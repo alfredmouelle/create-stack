@@ -8,6 +8,9 @@ import TanStackQueryDevtools from '~/trpc/devtools'
 
 import appCss from '../styles.css?url'
 
+// Runs before hydration to set the theme class and avoid a flash of wrong theme.
+const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m));}catch(e){}})();`
+
 interface RouterContext {
   queryClient: QueryClient
   trpc: TRPCOptionsProxy<AppRouter>
@@ -45,6 +48,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/** biome-ignore lint/security/noDangerouslySetInnerHtml: anti-FOUC theme script */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <HeadContent />
       </head>
       <body>
