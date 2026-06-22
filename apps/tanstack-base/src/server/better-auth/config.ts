@@ -1,9 +1,9 @@
-import { betterAuth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { tanstackStartCookies } from 'better-auth/tanstack-start';
-import { env } from '~/env';
-import { db } from '~/server/db';
-import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { tanstackStartCookies } from 'better-auth/tanstack-start'
+import { env } from '~/env'
+import { db } from '~/server/db'
+import { sendPasswordResetEmail, sendVerificationEmail } from './emails'
 
 const socialProviders =
   env.BETTER_AUTH_GOOGLE_CLIENT_ID && env.BETTER_AUTH_GOOGLE_CLIENT_SECRET
@@ -13,7 +13,7 @@ const socialProviders =
           clientSecret: env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
         },
       }
-    : undefined;
+    : undefined
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -27,7 +27,7 @@ export const auth = betterAuth({
       await sendPasswordResetEmail({
         to: { email: user.email, name: user.name },
         url,
-      });
+      })
     },
   },
   emailVerification: {
@@ -38,7 +38,7 @@ export const auth = betterAuth({
       await sendVerificationEmail({
         to: { email: user.email, name: user.name },
         url,
-      });
+      })
     },
   },
   socialProviders,
@@ -63,6 +63,6 @@ export const auth = betterAuth({
     },
   },
   plugins: [tanstackStartCookies()],
-});
+})
 
-export type Session = typeof auth.$Infer.Session;
+export type Session = typeof auth.$Infer.Session

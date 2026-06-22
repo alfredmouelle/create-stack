@@ -1,7 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { flatten, ValiError } from 'valibot';
-import { isAdminRole, isStaffRole } from '~/lib/roles';
 import { auth } from '~/server/better-auth';
 import { db } from '~/server/db';
 
@@ -63,19 +62,3 @@ export const protectedProcedure = t.procedure
       },
     });
   });
-
-export const staffProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!isStaffRole(ctx.session.user.role)) {
-    throw new TRPCError({ code: 'FORBIDDEN' });
-  }
-
-  return next();
-});
-
-export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!isAdminRole(ctx.session.user.role)) {
-    throw new TRPCError({ code: 'FORBIDDEN' });
-  }
-
-  return next();
-});
