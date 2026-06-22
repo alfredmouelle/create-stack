@@ -4,5 +4,7 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - protobufjs
+  - sharp
+  - lightningcss
 overrides:
   vite: "^8.0.16"

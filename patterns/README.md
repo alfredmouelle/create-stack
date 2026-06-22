@@ -6,14 +6,14 @@ freshly scaffolded app — the counterpart to `packages/` (swappable capabilitie
 A *capability* is a provider behind a port (mailer, storage, …), swappable by
 changing one line. A *pattern* is a foundation you don't swap but always set up
 the same way: tRPC wiring, the better-auth instance, the Drizzle client. They are
-**framework-coupled** (currently `tanstack-start`, mirrored from the e-skrib
-reference) and depend on each other.
+**framework-coupled** (currently `tanstack-start`, mirrored from the reference
+base apps) and depend on each other.
 
 Each pattern is `<name>/` with:
 
 - `pattern.json` — manifest (see `../pattern.schema.json`) driving detection,
   deps, env, files and wiring.
-- `files/` — the genericized reference source to vendor (e-skrib's conventions,
+- `files/` — the genericized reference source to vendor (the stack's conventions,
   business logic stripped). Layout mirrors the destination tree.
 
 `_baseline/` is special: always-applied config (Biome, tsconfig, env skeleton),
@@ -30,7 +30,8 @@ not an opt-in pattern.
 
 These files are inert templates: they import deps (`@trpc/server`, `better-auth`,
 `drizzle-orm`, `~/…`) that don't exist in this repo, so `patterns/` is excluded
-from the stack's Biome / typecheck. Their correctness is anchored in e-skrib.
+from the stack's Biome / typecheck. Their correctness is anchored in the base apps
+(`apps/tanstack-base`, `apps/next-base`), which wire them for real.
 
 ## Available patterns
 

@@ -61,8 +61,10 @@ Detect, by reading the project (not guessing):
 - **Package manager**: `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock` / `bun.lockb`.
 - **Framework**: `next` (App Router → `app/` route handlers + `'use server'`) vs
   `@tanstack/react-start` (TanStack Start → `createFileRoute` + `createServerFn`).
-  The reference apps `$STACK/apps/with-next` and `$STACK/apps/with-tanstack` are
-  the canonical wiring patterns — read the matching one before wiring.
+  Each capability's README carries the exact per-framework wiring snippet; the
+  base apps `$STACK/apps/next-base` and `$STACK/apps/tanstack-base` show a
+  realistic composition root. Read the capability README (+ the matching base app
+  when a capability has an HTTP surface) before wiring.
 - **Source root + alias**: `src/` with a `~/*` tsconfig path (the personal
   convention is always `~/*`, never `@/*`). Use it for the vendored destination.
 - **Existing env approach**: a typed `env.ts` (`@t3-oss/env-core` + valibot/zod)?
@@ -79,9 +81,8 @@ Detect, by reading the project (not guessing):
 The reference packages are private. Integration **copies the source** into the
 project so the project owns and can tweak it — that's the whole agnostic point.
 
-**Destination depends on the capability's nature** (this mirrors e-skrib's own
-layout — `src/server/email/`, `src/server/inngest/`, `src/lib/api.ts`,
-`src/emails/`):
+**Destination depends on the capability's nature** (the personal layout —
+`src/server/<cap>/`, `src/lib/http/`, `src/emails/`):
 
 | Capability | Destination | Why |
 |---|---|---|
@@ -132,13 +133,13 @@ For each var in the adapter's `env` (+ a `<CAPABILITY>_PROVIDER` selector when i
 helps):
 - Append to `.env.example` (and `.env` / `.env.local` with empty values).
 - If the project has a typed `env.ts`, add validated entries (mirror the style in
-  `$STACK/apps/with-*/src/env.ts`: `optionalString`, picklist for the provider).
+  `$STACK/apps/*-base/src/env.ts`: `optionalString`, picklist for the provider).
 
 ## Step 6 — Wire the composition root
 
 Create or extend a single composition root (`<srcRoot>/server/services.ts` or
 the project's equivalent) that imports the vendored factory/adapter and exports
-the **port**. Pattern (from `$STACK/apps/with-*/src/server/services.ts`):
+the **port**. Pattern (the composition root, mirrored in `$STACK/apps/*-base`):
 
 ```ts
 export const mailer = createMailer({
@@ -151,8 +152,8 @@ export const mailer = createMailer({
 
 App code must import the **port** from here, never an adapter directly. If the
 capability exposes an HTTP surface (jobs webhook, provider callbacks), mount it
-with the framework shim from the matching reference app — copy that file's
-pattern exactly (Next route handler vs TanStack `createFileRoute`).
+with the framework shim from the capability's README (Next route handler vs
+TanStack `createFileRoute`) — the base apps show it mounted in context.
 
 ## Step 7 — Verify
 

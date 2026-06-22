@@ -55,20 +55,24 @@ packages/
   mailer/  email-kit/  storage/  jobs/
   cache/  logger/  analytics/  error-tracking/  http/
 apps/
-  with-next/        # wiring reference — Next.js (App Router) shims
-  with-tanstack/    # wiring reference — TanStack Start shims
+  next-base/        # real Next.js (App Router) starter — fork for a new project
+  tanstack-base/    # real TanStack Start starter — fork for a new project
+patterns/
+  drizzle/  better-auth/  trpc/   # foundational patterns (pattern.json)
+  _baseline/        # always-on config: biome, tsconfig, env, author
 skills/
-  bootstrap/        # cleanup + baseline for a new project
+  bootstrap/        # detect opt-in → clean → vendor patterns + baseline
   add-capability/   # add a capability into a project behind a port
 scripts/
   link-skills.sh    # symlink skills into Claude / Codex
 capability.schema.json   # the manifest schema each capability.json follows
+pattern.schema.json      # the manifest schema each pattern.json follows
 ```
 
-`apps/with-*` are **wiring-only** references: a typed `env.ts`, a
-`server/services.ts` composition root that picks each adapter from the env, and
-the framework shims (server functions, webhook mounts). Everything that isn't a
-shim is identical between the two — that's the framework boundary made visible.
+`apps/*-base` are **real starter apps** — the absolute references you fork for a
+new project. They carry the personal baseline (strict Biome, `~/*` alias, typed
+`env.ts`) and nothing app-specific; tools are added per-project with
+**add-capability**, foundations (trpc, better-auth, drizzle) with **bootstrap**.
 
 ## Getting started
 

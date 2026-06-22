@@ -29,6 +29,6 @@
   ],
   "notes": [
     "trpc.ts integrates with better-auth: it imports `auth` and injects `session` into the context, and staff/adminProcedure use ~/lib/roles. If the better-auth pattern is NOT opt-in, strip those imports, the `session` from the context, and the protected/staff/admin procedures — keep publicProcedure + the timing middleware.",
-    "Wire TRPCReactProvider + createQueryClient into the app's root route, and getServerHelpers for SSR preloading (see the e-skrib router for the exact root wiring)."
+    "Wire TRPCReactProvider + createQueryClient into the app's root route, and getServerHelpers for SSR preloading (see tanstack-base's router for the exact root wiring)."
   ]
 }

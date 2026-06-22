@@ -1,0 +1,34 @@
+{
+  "name": "@alfredmouelle/next-base",
+  "version": "0.1.0",
+  "private": true,
+  "author": {
+    "name": "Alfred MOUELLE",
+    "email": "alfredmouelle@gmail.com",
+    "url": "https://alfredmouelle.com"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "check": "biome check .",
+    "check:unsafe": "biome check --write --unsafe .",
+    "check:write": "biome check --write ."
+  },
+  "dependencies": {
+    "@t3-oss/env-core": "^0.13.11",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "valibot": "^1.4.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5.9.3"
+  }
+}

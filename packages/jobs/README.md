@@ -43,6 +43,33 @@ export const handler = inngestServeHandler(jobs, serve, {
 })
 ```
 
+The same `FetchHandler` mounts unchanged in either framework — only the route
+shim differs. This is the canonical wiring (no demo app needed):
+
+```ts
+// Next.js — src/app/api/inngest/route.ts
+import { handler } from '~/server/jobs/serve'
+export const GET = handler
+export const POST = handler
+export const PUT = handler
+```
+
+```ts
+// TanStack Start — src/routes/api/inngest.ts
+import { createFileRoute } from '@tanstack/react-router'
+import { handler } from '~/server/jobs/serve'
+
+export const Route = createFileRoute('/api/inngest')({
+  server: {
+    handlers: {
+      GET: ({ request }) => handler(request),
+      POST: ({ request }) => handler(request),
+      PUT: ({ request }) => handler(request),
+    },
+  },
+})
+```
+
 ### Trigger.dev
 
 Swap the composition root to the `trigger` adapter. Each `defineJob` becomes a
