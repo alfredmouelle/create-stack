@@ -61,7 +61,7 @@
     "valibot": "^1.4.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.5",
+    "@biomejs/biome": "^2.5.0",
     "@faker-js/faker": "^10.5.0",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-vite": "^0.8.0",

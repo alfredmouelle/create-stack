@@ -2,7 +2,16 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "root": true,
   "files": {
-    "includes": ["**", "!public", "!src/components/ui", "!src/routeTree.gen.ts"]
+    "includes": [
+      "**",
+      "!public",
+      "!**/dist",
+      "!**/.next",
+      "!**/.output",
+      "!**/.nitro",
+      "!**/routeTree.gen.ts",
+      "!**/components/ui"
+    ]
   },
   "vcs": {
     "enabled": true,
@@ -21,7 +30,8 @@
   "formatter": {
     "enabled": true,
     "indentWidth": 2,
-    "indentStyle": "space"
+    "indentStyle": "space",
+    "lineWidth": 100
   },
   "linter": {
     "enabled": true,
@@ -49,9 +59,7 @@
           "level": "warn",
           "options": {
             "strictCase": false,
-            "conventions": [
-              { "selector": { "kind": "objectLiteralProperty" }, "match": ".*" }
-            ]
+            "conventions": [{ "selector": { "kind": "objectLiteralProperty" }, "match": ".*" }]
           }
         },
         "useConsistentArrayType": {
@@ -85,7 +93,9 @@
     },
     "formatter": {
       "enabled": true,
-      "quoteStyle": "single"
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all"
     },
     "linter": {
       "enabled": true
