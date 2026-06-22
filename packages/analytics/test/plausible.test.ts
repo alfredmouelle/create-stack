@@ -6,7 +6,7 @@ function mockFetch(status = 202) {
 }
 
 function lastCall(fetch: ReturnType<typeof mockFetch>) {
-  const [url, init] = fetch.mock.calls.at(-1) as [string, RequestInit]
+  const [url, init] = fetch.mock.calls.at(-1) as unknown as [string, RequestInit]
   const headers = new Headers(init.headers)
   return { url, init, headers, body: JSON.parse(init.body as string) }
 }
