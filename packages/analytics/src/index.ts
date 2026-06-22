@@ -1,4 +1,9 @@
 export { noopAdapter } from './adapters/noop/index.js'
+export { type PlausibleConfig, PlausibleConfigSchema } from './adapters/plausible/config.js'
+export {
+  type PlausibleAdapterOptions,
+  plausibleAdapter,
+} from './adapters/plausible/index.js'
 export { type PostHogConfig, PostHogConfigSchema } from './adapters/posthog/config.js'
 export {
   type PostHogAdapterOptions,

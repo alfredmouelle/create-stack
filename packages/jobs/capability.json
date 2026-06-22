@@ -10,6 +10,11 @@
       "env": ["INNGEST_EVENT_KEY", "INNGEST_SIGNING_KEY"],
       "files": ["src/adapters/inngest"]
     },
+    "trigger": {
+      "deps": ["@trigger.dev/sdk"],
+      "env": ["TRIGGER_SECRET_KEY"],
+      "files": ["src/adapters/trigger"]
+    },
     "memory": {
       "deps": [],
       "env": [],

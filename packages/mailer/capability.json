@@ -15,6 +15,11 @@
       "deps": ["@getbrevo/brevo"],
       "env": ["BREVO_API_KEY"],
       "files": ["src/adapters/brevo"]
+    },
+    "ses": {
+      "deps": ["@aws-sdk/client-sesv2"],
+      "env": ["AWS_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+      "files": ["src/adapters/ses"]
     }
   },
   "sharedDeps": ["valibot", "@react-email/render"],

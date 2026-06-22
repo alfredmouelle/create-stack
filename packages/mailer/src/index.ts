@@ -10,6 +10,12 @@ export {
   type ResendClient,
   resendAdapter,
 } from './adapters/resend/index.js'
+export { type SesConfig, SesConfigSchema } from './adapters/ses/config.js'
+export {
+  type SesAdapterOptions,
+  type SesClientLike,
+  sesAdapter,
+} from './adapters/ses/index.js'
 export { formatAddress, normalizeAddress, normalizeRecipients } from './core/address.js'
 export type {
   MailAddress,

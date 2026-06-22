@@ -32,6 +32,27 @@ await analytics.shutdown()
 enqueue work and return immediately. Use `flush()` to drain pending events and
 `shutdown()` to flush + release resources.
 
+## Swapping provider — Plausible
+
+Use the privacy-first Plausible adapter (server-side Events API). Set the site
+domain; the page `url`, `referrer` and client `ip` are read from each event's
+`properties`:
+
+```ts
+import { plausibleAdapter } from '@alfredmouelle/analytics'
+
+export const analytics = plausibleAdapter({ domain: process.env.PLAUSIBLE_DOMAIN! })
+
+analytics.capture({
+  event: 'user_signed_up',
+  distinctId: 'user_123',
+  properties: { plan: 'pro', url: 'https://acme.com/signup', ip: req.ip },
+})
+```
+
+Plausible is cookieless and stores no person profiles, so `identify` is a no-op
+and `distinctId` is forwarded only as a `distinct_id` custom property.
+
 ## Disabling analytics
 
 Use the `noop` adapter in development, tests, or when analytics is off:

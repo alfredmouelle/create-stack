@@ -10,5 +10,14 @@ export {
   inngestServeHandler,
 } from './adapters/inngest/index.js'
 export { type MemoryJobsAdapter, memoryAdapter } from './adapters/memory/index.js'
+export { type TriggerDevConfig, TriggerDevConfigSchema } from './adapters/trigger/config.js'
+export {
+  type TriggerDevAdapterOptions,
+  type TriggerDevJobsAdapter,
+  type TriggerDevLike,
+  type TriggerTask,
+  triggerDevAdapter,
+  triggerDevTasks,
+} from './adapters/trigger/index.js'
 export type { JobDefinition, JobEvent, JobsPort } from './core/port.js'
 export { JobsError } from './core/port.js'

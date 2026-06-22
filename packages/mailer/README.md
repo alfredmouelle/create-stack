@@ -34,6 +34,18 @@ import { brevoAdapter } from '@alfredmouelle/mailer'
 adapter: brevoAdapter({ apiKey: process.env.BREVO_API_KEY! })
 ```
 
+Or Amazon SES (SESv2) — credentials resolve from the standard AWS chain (env,
+profile, IAM role) when omitted:
+
+```ts
+import { sesAdapter } from '@alfredmouelle/mailer'
+
+adapter: sesAdapter({ region: process.env.AWS_REGION })
+```
+
+The SES adapter sends via the `SendEmail` Simple content path. Attachments need
+a raw MIME message, which it does not build — passing `attachments` throws.
+
 No call site changes — they all depend on `Mailer`, never on a provider.
 
 ## Templates & theming

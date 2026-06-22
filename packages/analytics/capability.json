@@ -10,6 +10,11 @@
       "env": ["POSTHOG_API_KEY", "POSTHOG_HOST"],
       "files": ["src/adapters/posthog"]
     },
+    "plausible": {
+      "deps": ["@alfredmouelle/http"],
+      "env": ["PLAUSIBLE_DOMAIN", "PLAUSIBLE_API_HOST"],
+      "files": ["src/adapters/plausible"]
+    },
     "noop": {
       "deps": [],
       "env": [],

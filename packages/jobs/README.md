@@ -43,6 +43,37 @@ export const handler = inngestServeHandler(jobs, serve, {
 })
 ```
 
+### Trigger.dev
+
+Swap the composition root to the `trigger` adapter. Each `defineJob` becomes a
+Trigger.dev task; `trigger` fans an event out to every task subscribed to it.
+
+```ts
+import { triggerDevAdapter } from '@alfredmouelle/jobs'
+
+export const jobs = triggerDevAdapter({
+  secretKey: process.env.TRIGGER_SECRET_KEY,
+})
+
+jobs.defineJob<{ userId: string }>({
+  id: 'send-welcome',
+  event: 'user/created',
+  handler: async ({ data }) => sendWelcomeEmail(data.userId),
+})
+
+await jobs.trigger({ name: 'user/created', data: { userId: '123' } })
+```
+
+Trigger.dev discovers tasks by scanning the `dirs` in `trigger.config.ts`.
+Re-export the collected tasks from a file inside one of those dirs so the CLI
+picks them up:
+
+```ts
+// src/trigger/index.ts
+import { jobs } from '../server/jobs'
+export const tasks = jobs.tasks
+```
+
 ## Dev & tests
 
 Use the in-process `memoryAdapter` to run job logic synchronously, no network:
