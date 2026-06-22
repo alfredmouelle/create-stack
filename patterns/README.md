@@ -44,3 +44,6 @@ from the stack's Biome / typecheck. Their correctness is anchored in the base ap
 - **trpc** — tRPC v11 + TanStack React Query. Context, procedure tiers, error
   formatter, client + SSR caller, fetch handler. `dependsOn` drizzle,
   `integratesWith` better-auth.
+- **data-table** — headless tables with TanStack Table (table + skeleton
+  primitives, DataTable, InfiniteDataTable, SortableHeader). `framework: agnostic`
+  — works in both Next and TanStack Start.
