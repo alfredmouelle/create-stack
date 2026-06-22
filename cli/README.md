@@ -46,13 +46,12 @@ not exist yet. In non-interactive mode it is required.
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
 | `--foundations` | csv of `drizzle,trpc,better-auth,data-table` | all | Foundations to keep; the rest are stripped. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. `none` is rejected when `better-auth` is kept. |
-| `--caps` | csv of capability names | — | Extra capabilities to add afterwards via `add-capability` (see below). |
 | `--no-install` | — | install on | Skip `pnpm install` + verification. |
 | `--yes`, `-y` | — | — | Non-interactive with all defaults. |
 
-Passing any of `--framework`, `--foundations`, `--mailer`, `--caps` or
-`--no-install` (or `--yes`) switches the CLI to non-interactive mode; missing
-values fall back to the defaults above.
+Passing any of `--framework`, `--foundations`, `--mailer` or `--no-install`
+(or `--yes`) switches the CLI to non-interactive mode; missing values fall back
+to the defaults above.
 
 ### Dependency resolution
 
@@ -76,10 +75,6 @@ pnpm dlx @alfredmouelle/create-stack api --framework next \
 
 # Minimal: Drizzle only, no mailer
 pnpm dlx @alfredmouelle/create-stack db-svc --foundations drizzle --mailer none
-
-# TanStack + auth, and queue up extra capabilities for later
-pnpm dlx @alfredmouelle/create-stack app --foundations drizzle,trpc,better-auth \
-  --caps storage,jobs
 ```
 
 ## What you get
@@ -97,12 +92,12 @@ pnpm dlx @alfredmouelle/create-stack app --foundations drizzle,trpc,better-auth 
 Unselected foundations are removed cleanly (files, deps, env vars and wiring),
 and the project is left **bootable and green** (typecheck + Biome).
 
-## Extra capabilities
+## Adding more capabilities
 
-`--caps` lists capabilities that aren't baked into the base (storage, jobs, cache,
-logger, analytics, error-tracking, http). They are **not** scaffolded by this CLI;
-the final report prints the follow-up to add them with the `add-capability` skill.
-Mailer is the exception — it's built in and chosen via `--mailer`.
+The base bakes in the **mailer** (chosen via `--mailer`). Other capabilities —
+storage, jobs, cache, logger, analytics, error-tracking, http — are added *after*
+scaffolding with the `add-capability` skill (it wires each adapter's env/config per
+provider, which this CLI deliberately leaves out).
 
 ## After scaffolding
 
