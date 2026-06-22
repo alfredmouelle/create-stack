@@ -49,7 +49,7 @@
     },
     "files": {
       "type": "array",
-      "description": "Reference files to vendor. `from` is relative to the pattern dir; `to` is the project destination ('<srcRoot>' = the project's source root).",
+      "description": "Reference files to vendor. `from` is a path relative to the stack repo root, pointing into the base apps (apps/tanstack-base | apps/next-base) which hold the single source of truth for the code; `to` is the project destination ('<srcRoot>' = the project's source root).",
       "items": {
         "type": "object",
         "required": ["from", "to"],

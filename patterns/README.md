@@ -9,29 +9,28 @@ the same way: tRPC wiring, the better-auth instance, the Drizzle client. They ar
 **framework-coupled** (currently `tanstack-start`, mirrored from the reference
 base apps) and depend on each other.
 
-Each pattern is `<name>/` with:
+**The code lives in the base apps, not here.** `patterns/` is a pure *manifest
+layer*: each `pattern.json` describes a foundation (how to detect it, its deps,
+env, framework, dependencies) and lists the files that make it up — by pointing
+**into the base apps** (`apps/tanstack-base`, `apps/next-base`), the single source
+of truth. No code is duplicated.
 
-- `pattern.json` — manifest (see `../pattern.schema.json`) driving detection,
-  deps, env, files and wiring.
-- `files/` — the genericized reference source to vendor (the stack's conventions,
-  business logic stripped). Layout mirrors the destination tree.
+Each pattern is `<name>/pattern.json` (see `../pattern.schema.json`).
+`_baseline/` is special: real always-applied config files (Biome, tsconfig, env
+skeleton, the `# Author` README footer) that a standalone fork needs but the base
+apps don't carry on their own (they inherit the monorepo's Biome).
 
-`_baseline/` is special: always-applied config (Biome, tsconfig, env skeleton),
-not an opt-in pattern.
+## How the skills use these
 
-## How bootstrap uses these
+The manifests drive two flows:
 
-1. Reads the target project and matches each pattern's `detect` against the
-   installed deps / config files → the **opt-in set**.
-2. Vendors only opt-in patterns (+ their hard `dependsOn`). A pattern present in
-   the stack but not referenced in the project is **never** pulled.
-3. Wires patterns that `integratesWith` each other only when both are opt-in.
-4. Pulls the `capabilities` an opt-in pattern needs via the add-capability skill.
-
-These files are inert templates: they import deps (`@trpc/server`, `better-auth`,
-`drizzle-orm`, `~/…`) that don't exist in this repo, so `patterns/` is excluded
-from the stack's Biome / typecheck. Their correctness is anchored in the base apps
-(`apps/tanstack-base`, `apps/next-base`), which wire them for real.
+- **bootstrap — create mode** (empty folder): fork a base app, then *strip* every
+  foundation/capability the user didn't pick, using each manifest's `files`/`deps`/
+  `env` to know its exact footprint.
+- **bootstrap — existing project / add-capability**: match each manifest's `detect`
+  against the project → the opt-in set, then *vendor* the listed files (copied from
+  the base apps) + deps + env, wire `integratesWith` when both sides are opt-in, and
+  pull required `capabilities`. A pattern not referenced is never pulled.
 
 ## Available patterns
 

@@ -4,13 +4,24 @@
   "description": "better-auth v1 with the Drizzle adapter (Postgres). Email+password, email verification, optional Google OAuth, rate limiting and TanStack Start cookies. Ships auth tables, server/client instances, session helpers and a route guard.",
   "framework": "tanstack-start",
   "detect": {
-    "deps": ["better-auth"],
+    "deps": [
+      "better-auth"
+    ],
     "files": []
   },
-  "dependsOn": ["drizzle"],
-  "integratesWith": ["trpc"],
-  "capabilities": ["mailer", "email-kit"],
-  "deps": ["better-auth"],
+  "dependsOn": [
+    "drizzle"
+  ],
+  "integratesWith": [
+    "trpc"
+  ],
+  "capabilities": [
+    "mailer",
+    "email-kit"
+  ],
+  "deps": [
+    "better-auth"
+  ],
   "env": [
     "BETTER_AUTH_URL",
     "BETTER_AUTH_SECRET",
@@ -18,14 +29,38 @@
     "BETTER_AUTH_GOOGLE_CLIENT_SECRET"
   ],
   "files": [
-    { "from": "files/server/better-auth/config.ts", "to": "<srcRoot>/server/better-auth/config.ts" },
-    { "from": "files/server/better-auth/client.ts", "to": "<srcRoot>/server/better-auth/client.ts" },
-    { "from": "files/server/better-auth/session.ts", "to": "<srcRoot>/server/better-auth/session.ts" },
-    { "from": "files/server/better-auth/emails.tsx", "to": "<srcRoot>/server/better-auth/emails.tsx" },
-    { "from": "files/server/better-auth/index.ts", "to": "<srcRoot>/server/better-auth/index.ts" },
-    { "from": "files/server/db/schemas/auth.schema.ts", "to": "<srcRoot>/server/db/schemas/auth.schema.ts" },
-    { "from": "files/routes/api/auth/$.ts", "to": "<srcRoot>/routes/api/auth/$.ts" },
-    { "from": "files/routes/_authed.tsx", "to": "<srcRoot>/routes/_authed.tsx" }
+    {
+      "from": "apps/tanstack-base/src/server/better-auth/config.ts",
+      "to": "<srcRoot>/server/better-auth/config.ts"
+    },
+    {
+      "from": "apps/tanstack-base/src/server/better-auth/client.ts",
+      "to": "<srcRoot>/server/better-auth/client.ts"
+    },
+    {
+      "from": "apps/tanstack-base/src/server/better-auth/session.ts",
+      "to": "<srcRoot>/server/better-auth/session.ts"
+    },
+    {
+      "from": "apps/tanstack-base/src/server/better-auth/emails.tsx",
+      "to": "<srcRoot>/server/better-auth/emails.tsx"
+    },
+    {
+      "from": "apps/tanstack-base/src/server/better-auth/index.ts",
+      "to": "<srcRoot>/server/better-auth/index.ts"
+    },
+    {
+      "from": "apps/tanstack-base/src/server/db/schemas/auth.schema.ts",
+      "to": "<srcRoot>/server/db/schemas/auth.schema.ts"
+    },
+    {
+      "from": "apps/tanstack-base/src/routes/api/auth/$.ts",
+      "to": "<srcRoot>/routes/api/auth/$.ts"
+    },
+    {
+      "from": "apps/tanstack-base/src/routes/_authed.tsx",
+      "to": "<srcRoot>/routes/_authed.tsx"
+    }
   ],
   "wiring": [
     "Append `export * from './auth.schema'` to <srcRoot>/server/db/schemas/index.ts (created by the drizzle pattern).",

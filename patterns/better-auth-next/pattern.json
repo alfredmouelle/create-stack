@@ -4,13 +4,26 @@
   "description": "better-auth v1 for Next.js App Router with the Drizzle adapter. Email+password + verification, optional Google OAuth, session via next/headers (react cache), toNextJsHandler catch-all route, and server-component guards. The Next counterpart of the `better-auth` pattern.",
   "framework": "next",
   "detect": {
-    "deps": ["better-auth"],
-    "files": ["src/app/api/auth/[...all]/route.ts"]
+    "deps": [
+      "better-auth"
+    ],
+    "files": [
+      "src/app/api/auth/[...all]/route.ts"
+    ]
   },
-  "dependsOn": ["drizzle"],
-  "integratesWith": ["trpc-next"],
-  "capabilities": ["mailer", "email-kit"],
-  "deps": ["better-auth"],
+  "dependsOn": [
+    "drizzle"
+  ],
+  "integratesWith": [
+    "trpc-next"
+  ],
+  "capabilities": [
+    "mailer",
+    "email-kit"
+  ],
+  "deps": [
+    "better-auth"
+  ],
   "env": [
     "BETTER_AUTH_URL",
     "BETTER_AUTH_SECRET",
@@ -18,14 +31,38 @@
     "BETTER_AUTH_GOOGLE_CLIENT_SECRET"
   ],
   "files": [
-    { "from": "files/server/better-auth/config.ts", "to": "<srcRoot>/server/better-auth/config.ts" },
-    { "from": "files/server/better-auth/client.ts", "to": "<srcRoot>/server/better-auth/client.ts" },
-    { "from": "files/server/better-auth/server.ts", "to": "<srcRoot>/server/better-auth/server.ts" },
-    { "from": "files/server/better-auth/emails.tsx", "to": "<srcRoot>/server/better-auth/emails.tsx" },
-    { "from": "files/server/better-auth/index.ts", "to": "<srcRoot>/server/better-auth/index.ts" },
-    { "from": "files/server/auth/guards.ts", "to": "<srcRoot>/server/auth/guards.ts" },
-    { "from": "files/server/db/schemas/auth.schema.ts", "to": "<srcRoot>/server/db/schemas/auth.schema.ts" },
-    { "from": "files/app/api/auth/[...all]/route.ts", "to": "<srcRoot>/app/api/auth/[...all]/route.ts" }
+    {
+      "from": "apps/next-base/src/server/better-auth/config.ts",
+      "to": "<srcRoot>/server/better-auth/config.ts"
+    },
+    {
+      "from": "apps/next-base/src/server/better-auth/client.ts",
+      "to": "<srcRoot>/server/better-auth/client.ts"
+    },
+    {
+      "from": "apps/next-base/src/server/better-auth/server.ts",
+      "to": "<srcRoot>/server/better-auth/server.ts"
+    },
+    {
+      "from": "apps/next-base/src/server/better-auth/emails.tsx",
+      "to": "<srcRoot>/server/better-auth/emails.tsx"
+    },
+    {
+      "from": "apps/next-base/src/server/better-auth/index.ts",
+      "to": "<srcRoot>/server/better-auth/index.ts"
+    },
+    {
+      "from": "apps/next-base/src/server/auth/guards.ts",
+      "to": "<srcRoot>/server/auth/guards.ts"
+    },
+    {
+      "from": "apps/next-base/src/server/db/schemas/auth.schema.ts",
+      "to": "<srcRoot>/server/db/schemas/auth.schema.ts"
+    },
+    {
+      "from": "apps/next-base/src/app/api/auth/[...all]/route.ts",
+      "to": "<srcRoot>/app/api/auth/[...all]/route.ts"
+    }
   ],
   "wiring": [
     "Append `export * from './auth.schema'` to <srcRoot>/server/db/schemas/index.ts (created by the drizzle pattern).",

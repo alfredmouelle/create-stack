@@ -4,18 +4,37 @@
   "description": "Headless data tables with TanStack Table: shadcn table + skeleton primitives, a DataTable (loading + empty states), an InfiniteDataTable and a SortableHeader.",
   "framework": "agnostic",
   "detect": {
-    "deps": ["@tanstack/react-table"],
+    "deps": [
+      "@tanstack/react-table"
+    ],
     "files": []
   },
   "dependsOn": [],
-  "deps": ["@tanstack/react-table"],
+  "deps": [
+    "@tanstack/react-table"
+  ],
   "env": [],
   "files": [
-    { "from": "files/components/ui/table.tsx", "to": "<srcRoot>/components/ui/table.tsx" },
-    { "from": "files/components/ui/skeleton.tsx", "to": "<srcRoot>/components/ui/skeleton.tsx" },
-    { "from": "files/components/data-table.tsx", "to": "<srcRoot>/components/data-table.tsx" },
-    { "from": "files/components/infinite-data-table.tsx", "to": "<srcRoot>/components/infinite-data-table.tsx" },
-    { "from": "files/components/sortable-header.tsx", "to": "<srcRoot>/components/sortable-header.tsx" }
+    {
+      "from": "apps/tanstack-base/src/components/ui/table.tsx",
+      "to": "<srcRoot>/components/ui/table.tsx"
+    },
+    {
+      "from": "apps/tanstack-base/src/components/ui/skeleton.tsx",
+      "to": "<srcRoot>/components/ui/skeleton.tsx"
+    },
+    {
+      "from": "apps/tanstack-base/src/components/data-table.tsx",
+      "to": "<srcRoot>/components/data-table.tsx"
+    },
+    {
+      "from": "apps/tanstack-base/src/components/infinite-data-table.tsx",
+      "to": "<srcRoot>/components/infinite-data-table.tsx"
+    },
+    {
+      "from": "apps/tanstack-base/src/components/sortable-header.tsx",
+      "to": "<srcRoot>/components/sortable-header.tsx"
+    }
   ],
   "notes": [
     "Pure React + TanStack Table — works in both Next App Router and TanStack Start. Needs shadcn (cn util + Button); the table/skeleton primitives are vendored here.",

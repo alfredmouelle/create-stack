@@ -4,11 +4,17 @@
   "description": "tRPC v11 for Next.js App Router — the classic `api.x.useQuery` / `useMutation` hooks (createTRPCReact) plus RSC hydration (createHydrationHelpers). The Next counterpart of the `trpc` pattern.",
   "framework": "next",
   "detect": {
-    "deps": ["@trpc/react-query"],
+    "deps": [
+      "@trpc/react-query"
+    ],
     "files": []
   },
-  "dependsOn": ["drizzle"],
-  "integratesWith": ["better-auth-next"],
+  "dependsOn": [
+    "drizzle"
+  ],
+  "integratesWith": [
+    "better-auth-next"
+  ],
   "deps": [
     "@trpc/server",
     "@trpc/client",
@@ -19,13 +25,34 @@
   ],
   "env": [],
   "files": [
-    { "from": "files/server/api/trpc.ts", "to": "<srcRoot>/server/api/trpc.ts" },
-    { "from": "files/server/api/root.ts", "to": "<srcRoot>/server/api/root.ts" },
-    { "from": "files/server/api/routers/health.router.ts", "to": "<srcRoot>/server/api/routers/health.router.ts" },
-    { "from": "files/trpc/react.tsx", "to": "<srcRoot>/trpc/react.tsx" },
-    { "from": "files/trpc/query-client.ts", "to": "<srcRoot>/trpc/query-client.ts" },
-    { "from": "files/trpc/server.ts", "to": "<srcRoot>/trpc/server.ts" },
-    { "from": "files/app/api/trpc/[trpc]/route.ts", "to": "<srcRoot>/app/api/trpc/[trpc]/route.ts" }
+    {
+      "from": "apps/next-base/src/server/api/trpc.ts",
+      "to": "<srcRoot>/server/api/trpc.ts"
+    },
+    {
+      "from": "apps/next-base/src/server/api/root.ts",
+      "to": "<srcRoot>/server/api/root.ts"
+    },
+    {
+      "from": "apps/next-base/src/server/api/routers/health.router.ts",
+      "to": "<srcRoot>/server/api/routers/health.router.ts"
+    },
+    {
+      "from": "apps/next-base/src/trpc/react.tsx",
+      "to": "<srcRoot>/trpc/react.tsx"
+    },
+    {
+      "from": "apps/next-base/src/trpc/query-client.ts",
+      "to": "<srcRoot>/trpc/query-client.ts"
+    },
+    {
+      "from": "apps/next-base/src/trpc/server.ts",
+      "to": "<srcRoot>/trpc/server.ts"
+    },
+    {
+      "from": "apps/next-base/src/app/api/trpc/[trpc]/route.ts",
+      "to": "<srcRoot>/app/api/trpc/[trpc]/route.ts"
+    }
   ],
   "wiring": [
     "Wrap the app in <TRPCReactProvider> in app/layout.tsx (it's a client component)."
