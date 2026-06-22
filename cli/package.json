@@ -1,14 +1,49 @@
 {
-  "name": "create-stack",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@alfredmouelle/create-stack",
+  "version": "0.1.0",
   "type": "module",
-  "description": "Interactive, deterministic installer for the personal reference stack — the non-LLM counterpart of the bootstrap skill's create mode. Forks a base app and strips it to your selection.",
+  "description": "Interactive, deterministic installer for the personal reference stack — forks a base app (Next.js / TanStack Start) and strips it to your selection.",
+  "author": {
+    "name": "Alfred MOUELLE",
+    "email": "alfredmouelle@gmail.com",
+    "url": "https://alfredmouelle.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "create",
+    "scaffold",
+    "starter",
+    "boilerplate",
+    "tanstack-start",
+    "nextjs",
+    "drizzle",
+    "trpc",
+    "better-auth"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alfredmouelle/stack.git",
+    "directory": "cli"
+  },
   "bin": {
     "create-stack": "./index.mjs"
   },
   "engines": {
     "node": ">=22"
+  },
+  "files": [
+    "index.mjs",
+    "lib",
+    "templates",
+    "_stack",
+    "README.md"
+  ],
+  "scripts": {
+    "bundle": "node scripts/bundle.mjs",
+    "prepack": "node scripts/bundle.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@clack/prompts": "^1.6.0"

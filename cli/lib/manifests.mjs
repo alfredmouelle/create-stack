@@ -2,14 +2,16 @@
 // data-driven (file lists, deps, env come from the manifests, not hardcoded).
 // Only the few code "seams" (trpc/auth wiring) are hardcoded in strip.mjs.
 
-import { readdirSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readJSON } from './util.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-/** Stack repo root — the CLI lives in `<stack>/cli`, so root is one up. */
-export const STACK_ROOT = resolve(here, '..', '..')
+// Published: assets are bundled into cli/_stack (see scripts/bundle.mjs).
+// Dev (inside the monorepo): read them straight from the repo root.
+const bundled = resolve(here, '..', '_stack')
+export const STACK_ROOT = existsSync(bundled) ? bundled : resolve(here, '..', '..')
 
 export const loadPatterns = () => {
   const dir = join(STACK_ROOT, 'patterns')
