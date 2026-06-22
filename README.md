@@ -8,9 +8,9 @@ logging, analytics, error tracking) lives behind a tiny **port**. App code
 depends only on the port, never on a provider — so swapping Resend for Brevo, or
 S3 for R2, is one line in a composition root, not a refactor.
 
-Two companion skills turn this repo into automation: **`bootstrap`** (start a new
-project on the baseline) and **`add-capability`** (drop a capability into a
-project behind a port).
+Two companion skills turn this repo into automation: **`create-stack`** (scaffold a
+new project by running the published CLI) and **`add-capability`** (drop a
+capability into a project behind a port).
 
 ## Why
 
@@ -61,7 +61,7 @@ patterns/
   drizzle/  better-auth/  trpc/   # foundational patterns (pattern.json)
   _baseline/        # always-on config: biome, tsconfig, env, author
 skills/
-  bootstrap/        # detect opt-in → clean → vendor patterns + baseline
+  create-stack/     # run the published create-stack CLI to scaffold a project
   add-capability/   # add a capability into a project behind a port
 scripts/
   link-skills.sh    # symlink skills into Claude / Codex
@@ -71,8 +71,9 @@ pattern.schema.json      # the manifest schema each pattern.json follows
 
 `apps/*-base` are **real starter apps** — the absolute references you fork for a
 new project. They carry the personal baseline (strict Biome, `~/*` alias, typed
-`env.ts`) and nothing app-specific; tools are added per-project with
-**add-capability**, foundations (trpc, better-auth, drizzle) with **bootstrap**.
+`env.ts`) and nothing app-specific; new projects are scaffolded (framework +
+foundations) with **create-stack**, and tools are added per-project with
+**add-capability**.
 
 ## Getting started
 
@@ -99,8 +100,9 @@ pnpm link:skills          # → Claude (~/.claude/skills)
 pnpm link:skills:codex    # → Codex  (~/.codex/prompts)
 ```
 
-- **`/bootstrap`** — strip a fresh project's boilerplate and apply the baseline
-  (strict Biome, tsconfig, typed env, `~/*` alias).
+- **`/create-stack`** — scaffold a new project by running the published
+  `@alfredmouelle/create-stack` CLI (framework + foundations + mailer, installs &
+  inits git).
 - **`/add-capability <capability> <adapter>`** — vendor a capability into the
   current project behind a port (e.g. `/add-capability mailer resend`). Server
   capabilities land in `src/server/<cap>/`, pure utils in `src/lib/`, templates

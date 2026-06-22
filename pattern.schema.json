@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Foundation pattern manifest",
-  "description": "Describes a foundational, framework-coupled pattern (trpc, better-auth, drizzle, …) so the bootstrap skill can vendor the right reference files, deps, env vars and wiring into a freshly scaffolded app — but only when the pattern was opt-in.",
+  "description": "Describes a foundational, framework-coupled pattern (trpc, better-auth, drizzle, …) so the create-stack CLI knows each foundation's footprint (files, deps, env, wiring) when forking a base app and stripping it down to the selected foundations.",
   "type": "object",
   "required": ["name", "description", "framework", "detect", "files"],
   "properties": {

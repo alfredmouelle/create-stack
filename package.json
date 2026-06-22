@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Personal agnostic SaaS stack: swappable capabilities behind ports & adapters (mailer, storage, jobs, cache, logger, analytics, error-tracking), framework-agnostic, with bootstrap & add-capability skills.",
+  "description": "Personal agnostic SaaS stack: swappable capabilities behind ports & adapters (mailer, storage, jobs, cache, logger, analytics, error-tracking), framework-agnostic, with create-stack & add-capability skills.",
   "author": {
     "name": "Alfred MOUELLE",
     "email": "alfredmouelle@gmail.com",

@@ -4,10 +4,11 @@ Claude Code skills that automate working with this reference stack. They live
 here (versioned with the stack) and are **symlinked** into the user-level skills
 directory so editing them here updates what Claude uses — no copy step.
 
-- **bootstrap** — turn a freshly scaffolded project into one that follows the
-  stack: detect the opt-in packages (trpc, better-auth, drizzle, …), strip the
-  CLI's example boilerplate, vendor the matching `patterns/` + baseline (strict
-  Biome, tsconfig, typed env, `~/*` alias), then freshen deps + stamp author info.
+- **create-stack** — scaffold a brand-new project by running the published
+  `@alfredmouelle/create-stack` CLI: pick a framework (Next.js / TanStack Start),
+  foundations (drizzle, trpc, better-auth, data-table) and a mailer; it forks a
+  base app, strips it to the selection, installs, verifies and inits git. A thin
+  wrapper over the CLI — the agent gathers the choices, then runs it with flags.
 - **add-capability** — add a capability (mailer, storage, jobs, cache, logger,
   analytics, error-tracking, email-kit, http) into a project behind a port, with
   a chosen provider. Vendors server-only capabilities into `src/server/<cap>/`,

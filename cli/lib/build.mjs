@@ -39,7 +39,7 @@ export function buildProject({
 
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
-  pkg.description = `${projectName} — bootstrapped from the personal reference stack.`
+  pkg.description = `${projectName} — scaffolded from the personal reference stack.`
   pkgRemoveDeps(pkg, [...strip.removeDeps, ...mailer.removeDeps])
   pkgRemoveScripts(pkg, strip.removeScripts)
   pkgAddDeps(pkg, mailer.addDeps)

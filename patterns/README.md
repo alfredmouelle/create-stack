@@ -1,7 +1,8 @@
 # Patterns
 
-Foundational, framework-coupled **patterns** the `bootstrap` skill vendors into a
-freshly scaffolded app — the counterpart to `packages/` (swappable capabilities).
+Foundational, framework-coupled **patterns** the create-stack CLI reads to strip a
+forked base app down to the selected foundations — the counterpart to `packages/`
+(swappable capabilities).
 
 A *capability* is a provider behind a port (mailer, storage, …), swappable by
 changing one line. A *pattern* is a foundation you don't swap but always set up
@@ -20,17 +21,15 @@ Each pattern is `<name>/pattern.json` (see `../pattern.schema.json`).
 skeleton, the `# Author` README footer) that a standalone fork needs but the base
 apps don't carry on their own (they inherit the monorepo's Biome).
 
-## How the skills use these
+## How create-stack uses these
 
-The manifests drive two flows:
-
-- **bootstrap — create mode** (empty folder): fork a base app, then *strip* every
-  foundation/capability the user didn't pick, using each manifest's `files`/`deps`/
-  `env` to know its exact footprint.
-- **bootstrap — existing project / add-capability**: match each manifest's `detect`
-  against the project → the opt-in set, then *vendor* the listed files (copied from
-  the base apps) + deps + env, wire `integratesWith` when both sides are opt-in, and
-  pull required `capabilities`. A pattern not referenced is never pulled.
+The create-stack CLI forks a base app (the maximal foundation), then *strips* every
+foundation the user didn't pick — using each manifest's `files`/`deps`/`env`/`scripts`
+to know its exact footprint, and `framework` to pick the right variant. `_baseline/`
+supplies the standalone config a fork needs (Biome, tsconfig, env, the `# Author`
+footer). The `add-capability` skill uses the `packages/*` capability manifests
+separately. (The `detect`/`cleanup` fields are legacy — the dropped "convert an
+existing project" flow no longer runs.)
 
 ## Available patterns
 
@@ -54,5 +53,5 @@ Next.js variants (App Router) of the framework-coupled patterns:
 - **trpc-next** — tRPC with the classic `api.x.useQuery` hooks (createTRPCReact) +
   RSC hydration. `integratesWith` better-auth-next.
 
-bootstrap picks the variant matching the project's framework: `trpc`/`better-auth`
+create-stack picks the variant matching the chosen framework: `trpc`/`better-auth`
 for TanStack Start, `trpc-next`/`better-auth-next` for Next.
