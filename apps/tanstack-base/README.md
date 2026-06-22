@@ -1,14 +1,23 @@
 # tanstack-base
 
-Reference TanStack Start app — the starting point to fork for a new project.
-Carries the personal baseline (strict Biome via the repo root config, `~/*`
-alias, typed `env.ts`) and nothing else: tools are added per-project with the
-**add-capability** skill, foundations (trpc, better-auth, drizzle) with
-**bootstrap**.
+Reference TanStack Start app — fork it to start a new project. Comes wired with
+the full personal foundation:
+
+- **baseline** — `~/*` alias, typed `env.ts`, strict Biome, Tailwind v4 + shadcn
+  (Geist, dark mode)
+- **data** — Drizzle (Postgres) + drizzle-kit, faker seed harness
+- **auth** — better-auth (email/password + verification, optional Google) + a full
+  auth UI (sign-in/up, forgot/reset, verify) with `@tanstack/react-form`
+- **email** — mailer (Resend) + email-kit templates (`email:dev` studio)
+- **API** — tRPC (`useTRPC`) + TanStack React Query with SSR hydration
+- **UI utilities** — theme toggle (light/dark/system), DataTable, DatePicker
+- **deploy** — multi-stage `Dockerfile` (Nitro output) for a VPS
 
 ```bash
 pnpm --filter @alfredmouelle/tanstack-base dev    # http://localhost:3000
 ```
+
+Add more swappable tools with **add-capability**.
 
 # Author
 

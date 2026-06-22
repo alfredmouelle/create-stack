@@ -112,10 +112,10 @@ if a dependency wasn't independently detected — e.g. better-auth pulls drizzle
    keep the integration; if it's **not** opt-in, strip it per the manifest's
    `notes` (e.g. trpc without better-auth → drop the `auth`/`session` lines and the
    protected/staff/admin procedures, keep `publicProcedure`).
-6. **Framework fit** — the reference files target `pattern.framework`
-   (`tanstack-start`). On Next.js, adapt only the framework shims (route handlers:
-   `createFileRoute` → an App Router `route.ts`); the core logic is unchanged.
-   Rewrite any leftover `~/` import to the project's actual alias.
+6. **Framework variant** — pick the pattern whose `framework` matches the project:
+   `trpc` / `better-auth` for TanStack Start, `trpc-next` / `better-auth-next` for
+   Next.js App Router; `drizzle` and `data-table` are `agnostic`. Rewrite any
+   leftover `~/` import to the project's actual alias.
 
 ## Step 6 — Freshen dependencies
 
@@ -133,8 +133,9 @@ node -e "console.log(JSON.stringify(require('$STACK/package.json').author))"
 
 Apply it to the new project:
 - `package.json` — set `author` (name/email/url) and a real `name`/`description`.
-- `README.md` — replace starter marketing with a short project README under the
-  author's name.
+- `README.md` — replace starter marketing with a short project README, then append
+  the author footer **verbatim** from `$STACK/patterns/_baseline/README-author.md`
+  (the badges block) so every project ends with the same `# Author` section.
 - **Meta tags** — set the author/og/site metadata in the framework's head config
   (Next `metadata` export / `<head>`, TanStack root route `head`/`meta`).
 
