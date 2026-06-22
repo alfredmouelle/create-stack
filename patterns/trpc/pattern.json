@@ -1,0 +1,34 @@
+{
+  "$schema": "../../pattern.schema.json",
+  "name": "trpc",
+  "description": "tRPC v11 + TanStack React Query. Context with session injection, procedure tiers (public/protected/staff/admin), valibot error formatter, batch-stream client, SSR caller and a fetch route handler.",
+  "framework": "tanstack-start",
+  "detect": {
+    "deps": ["@trpc/server"],
+    "files": []
+  },
+  "dependsOn": ["drizzle"],
+  "integratesWith": ["better-auth"],
+  "deps": [
+    "@trpc/server",
+    "@trpc/client",
+    "@trpc/tanstack-react-query",
+    "@tanstack/react-query",
+    "superjson",
+    "valibot"
+  ],
+  "env": [],
+  "files": [
+    { "from": "files/server/api/trpc.ts", "to": "<srcRoot>/server/api/trpc.ts" },
+    { "from": "files/server/api/root.ts", "to": "<srcRoot>/server/api/root.ts" },
+    { "from": "files/server/api/routers/health.router.ts", "to": "<srcRoot>/server/api/routers/health.router.ts" },
+    { "from": "files/routes/api.trpc.$.tsx", "to": "<srcRoot>/routes/api.trpc.$.tsx" },
+    { "from": "files/trpc/react.tsx", "to": "<srcRoot>/trpc/react.tsx" },
+    { "from": "files/trpc/query-client.ts", "to": "<srcRoot>/trpc/query-client.ts" },
+    { "from": "files/trpc/server.ts", "to": "<srcRoot>/trpc/server.ts" }
+  ],
+  "notes": [
+    "trpc.ts integrates with better-auth: it imports `auth` and injects `session` into the context, and staff/adminProcedure use ~/lib/roles. If the better-auth pattern is NOT opt-in, strip those imports, the `session` from the context, and the protected/staff/admin procedures — keep publicProcedure + the timing middleware.",
+    "Wire TRPCReactProvider + createQueryClient into the app's root route, and getServerHelpers for SSR preloading (see the e-skrib router for the exact root wiring)."
+  ]
+}

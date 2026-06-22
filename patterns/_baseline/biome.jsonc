@@ -2,16 +2,7 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "root": true,
   "files": {
-    "includes": [
-      "**",
-      "!**/dist",
-      "!**/.turbo",
-      "!**/.next",
-      "!**/.output",
-      "!**/.nitro",
-      "!**/routeTree.gen.ts",
-      "!patterns"
-    ]
+    "includes": ["**", "!public", "!src/components/ui", "!src/routeTree.gen.ts"]
   },
   "vcs": {
     "enabled": true,
@@ -30,8 +21,7 @@
   "formatter": {
     "enabled": true,
     "indentWidth": 2,
-    "indentStyle": "space",
-    "lineWidth": 100
+    "indentStyle": "space"
   },
   "linter": {
     "enabled": true,
@@ -59,7 +49,9 @@
           "level": "warn",
           "options": {
             "strictCase": false,
-            "conventions": [{ "selector": { "kind": "objectLiteralProperty" }, "match": ".*" }]
+            "conventions": [
+              { "selector": { "kind": "objectLiteralProperty" }, "match": ".*" }
+            ]
           }
         },
         "useConsistentArrayType": {
@@ -75,28 +67,43 @@
         "useSortedClasses": {
           "level": "warn",
           "fix": "safe",
-          "options": { "functions": ["clsx", "cva", "cn"] }
+          "options": {
+            "functions": ["clsx", "cva", "cn"]
+          }
         }
       }
     }
   },
   "html": {
-    "formatter": { "enabled": true }
+    "formatter": {
+      "enabled": true
+    }
   },
   "javascript": {
-    "assist": { "enabled": true },
+    "assist": {
+      "enabled": true
+    },
     "formatter": {
       "enabled": true,
-      "quoteStyle": "single",
-      "semicolons": "asNeeded",
-      "trailingCommas": "all"
+      "quoteStyle": "single"
     },
-    "linter": { "enabled": true }
+    "linter": {
+      "enabled": true
+    }
   },
   "css": {
-    "assist": { "enabled": true },
-    "formatter": { "enabled": true },
-    "linter": { "enabled": true },
-    "parser": { "cssModules": true, "tailwindDirectives": true }
+    "assist": {
+      "enabled": true
+    },
+    "formatter": {
+      "enabled": true
+    },
+    "linter": {
+      "enabled": true
+    },
+    "parser": {
+      "cssModules": true,
+      "tailwindDirectives": true
+    }
   }
 }

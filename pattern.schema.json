@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Foundation pattern manifest",
+  "description": "Describes a foundational, framework-coupled pattern (trpc, better-auth, drizzle, …) so the bootstrap skill can vendor the right reference files, deps, env vars and wiring into a freshly scaffolded app — but only when the pattern was opt-in.",
+  "type": "object",
+  "required": ["name", "description", "framework", "detect", "files"],
+  "properties": {
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "framework": {
+      "type": "string",
+      "description": "Framework the reference files target (e.g. 'tanstack-start'). The skill adapts route handlers for other frameworks."
+    },
+    "detect": {
+      "type": "object",
+      "description": "How to tell the pattern was opt-in in the target project. Matches if ANY dep is present OR ANY file exists.",
+      "properties": {
+        "deps": { "type": "array", "items": { "type": "string" } },
+        "files": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "dependsOn": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other pattern names this one HARD-requires. Vendored transitively even if not independently opt-in."
+    },
+    "integratesWith": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other pattern names wired together IF also opt-in (soft). Absent → strip the integration."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Swappable capabilities (add-capability) this pattern needs (e.g. better-auth → mailer, email-kit)."
+    },
+    "deps": { "type": "array", "items": { "type": "string" } },
+    "devDeps": { "type": "array", "items": { "type": "string" } },
+    "env": { "type": "array", "items": { "type": "string" } },
+    "scripts": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "package.json scripts to add."
+    },
+    "cleanup": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Globs of CLI-generated example/boilerplate to remove when this pattern is set up."
+    },
+    "files": {
+      "type": "array",
+      "description": "Reference files to vendor. `from` is relative to the pattern dir; `to` is the project destination ('<srcRoot>' = the project's source root).",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" }
+        }
+      }
+    },
+    "wiring": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Imperative wiring steps the skill performs after copying (e.g. append an export to a barrel)."
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Adaptation notes (integration stripping, framework caveats)."
+    }
+  }
+}
