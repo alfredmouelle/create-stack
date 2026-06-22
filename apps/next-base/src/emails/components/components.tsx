@@ -1,3 +1,5 @@
+'use client'
+
 import { Body, Container, Head, Html, Link, Preview, Section, Tailwind, Text } from 'react-email'
 import { EmailThemeProvider, useEmailTheme } from './context'
 import { createEmailTheme, type EmailTheme, type EmailThemeOverride } from './theme'
