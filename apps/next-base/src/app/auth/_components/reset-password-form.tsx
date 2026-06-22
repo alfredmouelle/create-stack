@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group'
+import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { type ResetPasswordInput, ResetPasswordSchema } from '~/features/auth/schemas'
 import { authClient } from '~/server/better-auth/client'
@@ -95,6 +96,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
           disabled={form.formState.isSubmitting}
           type="submit"
         >
+          {form.formState.isSubmitting ? <Spinner /> : null}
           {form.formState.isSubmitting ? 'Saving…' : 'Reset password'}
         </Button>
       </form>

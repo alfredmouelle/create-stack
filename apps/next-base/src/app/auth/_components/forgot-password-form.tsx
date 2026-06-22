@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group'
+import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { type ForgotPasswordInput, ForgotPasswordSchema } from '~/features/auth/schemas'
 import { authClient } from '~/server/better-auth/client'
@@ -82,6 +83,7 @@ export function ForgotPasswordForm() {
           disabled={form.formState.isSubmitting}
           type="submit"
         >
+          {form.formState.isSubmitting ? <Spinner /> : null}
           {form.formState.isSubmitting ? 'Sending…' : 'Send link'}
         </Button>
       </form>

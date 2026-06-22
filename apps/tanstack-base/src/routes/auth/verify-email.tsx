@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Button } from '~/components/ui/button'
+import { Spinner } from '~/components/ui/spinner'
 import { AuthCard } from '~/features/auth/auth-card'
 import { FormAlert } from '~/features/auth/form-alert'
 import { authClient } from '~/server/better-auth/client'
@@ -62,6 +63,7 @@ function VerifyEmail() {
           type="button"
           variant="outline"
         >
+          {status === 'sending' ? <Spinner /> : null}
           {status === 'sending' ? 'Sending…' : 'Resend link'}
         </Button>
       </div>

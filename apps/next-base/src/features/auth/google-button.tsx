@@ -1,8 +1,8 @@
 'use client'
 
-import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '~/components/ui/button'
+import { Spinner } from '~/components/ui/spinner'
 import { authClient } from '~/server/better-auth/client'
 
 function GoogleIcon() {
@@ -49,7 +49,7 @@ export function GoogleButton({
       type="button"
       variant="outline"
     >
-      {loading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
+      {loading ? <Spinner /> : <GoogleIcon />}
       {label}
     </Button>
   )

@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from '~/components/ui/form'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group'
+import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { AuthDivider, GoogleButton } from '~/features/auth/google-button'
 import { type SignInInput, SignInSchema } from '~/features/auth/schemas'
@@ -116,6 +117,7 @@ export function SignInForm() {
           disabled={form.formState.isSubmitting}
           type="submit"
         >
+          {form.formState.isSubmitting ? <Spinner /> : null}
           {form.formState.isSubmitting ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>

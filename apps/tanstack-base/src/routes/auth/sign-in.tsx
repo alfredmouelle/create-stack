@@ -4,6 +4,7 @@ import { Lock, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { TextField } from '~/components/form/text-field'
 import { Button } from '~/components/ui/button'
+import { Spinner } from '~/components/ui/spinner'
 import { AuthCard } from '~/features/auth/auth-card'
 import { FormAlert } from '~/features/auth/form-alert'
 import { AuthDivider, GoogleButton } from '~/features/auth/google-button'
@@ -105,6 +106,7 @@ function SignIn() {
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button className="w-full cursor-pointer" disabled={!canSubmit} type="submit">
+              {isSubmitting ? <Spinner /> : null}
               {isSubmitting ? 'Signing in…' : 'Sign in'}
             </Button>
           )}
