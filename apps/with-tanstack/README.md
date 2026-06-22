@@ -1,6 +1,6 @@
 # with-tanstack
 
-Reference **wiring** of every `@stack/*` capability into a TanStack Start app.
+Reference **wiring** of every `@alfredmouelle/*` capability into a TanStack Start app.
 This is not a full app — it's the composition root + the framework shims, so you
 can copy the pattern into a real project.
 
@@ -13,7 +13,7 @@ can copy the pattern into a real project.
   `analytics`, `errorTracking`). This is the only file that imports adapters.
 - `src/server/email.ts` — resilient `sendEmail` wrapper (mailer + logger +
   error-tracking).
-- `src/emails/welcome.tsx` — an email built with `@stack/email-kit`.
+- `src/emails/welcome.tsx` — an email built with `@alfredmouelle/email-kit`.
 - `src/server/notifications.tsx` — a `createServerFn` that sends it.
 - `src/server/jobs.ts` — a `defineJob` example.
 - `src/routes/api/inngest.ts` — the Inngest webhook mounted the TanStack way

@@ -2,23 +2,23 @@ import {
   type AnalyticsPort,
   noopAdapter as analyticsNoopAdapter,
   posthogAdapter,
-} from '@stack/analytics'
-import { type CachePort, memoryAdapter as cacheMemoryAdapter, redisAdapter } from '@stack/cache'
+} from '@alfredmouelle/analytics'
+import { type CachePort, memoryAdapter as cacheMemoryAdapter, redisAdapter } from '@alfredmouelle/cache'
 import {
   consoleAdapter as consoleErrorTracking,
   type ErrorTrackingPort,
   sentryAdapter,
-} from '@stack/error-tracking'
+} from '@alfredmouelle/error-tracking'
 import {
   type InngestJobsAdapter,
   inngestAdapter,
   type JobsPort,
   memoryAdapter as jobsMemoryAdapter,
-} from '@stack/jobs'
-import { consoleAdapter as consoleLogger, type Logger, pinoAdapter } from '@stack/logger'
-import { brevoAdapter, createMailer, type Mailer, resendAdapter } from '@stack/mailer'
-import { gcsAdapter, localAdapter, r2Adapter, type StoragePort, s3Adapter } from '@stack/storage'
-// `@stack/http` is also available for APIs without an official SDK — see
+} from '@alfredmouelle/jobs'
+import { consoleAdapter as consoleLogger, type Logger, pinoAdapter } from '@alfredmouelle/logger'
+import { brevoAdapter, createMailer, type Mailer, resendAdapter } from '@alfredmouelle/mailer'
+import { gcsAdapter, localAdapter, r2Adapter, type StoragePort, s3Adapter } from '@alfredmouelle/storage'
+// `@alfredmouelle/http` is also available for APIs without an official SDK — see
 // `src/app/api/webhooks/resend/route.ts`.
 import { env } from '../env.js'
 

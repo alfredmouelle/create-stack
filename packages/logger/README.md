@@ -1,4 +1,4 @@
-# @stack/logger
+# @alfredmouelle/logger
 
 Structured logging behind a tiny port. Application code logs against the
 `Logger` interface; the backend (pino, console) is chosen once at the
@@ -7,7 +7,7 @@ composition root and never leaks into call sites.
 ## Usage
 
 ```ts
-import { pinoAdapter } from '@stack/logger'
+import { pinoAdapter } from '@alfredmouelle/logger'
 
 // composition root — pick the backend here, once
 export const logger = pinoAdapter({ level: 'info', bindings: { app: 'web' } })
@@ -25,7 +25,7 @@ reqLog.error('payment failed', { orderId: '7' })
 Change one line in the composition root:
 
 ```ts
-import { consoleAdapter } from '@stack/logger'
+import { consoleAdapter } from '@alfredmouelle/logger'
 
 export const logger = consoleAdapter({ level: 'debug' })
 ```

@@ -1,4 +1,4 @@
-# @stack/storage
+# @alfredmouelle/storage
 
 Object storage behind a tiny port: `put` / `get` / `delete` / `exists` plus
 signed URLs. Application code depends only on the `StoragePort`; the provider
@@ -8,7 +8,7 @@ the composition root.
 ## Usage
 
 ```ts
-import { s3Adapter, type StoragePort } from '@stack/storage'
+import { s3Adapter, type StoragePort } from '@alfredmouelle/storage'
 
 // composition root — pick the provider here, once
 export const storage: StoragePort = s3Adapter({
@@ -27,13 +27,13 @@ const url = await storage.getSignedUrl('avatars/alfred.png', { operation: 'get' 
 Change one line in the composition root:
 
 ```ts
-import { gcsAdapter } from '@stack/storage'
+import { gcsAdapter } from '@alfredmouelle/storage'
 
 export const storage = gcsAdapter({ bucket: process.env.GCS_BUCKET! })
 ```
 
 ```ts
-import { r2Adapter } from '@stack/storage'
+import { r2Adapter } from '@alfredmouelle/storage'
 
 // Cloudflare R2 is S3-compatible — same behavior, R2 endpoint + `auto` region.
 export const storage = r2Adapter({
@@ -45,7 +45,7 @@ export const storage = r2Adapter({
 ```
 
 ```ts
-import { localAdapter } from '@stack/storage'
+import { localAdapter } from '@alfredmouelle/storage'
 
 // dev/tests only — getSignedUrl returns `${publicBaseUrl}/${key}`, it does NOT sign.
 export const storage = localAdapter({ baseDir: '.storage', publicBaseUrl: '/files' })

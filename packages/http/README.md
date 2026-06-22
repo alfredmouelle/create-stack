@@ -1,10 +1,10 @@
-# @stack/http
+# @alfredmouelle/http
 
 The shared HTTP foundation for the monorepo: a typed `fetch` wrapper and a set
 of Web-standard helpers that both Next.js and TanStack Start understand.
 
 > Use this for talking to APIs that have **no official SDK**. When a provider
-> ships an SDK, prefer the SDK (see `@stack/mailer`, `@stack/storage`, …).
+> ships an SDK, prefer the SDK (see `@alfredmouelle/mailer`, `@alfredmouelle/storage`, …).
 
 ## `apiFetch` — typed fetch wrapper
 
@@ -12,7 +12,7 @@ URL/query building, JSON encoding, timeouts, content-negotiated parsing, and
 rich typed errors. Non-2xx responses throw.
 
 ```ts
-import { apiFetch, isApiFetchError } from '@stack/http'
+import { apiFetch, isApiFetchError } from '@alfredmouelle/http'
 
 const user = await apiFetch<User>('/users/me', {
   baseUrl: 'https://api.acme.com',
@@ -41,7 +41,7 @@ Errors: `ApiFetchError` (`status`, `statusText`, `url`, `serverMessage`,
 Write handlers once against `Request -> Response`; mount them in any framework.
 
 ```ts
-import { json, noContent, type WebhookHandler } from '@stack/http'
+import { json, noContent, type WebhookHandler } from '@alfredmouelle/http'
 
 export const handleWebhook: WebhookHandler = async (req) => {
   const event = await req.json()

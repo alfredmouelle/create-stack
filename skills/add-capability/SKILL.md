@@ -106,14 +106,14 @@ cp -R "$STACK/packages/<capability>/<entry>" "$DEST/<entry-parent>/"
 
 Do NOT copy other adapters, tests, README, tsconfig, or package.json.
 
-**Cross-package imports**: some capabilities import another (`@stack/http`,
-`@stack/email-kit`). Grep the copied files for `@stack/`:
+**Cross-package imports**: some capabilities import another (`@alfredmouelle/http`,
+`@alfredmouelle/email-kit`). Grep the copied files for `@alfredmouelle/`:
 ```bash
-grep -rn "@stack/" "$DEST"
+grep -rn "@alfredmouelle/" "$DEST"
 ```
-For each referenced `@stack/<x>`: recursively add it too (same process, into its
-own destination per the table above), then rewrite the import from `@stack/<x>`
-to the project's `~/` alias path. Leave no `@stack/*` import behind.
+For each referenced `@alfredmouelle/<x>`: recursively add it too (same process, into its
+own destination per the table above), then rewrite the import from `@alfredmouelle/<x>`
+to the project's `~/` alias path. Leave no `@alfredmouelle/*` import behind.
 
 ## Step 4 — Install dependencies (current versions)
 
@@ -157,14 +157,14 @@ pattern exactly (Next route handler vs TanStack `createFileRoute`).
 ## Step 7 — Verify
 
 - Typecheck (`tsc --noEmit` or the project's script). Resolve any leftover
-  `@stack/*` import or missing dep.
+  `@alfredmouelle/*` import or missing dep.
 - If the project runs biome/eslint, format the new files to match.
 - Report to the user, concise: capability + adapter added, files vendored, deps
   installed, env vars to fill, and the one-line swap to change provider later.
 
 ## Guardrails
 
-- Never leave a dangling `@stack/*` import — vendor the dependency or rewrite it.
+- Never leave a dangling `@alfredmouelle/*` import — vendor the dependency or rewrite it.
 - Don't invent SDK calls; the vendored adapter is the source of truth, and verify
   the SDK's current API with find-docs when in doubt.
 - Don't abstract what isn't being swapped — integrate only the requested capability.

@@ -1,5 +1,5 @@
 {
-  "name": "@stack/storage",
+  "name": "@alfredmouelle/storage",
   "version": "0.0.0",
   "private": true,
   "type": "module",

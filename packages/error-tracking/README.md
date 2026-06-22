@@ -1,4 +1,4 @@
-# @stack/error-tracking
+# @alfredmouelle/error-tracking
 
 Error reporting behind a tiny port. Capture exceptions, messages, breadcrumbs
 and user context, then ship them to a provider — application code depends only
@@ -7,7 +7,7 @@ on the `ErrorTrackingPort`, never on the provider SDK.
 ## Usage
 
 ```ts
-import { sentryAdapter } from '@stack/error-tracking'
+import { sentryAdapter } from '@alfredmouelle/error-tracking'
 
 // composition root — pick the provider here, once
 export const errors = sentryAdapter({
@@ -31,7 +31,7 @@ errors.addBreadcrumb({ message: 'cart opened', category: 'ui' })
 Use the console adapter in dev/tests — no SDK, no network:
 
 ```ts
-import { consoleAdapter } from '@stack/error-tracking'
+import { consoleAdapter } from '@alfredmouelle/error-tracking'
 
 export const errors = consoleAdapter()
 ```

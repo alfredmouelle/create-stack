@@ -1,4 +1,4 @@
-# @stack/analytics
+# @alfredmouelle/analytics
 
 Product analytics behind a tiny port. Capture events and identify users through
 a swappable adapter — application code depends only on `AnalyticsPort`, never on
@@ -7,7 +7,7 @@ a provider.
 ## Usage
 
 ```ts
-import { posthogAdapter } from '@stack/analytics'
+import { posthogAdapter } from '@alfredmouelle/analytics'
 
 // composition root — pick the provider here, once
 export const analytics = posthogAdapter({
@@ -37,7 +37,7 @@ enqueue work and return immediately. Use `flush()` to drain pending events and
 Use the `noop` adapter in development, tests, or when analytics is off:
 
 ```ts
-import { noopAdapter } from '@stack/analytics'
+import { noopAdapter } from '@alfredmouelle/analytics'
 
 export const analytics = noopAdapter()
 ```

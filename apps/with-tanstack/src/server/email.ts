@@ -1,4 +1,4 @@
-import type { MailMessage, SentMail } from '@stack/mailer'
+import type { MailMessage, SentMail } from '@alfredmouelle/mailer'
 import { errorTracking, logger, mailer } from './services.js'
 
 interface SendEmailParams extends MailMessage {
@@ -10,10 +10,10 @@ interface SendEmailParams extends MailMessage {
 
 /**
  * Resilient wrapper around `mailer.send`: it renders + sends, and on failure
- * logs through `@stack/logger` and reports to `@stack/error-tracking` instead of
+ * logs through `@alfredmouelle/logger` and reports to `@alfredmouelle/error-tracking` instead of
  * crashing the caller. Pass `throwOnError` for flows where delivery is critical.
  *
- * The body is a React Email component (see `@stack/email-kit`).
+ * The body is a React Email component (see `@alfredmouelle/email-kit`).
  */
 export async function sendEmail(params: SendEmailParams): Promise<SentMail | null> {
   const { userId, throwOnError = false, ...message } = params

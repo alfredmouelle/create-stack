@@ -1,8 +1,8 @@
-import { json, noContent, type WebhookHandler } from '@stack/http'
+import { json, noContent, type WebhookHandler } from '@alfredmouelle/http'
 import { logger } from '../../../../server/services.js'
 
 /**
- * A webhook handler written once against the Web standard (`@stack/http`'s
+ * A webhook handler written once against the Web standard (`@alfredmouelle/http`'s
  * `WebhookHandler` = `Request -> Response`). It is framework-agnostic; mounting
  * it is the only framework-specific line. The TanStack app reuses the SAME
  * `handleResendWebhook` from a `createFileRoute` server handler.

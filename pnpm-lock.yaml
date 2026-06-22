@@ -32,31 +32,31 @@ importers:
 
   apps/with-next:
     dependencies:
-      '@stack/analytics':
+      '@alfredmouelle/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
-      '@stack/cache':
+      '@alfredmouelle/cache':
         specifier: workspace:*
         version: link:../../packages/cache
-      '@stack/email-kit':
+      '@alfredmouelle/email-kit':
         specifier: workspace:*
         version: link:../../packages/email-kit
-      '@stack/error-tracking':
+      '@alfredmouelle/error-tracking':
         specifier: workspace:*
         version: link:../../packages/error-tracking
-      '@stack/http':
+      '@alfredmouelle/http':
         specifier: workspace:*
         version: link:../../packages/http
-      '@stack/jobs':
+      '@alfredmouelle/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
-      '@stack/logger':
+      '@alfredmouelle/logger':
         specifier: workspace:*
         version: link:../../packages/logger
-      '@stack/mailer':
+      '@alfredmouelle/mailer':
         specifier: workspace:*
         version: link:../../packages/mailer
-      '@stack/storage':
+      '@alfredmouelle/storage':
         specifier: workspace:*
         version: link:../../packages/storage
       '@t3-oss/env-core':
@@ -93,28 +93,28 @@ importers:
 
   apps/with-tanstack:
     dependencies:
-      '@stack/analytics':
+      '@alfredmouelle/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
-      '@stack/cache':
+      '@alfredmouelle/cache':
         specifier: workspace:*
         version: link:../../packages/cache
-      '@stack/email-kit':
+      '@alfredmouelle/email-kit':
         specifier: workspace:*
         version: link:../../packages/email-kit
-      '@stack/error-tracking':
+      '@alfredmouelle/error-tracking':
         specifier: workspace:*
         version: link:../../packages/error-tracking
-      '@stack/jobs':
+      '@alfredmouelle/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
-      '@stack/logger':
+      '@alfredmouelle/logger':
         specifier: workspace:*
         version: link:../../packages/logger
-      '@stack/mailer':
+      '@alfredmouelle/mailer':
         specifier: workspace:*
         version: link:../../packages/mailer
-      '@stack/storage':
+      '@alfredmouelle/storage':
         specifier: workspace:*
         version: link:../../packages/storage
       '@t3-oss/env-core':
@@ -262,7 +262,7 @@ importers:
 
   packages/jobs:
     dependencies:
-      '@stack/http':
+      '@alfredmouelle/http':
         specifier: workspace:*
         version: link:../http
       inngest:

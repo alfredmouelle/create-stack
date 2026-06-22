@@ -1,4 +1,4 @@
-import type { MailMessage, SentMail } from '@stack/mailer'
+import type { MailMessage, SentMail } from '@alfredmouelle/mailer'
 import { errorTracking, logger, mailer } from './services.js'
 
 interface SendEmailParams extends MailMessage {
@@ -10,7 +10,7 @@ interface SendEmailParams extends MailMessage {
 
 /**
  * Resilient wrapper around `mailer.send`: renders + sends, and on failure logs
- * through `@stack/logger` and reports to `@stack/error-tracking` instead of
+ * through `@alfredmouelle/logger` and reports to `@alfredmouelle/error-tracking` instead of
  * crashing the caller. Identical to the TanStack app — this layer is
  * framework-agnostic.
  */

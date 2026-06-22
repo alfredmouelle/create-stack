@@ -1,4 +1,4 @@
-import type { FetchHandler } from '@stack/http'
+import type { FetchHandler } from '@alfredmouelle/http'
 import { Inngest } from 'inngest'
 import * as v from 'valibot'
 import type { JobDefinition, JobEvent, JobsPort } from '../../core/port.js'

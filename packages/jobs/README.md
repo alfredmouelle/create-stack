@@ -1,4 +1,4 @@
-# @stack/jobs
+# @alfredmouelle/jobs
 
 Background jobs / events behind a tiny, event-driven port. Define jobs against
 named events and `trigger` them; the adapter handles delivery and execution.
@@ -7,7 +7,7 @@ Swap providers without touching call sites.
 ## Usage
 
 ```ts
-import { inngestAdapter } from '@stack/jobs'
+import { inngestAdapter } from '@alfredmouelle/jobs'
 
 // composition root — pick the provider here, once
 export const jobs = inngestAdapter({
@@ -35,7 +35,7 @@ Web-standard `FetchHandler` and mount it in your framework:
 
 ```ts
 import { serve } from 'inngest/edge'
-import { inngestServeHandler } from '@stack/jobs'
+import { inngestServeHandler } from '@alfredmouelle/jobs'
 
 // FetchHandler: Request -> Response, mountable in Next.js or TanStack Start
 export const handler = inngestServeHandler(jobs, serve, {
@@ -48,7 +48,7 @@ export const handler = inngestServeHandler(jobs, serve, {
 Use the in-process `memoryAdapter` to run job logic synchronously, no network:
 
 ```ts
-import { memoryAdapter } from '@stack/jobs'
+import { memoryAdapter } from '@alfredmouelle/jobs'
 
 const jobs = memoryAdapter()
 jobs.defineJob({ id: 'x', event: 'user/created', handler })
@@ -66,7 +66,7 @@ limits, retries, cron triggers, fan-out, and typed event schemas.
 None of that is in the port — by design. Keeping the port tiny is what makes it
 swappable (the `memory` adapter is ~30 lines). When you need real Inngest
 features, **reach for the SDK directly** via `adapter.client` rather than
-widening the port. Treat `@stack/jobs` as the seam for the simple 80% case; drop
+widening the port. Treat `@alfredmouelle/jobs` as the seam for the simple 80% case; drop
 to Inngest for the powerful 20%.
 
 ## Adding a provider

@@ -1,4 +1,4 @@
-import { inngestServeHandler } from '@stack/jobs'
+import { inngestServeHandler } from '@alfredmouelle/jobs'
 import { serve } from 'inngest/edge'
 // Importing this module registers the app's job definitions on the adapter.
 import '../../../server/jobs.js'

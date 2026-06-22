@@ -1,6 +1,6 @@
 # with-next
 
-Reference **wiring** of every `@stack/*` capability into a Next.js (App Router)
+Reference **wiring** of every `@alfredmouelle/*` capability into a Next.js (App Router)
 app. Not a full app — the composition root + framework shims, to copy into a
 real project.
 
@@ -12,11 +12,11 @@ real project.
   the env and exports the ports. The only file that imports adapters. Byte-for-byte
   the same as the TanStack app except the Inngest app id.
 - `src/server/email.ts` — resilient `sendEmail` wrapper. Identical to TanStack.
-- `src/emails/welcome.tsx` — an email built with `@stack/email-kit`. Identical.
+- `src/emails/welcome.tsx` — an email built with `@alfredmouelle/email-kit`. Identical.
 - `src/server/notifications.tsx` — a Next **server action** (`'use server'`).
 - `src/app/api/inngest/route.ts` — Inngest mounted as a Next **route handler**.
 - `src/app/api/webhooks/resend/route.ts` — a webhook written against
-  `@stack/http`'s Web-standard `WebhookHandler`, mounted in one line.
+  `@alfredmouelle/http`'s Web-standard `WebhookHandler`, mounted in one line.
 
 ## Swapping a provider
 

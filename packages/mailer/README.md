@@ -1,4 +1,4 @@
-# @stack/mailer
+# @alfredmouelle/mailer
 
 Transactional email behind a tiny port. Bodies are **always** React Email
 components — the mailer renders them to HTML + plain text before they reach the
@@ -7,7 +7,7 @@ provider, so application code never touches raw HTML.
 ## Usage
 
 ```ts
-import { createMailer, resendAdapter } from '@stack/mailer'
+import { createMailer, resendAdapter } from '@alfredmouelle/mailer'
 import { WelcomeEmail } from './emails/welcome'
 
 // composition root — pick the provider here, once
@@ -29,7 +29,7 @@ await mailer.send({
 Change one line in the composition root:
 
 ```ts
-import { brevoAdapter } from '@stack/mailer'
+import { brevoAdapter } from '@alfredmouelle/mailer'
 
 adapter: brevoAdapter({ apiKey: process.env.BREVO_API_KEY! })
 ```
@@ -39,8 +39,8 @@ No call site changes — they all depend on `Mailer`, never on a provider.
 ## Templates & theming
 
 Bodies are React Email components. Build them with
-[`@stack/email-kit`](../email-kit) for a swappable theme (colors / brand) and a
-local preview studio (`pnpm --filter @stack/email-kit email:dev`).
+[`@alfredmouelle/email-kit`](../email-kit) for a swappable theme (colors / brand) and a
+local preview studio (`pnpm --filter @alfredmouelle/email-kit email:dev`).
 
 ## Adding a provider
 

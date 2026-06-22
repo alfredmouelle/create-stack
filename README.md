@@ -82,7 +82,7 @@ pnpm lint
 Preview emails locally:
 
 ```bash
-pnpm --filter @stack/email-kit email:dev   # react-email studio on :3001
+pnpm --filter @alfredmouelle/email-kit email:dev   # react-email studio on :3001
 ```
 
 ## Skills

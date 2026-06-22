@@ -1,4 +1,4 @@
-# @stack/email-kit
+# @alfredmouelle/email-kit
 
 Composable React Email primitives with a **swappable theme**. Build templates
 once; restyle every email by passing a theme override — no template changes.
@@ -10,7 +10,7 @@ once; restyle every email by passing a theme override — no template changes.
 (primary / destructive) · `EmailFallback` (copy-this-link block).
 
 ```tsx
-import { EmailLayout, EmailHeading, EmailButton } from '@stack/email-kit'
+import { EmailLayout, EmailHeading, EmailButton } from '@alfredmouelle/email-kit'
 
 export function VerifyEmail({ url }: { url: string }) {
   return (
@@ -27,7 +27,7 @@ export function VerifyEmail({ url }: { url: string }) {
 The theme is a set of design tokens read from React context. Override any subset:
 
 ```tsx
-import { createEmailTheme } from '@stack/email-kit'
+import { createEmailTheme } from '@alfredmouelle/email-kit'
 
 const theme = createEmailTheme({
   brand: { name: 'NEON', footer: 'NEON Inc.' },
@@ -44,7 +44,7 @@ snapshots). Otherwise it uses the current year.
 ## Local preview
 
 ```bash
-pnpm --filter @stack/email-kit email:dev   # react-email studio on :3001
+pnpm --filter @alfredmouelle/email-kit email:dev   # react-email studio on :3001
 ```
 
 Drop `*.tsx` files in `emails/` that default-export a preview component

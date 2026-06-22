@@ -1,5 +1,5 @@
 {
-  "name": "@stack/email-kit",
+  "name": "@alfredmouelle/email-kit",
   "version": "0.0.0",
   "private": true,
   "type": "module",

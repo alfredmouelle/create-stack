@@ -1,4 +1,4 @@
-import { EmailBodyText, EmailButton, EmailHeading, EmailLayout } from '@stack/email-kit'
+import { EmailBodyText, EmailButton, EmailHeading, EmailLayout } from '@alfredmouelle/email-kit'
 
 interface WelcomeEmailProps {
   name: string

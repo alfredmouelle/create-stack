@@ -1,4 +1,4 @@
-# @stack/cache
+# @alfredmouelle/cache
 
 Key/value cache behind a tiny port. Values are serialized as JSON, so the same
 call sites work against Redis in production and an in-memory map in dev/tests.
@@ -6,7 +6,7 @@ call sites work against Redis in production and an in-memory map in dev/tests.
 ## Usage
 
 ```ts
-import { redisAdapter } from '@stack/cache'
+import { redisAdapter } from '@alfredmouelle/cache'
 
 // composition root — pick the backend here, once
 export const cache = redisAdapter({ url: process.env.REDIS_URL! })
@@ -24,7 +24,7 @@ const stats = await cache.wrap('stats', () => computeStats(), 300)
 Change one line in the composition root:
 
 ```ts
-import { memoryAdapter } from '@stack/cache'
+import { memoryAdapter } from '@alfredmouelle/cache'
 
 export const cache = memoryAdapter()
 ```
