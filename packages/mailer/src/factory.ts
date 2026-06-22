@@ -3,21 +3,20 @@ import type { Mailer, MailerAdapter, MailRecipient, RenderedMessage } from './co
 import { type EmailRenderer, renderEmail } from './core/render.js'
 
 export interface CreateMailerOptions {
-  /** The provider implementation (Resend, Brevo, …). */
+  /** Provider implementation (Resend, Brevo, …). */
   adapter: MailerAdapter
-  /** Default sender used when a message omits `from`. */
+  /** Default sender when a message omits `from`. */
   from: MailRecipient
-  /** Override the React Email renderer (mostly for tests). */
+  /** Override the React Email renderer (mostly tests). */
   render?: EmailRenderer
 }
 
 /**
- * Build a {@link Mailer}. This is the composition root: pick the adapter here,
- * the rest of the app depends only on the `Mailer` port.
+ * Build a {@link Mailer}. Composition root: pick the adapter here; the rest of
+ * the app depends only on the `Mailer` port.
  *
- * The mailer renders the React body to HTML + plain text, normalizes every
- * address, applies the default sender, then hands a {@link RenderedMessage} to
- * the adapter.
+ * Renders the React body to HTML + plain text, normalizes addresses, applies the
+ * default sender, then hands a {@link RenderedMessage} to the adapter.
  */
 export function createMailer(options: CreateMailerOptions): Mailer {
   const defaultFrom = normalizeAddress(options.from)

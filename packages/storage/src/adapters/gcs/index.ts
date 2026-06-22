@@ -8,7 +8,7 @@ import {
 } from '../../core/port.js'
 import { GcsConfigSchema } from './config.js'
 
-/** Minimal structural view of a GCS file handle (eases testing). */
+/** Structural view of a GCS file handle (eases testing). */
 export interface GcsFileLike {
   save(data: Buffer | string, options?: { contentType?: string }): Promise<void>
   download(): Promise<[Buffer]>
@@ -22,12 +22,12 @@ export interface GcsFileLike {
   }): Promise<[string]>
 }
 
-/** Minimal structural view of a GCS bucket handle. */
+/** Structural view of a GCS bucket handle. */
 export interface GcsBucketLike {
   file(key: string): GcsFileLike
 }
 
-/** Minimal structural view of the GCS Storage client we depend on. */
+/** Structural view of the GCS Storage client. */
 export interface GcsStorageLike {
   bucket(name: string): GcsBucketLike
 }
@@ -35,7 +35,7 @@ export interface GcsStorageLike {
 export interface GcsAdapterOptions {
   bucket: string
   projectId?: string
-  /** Inject a custom/mock client. Defaults to a real `Storage` instance. */
+  /** Inject custom/mock client. Defaults to real `Storage`. */
   client?: GcsStorageLike
 }
 
@@ -47,7 +47,7 @@ function isNotFound(error: unknown): boolean {
 }
 
 export function gcsAdapter(options: GcsAdapterOptions): StoragePort {
-  // Validate config early so missing config fails at construction, not at use.
+  // Validate early: missing config fails at construction, not use.
   const config = v.parse(GcsConfigSchema, {
     bucket: options.bucket,
     projectId: options.projectId,

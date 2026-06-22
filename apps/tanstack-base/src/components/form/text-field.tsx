@@ -14,7 +14,7 @@ interface TextFieldProps extends NativeInputProps {
   field: AnyFieldApi
   label: string
   description?: string
-  /** Optional leading adornment (e.g. a lucide icon). */
+  /** Leading adornment (e.g. lucide icon). */
   icon?: ReactNode
 }
 

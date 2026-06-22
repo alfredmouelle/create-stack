@@ -1,14 +1,13 @@
 import type { JobDefinition, JobEvent, JobsPort } from '../../core/port.js'
 
 export interface MemoryJobsAdapter extends JobsPort {
-  /** Jobs registered so far, keyed by the event name they subscribe to. */
+  /** Registered jobs, keyed by subscribed event name. */
   readonly jobs: ReadonlyMap<string, JobDefinition[]>
 }
 
 /**
- * Synchronous, in-process jobs adapter for dev and tests. `trigger` runs every
- * matching handler inline (awaiting async ones) — no queue, no network. Lets
- * job logic be unit-tested without Inngest.
+ * In-process jobs adapter for dev/tests. `trigger` runs every matching handler
+ * inline (awaiting async) — no queue, no network. Unit-test jobs without Inngest.
  */
 export function memoryAdapter(): MemoryJobsAdapter {
   const jobs = new Map<string, JobDefinition[]>()

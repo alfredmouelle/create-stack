@@ -1,29 +1,23 @@
 /**
- * The port the application depends on. Swapping cache backends means swapping
- * the adapter passed to the composition root; this interface never changes.
- *
- * Values are serialized as JSON for remote stores, so anything stored must be
- * JSON-serializable.
+ * App-facing port; swap adapters at the composition root, never this interface.
+ * Values are JSON-serialized for remote stores, so stored values must be JSON-serializable.
  */
 export interface CachePort {
-  /** Identifies the backing adapter (`redis`, `memory`, …). */
+  /** Backing adapter name (`redis`, `memory`, …). */
   readonly name: string
-  /** Read a value, or `null` when the key is absent or expired. */
+  /** Read a value, or `null` if absent/expired. */
   get<T>(key: string): Promise<T | null>
-  /** Store a value, optionally expiring it after `ttlSeconds`. */
+  /** Store a value, optionally expiring after `ttlSeconds`. */
   set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>
-  /** Remove a key. No-op when the key is absent. */
+  /** Remove a key (no-op if absent). */
   delete(key: string): Promise<void>
-  /** Whether a (non-expired) value exists for the key. */
+  /** Whether a non-expired value exists. */
   has(key: string): Promise<boolean>
-  /**
-   * Return the cached value for `key` if present, otherwise call `factory()`,
-   * store its result with `ttlSeconds`, and return it.
-   */
+  /** Read-through: cached value, else `factory()` stored with `ttlSeconds`. */
   wrap<T>(key: string, factory: () => Promise<T>, ttlSeconds?: number): Promise<T>
 }
 
-/** Normalized error thrown by adapters so callers never catch backend types. */
+/** Normalized adapter error; callers never catch backend types. */
 export class CacheError extends Error {
   readonly adapter: string
 

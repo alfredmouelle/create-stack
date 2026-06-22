@@ -3,11 +3,11 @@ import { config } from 'dotenv'
 
 config({ path: ['.env.local', '.env'] })
 
-// Deterministic data across runs.
+// Deterministic across runs.
 faker.seed(42)
 
 async function main() {
-  // Import the db client and seed your tables here (idempotent), using faker:
+  // Seed tables here (idempotent), via faker:
   //   const { db } = await import('~/server/db')
   //   await db.insert(user).values({
   //     id: faker.string.uuid(),

@@ -7,14 +7,11 @@ import type {
 } from '../../core/port.js'
 
 export interface ConsoleAdapterOptions {
-  /** Cap how many breadcrumbs are kept in memory (oldest dropped). Default 20. */
+  /** Max breadcrumbs kept in memory (oldest dropped). Default 20. */
   maxBreadcrumbs?: number
 }
 
-/**
- * A dev/test adapter that logs to the console. User and breadcrumb state are
- * kept in-memory and included in subsequent logs (best-effort, no transport).
- */
+/** Dev/test adapter logging to console; user + breadcrumb state kept in-memory (no transport). */
 export function consoleAdapter(options: ConsoleAdapterOptions = {}): ErrorTrackingPort {
   const maxBreadcrumbs = options.maxBreadcrumbs ?? 20
   let user: ErrorUser | null = null

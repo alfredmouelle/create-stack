@@ -4,7 +4,7 @@ import { formatAddress } from '../../core/address'
 import { type MailerAdapter, MailerError, type RenderedMessage } from '../../core/port'
 import { ResendConfigSchema } from './config'
 
-/** Minimal structural view of the Resend client we depend on (eases testing). */
+/** Structural view of the Resend client we depend on (eases testing). */
 export interface ResendClient {
   emails: {
     send(payload: ResendSendPayload): Promise<{
@@ -30,7 +30,7 @@ interface ResendSendPayload {
 
 export interface ResendAdapterOptions {
   apiKey: string
-  /** Inject a custom/mock client. Defaults to a real `Resend` instance. */
+  /** Inject a custom/mock client. Defaults to real `Resend`. */
   client?: ResendClient
 }
 
@@ -39,7 +39,7 @@ function toAttachmentContent(content: Uint8Array | string): Buffer | string {
 }
 
 export function resendAdapter(options: ResendAdapterOptions): MailerAdapter {
-  // Validate config early so a missing key fails at construction, not at send().
+  // Validate early so a missing key fails at construction, not send().
   const config = v.parse(ResendConfigSchema, { apiKey: options.apiKey })
   const client: ResendClient =
     options.client ?? (new Resend(config.apiKey) as unknown as ResendClient)

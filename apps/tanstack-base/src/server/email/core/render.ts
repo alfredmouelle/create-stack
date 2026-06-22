@@ -6,7 +6,7 @@ export interface RenderedBody {
   text: string
 }
 
-/** A function that turns a React Email component into HTML + plain text. */
+/** Turns a React Email component into HTML + plain text. */
 export type EmailRenderer = (react: ReactElement) => Promise<RenderedBody>
 
 /** Default renderer backed by `@react-email/render`. */

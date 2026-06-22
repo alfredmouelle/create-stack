@@ -10,12 +10,11 @@ import {
 import { LocalConfigSchema } from './config.js'
 
 export interface LocalAdapterOptions {
-  /** Root directory under which objects are stored. */
+  /** Root directory for stored objects. */
   baseDir: string
   /**
-   * Base URL prefixed to keys by {@link StoragePort.getSignedUrl}. Note: the
-   * local adapter does NOT sign URLs — it just returns `${publicBaseUrl}/${key}`.
-   * Use it for dev/tests only.
+   * Base URL prefixed to keys by {@link StoragePort.getSignedUrl}. NOT signed —
+   * returns `${publicBaseUrl}/${key}`. Dev/tests only.
    */
   publicBaseUrl?: string
 }
@@ -71,7 +70,7 @@ export function localAdapter(options: LocalAdapterOptions): StoragePort {
       }
     },
     async getSignedUrl(key: string, _options: SignedUrlOptions) {
-      // No real signing: dev/test convenience only.
+      // No real signing; dev/test only.
       const base = config.publicBaseUrl ?? ''
       return `${base}/${key}`
     },

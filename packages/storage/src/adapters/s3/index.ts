@@ -15,12 +15,12 @@ import {
 } from '../../core/port.js'
 import { S3ConfigSchema } from './config.js'
 
-/** Minimal structural view of the S3 client we depend on (eases testing). */
+/** Structural view of the S3 client (eases testing). */
 export interface S3ClientLike {
   send(command: unknown): Promise<unknown>
 }
 
-/** The presigner function shape, injectable so tests never sign for real. */
+/** Presigner shape, injectable so tests never sign for real. */
 export type S3Presigner = (
   client: S3ClientLike,
   command: unknown,
@@ -33,9 +33,9 @@ export interface S3AdapterOptions {
   accessKeyId?: string
   secretAccessKey?: string
   endpoint?: string
-  /** Inject a custom/mock client. Defaults to a real `S3Client`. */
+  /** Inject custom/mock client. Defaults to real `S3Client`. */
   client?: S3ClientLike
-  /** Inject a custom/mock presigner. Defaults to `@aws-sdk/s3-request-presigner`. */
+  /** Inject custom/mock presigner. Defaults to `@aws-sdk/s3-request-presigner`. */
   presign?: S3Presigner
 }
 
@@ -56,7 +56,7 @@ function isNotFound(error: unknown): boolean {
 }
 
 export function s3Adapter(options: S3AdapterOptions): StoragePort {
-  // Validate config early so missing config fails at construction, not at use.
+  // Validate early: missing config fails at construction, not use.
   const config = v.parse(S3ConfigSchema, {
     bucket: options.bucket,
     region: options.region,

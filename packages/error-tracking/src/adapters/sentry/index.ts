@@ -9,7 +9,7 @@ import type {
 } from '../../core/port.js'
 import { SentryConfigSchema } from './config.js'
 
-/** Minimal structural view of the Sentry namespace we depend on (eases testing). */
+/** Minimal structural view of the Sentry namespace (eases testing). */
 export interface SentryCaptureContext {
   tags?: Record<string, string>
   extra?: Record<string, unknown>
@@ -28,21 +28,21 @@ export interface SentryLike {
 export interface SentryAdapterOptions {
   dsn: string
   environment?: string
-  /** Inject a custom/mock client. Defaults to the real `@sentry/node` namespace. */
+  /** Inject a custom/mock client; defaults to the real `@sentry/node`. */
   client?: SentryLike
-  /** Skip the implicit `Sentry.init` call (e.g. when init happens elsewhere). */
+  /** Skip the implicit `Sentry.init` (e.g. init happens elsewhere). */
   init?: boolean
 }
 
 export function sentryAdapter(options: SentryAdapterOptions): ErrorTrackingPort {
-  // Validate config early so a missing DSN fails at construction, not at capture().
+  // Validate early: missing DSN fails at construction, not at capture().
   const config = v.parse(SentryConfigSchema, {
     dsn: options.dsn,
     environment: options.environment,
   })
   const client: SentryLike = options.client ?? (Sentry as unknown as SentryLike)
 
-  // Only init the real namespace; an injected client is assumed already wired.
+  // Only init the real namespace; injected clients are assumed already wired.
   if (options.init !== false && !options.client) {
     client.init({ dsn: config.dsn, environment: config.environment })
   }

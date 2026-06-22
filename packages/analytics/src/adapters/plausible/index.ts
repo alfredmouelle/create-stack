@@ -7,20 +7,17 @@ const DEFAULT_API_HOST = 'https://plausible.io'
 const DEFAULT_USER_AGENT = '@alfredmouelle/analytics (+https://plausible.io)'
 
 export interface PlausibleAdapterOptions {
-  /** The site's domain as registered in Plausible (e.g. `acme.com`). */
+  /** Site domain as registered in Plausible (e.g. `acme.com`). */
   domain: string
-  /** Plausible instance host. Defaults to `https://plausible.io`. */
+  /** Plausible host. Defaults to `https://plausible.io`. */
   apiHost?: string
-  /** Fallback page URL when an event carries no `url` property. */
+  /** Fallback page URL when an event has no `url`. */
   defaultUrl?: string
-  /**
-   * User-Agent sent to Plausible. Plausible derives the (cookieless) visitor id
-   * from it plus the client IP, so set a realistic value for accurate counting.
-   */
+  /** User-Agent sent to Plausible; it derives the cookieless visitor id from UA + client IP, so use a realistic value. */
   userAgent?: string
-  /** Inject a custom fetch (mock in tests, scoped client in adapters). */
+  /** Inject a custom fetch (mock/scoped client). */
   fetchImpl?: typeof globalThis.fetch
-  /** Called when a fire-and-forget request fails. Defaults to swallowing. */
+  /** Called on fire-and-forget request failure; defaults to swallowing. */
   onError?: (error: unknown) => void
 }
 
@@ -33,17 +30,11 @@ interface PlausibleEventPayload {
 }
 
 /**
- * Plausible analytics adapter, backed by the server-side Events API
- * (`POST /api/event`). Like the port, `capture` is fire-and-forget: the request
- * is sent without blocking and tracked so `flush`/`shutdown` can drain it.
- *
- * Plausible is cookieless and stores no person profiles, so `identify` is a
- * no-op. The `distinctId` is forwarded as a `distinct_id` custom property for
- * visibility, but it does not drive Plausible's unique-visitor counting (that's
- * derived from the User-Agent + client IP).
- *
- * The page `url` and client `ip` are read from the event's `properties` (`url`,
- * `referrer`, `ip`); `url` falls back to `defaultUrl`.
+ * Plausible adapter via server-side Events API (`POST /api/event`). `capture` is
+ * fire-and-forget; requests are tracked so `flush`/`shutdown` drain them.
+ * Cookieless, no person profiles, so `identify` is a no-op; `distinctId` is
+ * forwarded as a `distinct_id` prop for visibility only (counting uses UA + IP).
+ * `url`/`referrer`/`ip` read from event `properties`; `url` falls back to `defaultUrl`.
  */
 export function plausibleAdapter(options: PlausibleAdapterOptions): AnalyticsPort {
   const config = v.parse(PlausibleConfigSchema, {
@@ -91,7 +82,7 @@ export function plausibleAdapter(options: PlausibleAdapterOptions): AnalyticsPor
       )
     },
     identify() {
-      // Plausible is cookieless and stores no person profiles — nothing to do.
+      // Cookieless, no person profiles — nothing to do.
     },
     async flush() {
       await Promise.all([...pending])

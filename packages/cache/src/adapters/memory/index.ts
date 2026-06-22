@@ -3,19 +3,16 @@ import { wrapValue } from '../../core/wrap.js'
 
 interface Entry {
   value: unknown
-  /** Epoch ms after which the entry is expired, or `undefined` for no expiry. */
+  /** Epoch ms expiry; `undefined` = no expiry. */
   expiresAt?: number
 }
 
 export interface MemoryAdapterOptions {
-  /** Seed the cache with an existing store (mostly for tests). */
+  /** Seed store (mostly for tests). */
   store?: Map<string, Entry>
 }
 
-/**
- * In-process cache backed by a `Map`, with lazy per-key expiry. No external
- * deps — good for dev and tests.
- */
+/** In-process `Map` cache with lazy per-key expiry; no deps. Dev/tests. */
 export function memoryAdapter(options: MemoryAdapterOptions = {}): CachePort {
   const store = options.store ?? new Map<string, Entry>()
 

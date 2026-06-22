@@ -4,7 +4,7 @@ import { CacheError, type CachePort } from '../../core/port.js'
 import { wrapValue } from '../../core/wrap.js'
 import { RedisConfigSchema } from './config.js'
 
-/** Minimal structural view of the Redis client we depend on (eases testing). */
+/** Minimal structural view of the Redis client (eases testing). */
 export interface RedisLike {
   get(key: string): Promise<string | null>
   set(key: string, value: string, secondsToken?: 'EX', seconds?: number): Promise<unknown>
@@ -13,16 +13,16 @@ export interface RedisLike {
 }
 
 export interface RedisAdapterOptions {
-  /** Inject a custom/mock client. Defaults to a real `Redis` instance. */
+  /** Inject a custom/mock client; defaults to a real `Redis`. */
   client?: RedisLike
-  /** Connection URL used when no `client` is injected. */
+  /** Connection URL when no `client` is injected. */
   url?: string
   /** Prepended to every key. */
   keyPrefix?: string
 }
 
 export function redisAdapter(options: RedisAdapterOptions = {}): CachePort {
-  // Validate config early so a bad option fails at construction, not at use.
+  // Validate early: bad option fails at construction, not at use.
   const config = v.parse(RedisConfigSchema, { url: options.url, keyPrefix: options.keyPrefix })
   const defaultClient = () =>
     (config.url ? new Redis(config.url) : new Redis()) as unknown as RedisLike

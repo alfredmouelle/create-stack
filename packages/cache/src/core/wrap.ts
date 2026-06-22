@@ -1,17 +1,10 @@
-/**
- * The minimal read/write pair `wrap` needs. Adapters pass their own `get`/`set`
- * so the read-through logic lives in one place (DRY).
- */
+/** Minimal read/write pair `wrap` needs; adapters pass their own `get`/`set`. */
 export interface WrapStore {
   get<T>(key: string): Promise<T | null>
   set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>
 }
 
-/**
- * Read-through helper shared by every adapter: return the cached value if
- * present, otherwise call `factory()`, store the result with `ttlSeconds`, and
- * return it.
- */
+/** Read-through: return cached value, else call `factory()`, store with `ttlSeconds`, return. */
 export async function wrapValue<T>(
   store: WrapStore,
   key: string,

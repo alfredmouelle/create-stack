@@ -1,16 +1,10 @@
-/**
- * An event that flows through the jobs system. `name` routes the event to the
- * jobs subscribed to it; `data` is the arbitrary, serializable payload.
- */
+/** Event through the jobs system. `name` routes to subscribed jobs; `data` is the serializable payload. */
 export interface JobEvent<T = unknown> {
   name: string
   data: T
 }
 
-/**
- * A unit of background work. A job subscribes to a single `event` name; its
- * `handler` runs whenever a matching event is triggered.
- */
+/** Background work unit. Subscribes to one `event` name; `handler` runs on a matching event. */
 export interface JobDefinition<T = unknown> {
   id: string
   event: string
@@ -18,22 +12,20 @@ export interface JobDefinition<T = unknown> {
 }
 
 /**
- * The port the application depends on. Swapping providers means swapping the
- * adapter; this interface never changes.
+ * The port the app depends on. Swap provider = swap adapter; this never changes.
  *
- * Kept intentionally minimal and event-driven. Rich provider features (steps,
- * concurrency, cron, fan-out) are NOT modeled here — reach for the underlying
- * SDK directly when you need them. See the package README.
+ * Minimal and event-driven. Rich provider features (steps, concurrency, cron,
+ * fan-out) are NOT modeled — use the underlying SDK directly. See the README.
  */
 export interface JobsPort {
   readonly name: string
-  /** Register a job. Returns the definition so it can be collected/exported. */
+  /** Register a job. Returns the definition for collection/export. */
   defineJob<T>(def: JobDefinition<T>): JobDefinition<T>
   /** Emit an event, triggering every job subscribed to `event.name`. */
   trigger<T>(event: JobEvent<T>): Promise<void>
 }
 
-/** Normalized error thrown by adapters so callers never catch provider types. */
+/** Normalized adapter error so callers never catch provider types. */
 export class JobsError extends Error {
   readonly adapter: string
 

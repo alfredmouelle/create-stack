@@ -1,15 +1,11 @@
 import { createEnv } from '@t3-oss/env-core'
 import * as v from 'valibot'
 
-/** Makes a var required only in production (optional in dev/test). */
+/** Required in production, optional in dev/test. */
 export const requiredInProduction = <T extends v.GenericSchema>(schema: T) =>
   process.env.NODE_ENV === 'production' ? schema : v.optional(schema)
 
-/**
- * Typed environment. Start minimal — patterns (drizzle, better-auth, …) and
- * capabilities (add-capability) extend the `server` block and `runtimeEnv` with
- * the keys they need.
- */
+/** Typed env; foundations/capabilities extend `server` + `runtimeEnv` as needed. */
 export const env = createEnv({
   shared: {
     NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'development'),

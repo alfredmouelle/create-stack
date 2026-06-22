@@ -1,2 +1,2 @@
-// Barrel of every Drizzle schema. Add one `export *` line per `*.schema.ts`.
+// Drizzle schema barrel; one `export *` per `*.schema.ts`.
 export * from './auth.schema'

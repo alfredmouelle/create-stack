@@ -12,7 +12,7 @@ export function EmailThemeProvider({ theme, children }: EmailThemeProviderProps)
   return <EmailThemeContext.Provider value={theme}>{children}</EmailThemeContext.Provider>
 }
 
-/** Read the active email theme. Falls back to {@link defaultTheme}. */
+/** Active email theme. Falls back to {@link defaultTheme}. */
 export function useEmailTheme(): EmailTheme {
   return useContext(EmailThemeContext)
 }

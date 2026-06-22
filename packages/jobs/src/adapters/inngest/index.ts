@@ -5,14 +5,10 @@ import type { JobDefinition, JobEvent, JobsPort } from '../../core/port.js'
 import { JobsError } from '../../core/port.js'
 import { InngestConfigSchema } from './config.js'
 
-/** An Inngest function object as returned by `createFunction`. Opaque to us. */
+/** Opaque Inngest function from `createFunction`. */
 export type InngestFunction = unknown
 
-/**
- * Minimal structural view of the Inngest client we depend on. The real
- * `Inngest` instance satisfies this; tests pass a mock with the same shape so
- * nothing ever hits the network.
- */
+/** Structural view of the Inngest client; real `Inngest` satisfies it, tests mock it. */
 export interface InngestLike {
   send(payload: { name: string; data: unknown }): Promise<unknown>
   createFunction(
@@ -25,21 +21,21 @@ export interface InngestLike {
 export interface InngestAdapterOptions {
   /** Inngest app id (`new Inngest({ id })`). */
   id: string
-  /** Inject a custom/mock client. Defaults to a real `Inngest` instance. */
+  /** Inject custom/mock client. Defaults to real `Inngest`. */
   client?: InngestLike
-  /** Event key for sending events in production. */
+  /** Event key for sending in production. */
   eventKey?: string
 }
 
 export interface InngestJobsAdapter extends JobsPort {
-  /** Functions created via `defineJob`, ready to pass to Inngest's `serve`. */
+  /** Functions from `defineJob`, for Inngest's `serve`. */
   readonly functions: InngestFunction[]
-  /** The underlying client, for advanced use (steps, cron, concurrency, …). */
+  /** Underlying client for advanced use (steps, cron, concurrency, …). */
   readonly client: InngestLike
 }
 
 export function inngestAdapter(options: InngestAdapterOptions): InngestJobsAdapter {
-  // Validate config early so a bad id fails at construction, not at trigger().
+  // Validate early: bad id fails at construction, not trigger().
   const config = v.parse(InngestConfigSchema, { id: options.id, eventKey: options.eventKey })
   const client: InngestLike =
     options.client ??
@@ -68,23 +64,21 @@ export function inngestAdapter(options: InngestAdapterOptions): InngestJobsAdapt
   }
 }
 
-/** Collect the Inngest functions to wire into `serve({ client, functions })`. */
+/** Collect functions for `serve({ client, functions })`. */
 export function inngestFunctions(adapter: InngestJobsAdapter): InngestFunction[] {
   return adapter.functions
 }
 
 /**
- * Inngest's framework-agnostic `serve` (e.g. from `inngest/edge`). Typed loosely
- * via the options param so the real `serve` — whose option types are richer than
- * our structural `InngestLike` — is accepted; the call site builds the options.
+ * Inngest's framework-agnostic `serve` (e.g. `inngest/edge`). Loosely typed so
+ * the real `serve` (richer options than our `InngestLike`) is accepted.
  */
 // biome-ignore lint/suspicious/noExplicitAny: accepts the real serve whose options are richer than InngestLike
 export type InngestServe = (options: any) => FetchHandler
 
 /**
- * Build a {@link FetchHandler} that serves the adapter's collected functions.
- * Pass Inngest's framework-agnostic `serve` (from `inngest/edge`) as `serve`;
- * the returned handler can be mounted in Next.js or TanStack Start unchanged.
+ * {@link FetchHandler} serving the adapter's functions. Pass Inngest's `serve`
+ * (from `inngest/edge`); the handler mounts in Next.js or TanStack Start unchanged.
  */
 export function inngestServeHandler<TServe extends InngestServe>(
   adapter: InngestJobsAdapter,

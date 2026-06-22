@@ -3,14 +3,13 @@ import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '.'
 
 /**
- * Server-function: resolves the better-auth session from the current request
- * headers. Use it in route loaders / `beforeLoad`.
+ * Server-fn resolving the better-auth session from request headers; use in
+ * loaders / `beforeLoad`.
  *
- * The server-only `getRequest` call lives INSIDE the handler on purpose: the
- * TanStack Start plugin extracts the handler server-side and strips this import
- * from the client bundle. A standalone module-scope helper that calls
- * `getRequest` would leak `@tanstack/react-start/server` into client code (it's
- * imported transitively by routes) and trip the import-protection plugin.
+ * `getRequest` is called INSIDE the handler on purpose: the Start plugin
+ * extracts handlers server-side and strips the import from the client bundle.
+ * Calling it at module scope would leak `@tanstack/react-start/server` into
+ * client code (routes import this transitively) and trip import-protection.
  */
 export const getServerSession = createServerFn({ method: 'GET' }).handler(() =>
   auth.api.getSession({ headers: getRequest().headers }),

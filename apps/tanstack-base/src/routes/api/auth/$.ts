@@ -1,4 +1,4 @@
-// Loads the TanStack Start augmentation that adds `server` to route options.
+// Loads the Start augmentation adding `server` to route options.
 
 import { createFileRoute } from '@tanstack/react-router'
 import type {} from '@tanstack/react-start'

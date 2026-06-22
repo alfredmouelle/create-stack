@@ -3,7 +3,7 @@ import type { LogFields, Logger, LogLevel } from '../../core/port.js'
 import { ConsoleConfigSchema } from './config.js'
 
 export interface ConsoleAdapterOptions {
-  /** Minimum level to emit. Lower-severity lines are dropped. Defaults to `'info'`. */
+  /** Min level to emit; lower-severity dropped. Defaults to `'info'`. */
   level?: LogLevel
   /** Fields pinned onto every line. */
   bindings?: LogFields

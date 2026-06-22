@@ -1,28 +1,25 @@
-/** An analytics event to capture. Fire-and-forget. */
+/** Analytics event to capture. Fire-and-forget. */
 export interface CaptureEvent {
-  /** The event name, e.g. `'user_signed_up'`. */
+  /** Event name, e.g. `'user_signed_up'`. */
   event: string
-  /** Stable identifier for the user/actor this event belongs to. */
+  /** Stable user/actor id. */
   distinctId: string
-  /** Arbitrary event metadata. */
+  /** Event metadata. */
   properties?: Record<string, unknown>
 }
 
-/** Attach (or update) properties on a user/actor. Fire-and-forget. */
+/** Set/update properties on a user/actor. Fire-and-forget. */
 export interface IdentifyParams {
-  /** Stable identifier for the user/actor. */
+  /** Stable user/actor id. */
   distinctId: string
   /** Person properties to set. */
   properties?: Record<string, unknown>
 }
 
 /**
- * The port the application depends on. Swapping providers means swapping the
- * adapter passed to the composition root; this interface never changes.
- *
- * `capture` and `identify` are fire-and-forget (like the PostHog SDK): they
- * enqueue work and return immediately. Use `flush` to drain pending events and
- * `shutdown` to flush + release resources before the process exits.
+ * App-facing port; swap adapters at the composition root, never this interface.
+ * `capture`/`identify` are fire-and-forget (like PostHog SDK): enqueue and return.
+ * `flush` drains pending events; `shutdown` flushes + releases before exit.
  */
 export interface AnalyticsPort {
   readonly name: string

@@ -1,4 +1,4 @@
-/** Build a JSON `Response` with the correct content-type. */
+/** JSON `Response` with correct content-type. */
 export function json(data: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(data), {
     ...init,
@@ -6,12 +6,12 @@ export function json(data: unknown, init: ResponseInit = {}): Response {
   })
 }
 
-/** `204 No Content` — the canonical "ack" for a processed webhook. */
+/** `204 No Content` — canonical webhook ack. */
 export function noContent(init: ResponseInit = {}): Response {
   return new Response(null, { status: 204, ...init })
 }
 
-/** A plain-text `Response`. */
+/** Plain-text `Response`. */
 export function text(body: string, init: ResponseInit = {}): Response {
   return new Response(body, {
     ...init,
@@ -19,7 +19,7 @@ export function text(body: string, init: ResponseInit = {}): Response {
   })
 }
 
-/** A JSON error envelope. */
+/** JSON error envelope. */
 export function error(message: string, status = 400, init: ResponseInit = {}): Response {
   return json({ error: message }, { ...init, status })
 }

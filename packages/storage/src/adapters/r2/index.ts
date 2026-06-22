@@ -4,9 +4,8 @@ import { type S3ClientLike, type S3Presigner, s3Adapter } from '../s3/index.js'
 import { R2ConfigSchema } from './config.js'
 
 /**
- * Cloudflare R2 is S3-compatible, so this adapter is the {@link s3Adapter} with
- * R2's endpoint (`https://<accountId>.r2.cloudflarestorage.com`) and the special
- * `auto` region. All behavior (put/get/delete/exists/signed URLs) is inherited.
+ * R2 is S3-compatible: {@link s3Adapter} with R2's endpoint
+ * (`https://<accountId>.r2.cloudflarestorage.com`) and `auto` region. All behavior inherited.
  */
 export interface R2AdapterOptions {
   bucket: string
@@ -14,9 +13,9 @@ export interface R2AdapterOptions {
   accountId: string
   accessKeyId?: string
   secretAccessKey?: string
-  /** Inject a custom/mock client. Defaults to a real `S3Client`. */
+  /** Inject custom/mock client. Defaults to real `S3Client`. */
   client?: S3ClientLike
-  /** Inject a custom/mock presigner. */
+  /** Inject custom/mock presigner. */
   presign?: S3Presigner
 }
 
