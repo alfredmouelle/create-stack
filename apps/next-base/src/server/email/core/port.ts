@@ -1,0 +1,89 @@
+import type { ReactElement } from 'react'
+
+/** A structured email address. */
+export interface MailAddress {
+  email: string
+  name?: string
+}
+
+/**
+ * A recipient, either as a plain string (`"hi@acme.com"` or
+ * `"Acme <hi@acme.com>"`) or a structured {@link MailAddress}.
+ */
+export type MailRecipient = string | MailAddress
+
+export interface MailAttachment {
+  filename: string
+  /** Raw bytes or a base64 string. */
+  content: Uint8Array | string
+  contentType?: string
+}
+
+/**
+ * A message as authored by application code. We never send raw HTML strings:
+ * the body is always a React Email component, rendered to HTML + plain text by
+ * the mailer before it reaches the adapter.
+ */
+export interface MailMessage {
+  to: MailRecipient | MailRecipient[]
+  subject: string
+  /** A React Email component. Rendered to HTML and plain text automatically. */
+  react: ReactElement
+  /** Overrides the default `from` configured on the mailer. */
+  from?: MailRecipient
+  replyTo?: MailRecipient
+  cc?: MailRecipient | MailRecipient[]
+  bcc?: MailRecipient | MailRecipient[]
+  headers?: Record<string, string>
+  /** Provider-agnostic key/value tags for analytics & filtering. */
+  tags?: Record<string, string>
+  attachments?: MailAttachment[]
+}
+
+export interface SentMail {
+  /** Provider message id. */
+  id: string
+}
+
+/**
+ * The port the application depends on. Swapping providers means swapping the
+ * adapter passed to {@link createMailer}; this interface never changes.
+ */
+export interface Mailer {
+  send(message: MailMessage): Promise<SentMail>
+}
+
+/**
+ * The message shape an adapter receives: addresses are normalized and the body
+ * is already rendered to `html` + `text`. Adapters do no rendering.
+ */
+export interface RenderedMessage {
+  to: MailAddress[]
+  from: MailAddress
+  subject: string
+  html: string
+  text: string
+  replyTo?: MailAddress
+  cc?: MailAddress[]
+  bcc?: MailAddress[]
+  headers?: Record<string, string>
+  tags?: Record<string, string>
+  attachments?: MailAttachment[]
+}
+
+/** The contract each provider implements. Kept intentionally tiny. */
+export interface MailerAdapter {
+  readonly name: string
+  send(message: RenderedMessage): Promise<SentMail>
+}
+
+/** Normalized error thrown by adapters so callers never catch provider types. */
+export class MailerError extends Error {
+  readonly adapter: string
+
+  constructor(message: string, options: { adapter: string; cause?: unknown }) {
+    super(message, { cause: options.cause })
+    this.name = 'MailerError'
+    this.adapter = options.adapter
+  }
+}

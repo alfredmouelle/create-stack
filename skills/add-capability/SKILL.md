@@ -87,7 +87,7 @@ project so the project owns and can tweak it — that's the whole agnostic point
 | Capability | Destination | Why |
 |---|---|---|
 | mailer, storage, jobs, cache, logger, analytics, error-tracking | `<srcRoot>/server/<capability>/` | **server-only**: uses secrets + node SDKs, must never reach the client bundle |
-| email-kit | `<srcRoot>/emails/_components/` | React Email templates/primitives |
+| email-kit | `<srcRoot>/emails/components/` | React Email templates/primitives |
 | http (`apiFetch`, response helpers) | `<srcRoot>/lib/http/` | **pure**, runs client or server |
 
 If the project already has a folder for this concern (e.g. `src/server/email/`),
@@ -99,7 +99,7 @@ Copy into the destination:
 2. every path in the chosen adapter's `files`
 
 ```bash
-DEST="<srcRoot>/server/<capability>"   # or lib/http, or emails/_components
+DEST="<srcRoot>/server/<capability>"   # or lib/http, or emails/components
 mkdir -p "$DEST"
 # for each entry in sharedFiles + adapters.<adapter>.files:
 cp -R "$STACK/packages/<capability>/<entry>" "$DEST/<entry-parent>/"

@@ -16,11 +16,16 @@ export const env = createEnv({
   },
 
   server: {
-    // Extended by patterns/capabilities (DATABASE_URL, BETTER_AUTH_SECRET, …).
+    DATABASE_URL: v.pipe(v.string(), v.url()),
+    EMAIL_FROM: v.optional(v.pipe(v.string(), v.email()), 'no-reply@example.com'),
+    RESEND_API_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
   },
 
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    DATABASE_URL: process.env.DATABASE_URL,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
