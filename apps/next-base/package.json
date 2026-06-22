@@ -26,6 +26,7 @@
     "@fontsource-variable/geist": "^5.2.9",
     "@t3-oss/env-core": "^0.13.11",
     "class-variance-authority": "^0.7.1",
+    "better-auth": "^1.6.19",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.545.0",
