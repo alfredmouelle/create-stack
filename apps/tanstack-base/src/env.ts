@@ -16,12 +16,14 @@ export const env = createEnv({
   },
 
   server: {
-    // Extended by patterns/capabilities (DATABASE_URL, BETTER_AUTH_SECRET, …).
+    DATABASE_URL: v.pipe(v.string(), v.url()),
   },
 
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    DATABASE_URL: process.env.DATABASE_URL,
   },
 
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
 })

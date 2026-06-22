@@ -9,7 +9,7 @@
   },
   "dependsOn": [],
   "deps": ["drizzle-orm", "pg"],
-  "devDeps": ["drizzle-kit", "dotenv", "tsx", "@types/pg"],
+  "devDeps": ["drizzle-kit", "dotenv", "tsx", "@types/pg", "@faker-js/faker"],
   "env": ["DATABASE_URL"],
   "scripts": {
     "db:generate": "drizzle-kit generate",
@@ -23,8 +23,7 @@
     { "from": "files/server/db/index.ts", "to": "<srcRoot>/server/db/index.ts" },
     { "from": "files/server/db/keyset.ts", "to": "<srcRoot>/server/db/keyset.ts" },
     { "from": "files/server/db/seed.ts", "to": "<srcRoot>/server/db/seed.ts" },
-    { "from": "files/server/db/schemas/index.ts", "to": "<srcRoot>/server/db/schemas/index.ts" },
-    { "from": "files/server/db/schemas/app-config.schema.ts", "to": "<srcRoot>/server/db/schemas/app-config.schema.ts" }
+    { "from": "files/server/db/schemas/index.ts", "to": "<srcRoot>/server/db/schemas/index.ts" }
   ],
   "notes": [
     "drizzle.config.ts globs ./src/server/db/schemas/*.schema.ts — adjust the path if the project's source root is not ./src."
