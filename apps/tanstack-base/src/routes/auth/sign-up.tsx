@@ -1,61 +1,58 @@
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Lock, Mail } from 'lucide-react'
+import { Lock, Mail, User } from 'lucide-react'
 import { useState } from 'react'
 import { TextField } from '~/components/form/text-field'
 import { Button } from '~/components/ui/button'
 import { AuthCard } from '~/features/auth/auth-card'
 import { FormAlert } from '~/features/auth/form-alert'
 import { AuthDivider, GoogleButton } from '~/features/auth/google-button'
-import { SignInSchema } from '~/features/auth/schemas'
+import { SignUpSchema } from '~/features/auth/schemas'
 import { authClient } from '~/server/better-auth/client'
 
-export const Route = createFileRoute('/auth/sign-in')({ component: SignIn })
+export const Route = createFileRoute('/auth/sign-up')({ component: SignUp })
 
-function SignIn() {
+function SignUp() {
   const navigate = useNavigate()
   const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm({
-    defaultValues: { email: '', password: '' },
-    validators: { onBlur: SignInSchema },
+    defaultValues: { name: '', email: '', password: '' },
+    validators: { onBlur: SignUpSchema },
     onSubmit: async ({ value }) => {
       setFormError(null)
-      const { error } = await authClient.signIn.email({
+      const { error } = await authClient.signUp.email({
+        name: value.name,
         email: value.email,
         password: value.password,
+        callbackURL: '/',
       })
 
       if (!error) {
-        await navigate({ to: '/' })
-        return
-      }
-
-      if (error.code === 'EMAIL_NOT_VERIFIED') {
         await navigate({ to: '/auth/verify-email', search: { email: value.email } })
         return
       }
 
       setFormError(
-        error.code === 'INVALID_EMAIL_OR_PASSWORD'
-          ? 'Incorrect email or password.'
-          : (error.message ?? 'Could not sign in. Try again.'),
+        error.code === 'USER_ALREADY_EXISTS'
+          ? 'An account already exists with this email.'
+          : (error.message ?? 'Could not sign up. Try again.'),
       )
     },
   })
 
   return (
     <AuthCard
-      description="Sign in to your account."
+      description="Create your account."
       footer={
         <>
-          No account yet?{' '}
-          <Link className="ml-1 text-foreground hover:underline" to="/auth/sign-up">
-            Create an account
+          Already have an account?{' '}
+          <Link className="ml-1 text-foreground hover:underline" to="/auth/sign-in">
+            Sign in
           </Link>
         </>
       }
-      title="Sign in"
+      title="Create an account"
     >
       <form
         className="grid gap-4"
@@ -64,10 +61,22 @@ function SignIn() {
           form.handleSubmit()
         }}
       >
-        <GoogleButton label="Continue with Google" />
+        <GoogleButton label="Sign up with Google" />
         <AuthDivider />
 
         {formError ? <FormAlert>{formError}</FormAlert> : null}
+
+        <form.Field name="name">
+          {(field) => (
+            <TextField
+              autoComplete="name"
+              field={field}
+              icon={<User />}
+              label="Name"
+              placeholder="Your name"
+            />
+          )}
+        </form.Field>
 
         <form.Field name="email">
           {(field) => (
@@ -84,28 +93,21 @@ function SignIn() {
 
         <form.Field name="password">
           {(field) => (
-            <div className="grid gap-2">
-              <TextField
-                autoComplete="current-password"
-                field={field}
-                icon={<Lock />}
-                label="Password"
-                type="password"
-              />
-              <Link
-                className="justify-self-end text-muted-foreground text-xs hover:underline"
-                to="/auth/forgot-password"
-              >
-                Forgot password?
-              </Link>
-            </div>
+            <TextField
+              autoComplete="new-password"
+              field={field}
+              icon={<Lock />}
+              label="Password"
+              placeholder="At least 8 characters"
+              type="password"
+            />
           )}
         </form.Field>
 
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Button className="w-full cursor-pointer" disabled={!canSubmit} type="submit">
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
+              {isSubmitting ? 'Creating…' : 'Create account'}
             </Button>
           )}
         </form.Subscribe>
