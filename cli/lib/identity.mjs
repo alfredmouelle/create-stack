@@ -1,7 +1,6 @@
-// Step A4 — stamp the project identity: title/meta + a README that ends with
-// the stack's `# Author` footer verbatim.
+// Stamp project identity: title/meta + README ending with the `# Author` footer verbatim.
 
-import { STACK_ROOT } from './manifests.mjs'
+import { TEMPLATES } from './paths.mjs'
 import { editFile, join, read, write } from './util.mjs'
 
 const titleFiles = {
@@ -10,12 +9,12 @@ const titleFiles = {
 }
 
 export function stampIdentity(projectDir, projectName, framework) {
-  // Swap the placeholder title 'App' in the root document/metadata.
+  // swap placeholder title 'App' in root document/metadata
   for (const rel of titleFiles[framework === 'next' ? 'next' : 'tanstack']) {
     editFile(join(projectDir, rel), (c) => c.replaceAll("title: 'App'", `title: '${projectName}'`))
   }
 
-  const footer = read(join(STACK_ROOT, 'patterns/_baseline/README-author.md'))
+  const footer = read(join(TEMPLATES, 'README-author.md'))
   const readme = `# ${projectName}
 
 Bootstrapped from the personal reference stack.

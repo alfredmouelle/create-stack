@@ -1,16 +1,11 @@
 #!/usr/bin/env node
-// create-stack — deterministic installer for the personal reference stack.
-// The deterministic installer behind the create-stack skill: fork a base app,
-// strip it to the selection, stamp identity, verify.
-//
-// Interactive by default. Non-interactive when any selection flag (or --yes) is
-// passed — useful for scripts/CI and for headless end-to-end testing:
+// create-stack — fork a base app, strip to selection, stamp identity, verify.
+// Interactive by default; non-interactive when any selection flag (or --yes) is passed:
 //   create-stack my-app --framework next --foundations drizzle,trpc --mailer ses --no-install
 
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { buildProject } from './lib/build.mjs'
-import { loadPatterns } from './lib/manifests.mjs'
 import { isDirEmpty, run } from './lib/util.mjs'
 
 const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
@@ -52,7 +47,7 @@ const csv = (v) =>
         .filter(Boolean)
     : []
 
-/** Resolve hard deps + the mailer's better-auth requirement. */
+/** Resolve hard deps + mailer's better-auth requirement. */
 function normalize(picked, mailer) {
   const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
   if (kept.has('trpc') || kept.has('better-auth')) kept.add('drizzle')
@@ -131,7 +126,7 @@ async function collectFromPrompts(argDir) {
   return { argDir, projectName, framework, kept, mailerProvider, doInstall }
 }
 
-function execute(a, patterns) {
+function execute(a) {
   const projectDir = resolve(process.cwd(), a.argDir ?? a.projectName)
   if (!isDirEmpty(projectDir)) {
     p.cancel(`Target directory is not empty: ${projectDir}`)
@@ -140,7 +135,7 @@ function execute(a, patterns) {
 
   const s = p.spinner()
   s.start('Forking + stripping the base app')
-  buildProject({ ...a, projectDir, patterns })
+  buildProject({ ...a, projectDir })
   s.stop('Project scaffolded')
 
   if (a.doInstall) {
@@ -158,9 +153,8 @@ function execute(a, patterns) {
     )
   }
 
-  // Initialize a fresh repo + initial commit (also satisfies Biome's
-  // vcs.useIgnoreFile). The commit is best-effort: if git identity isn't
-  // configured it's skipped (staged tree is left in place) without failing.
+  // fresh repo + initial commit (also satisfies Biome vcs.useIgnoreFile).
+  // commit is best-effort: skipped if git identity unset, staged tree left in place.
   if (run('git', ['-C', projectDir, 'init', '-q'])) {
     run('git', ['-C', projectDir, 'add', '-A'])
     const committed = run(
@@ -193,7 +187,6 @@ function execute(a, patterns) {
 }
 
 async function main() {
-  const patterns = loadPatterns()
   const args = parseArgs(process.argv.slice(2))
 
   const nonInteractive =
@@ -203,7 +196,7 @@ async function main() {
 
   const answers = nonInteractive ? collectFromFlags(args) : await collectFromPrompts(args._[0])
 
-  execute(answers, patterns)
+  execute(answers)
 }
 
 main().catch((err) => {

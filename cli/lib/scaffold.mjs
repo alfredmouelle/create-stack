@@ -1,7 +1,7 @@
-// Step A2 — fork a base app into the target dir and make it standalone
-// (its own Biome config, pnpm workspace + build allowlist, project name).
+// Fork a base app into the target dir + make it standalone
+// (own Biome config, pnpm workspace + build allowlist, project name).
 
-import { STACK_ROOT } from './manifests.mjs'
+import { STACK_ROOT, TEMPLATES } from './paths.mjs'
 import { copy, exists, join, readJSON, run, write, writeJSON } from './util.mjs'
 
 const RSYNC_EXCLUDES = [
@@ -22,8 +22,8 @@ const PNPM_WORKSPACE = `allowBuilds:
   lightningcss: true
 `
 
-// Generated explicitly: npm strips `.gitignore` from published tarballs, so we
-// can't rely on the bundled base app's copy surviving. Both keep `.env.example`.
+// Generated explicitly: npm strips `.gitignore` from published tarballs, so the
+// bundled base app's copy won't survive. Both keep `.env.example`.
 const GITIGNORE = {
   tanstack: `node_modules
 .DS_Store
@@ -74,7 +74,7 @@ next-env.d.ts
 `,
 }
 
-/** Copy the base app into projectDir, minus build output & generated files. */
+/** Copy base app into projectDir, minus build output & generated files. */
 export function forkBase(framework, projectDir) {
   const base = join(STACK_ROOT, 'apps', framework === 'next' ? 'next-base' : 'tanstack-base')
   if (!exists(base)) throw new Error(`Base app not found: ${base}`)
@@ -86,19 +86,19 @@ export function forkBase(framework, projectDir) {
 
 /** Make the fork standalone (Biome, pnpm workspace, .gitignore, identity). */
 export function makeStandalone(projectDir, projectName, framework) {
-  // A fork needs its own Biome config (the base inherits the monorepo root's).
-  copy(join(STACK_ROOT, 'patterns/_baseline/biome.jsonc'), join(projectDir, 'biome.jsonc'))
+  // fork needs its own Biome config (base inherits the monorepo root's)
+  copy(join(TEMPLATES, 'biome.jsonc'), join(projectDir, 'biome.jsonc'))
 
-  // Biome's vcs.useIgnoreFile needs a .gitignore; also good project hygiene.
+  // Biome vcs.useIgnoreFile needs a .gitignore
   write(join(projectDir, '.gitignore'), GITIGNORE[framework === 'next' ? 'next' : 'tanstack'])
 
-  // Avoid ERR_PNPM_IGNORED_BUILDS on a fresh install (native build scripts).
+  // avoid ERR_PNPM_IGNORED_BUILDS on fresh install (native build scripts)
   write(join(projectDir, 'pnpm-workspace.yaml'), PNPM_WORKSPACE)
 
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
   pkg.name = projectName
-  delete pkg.private // a leaf project; let the user decide
+  delete pkg.private // leaf project
   pkg.private = true
   writeJSON(pkgPath, pkg)
 }

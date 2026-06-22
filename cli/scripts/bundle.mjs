@@ -1,8 +1,7 @@
-// Snapshot the stack assets the CLI reads at runtime into cli/_stack/ so the
-// published package is self-contained (the base apps, manifests, baseline and
-// the mailer adapters live outside cli/ in the monorepo). Runs on `prepack`.
+// prepack: snapshot base apps + mailer adapters (which live outside cli/) into
+// cli/_stack for a self-contained package. CLI-owned templates ship directly from cli/templates.
 
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { cpSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -33,22 +32,12 @@ const copyApp = (from, to) =>
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })
 
-// Base apps (the forkable source).
+// base apps (forkable source)
 for (const base of ['next-base', 'tanstack-base']) {
   copyApp(join(ROOT, 'apps', base), join(OUT, 'apps', base))
 }
 
-// Patterns: manifests + _baseline (small, copy wholesale).
-cpSync(join(ROOT, 'patterns'), join(OUT, 'patterns'), { recursive: true })
-
-// Capabilities: the wizard lists every capability.json; the mailer swap needs
-// the mailer package's adapters + manifest for dep ranges.
-for (const pkg of readdirSync(join(ROOT, 'packages'))) {
-  const manifest = join(ROOT, 'packages', pkg, 'capability.json')
-  if (existsSync(manifest)) {
-    cpSync(manifest, join(OUT, 'packages', pkg, 'capability.json'))
-  }
-}
+// mailer: adapters + manifest (provider swap reads its dep ranges)
 cpSync(join(ROOT, 'packages/mailer/package.json'), join(OUT, 'packages/mailer/package.json'))
 cpSync(join(ROOT, 'packages/mailer/src/adapters'), join(OUT, 'packages/mailer/src/adapters'), {
   recursive: true,

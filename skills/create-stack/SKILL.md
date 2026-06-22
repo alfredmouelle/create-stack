@@ -14,7 +14,7 @@ description: >-
 # Create a project with create-stack
 
 Scaffolding is delegated to the **published CLI** — a deterministic, self-contained
-installer. Do not fork the base apps or vendor patterns by hand; just run it.
+installer. Do not fork the base apps or reproduce the wiring by hand; just run it.
 
 ```
 @alfredmouelle/create-stack   (npm, public)

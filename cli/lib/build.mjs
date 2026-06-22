@@ -1,5 +1,5 @@
-// Pure build phase (no prompts, no install) — fork → strip → mailer → env →
-// identity. Shared by index.mjs (after the wizard) and the test harness.
+// Pure build phase (no prompts/install): fork → strip → mailer → env → identity.
+// Shared by index.mjs (post-wizard) and the test harness.
 
 import { writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
@@ -13,26 +13,18 @@ import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON 
  * @param {string} o.projectDir  absolute target dir (must be empty)
  * @param {string} o.projectName
  * @param {'next'|'tanstack'} o.framework
- * @param {Set<string>} o.kept   logical foundations to keep (deps pre-resolved)
+ * @param {Set<string>} o.kept   foundations to keep (deps pre-resolved)
  * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
- * @param {object} o.patterns    loadPatterns()
  * @returns {{ kept: string[], keptMailer: boolean, mailerProvider: string, envKeys: string[] }}
  */
-export function buildProject({
-  projectDir,
-  projectName,
-  framework,
-  kept,
-  mailerProvider,
-  patterns,
-}) {
+export function buildProject({ projectDir, projectName, framework, kept, mailerProvider }) {
   const authKept = kept.has('better-auth')
   const keptMailer = mailerProvider !== 'none'
 
   forkBase(framework, projectDir)
   makeStandalone(projectDir, projectName, framework)
 
-  const strip = stripFoundations({ projectDir, framework, kept, keptMailer, patterns })
+  const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
   const mailer = keptMailer
     ? swapMailer(projectDir, mailerProvider)
     : { addDeps: {}, removeDeps: [], envKeys: [] }

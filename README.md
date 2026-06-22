@@ -57,16 +57,14 @@ packages/
 apps/
   next-base/        # real Next.js (App Router) starter — fork for a new project
   tanstack-base/    # real TanStack Start starter — fork for a new project
-patterns/
-  drizzle/  better-auth/  trpc/   # foundational patterns (pattern.json)
-  _baseline/        # always-on config: biome, tsconfig, env, author
+cli/                # create-stack: the published installer that forks a base app
+  index.mjs  lib/  templates/   # (biome.jsonc + # Author footer + wiring variants)
 skills/
   create-stack/     # run the published create-stack CLI to scaffold a project
   add-capability/   # add a capability into a project behind a port
 scripts/
   link-skills.sh    # symlink skills into Claude / Codex
 capability.schema.json   # the manifest schema each capability.json follows
-pattern.schema.json      # the manifest schema each pattern.json follows
 ```
 
 `apps/*-base` are **real starter apps** — the absolute references you fork for a

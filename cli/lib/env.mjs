@@ -1,10 +1,9 @@
-// Rebuilds src/env.ts `server` + `runtimeEnv` blocks from the final key set,
-// and generates .env.example + .env. Adds keys (e.g. a swapped mailer provider)
-// and prunes keys of stripped foundations/capabilities — deterministically.
+// Rebuilds src/env.ts `server` + `runtimeEnv` from the final key set; generates
+// .env.example + .env. Adds swapped-mailer keys, prunes stripped ones, deterministically.
 
 import { editFile, join, write } from './util.mjs'
 
-/** valibot schema text per known env key. */
+/** valibot schema text per env key. */
 const SCHEMAS = {
   DATABASE_URL: 'v.pipe(v.string(), v.url())',
   BETTER_AUTH_URL: 'v.pipe(v.string(), v.url())',
@@ -19,7 +18,7 @@ const SCHEMAS = {
   AWS_SECRET_ACCESS_KEY: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
 }
 
-/** Placeholder values for the generated .env files. */
+/** Placeholder values for generated .env files. */
 const PLACEHOLDERS = {
   DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/app',
   BETTER_AUTH_URL: 'http://localhost:3000',
@@ -29,7 +28,7 @@ const PLACEHOLDERS = {
 
 const indent = (s) => `    ${s}`
 
-/** Write the final env.ts and .env files. `keys` is an ordered string[]. */
+/** Write final env.ts + .env files. `keys`: ordered string[]. */
 export function writeEnv(projectDir, keys) {
   const seen = new Set()
   const ordered = keys.filter((k) => SCHEMAS[k] && !seen.has(k) && seen.add(k))

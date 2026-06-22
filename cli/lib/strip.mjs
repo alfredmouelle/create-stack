@@ -1,43 +1,28 @@
-// Step A3 — reverse-strip the foundations the user did NOT select.
-// Whole-directory deletes (robust against orphans) + the few code "seams"
-// that need surgery (trpc/auth wiring) via shipped reduced variants.
+// Strip unselected foundations: whole-dir deletes + code-seam variants (trpc/auth).
 
-import { dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { foundationManifest } from './manifests.mjs'
+import { FOUNDATIONS, foundationDeps, foundationScripts } from './foundations.mjs'
+import { TEMPLATES } from './paths.mjs'
 import { copy, editFile, join, remove } from './util.mjs'
 
-const here = dirname(fileURLToPath(import.meta.url))
-const tpl = (rel) => join(here, '..', 'templates', rel)
+const tpl = (rel) => join(TEMPLATES, rel)
 
 const ALWAYS_KEEP = new Set(['valibot'])
 
-const manifestDeps = (m) => [...(m?.deps ?? []), ...(m?.devDeps ?? [])]
-
-/** Logical foundations always present in a base app. */
-export const FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
-
-/**
- * Strip the unselected foundations from the fork.
- * @returns {{ removeDeps: string[], removeScripts: string[] }}
- */
-export function stripFoundations({ projectDir, framework, kept, keptMailer, patterns }) {
+/** @returns {{ removeDeps: string[], removeScripts: string[] }} */
+export function stripFoundations({ projectDir, framework, kept, keptMailer }) {
   const next = framework === 'next'
   const src = (p) => join(projectDir, 'src', p)
   const dropped = FOUNDATIONS.filter((f) => !kept.has(f))
 
   // Dep diff: remove a dropped foundation's deps unless a kept one still needs it.
-  const keptDeps = new Set(
-    [...kept].flatMap((f) => manifestDeps(patterns[foundationManifest(f, framework)])),
-  )
+  const keptDeps = new Set([...kept].flatMap((f) => foundationDeps(f, framework)))
   const removeDeps = new Set()
   const removeScripts = new Set()
   for (const f of dropped) {
-    const m = patterns[foundationManifest(f, framework)]
-    for (const d of manifestDeps(m)) {
+    for (const d of foundationDeps(f, framework)) {
       if (!keptDeps.has(d) && !ALWAYS_KEEP.has(d)) removeDeps.add(d)
     }
-    for (const s of Object.keys(m?.scripts ?? {})) removeScripts.add(s)
+    for (const s of foundationScripts(f)) removeScripts.add(s)
   }
 
   // --- data-table ---
