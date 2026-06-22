@@ -173,10 +173,21 @@ function execute(a, patterns) {
     )
   }
 
-  // Initialize a fresh repo (also satisfies Biome's vcs.useIgnoreFile).
-  if (run('git', ['init', '-q'], { cwd: projectDir })) {
+  // Initialize a fresh repo + initial commit (also satisfies Biome's
+  // vcs.useIgnoreFile). The commit is best-effort: if git identity isn't
+  // configured it's skipped (staged tree is left in place) without failing.
+  if (run('git', ['-C', projectDir, 'init', '-q'])) {
     run('git', ['-C', projectDir, 'add', '-A'])
-    p.log.step('git initialized')
+    const committed = run(
+      'git',
+      ['-C', projectDir, 'commit', '-q', '-m', 'chore: initial commit from create-stack'],
+      { stdio: 'ignore' },
+    )
+    p.log.step(
+      committed
+        ? 'git repository initialized (initial commit created)'
+        : 'git repository initialized — set git user.name/email, then commit',
+    )
   }
 
   const keptMailer = a.mailerProvider !== 'none'
