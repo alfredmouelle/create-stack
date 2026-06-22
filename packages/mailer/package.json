@@ -1,0 +1,36 @@
+{
+  "name": "@stack/mailer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@getbrevo/brevo": "^5.0.4",
+    "resend": "^6.14.0",
+    "valibot": "^1.4.1"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "react-email": "^6.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-email": "^6.6.3",
+    "tsdown": "^0.22.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  }
+}

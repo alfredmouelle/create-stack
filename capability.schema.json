@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Capability manifest",
+  "description": "Describes a swappable capability so a generator/skill can copy the right files, deps and env vars into a target app.",
+  "type": "object",
+  "required": ["name", "description", "defaultAdapter", "adapters"],
+  "properties": {
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "port": { "type": "string", "description": "Path to the port interface file." },
+    "factory": { "type": "string", "description": "Path to the composition-root factory." },
+    "defaultAdapter": { "type": "string" },
+    "adapters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["deps", "env", "files"],
+        "properties": {
+          "deps": { "type": "array", "items": { "type": "string" } },
+          "env": { "type": "array", "items": { "type": "string" } },
+          "files": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "sharedDeps": { "type": "array", "items": { "type": "string" } },
+    "peerDeps": { "type": "array", "items": { "type": "string" } },
+    "sharedFiles": { "type": "array", "items": { "type": "string" } }
+  }
+}

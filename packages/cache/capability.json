@@ -1,0 +1,21 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "cache",
+  "description": "Key/value cache behind a swappable port. Values are serialized as JSON for remote stores.",
+  "port": "src/core/port.ts",
+  "defaultAdapter": "redis",
+  "adapters": {
+    "redis": {
+      "deps": ["ioredis"],
+      "env": ["REDIS_URL"],
+      "files": ["src/adapters/redis"]
+    },
+    "memory": {
+      "deps": [],
+      "env": [],
+      "files": ["src/adapters/memory"]
+    }
+  },
+  "sharedDeps": ["valibot"],
+  "sharedFiles": ["src/core", "src/index.ts"]
+}

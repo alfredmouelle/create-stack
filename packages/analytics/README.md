@@ -1,0 +1,50 @@
+# @stack/analytics
+
+Product analytics behind a tiny port. Capture events and identify users through
+a swappable adapter — application code depends only on `AnalyticsPort`, never on
+a provider.
+
+## Usage
+
+```ts
+import { posthogAdapter } from '@stack/analytics'
+
+// composition root — pick the provider here, once
+export const analytics = posthogAdapter({
+  apiKey: process.env.POSTHOG_API_KEY!,
+  host: process.env.POSTHOG_HOST,
+})
+
+// anywhere in the app — depends only on the AnalyticsPort
+analytics.capture({
+  event: 'user_signed_up',
+  distinctId: 'user_123',
+  properties: { plan: 'pro' },
+})
+
+analytics.identify({ distinctId: 'user_123', properties: { email: 'a@acme.com' } })
+
+// before the process exits
+await analytics.shutdown()
+```
+
+`capture` and `identify` are fire-and-forget (like the PostHog SDK): they
+enqueue work and return immediately. Use `flush()` to drain pending events and
+`shutdown()` to flush + release resources.
+
+## Disabling analytics
+
+Use the `noop` adapter in development, tests, or when analytics is off:
+
+```ts
+import { noopAdapter } from '@stack/analytics'
+
+export const analytics = noopAdapter()
+```
+
+No call site changes — they all depend on `AnalyticsPort`.
+
+## Adding a provider
+
+Implement `AnalyticsPort` (`src/core/port.ts`): a `name`, `capture`, `identify`,
+`flush`, and `shutdown`. Look at `src/adapters/posthog` (SDK-based) as a template.

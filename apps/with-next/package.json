@@ -1,0 +1,32 @@
+{
+  "name": "@stack/with-next",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stack/analytics": "workspace:*",
+    "@stack/cache": "workspace:*",
+    "@stack/email-kit": "workspace:*",
+    "@stack/error-tracking": "workspace:*",
+    "@stack/http": "workspace:*",
+    "@stack/jobs": "workspace:*",
+    "@stack/logger": "workspace:*",
+    "@stack/mailer": "workspace:*",
+    "@stack/storage": "workspace:*",
+    "@t3-oss/env-core": "^0.13.11",
+    "inngest": "^4.7.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-email": "^6.6.3",
+    "valibot": "^1.4.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.10.2"
+  }
+}

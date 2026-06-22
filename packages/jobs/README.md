@@ -1,0 +1,76 @@
+# @stack/jobs
+
+Background jobs / events behind a tiny, event-driven port. Define jobs against
+named events and `trigger` them; the adapter handles delivery and execution.
+Swap providers without touching call sites.
+
+## Usage
+
+```ts
+import { inngestAdapter } from '@stack/jobs'
+
+// composition root — pick the provider here, once
+export const jobs = inngestAdapter({
+  id: 'my-app',
+  eventKey: process.env.INNGEST_EVENT_KEY,
+})
+
+// register jobs (collected on the adapter for serving)
+jobs.defineJob<{ userId: string }>({
+  id: 'send-welcome',
+  event: 'user/created',
+  handler: async ({ data }) => {
+    await sendWelcomeEmail(data.userId)
+  },
+})
+
+// anywhere in the app — depends only on the JobsPort
+await jobs.trigger({ name: 'user/created', data: { userId: '123' } })
+```
+
+### Serving (Inngest)
+
+Inngest invokes your functions over HTTP. Wire the collected `functions` into a
+Web-standard `FetchHandler` and mount it in your framework:
+
+```ts
+import { serve } from 'inngest/edge'
+import { inngestServeHandler } from '@stack/jobs'
+
+// FetchHandler: Request -> Response, mountable in Next.js or TanStack Start
+export const handler = inngestServeHandler(jobs, serve, {
+  signingKey: process.env.INNGEST_SIGNING_KEY,
+})
+```
+
+## Dev & tests
+
+Use the in-process `memoryAdapter` to run job logic synchronously, no network:
+
+```ts
+import { memoryAdapter } from '@stack/jobs'
+
+const jobs = memoryAdapter()
+jobs.defineJob({ id: 'x', event: 'user/created', handler })
+await jobs.trigger({ name: 'user/created', data: { userId: '1' } }) // runs handler inline
+```
+
+## The abstraction leak
+
+This is the leakiest capability in the stack, and the port is deliberately
+minimal about it. `JobsPort` models only **events** (`trigger`) and
+**single-event handlers** (`defineJob`). Inngest's real model is far richer:
+multi-step durable functions (`step.run`, `step.waitForEvent`), concurrency
+limits, retries, cron triggers, fan-out, and typed event schemas.
+
+None of that is in the port — by design. Keeping the port tiny is what makes it
+swappable (the `memory` adapter is ~30 lines). When you need real Inngest
+features, **reach for the SDK directly** via `adapter.client` rather than
+widening the port. Treat `@stack/jobs` as the seam for the simple 80% case; drop
+to Inngest for the powerful 20%.
+
+## Adding a provider
+
+Implement `JobsPort` (`src/core/port.ts`): a `name`, `defineJob`, and `trigger`.
+Look at `src/adapters/inngest` (SDK-based) or `src/adapters/memory` (in-process)
+as templates.

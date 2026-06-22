@@ -1,0 +1,32 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "storage",
+  "description": "Object storage behind a swappable port: put/get/delete/exists plus signed URLs. Adapters for S3, Cloudflare R2, Google Cloud Storage and the local filesystem.",
+  "port": "src/core/port.ts",
+  "factory": "src/index.ts",
+  "defaultAdapter": "s3",
+  "adapters": {
+    "s3": {
+      "deps": ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
+      "env": ["S3_BUCKET", "S3_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+      "files": ["src/adapters/s3"]
+    },
+    "r2": {
+      "deps": ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
+      "env": ["R2_BUCKET", "R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"],
+      "files": ["src/adapters/r2", "src/adapters/s3"]
+    },
+    "gcs": {
+      "deps": ["@google-cloud/storage"],
+      "env": ["GCS_BUCKET", "GOOGLE_CLOUD_PROJECT"],
+      "files": ["src/adapters/gcs"]
+    },
+    "local": {
+      "deps": [],
+      "env": ["STORAGE_LOCAL_DIR"],
+      "files": ["src/adapters/local"]
+    }
+  },
+  "sharedDeps": ["valibot"],
+  "sharedFiles": ["src/core", "src/index.ts"]
+}

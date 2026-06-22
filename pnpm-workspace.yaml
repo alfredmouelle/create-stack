@@ -1,0 +1,8 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+onlyBuiltDependencies:
+  - esbuild
+  - protobufjs
+overrides:
+  vite: "^8.0.16"

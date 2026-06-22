@@ -1,0 +1,23 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "mailer",
+  "description": "Transactional email. Bodies are always React Email components, rendered to HTML + plain text.",
+  "port": "src/core/port.ts",
+  "factory": "src/factory.ts",
+  "defaultAdapter": "resend",
+  "adapters": {
+    "resend": {
+      "deps": ["resend"],
+      "env": ["RESEND_API_KEY"],
+      "files": ["src/adapters/resend"]
+    },
+    "brevo": {
+      "deps": ["@getbrevo/brevo"],
+      "env": ["BREVO_API_KEY"],
+      "files": ["src/adapters/brevo"]
+    }
+  },
+  "sharedDeps": ["valibot", "@react-email/render"],
+  "peerDeps": ["react", "react-dom"],
+  "sharedFiles": ["src/core", "src/factory.ts", "src/index.ts"]
+}

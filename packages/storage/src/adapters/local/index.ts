@@ -1,0 +1,79 @@
+import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import * as v from 'valibot'
+import {
+  type PutOptions,
+  type SignedUrlOptions,
+  StorageError,
+  type StoragePort,
+} from '../../core/port.js'
+import { LocalConfigSchema } from './config.js'
+
+export interface LocalAdapterOptions {
+  /** Root directory under which objects are stored. */
+  baseDir: string
+  /**
+   * Base URL prefixed to keys by {@link StoragePort.getSignedUrl}. Note: the
+   * local adapter does NOT sign URLs — it just returns `${publicBaseUrl}/${key}`.
+   * Use it for dev/tests only.
+   */
+  publicBaseUrl?: string
+}
+
+function isNotFound(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false
+  return (error as { code?: string }).code === 'ENOENT'
+}
+
+export function localAdapter(options: LocalAdapterOptions): StoragePort {
+  const config = v.parse(LocalConfigSchema, {
+    baseDir: options.baseDir,
+    publicBaseUrl: options.publicBaseUrl,
+  })
+
+  const resolve = (key: string): string => join(config.baseDir, key)
+
+  return {
+    name: 'local',
+    async put(key: string, data: Uint8Array | string, _options?: PutOptions) {
+      const path = resolve(key)
+      try {
+        await mkdir(dirname(path), { recursive: true })
+        await writeFile(path, typeof data === 'string' ? data : Buffer.from(data))
+      } catch (cause) {
+        throw new StorageError('Local put failed', { adapter: 'local', cause })
+      }
+    },
+    async get(key: string) {
+      try {
+        const buffer = await readFile(resolve(key))
+        return new Uint8Array(buffer)
+      } catch (cause) {
+        if (isNotFound(cause)) return null
+        throw new StorageError('Local get failed', { adapter: 'local', cause })
+      }
+    },
+    async delete(key: string) {
+      try {
+        await unlink(resolve(key))
+      } catch (cause) {
+        if (isNotFound(cause)) return
+        throw new StorageError('Local delete failed', { adapter: 'local', cause })
+      }
+    },
+    async exists(key: string) {
+      try {
+        await stat(resolve(key))
+        return true
+      } catch (cause) {
+        if (isNotFound(cause)) return false
+        throw new StorageError('Local exists failed', { adapter: 'local', cause })
+      }
+    },
+    async getSignedUrl(key: string, _options: SignedUrlOptions) {
+      // No real signing: dev/test convenience only.
+      const base = config.publicBaseUrl ?? ''
+      return `${base}/${key}`
+    },
+  }
+}

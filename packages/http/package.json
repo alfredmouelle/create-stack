@@ -1,0 +1,20 @@
+{
+  "name": "@stack/http",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsdown": "^0.22.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  }
+}

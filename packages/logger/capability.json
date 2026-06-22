@@ -1,0 +1,21 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "logger",
+  "description": "Structured logging behind a swappable port. Application code depends only on the Logger interface; pick an adapter (pino, console) at the composition root.",
+  "port": "src/core/port.ts",
+  "defaultAdapter": "pino",
+  "adapters": {
+    "pino": {
+      "deps": ["pino"],
+      "env": [],
+      "files": ["src/adapters/pino"]
+    },
+    "console": {
+      "deps": [],
+      "env": [],
+      "files": ["src/adapters/console"]
+    }
+  },
+  "sharedDeps": ["valibot"],
+  "sharedFiles": ["src/core", "src/index.ts"]
+}

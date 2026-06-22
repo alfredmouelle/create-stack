@@ -1,0 +1,21 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "analytics",
+  "description": "Product analytics behind a swappable port. Capture events and identify users; flush/shutdown to drain pending events.",
+  "port": "src/core/port.ts",
+  "defaultAdapter": "posthog",
+  "adapters": {
+    "posthog": {
+      "deps": ["posthog-node"],
+      "env": ["POSTHOG_API_KEY", "POSTHOG_HOST"],
+      "files": ["src/adapters/posthog"]
+    },
+    "noop": {
+      "deps": [],
+      "env": [],
+      "files": ["src/adapters/noop"]
+    }
+  },
+  "sharedDeps": ["valibot"],
+  "sharedFiles": ["src/core", "src/index.ts"]
+}

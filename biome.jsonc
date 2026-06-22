@@ -1,0 +1,101 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "root": true,
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/.turbo",
+      "!**/.next",
+      "!**/.output",
+      "!**/.nitro",
+      "!**/routeTree.gen.ts"
+    ]
+  },
+  "vcs": {
+    "enabled": true,
+    "useIgnoreFile": true,
+    "clientKind": "git"
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on",
+        "useSortedAttributes": "on"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentWidth": 2,
+    "indentStyle": "space",
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "react": "recommended",
+      "test": "recommended"
+    },
+    "rules": {
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noConsole": {
+          "level": "warn",
+          "options": { "allow": ["warn", "error"] }
+        }
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
+      },
+      "correctness": {
+        "noUndeclaredDependencies": "error"
+      },
+      "style": {
+        "noInferrableTypes": "error",
+        "useNamingConvention": {
+          "level": "warn",
+          "options": {
+            "strictCase": false,
+            "conventions": [{ "selector": { "kind": "objectLiteralProperty" }, "match": ".*" }]
+          }
+        },
+        "useConsistentArrayType": {
+          "level": "error",
+          "options": { "syntax": "shorthand" }
+        }
+      },
+      "a11y": {
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "warn",
+          "fix": "safe",
+          "options": { "functions": ["clsx", "cva", "cn"] }
+        }
+      }
+    }
+  },
+  "html": {
+    "formatter": { "enabled": true }
+  },
+  "javascript": {
+    "assist": { "enabled": true },
+    "formatter": {
+      "enabled": true,
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all"
+    },
+    "linter": { "enabled": true }
+  },
+  "css": {
+    "assist": { "enabled": true },
+    "formatter": { "enabled": true },
+    "linter": { "enabled": true },
+    "parser": { "cssModules": true, "tailwindDirectives": true }
+  }
+}

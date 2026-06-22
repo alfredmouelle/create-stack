@@ -1,0 +1,21 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "error-tracking",
+  "description": "Error reporting behind a swappable port. Capture exceptions, messages, breadcrumbs and user context, then ship them to a provider.",
+  "port": "src/core/port.ts",
+  "defaultAdapter": "sentry",
+  "adapters": {
+    "sentry": {
+      "deps": ["@sentry/node"],
+      "env": ["SENTRY_DSN", "SENTRY_ENVIRONMENT"],
+      "files": ["src/adapters/sentry"]
+    },
+    "console": {
+      "deps": [],
+      "env": [],
+      "files": ["src/adapters/console"]
+    }
+  },
+  "sharedDeps": ["valibot"],
+  "sharedFiles": ["src/core", "src/index.ts"]
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "jobs",
+  "description": "Background jobs / events behind a swappable port. Event-driven: define jobs against named events and trigger them; the adapter handles delivery and execution.",
+  "port": "src/core/port.ts",
+  "defaultAdapter": "inngest",
+  "adapters": {
+    "inngest": {
+      "deps": ["inngest"],
+      "env": ["INNGEST_EVENT_KEY", "INNGEST_SIGNING_KEY"],
+      "files": ["src/adapters/inngest"]
+    },
+    "memory": {
+      "deps": [],
+      "env": [],
+      "files": ["src/adapters/memory"]
+    }
+  },
+  "sharedDeps": ["valibot"],
+  "sharedFiles": ["src/core", "src/index.ts"]
+}
