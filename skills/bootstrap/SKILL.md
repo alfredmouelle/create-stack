@@ -53,6 +53,14 @@ empty/placeholder one)?
 
 # §A — Create mode (empty folder → guided installer)
 
+> **Prefer the CLI.** Create mode has a deterministic, no-LLM counterpart:
+> `node "$STACK/cli/index.mjs" [dir]` (or `pnpm -C "$STACK" create-stack`). It runs
+> the same wizard (framework, foundations, mailer provider, capabilities), forks a
+> base app, strips it to the selection via the manifests + shipped reduced variants,
+> stamps identity, and installs + verifies. Reach for the steps below only to drive
+> it yourself, handle a selection the CLI defers (extra capabilities → add-capability),
+> or fix a verify error. The CLI and these steps share the same manifests.
+
 ## A1. Wizard
 
 Ask with the question tool (sensible defaults, multi-select where it fits):

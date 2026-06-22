@@ -11,7 +11,8 @@
       "!**/.nitro",
       "!**/routeTree.gen.ts",
       "!**/components/ui",
-      "!patterns"
+      "!patterns",
+      "!cli/templates"
     ]
   },
   "vcs": {

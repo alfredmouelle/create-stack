@@ -1,0 +1,16 @@
+{
+  "name": "create-stack",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive, deterministic installer for the personal reference stack — the non-LLM counterpart of the bootstrap skill's create mode. Forks a base app and strips it to your selection.",
+  "bin": {
+    "create-stack": "./index.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.6.0"
+  }
+}
