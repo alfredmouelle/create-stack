@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
+import { TRPCReactProvider } from '~/trpc/react'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -7,14 +9,12 @@ export const metadata: Metadata = {
   authors: [{ name: 'Alfred MOUELLE', url: 'https://alfredmouelle.com' }],
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <TRPCReactProvider>{children}</TRPCReactProvider>
+      </body>
     </html>
   )
 }
