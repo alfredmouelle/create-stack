@@ -173,6 +173,12 @@ function execute(a, patterns) {
     )
   }
 
+  // Initialize a fresh repo (also satisfies Biome's vcs.useIgnoreFile).
+  if (run('git', ['init', '-q'], { cwd: projectDir })) {
+    run('git', ['-C', projectDir, 'add', '-A'])
+    p.log.step('git initialized')
+  }
+
   const keptMailer = a.mailerProvider !== 'none'
   const lines = [
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,

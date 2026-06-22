@@ -30,7 +30,7 @@ export function buildProject({
   const keptMailer = mailerProvider !== 'none'
 
   forkBase(framework, projectDir)
-  makeStandalone(projectDir, projectName)
+  makeStandalone(projectDir, projectName, framework)
 
   const strip = stripFoundations({ projectDir, framework, kept, keptMailer, patterns })
   const mailer = keptMailer
