@@ -4,6 +4,7 @@ import { createRootRouteWithContext, HeadContent, Scripts } from '@tanstack/reac
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query'
 import type { AppRouter } from '~/server/api/root'
+import TanStackQueryDevtools from '~/trpc/devtools'
 
 import appCss from '../styles.css?url'
 
@@ -57,6 +58,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               name: 'Tanstack Router',
               render: <TanStackRouterDevtoolsPanel />,
             },
+            TanStackQueryDevtools,
           ]}
         />
         <Scripts />
