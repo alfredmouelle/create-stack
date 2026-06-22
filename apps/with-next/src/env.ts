@@ -13,10 +13,13 @@ export const env = createEnv({
     NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'development'),
   },
   server: {
-    EMAIL_PROVIDER: v.optional(v.picklist(['resend', 'brevo']), 'resend'),
+    EMAIL_PROVIDER: v.optional(v.picklist(['resend', 'brevo', 'ses']), 'resend'),
     EMAIL_FROM: v.optional(v.pipe(v.string(), v.email()), 'no-reply@example.com'),
     RESEND_API_KEY: optionalString,
     BREVO_API_KEY: optionalString,
+    // SES also reads AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (shared below).
+    AWS_REGION: optionalString,
+    SES_CONFIGURATION_SET: optionalString,
 
     STORAGE_PROVIDER: v.optional(v.picklist(['s3', 'r2', 'gcs', 'local']), 'local'),
     S3_BUCKET: optionalString,
@@ -33,9 +36,10 @@ export const env = createEnv({
     STORAGE_LOCAL_DIR: v.optional(v.string(), '.storage'),
     STORAGE_PUBLIC_URL: v.optional(v.pipe(v.string(), v.url()), 'http://localhost:3000/files'),
 
-    JOBS_PROVIDER: v.optional(v.picklist(['inngest', 'memory']), 'memory'),
+    JOBS_PROVIDER: v.optional(v.picklist(['inngest', 'trigger', 'memory']), 'memory'),
     INNGEST_EVENT_KEY: optionalString,
     INNGEST_SIGNING_KEY: optionalString,
+    TRIGGER_SECRET_KEY: optionalString,
 
     LOGGER_PROVIDER: v.optional(v.picklist(['pino', 'console']), 'console'),
     LOG_LEVEL: v.optional(v.picklist(['trace', 'debug', 'info', 'warn', 'error']), 'info'),
@@ -43,9 +47,11 @@ export const env = createEnv({
     CACHE_PROVIDER: v.optional(v.picklist(['redis', 'memory']), 'memory'),
     REDIS_URL: v.optional(v.pipe(v.string(), v.url())),
 
-    ANALYTICS_PROVIDER: v.optional(v.picklist(['posthog', 'noop']), 'noop'),
+    ANALYTICS_PROVIDER: v.optional(v.picklist(['posthog', 'plausible', 'noop']), 'noop'),
     POSTHOG_API_KEY: optionalString,
     POSTHOG_HOST: v.optional(v.pipe(v.string(), v.url())),
+    PLAUSIBLE_DOMAIN: optionalString,
+    PLAUSIBLE_API_HOST: v.optional(v.pipe(v.string(), v.url())),
 
     ERROR_TRACKING_PROVIDER: v.optional(v.picklist(['sentry', 'console']), 'console'),
     SENTRY_DSN: optionalString,

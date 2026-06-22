@@ -14,10 +14,13 @@ export const env = createEnv({
   },
   server: {
     // mailer
-    EMAIL_PROVIDER: v.optional(v.picklist(['resend', 'brevo']), 'resend'),
+    EMAIL_PROVIDER: v.optional(v.picklist(['resend', 'brevo', 'ses']), 'resend'),
     EMAIL_FROM: v.optional(v.pipe(v.string(), v.email()), 'no-reply@example.com'),
     RESEND_API_KEY: optionalString,
     BREVO_API_KEY: optionalString,
+    // SES also reads AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (shared below).
+    AWS_REGION: optionalString,
+    SES_CONFIGURATION_SET: optionalString,
 
     // storage
     STORAGE_PROVIDER: v.optional(v.picklist(['s3', 'r2', 'gcs', 'local']), 'local'),
@@ -36,9 +39,10 @@ export const env = createEnv({
     STORAGE_PUBLIC_URL: v.optional(v.pipe(v.string(), v.url()), 'http://localhost:3000/files'),
 
     // jobs
-    JOBS_PROVIDER: v.optional(v.picklist(['inngest', 'memory']), 'memory'),
+    JOBS_PROVIDER: v.optional(v.picklist(['inngest', 'trigger', 'memory']), 'memory'),
     INNGEST_EVENT_KEY: optionalString,
     INNGEST_SIGNING_KEY: optionalString,
+    TRIGGER_SECRET_KEY: optionalString,
 
     // logger
     LOGGER_PROVIDER: v.optional(v.picklist(['pino', 'console']), 'console'),
@@ -49,9 +53,11 @@ export const env = createEnv({
     REDIS_URL: v.optional(v.pipe(v.string(), v.url())),
 
     // analytics
-    ANALYTICS_PROVIDER: v.optional(v.picklist(['posthog', 'noop']), 'noop'),
+    ANALYTICS_PROVIDER: v.optional(v.picklist(['posthog', 'plausible', 'noop']), 'noop'),
     POSTHOG_API_KEY: optionalString,
     POSTHOG_HOST: v.optional(v.pipe(v.string(), v.url())),
+    PLAUSIBLE_DOMAIN: optionalString,
+    PLAUSIBLE_API_HOST: v.optional(v.pipe(v.string(), v.url())),
 
     // error tracking
     ERROR_TRACKING_PROVIDER: v.optional(v.picklist(['sentry', 'console']), 'console'),

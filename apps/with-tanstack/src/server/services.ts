@@ -1,9 +1,14 @@
 import {
   type AnalyticsPort,
   noopAdapter as analyticsNoopAdapter,
+  plausibleAdapter,
   posthogAdapter,
 } from '@alfredmouelle/analytics'
-import { type CachePort, memoryAdapter as cacheMemoryAdapter, redisAdapter } from '@alfredmouelle/cache'
+import {
+  type CachePort,
+  memoryAdapter as cacheMemoryAdapter,
+  redisAdapter,
+} from '@alfredmouelle/cache'
 import {
   consoleAdapter as consoleErrorTracking,
   type ErrorTrackingPort,
@@ -14,10 +19,23 @@ import {
   inngestAdapter,
   type JobsPort,
   memoryAdapter as jobsMemoryAdapter,
+  triggerDevAdapter,
 } from '@alfredmouelle/jobs'
 import { consoleAdapter as consoleLogger, type Logger, pinoAdapter } from '@alfredmouelle/logger'
-import { brevoAdapter, createMailer, type Mailer, resendAdapter } from '@alfredmouelle/mailer'
-import { gcsAdapter, localAdapter, r2Adapter, type StoragePort, s3Adapter } from '@alfredmouelle/storage'
+import {
+  brevoAdapter,
+  createMailer,
+  type Mailer,
+  resendAdapter,
+  sesAdapter,
+} from '@alfredmouelle/mailer'
+import {
+  gcsAdapter,
+  localAdapter,
+  r2Adapter,
+  type StoragePort,
+  s3Adapter,
+} from '@alfredmouelle/storage'
 import { env } from '../env.js'
 
 /** Fail fast with a readable message when a selected provider misses a key. */
@@ -44,13 +62,22 @@ export const cache: CachePort =
     ? redisAdapter({ url: required(env.REDIS_URL, 'REDIS_URL') })
     : cacheMemoryAdapter()
 
-export const analytics: AnalyticsPort =
-  env.ANALYTICS_PROVIDER === 'posthog'
-    ? posthogAdapter({
+export const analytics: AnalyticsPort = (() => {
+  switch (env.ANALYTICS_PROVIDER) {
+    case 'posthog':
+      return posthogAdapter({
         apiKey: required(env.POSTHOG_API_KEY, 'POSTHOG_API_KEY'),
         host: env.POSTHOG_HOST,
       })
-    : analyticsNoopAdapter()
+    case 'plausible':
+      return plausibleAdapter({
+        domain: required(env.PLAUSIBLE_DOMAIN, 'PLAUSIBLE_DOMAIN'),
+        apiHost: env.PLAUSIBLE_API_HOST,
+      })
+    default:
+      return analyticsNoopAdapter()
+  }
+})()
 
 export const storage: StoragePort = (() => {
   switch (env.STORAGE_PROVIDER) {
@@ -81,10 +108,22 @@ export const storage: StoragePort = (() => {
 
 export const mailer: Mailer = createMailer({
   from: env.EMAIL_FROM,
-  adapter:
-    env.EMAIL_PROVIDER === 'brevo'
-      ? brevoAdapter({ apiKey: required(env.BREVO_API_KEY, 'BREVO_API_KEY') })
-      : resendAdapter({ apiKey: required(env.RESEND_API_KEY, 'RESEND_API_KEY') }),
+  adapter: (() => {
+    switch (env.EMAIL_PROVIDER) {
+      case 'brevo':
+        return brevoAdapter({ apiKey: required(env.BREVO_API_KEY, 'BREVO_API_KEY') })
+      case 'ses':
+        // Credentials fall back to the standard AWS chain when env keys are unset.
+        return sesAdapter({
+          region: env.AWS_REGION,
+          accessKeyId: env.AWS_ACCESS_KEY_ID,
+          secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+          configurationSetName: env.SES_CONFIGURATION_SET,
+        })
+      default:
+        return resendAdapter({ apiKey: required(env.RESEND_API_KEY, 'RESEND_API_KEY') })
+    }
+  })(),
 })
 
 /**
@@ -100,5 +139,13 @@ export const inngestJobs: InngestJobsAdapter | null =
       })
     : null
 
-/** The jobs port used everywhere to `trigger` events and `defineJob`. */
-export const jobs: JobsPort = inngestJobs ?? jobsMemoryAdapter()
+/**
+ * The jobs port used everywhere to `trigger` events and `defineJob`.
+ *
+ * Trigger.dev tasks run on Trigger.dev's platform (deployed via its CLI), so —
+ * unlike Inngest — there's no in-app serve route; the adapter only triggers.
+ */
+export const jobs: JobsPort =
+  env.JOBS_PROVIDER === 'trigger'
+    ? triggerDevAdapter({ secretKey: env.TRIGGER_SECRET_KEY })
+    : (inngestJobs ?? jobsMemoryAdapter())
