@@ -1,0 +1,37 @@
+{
+  "$schema": "../../pattern.schema.json",
+  "name": "trpc-next",
+  "description": "tRPC v11 for Next.js App Router — the classic `api.x.useQuery` / `useMutation` hooks (createTRPCReact) plus RSC hydration (createHydrationHelpers). The Next counterpart of the `trpc` pattern.",
+  "framework": "next",
+  "detect": {
+    "deps": ["@trpc/react-query"],
+    "files": []
+  },
+  "dependsOn": ["drizzle"],
+  "integratesWith": ["better-auth-next"],
+  "deps": [
+    "@trpc/server",
+    "@trpc/client",
+    "@trpc/react-query",
+    "@tanstack/react-query",
+    "superjson",
+    "valibot"
+  ],
+  "env": [],
+  "files": [
+    { "from": "files/server/api/trpc.ts", "to": "<srcRoot>/server/api/trpc.ts" },
+    { "from": "files/server/api/root.ts", "to": "<srcRoot>/server/api/root.ts" },
+    { "from": "files/server/api/routers/health.router.ts", "to": "<srcRoot>/server/api/routers/health.router.ts" },
+    { "from": "files/trpc/react.tsx", "to": "<srcRoot>/trpc/react.tsx" },
+    { "from": "files/trpc/query-client.ts", "to": "<srcRoot>/trpc/query-client.ts" },
+    { "from": "files/trpc/server.ts", "to": "<srcRoot>/trpc/server.ts" },
+    { "from": "files/app/api/trpc/[trpc]/route.ts", "to": "<srcRoot>/app/api/trpc/[trpc]/route.ts" }
+  ],
+  "wiring": [
+    "Wrap the app in <TRPCReactProvider> in app/layout.tsx (it's a client component)."
+  ],
+  "notes": [
+    "Client usage: `api.<router>.<proc>.useQuery()` / `.useMutation()` from ~/trpc/react. RSC usage: `import { api, HydrateClient } from '~/trpc/server'` for prefetch + hydrate.",
+    "trpc.ts context calls better-auth getSession; if better-auth-next is NOT opt-in, strip the auth import, `session` from the context, and protectedProcedure."
+  ]
+}

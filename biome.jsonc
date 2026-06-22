@@ -10,6 +10,7 @@
       "!**/.output",
       "!**/.nitro",
       "!**/routeTree.gen.ts",
+      "!**/components/ui",
       "!patterns"
     ]
   },

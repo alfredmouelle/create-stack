@@ -47,3 +47,13 @@ from the stack's Biome / typecheck. Their correctness is anchored in the base ap
 - **data-table** — headless tables with TanStack Table (table + skeleton
   primitives, DataTable, InfiniteDataTable, SortableHeader). `framework: agnostic`
   — works in both Next and TanStack Start.
+
+Next.js variants (App Router) of the framework-coupled patterns:
+
+- **better-auth-next** — better-auth with `next/headers` session, `toNextJsHandler`
+  catch-all, server-component guards (`requireAuth`).
+- **trpc-next** — tRPC with the classic `api.x.useQuery` hooks (createTRPCReact) +
+  RSC hydration. `integratesWith` better-auth-next.
+
+bootstrap picks the variant matching the project's framework: `trpc`/`better-auth`
+for TanStack Start, `trpc-next`/`better-auth-next` for Next.

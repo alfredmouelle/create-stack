@@ -1,0 +1,39 @@
+{
+  "$schema": "../../pattern.schema.json",
+  "name": "better-auth-next",
+  "description": "better-auth v1 for Next.js App Router with the Drizzle adapter. Email+password + verification, optional Google OAuth, session via next/headers (react cache), toNextJsHandler catch-all route, and server-component guards. The Next counterpart of the `better-auth` pattern.",
+  "framework": "next",
+  "detect": {
+    "deps": ["better-auth"],
+    "files": ["src/app/api/auth/[...all]/route.ts"]
+  },
+  "dependsOn": ["drizzle"],
+  "integratesWith": ["trpc-next"],
+  "capabilities": ["mailer", "email-kit"],
+  "deps": ["better-auth"],
+  "env": [
+    "BETTER_AUTH_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_GOOGLE_CLIENT_ID",
+    "BETTER_AUTH_GOOGLE_CLIENT_SECRET"
+  ],
+  "files": [
+    { "from": "files/server/better-auth/config.ts", "to": "<srcRoot>/server/better-auth/config.ts" },
+    { "from": "files/server/better-auth/client.ts", "to": "<srcRoot>/server/better-auth/client.ts" },
+    { "from": "files/server/better-auth/server.ts", "to": "<srcRoot>/server/better-auth/server.ts" },
+    { "from": "files/server/better-auth/emails.tsx", "to": "<srcRoot>/server/better-auth/emails.tsx" },
+    { "from": "files/server/better-auth/index.ts", "to": "<srcRoot>/server/better-auth/index.ts" },
+    { "from": "files/server/auth/guards.ts", "to": "<srcRoot>/server/auth/guards.ts" },
+    { "from": "files/server/db/schemas/auth.schema.ts", "to": "<srcRoot>/server/db/schemas/auth.schema.ts" },
+    { "from": "files/app/api/auth/[...all]/route.ts", "to": "<srcRoot>/app/api/auth/[...all]/route.ts" }
+  ],
+  "wiring": [
+    "Append `export * from './auth.schema'` to <srcRoot>/server/db/schemas/index.ts (created by the drizzle pattern).",
+    "emails.tsx imports ~/server/email (mailer) and ~/emails/{reset-password,verify-email} (email-kit) — add both capabilities and the two templates.",
+    "Auth pages live in app/auth/* (server pages) with forms in app/auth/_components/* ('use client', shadcn Form + react-hook-form + valibot)."
+  ],
+  "notes": [
+    "No tanstackStartCookies — cookies are handled by toNextJsHandler. getSession uses next/headers + react cache (server.ts). Protect Server Components/pages with requireAuth() from server/auth/guards.",
+    "Add custom user columns via `additionalFields` in config.ts mirrored in auth.schema.ts."
+  ]
+}
