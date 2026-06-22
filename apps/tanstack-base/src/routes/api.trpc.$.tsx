@@ -1,4 +1,8 @@
+// Loads the TanStack Start augmentation that adds `server` to route options
+// (so this server route typechecks even without other react-start imports).
+
 import { createFileRoute } from '@tanstack/react-router'
+import type {} from '@tanstack/react-start'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { appRouter } from '~/server/api/root'
 import { createTRPCContext } from '~/server/api/trpc'

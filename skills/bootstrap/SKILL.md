@@ -80,6 +80,19 @@ Then:
   apps inherit the monorepo's root config, a fork needs its own).
 - `package.json`: set `name` to the project (drop the `@alfredmouelle/` scope),
   keep `author`, drop monorepo-only bits.
+- Create a standalone `pnpm-workspace.yaml` so a fresh install doesn't error on
+  native build scripts:
+  ```yaml
+  allowBuilds:
+    esbuild: true
+  onlyBuiltDependencies:
+    - esbuild
+    - sharp
+    - lightningcss
+  ```
+
+The base apps never pin `latest` — deps use caret ranges, so a fresh install
+resolves a coherent recent set.
 
 The base is the **maximal foundation** (baseline, shadcn, drizzle, better-auth,
 mailer, email-kit, trpc, data-table, theme toggle, date pickers, Dockerfile). A3
