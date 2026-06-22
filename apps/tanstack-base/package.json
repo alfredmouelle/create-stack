@@ -35,6 +35,7 @@
     "@tanstack/react-form": "^1.33.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-query-devtools": "^5.101.0",
+    "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-start": "latest",
     "@tanstack/router-plugin": "^1.132.0",
     "@trpc/client": "^11.17.0",
