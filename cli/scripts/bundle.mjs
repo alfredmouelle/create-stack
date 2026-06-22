@@ -43,4 +43,19 @@ cpSync(join(ROOT, 'packages/mailer/src/adapters'), join(OUT, 'packages/mailer/sr
   recursive: true,
 })
 
+// capabilities: manifest + package.json (dep ranges) + src (core + adapters, vendored on demand)
+for (const cap of ['storage', 'cache', 'logger', 'analytics', 'error-tracking', 'jobs']) {
+  cpSync(
+    join(ROOT, 'packages', cap, 'capability.json'),
+    join(OUT, 'packages', cap, 'capability.json'),
+  )
+  cpSync(join(ROOT, 'packages', cap, 'package.json'), join(OUT, 'packages', cap, 'package.json'))
+  cpSync(join(ROOT, 'packages', cap, 'src'), join(OUT, 'packages', cap, 'src'), { recursive: true })
+}
+
+// http: vendored cross-dependency for analytics/plausible and jobs/inngest
+cpSync(join(ROOT, 'packages/http/package.json'), join(OUT, 'packages/http/package.json'))
+cpSync(join(ROOT, 'packages/http/src'), join(OUT, 'packages/http/src'), { recursive: true })
+
+// biome-ignore lint/suspicious/noConsole: build script output
 console.log(`bundled stack assets → ${OUT}`)

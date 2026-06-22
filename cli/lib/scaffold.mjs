@@ -20,6 +20,7 @@ const PNPM_WORKSPACE = `allowBuilds:
   esbuild: true
   sharp: true
   lightningcss: true
+  protobufjs: true
 `
 
 // Generated explicitly: npm strips `.gitignore` from published tarballs, so the

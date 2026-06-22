@@ -16,6 +16,27 @@ const SCHEMAS = {
   AWS_REGION: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
   AWS_ACCESS_KEY_ID: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
   AWS_SECRET_ACCESS_KEY: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  // capabilities — all optional; adapters validate required-ness at first use.
+  // emptyStringAsUndefined (env.ts) turns blank placeholders into undefined.
+  S3_BUCKET: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  S3_REGION: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  R2_BUCKET: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  R2_ACCOUNT_ID: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  R2_ACCESS_KEY_ID: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  R2_SECRET_ACCESS_KEY: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  GCS_BUCKET: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  GOOGLE_CLOUD_PROJECT: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  STORAGE_LOCAL_DIR: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  REDIS_URL: 'v.optional(v.pipe(v.string(), v.url()))',
+  POSTHOG_API_KEY: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  POSTHOG_HOST: 'v.optional(v.pipe(v.string(), v.url()))',
+  PLAUSIBLE_DOMAIN: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  PLAUSIBLE_API_HOST: 'v.optional(v.pipe(v.string(), v.url()))',
+  SENTRY_DSN: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  SENTRY_ENVIRONMENT: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  INNGEST_EVENT_KEY: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  INNGEST_SIGNING_KEY: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
+  TRIGGER_SECRET_KEY: 'v.optional(v.pipe(v.string(), v.minLength(1)))',
 }
 
 /** Placeholder values for generated .env files. */

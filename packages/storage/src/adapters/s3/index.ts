@@ -46,6 +46,7 @@ interface S3GetBody {
 }
 
 interface S3GetResult {
+  // biome-ignore lint/style/useNamingConvention: mirrors the S3 SDK response shape (GetObjectCommandOutput.Body)
   Body?: S3GetBody
 }
 

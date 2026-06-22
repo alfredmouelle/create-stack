@@ -6,6 +6,12 @@
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { buildProject } from './lib/build.mjs'
+import {
+  adapterChoices,
+  CAPABILITIES,
+  capabilityChoices,
+  resolveAdapter,
+} from './lib/capabilities.mjs'
 import { isDirEmpty, run } from './lib/util.mjs'
 
 const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
@@ -56,14 +62,24 @@ function normalize(picked, mailer) {
   return { kept, mailerProvider }
 }
 
+/** Read --<capability> flags into { capability: adapter } (default adapter if bare). */
+function collectCapabilityFlags(flags) {
+  const out = {}
+  for (const cap of CAPABILITIES) {
+    if (cap in flags) out[cap] = resolveAdapter(cap, flags[cap])
+  }
+  return out
+}
+
 function collectFromFlags(args) {
   const argDir = args._[0]
   if (!argDir) throw new Error('Project name is required (positional) in non-interactive mode')
   const framework = args.flags.framework === 'next' ? 'next' : 'tanstack'
   const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
   const { kept, mailerProvider } = normalize(picked, args.flags.mailer)
+  const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
-  return { argDir, projectName: argDir, framework, kept, mailerProvider, doInstall }
+  return { argDir, projectName: argDir, framework, kept, mailerProvider, capabilities, doInstall }
 }
 
 async function collectFromPrompts(argDir) {
@@ -118,12 +134,56 @@ async function collectFromPrompts(argDir) {
     }),
   )
 
+  const capPicked = cancelled(
+    await p.multiselect({
+      message: 'Capabilities (space to toggle, swappable behind a port)',
+      required: false,
+      initialValues: [],
+      options: capabilityChoices(),
+    }),
+  )
+
+  const capabilities = {}
+  for (const cap of capPicked) {
+    const { defaultAdapter, options } = adapterChoices(cap)
+    capabilities[cap] = cancelled(
+      await p.select({
+        message: `${cap} adapter`,
+        options,
+        initialValue: defaultAdapter,
+      }),
+    )
+  }
+
   const doInstall = cancelled(
     await p.confirm({ message: 'Install dependencies and verify now?', initialValue: true }),
   )
 
   const { kept, mailerProvider } = normalize(picked, mailer)
-  return { argDir, projectName, framework, kept, mailerProvider, doInstall }
+  return { argDir, projectName, framework, kept, mailerProvider, capabilities, doInstall }
+}
+
+const pnpmRun = (script, projectDir, opts = {}) =>
+  run('pnpm', ['--config.verify-deps-before-run=false', 'run', script], {
+    cwd: projectDir,
+    ...opts,
+  })
+
+/** Install deps, normalize vendored imports, then report typecheck + biome status. */
+function installAndVerify(projectDir, capabilities) {
+  p.log.step('pnpm install')
+  run('pnpm', ['install'], { cwd: projectDir })
+  // vendored capabilities rewrite cross-package imports (~/lib/http); let biome
+  // re-sort/normalize them so the initial commit is lint-clean.
+  if (Object.keys(capabilities ?? {}).length) {
+    pnpmRun('check:write', projectDir, { stdio: 'ignore' })
+  }
+  p.log.step('Verifying (typecheck + biome)')
+  const tc = pnpmRun('typecheck', projectDir)
+  const lint = pnpmRun('check', projectDir)
+  p.log[tc && lint ? 'success' : 'warn'](
+    tc && lint ? 'typecheck + biome clean' : 'verify reported issues (see output above)',
+  )
 }
 
 function execute(a) {
@@ -138,20 +198,7 @@ function execute(a) {
   buildProject({ ...a, projectDir })
   s.stop('Project scaffolded')
 
-  if (a.doInstall) {
-    p.log.step('pnpm install')
-    run('pnpm', ['install'], { cwd: projectDir })
-    p.log.step('Verifying (typecheck + biome)')
-    const tc = run('pnpm', ['--config.verify-deps-before-run=false', 'run', 'typecheck'], {
-      cwd: projectDir,
-    })
-    const lint = run('pnpm', ['--config.verify-deps-before-run=false', 'run', 'check'], {
-      cwd: projectDir,
-    })
-    p.log[tc && lint ? 'success' : 'warn'](
-      tc && lint ? 'typecheck + biome clean' : 'verify reported issues (see output above)',
-    )
-  }
+  if (a.doInstall) installAndVerify(projectDir, a.capabilities)
 
   // fresh repo + initial commit (also satisfies Biome vcs.useIgnoreFile).
   // commit is best-effort: skipped if git identity unset, staged tree left in place.
@@ -170,12 +217,14 @@ function execute(a) {
   }
 
   const keptMailer = a.mailerProvider !== 'none'
+  const capEntries = Object.entries(a.capabilities ?? {})
   const lines = [
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
     `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
     `Mailer: ${keptMailer ? a.mailerProvider : '(none)'}`,
+    `Capabilities: ${capEntries.map(([c, ad]) => `${c} (${ad})`).join(', ') || '(none)'}`,
     '',
-    'Add more tools (storage, jobs, cache, analytics, …) with the add-capability skill.',
+    'Add more tools later with the add-capability skill.',
     '',
     'Next:',
     `  cd ${a.argDir ?? a.projectName}`,
@@ -192,7 +241,9 @@ async function main() {
   const nonInteractive =
     args.flags.yes ||
     args.flags.y ||
-    ['framework', 'foundations', 'mailer', 'no-install'].some((k) => k in args.flags)
+    ['framework', 'foundations', 'mailer', 'no-install', ...CAPABILITIES].some(
+      (k) => k in args.flags,
+    )
 
   const answers = nonInteractive ? collectFromFlags(args) : await collectFromPrompts(args._[0])
 

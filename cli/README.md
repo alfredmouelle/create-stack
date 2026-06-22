@@ -4,9 +4,10 @@
 
 Interactive, **deterministic** project installer. It forks a fully-wired base app
 (**Next.js App Router** or **TanStack Start**) and strips it down to exactly the
-foundations and provider you pick — Drizzle, tRPC, better-auth, data tables and a
-mailer — then stamps identity, generates `.env`, initializes git and verifies the
-result (typecheck + Biome).
+foundations and provider you pick — Drizzle, tRPC, better-auth, data tables, a
+mailer and optional capabilities (storage, cache, jobs, logger, analytics,
+error-tracking) — then stamps identity, generates `.env`, initializes git and
+verifies the result (typecheck + Biome).
 
 No template guesswork: the output is a real, buildable app from day one.
 
@@ -46,12 +47,20 @@ not exist yet. In non-interactive mode it is required.
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
 | `--foundations` | csv of `drizzle,trpc,better-auth,data-table` | all | Foundations to keep; the rest are stripped. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. `none` is rejected when `better-auth` is kept. |
+| `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage capability (omit to skip). |
+| `--cache` | `redis` \| `memory` | `redis` | Key/value cache capability (omit to skip). |
+| `--jobs` | `inngest` \| `trigger` \| `memory` | `inngest` | Background jobs capability (omit to skip). `inngest` also scaffolds the serve route. |
+| `--logger` | `pino` \| `console` | `pino` | Structured logging capability (omit to skip). |
+| `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics capability (omit to skip). |
+| `--error-tracking` | `sentry` \| `console` | `sentry` | Error reporting capability (omit to skip). |
 | `--no-install` | — | install on | Skip `pnpm install` + verification. |
 | `--yes`, `-y` | — | — | Non-interactive with all defaults. |
 
-Passing any of `--framework`, `--foundations`, `--mailer` or `--no-install`
-(or `--yes`) switches the CLI to non-interactive mode; missing values fall back
-to the defaults above.
+Each capability flag is optional: pass it (bare for the default adapter, or with a
+value) to vendor that capability; omit it to leave it out. Passing any selection
+flag — `--framework`, `--foundations`, `--mailer`, any capability, or `--no-install`
+(or `--yes`) — switches the CLI to non-interactive mode; missing values fall back to
+the defaults above.
 
 ### Dependency resolution
 
@@ -75,6 +84,10 @@ pnpm dlx @alfredmouelle/create-stack api --framework next \
 
 # Minimal: Drizzle only, no mailer
 pnpm dlx @alfredmouelle/create-stack db-svc --foundations drizzle --mailer none
+
+# With capabilities: R2 storage, Redis cache, Inngest jobs, Sentry errors
+pnpm dlx @alfredmouelle/create-stack my-app \
+  --storage r2 --cache --jobs --error-tracking
 ```
 
 ## What you get
@@ -92,12 +105,27 @@ pnpm dlx @alfredmouelle/create-stack db-svc --foundations drizzle --mailer none
 Unselected foundations are removed cleanly (files, deps, env vars and wiring),
 and the project is left **bootable and green** (typecheck + Biome).
 
-## Adding more capabilities
+## Capabilities
 
-The base bakes in the **mailer** (chosen via `--mailer`). Other capabilities —
-storage, jobs, cache, logger, analytics, error-tracking, http — are added *after*
-scaffolding with the `add-capability` skill (it wires each adapter's env/config per
-provider, which this CLI deliberately leaves out).
+Beyond the **mailer** (always baked in, chosen via `--mailer`), the CLI can vendor
+any of the swappable capabilities at scaffold time — pick them in the wizard or via
+flags. Each is copied behind a port (into `src/server/<capability>/`) with a generated
+composition root that reads typed env and constructs the adapter lazily, so the app
+boots even before you fill in the keys:
+
+| Capability | Adapters | Notes |
+| --- | --- | --- |
+| `storage` | s3, r2, gcs, local | `getStorage()` accessor. |
+| `cache` | redis, memory | `getCache()` accessor. |
+| `jobs` | inngest, trigger, memory | `inngest` also scaffolds `serve.ts` + the framework route. |
+| `logger` | pino, console | `getLogger()` accessor. |
+| `analytics` | posthog, plausible, noop | `plausible` vendors `~/lib/http`. |
+| `error-tracking` | sentry, console | `getErrorTracking()` accessor. |
+
+Adapter deps and env keys are wired into `package.json` and `src/env.ts` automatically;
+cross-package imports (`@alfredmouelle/http`) are vendored into `src/lib/http` and
+rewritten. To add a capability to an **existing** project (or swap an adapter), use the
+`add-capability` skill.
 
 ## After scaffolding
 
@@ -110,8 +138,8 @@ pnpm dev
 
 ## Notes
 
-- The published package is **self-contained**: the base apps, pattern manifests
-  and mailer adapters are bundled at publish time, so `pnpm dlx` needs nothing but
-  this package.
+- The published package is **self-contained**: the base apps, the mailer adapters
+  and every capability package (`+ http`) are bundled at publish time, so `pnpm dlx`
+  needs nothing but this package.
 - The generated project is a fresh git repo (`git init`, files staged) — make your
   first commit when ready.
