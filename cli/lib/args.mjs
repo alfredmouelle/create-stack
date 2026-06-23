@@ -1,5 +1,4 @@
-// Pure argv parsing + selection normalization, factored out of index.mjs so it can be
-// unit-tested without booting the CLI (which runs main() on import).
+// Pure argv parsing + selection normalization, split out of index.mjs to be unit-testable.
 
 export const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
 

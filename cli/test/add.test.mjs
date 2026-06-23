@@ -1,6 +1,5 @@
-// `create-stack add` engine: vendor a capability into an existing project and merge its
-// deps + env incrementally, without disturbing what's already there. Structural + fast;
-// the typecheck proof that the merged env.ts compiles lives in smoke.test.mjs.
+// add engine: vendor into an existing project, merge deps + env without disturbing
+// existing keys. The typecheck proof of the merged env.ts lives in smoke.test.mjs.
 
 import { afterAll, describe, expect, test } from 'vitest'
 import { addCapability, build, cleanup, exists, read, readJSON } from './helpers.mjs'

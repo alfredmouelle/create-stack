@@ -115,14 +115,7 @@ export function writeEnv(projectDir, keys, requiredKeys = []) {
 
 const envLine = (k, required) => `${k}=${PLACEHOLDERS[k] ?? (required ? 'changeme' : '')}`
 
-/**
- * Append keys to an existing project's env.ts + .env files without rewriting what's
- * there — used by `create-stack add`. Inserts into the generated `server` / `runtimeEnv`
- * blocks (2-space-indented, the shape writeEnv emits) and skips keys already present.
- * @param {string} projectDir
- * @param {string[]} keys
- * @param {string[]} [requiredKeys]
- */
+/** Append new keys into the generated env.ts server/runtimeEnv blocks + .env files, leaving existing keys intact. */
 export function appendEnv(projectDir, keys, requiredKeys = []) {
   const required = new Set(requiredKeys)
   const known = keys.filter((k) => SCHEMAS[k])

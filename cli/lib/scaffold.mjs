@@ -94,8 +94,7 @@ export function forkBase(framework, projectDir) {
     if (!run('rsync', args)) throw new Error('rsync failed while forking the base app')
     return
   }
-  // RSYNC_EXCLUDES holds path-ish entries (e.g. src/routeTree.gen.ts); cpSync filters by
-  // basename, which is unambiguous for every excluded name in the base apps.
+  // cpSync filters by basename — unambiguous for every excluded name in the base apps
   const basenames = RSYNC_EXCLUDES.map((e) => e.slice(e.lastIndexOf('/') + 1))
   copyTree(base, projectDir, basenames)
 }

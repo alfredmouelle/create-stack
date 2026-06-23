@@ -1,6 +1,5 @@
-// `create-stack add <capability> [adapter]` — vendor one capability into an EXISTING
-// create-stack project. Reuses vendorCapability (same engine as the scaffold) and merges
-// its dep/env deltas incrementally, so nothing already in package.json / env.ts is lost.
+// `create-stack add` — vendor a capability into an existing project, merging dep/env
+// deltas incrementally (same engine as the scaffold) so nothing existing is lost.
 
 import { vendorCapability } from './capabilities.mjs'
 import { appendEnv } from './env.mjs'

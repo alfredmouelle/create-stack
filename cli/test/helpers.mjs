@@ -1,6 +1,5 @@
-// Test harness shared by build.test.mjs (fast, structural) and smoke.test.mjs (heavy,
-// install + verify). Forks the LIVE monorepo source via CREATE_STACK_STACK_ROOT, so a
-// stale cli/_stack snapshot never masks a broken base app or strip seam.
+// Shared test harness. Forks the live monorepo via CREATE_STACK_STACK_ROOT so a stale
+// cli/_stack snapshot never masks a broken base app or strip seam.
 
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -11,12 +10,10 @@ import { ALL_FOUNDATIONS, normalize } from '../lib/args.mjs'
 const here = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = resolve(here, '..', '..')
 
-// Must be set before lib/paths.mjs is evaluated → dynamic-import buildProject below.
+// set before lib/paths.mjs evaluates → dynamic-import the consumers below
 process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 
 const { buildProject } = await import('../lib/build.mjs')
-// Re-exported from here so the env above is set before lib/paths.mjs evaluates,
-// regardless of how a test file orders its imports.
 export const { addCapability } = await import('../lib/add.mjs')
 
 const PM = {

@@ -7,9 +7,7 @@ import { fileURLToPath } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const bundled = resolve(here, '..', '_stack')
 
-// Forkable source (base apps + mailer adapters): _stack when published, monorepo root
-// in dev. CREATE_STACK_STACK_ROOT forces a source — the test harness points it at the
-// live monorepo so it never forks a stale _stack snapshot.
+// Forkable source: _stack when published, monorepo root in dev; CREATE_STACK_STACK_ROOT overrides (tests).
 export const STACK_ROOT = process.env.CREATE_STACK_STACK_ROOT
   ? resolve(process.env.CREATE_STACK_STACK_ROOT)
   : existsSync(bundled)

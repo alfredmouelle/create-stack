@@ -1,7 +1,5 @@
-// Fast, install-free matrix: build each config, assert the fork is internally
-// consistent — kept foundations present, dropped ones gone (files, deps, env) with
-// no dangling imports left behind. A green run here means a buildable shape; the
-// heavy proof (typecheck + biome) lives in smoke.test.mjs.
+// Fast, install-free matrix: kept foundations present, dropped ones gone (files, deps,
+// env) with no dangling imports. The typecheck/biome proof lives in smoke.test.mjs.
 
 import { afterAll, describe, expect, test } from 'vitest'
 import { build, cleanup, exists, filesImporting, read, readJSON } from './helpers.mjs'
