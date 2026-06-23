@@ -15,6 +15,27 @@ description: >-
 Adds one capability to the current project from the **reference stack**, wired
 behind a port so the provider is swappable later by changing one line + env vars.
 
+## Prefer the CLI for create-stack projects
+
+If the target is a **create-stack-generated project** and you want a standard
+capability/adapter, use the CLI — it does all of the below deterministically:
+
+```bash
+create-stack add <capability> [adapter]   # e.g. create-stack add storage r2
+create-stack add                          # interactive multi-select
+create-stack add cache upstash            # re-add = swap the adapter
+create-stack add cache upstash --keep     # keep the previous adapter alongside
+```
+
+It covers every capability here — `storage`, `cache`, `jobs`, `logger`,
+`analytics`, `error-tracking`, `mailer`, `email-kit`, `http` — detecting the
+framework, vendoring behind the port, merging deps/env, and installing + verifying.
+
+**Use this skill instead when** the CLI can't: the project diverged from the
+create-stack conventions (non-`~/` alias, hand-edited `env.ts`), an SDK is already
+installed at a different major (verify with find-docs and align), the project isn't
+a create-stack scaffold at all, or the integration needs judgement the CLI doesn't make.
+
 ## Reference stack location
 
 Default: `/Users/alfredmouelle/Developer/stack`. Override with `$STACK_REPO` if

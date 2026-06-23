@@ -155,9 +155,19 @@ create-stack add storage r2      # non-interactive: one capability + adapter
 create-stack add cache --no-install
 ```
 
-It detects the framework from the project, vendors into `src/server/<capability>/`, appends
-the new env keys, and installs + verifies (unless `--no-install`). If the capability already
-exists it asks before overwriting (`--force` to skip the prompt).
+Targets: the six port capabilities (`storage`, `cache`, `jobs`, `logger`, `analytics`,
+`error-tracking`) plus **`mailer`** (resend / brevo / ses), **`email-kit`** (React Email
+primitives) and **`http`** (fetch + response helpers). It detects the framework, vendors
+behind the port, appends env keys, and installs + verifies (unless `--no-install`).
+
+**Swapping an adapter** — re-add a capability with a different adapter and it swaps,
+dropping the old adapter's files + deps:
+
+```bash
+create-stack add cache upstash         # redis → upstash
+create-stack add mailer brevo          # resend → brevo
+create-stack add cache upstash --keep  # keep both adapters; composition root uses the new one
+```
 
 ## After scaffolding
 
