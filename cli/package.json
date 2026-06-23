@@ -35,12 +35,18 @@
   ],
   "scripts": {
     "bundle": "node scripts/bundle.mjs",
-    "prepack": "node scripts/bundle.mjs"
+    "prepack": "node scripts/bundle.mjs",
+    "test": "vitest run test/build.test.mjs",
+    "test:watch": "vitest test/build.test.mjs",
+    "test:smoke": "RUN_SMOKE=1 vitest run test/smoke.test.mjs"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@clack/prompts": "^1.6.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.9"
   }
 }

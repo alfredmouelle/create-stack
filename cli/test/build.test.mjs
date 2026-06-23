@@ -1,0 +1,100 @@
+// Fast, install-free matrix: build each config, assert the fork is internally
+// consistent — kept foundations present, dropped ones gone (files, deps, env) with
+// no dangling imports left behind. A green run here means a buildable shape; the
+// heavy proof (typecheck + biome) lives in smoke.test.mjs.
+
+import { afterAll, describe, expect, test } from 'vitest'
+import { build, cleanup, exists, filesImporting, read, readJSON } from './helpers.mjs'
+
+afterAll(cleanup)
+
+// Foundation → marker dir/file, npm dep, and the import specifiers that must vanish
+// once it's stripped.
+const FOUND_DIR = {
+  drizzle: 'src/server/db',
+  trpc: 'src/trpc',
+  'better-auth': 'src/server/better-auth',
+  'data-table': 'src/components/data-table.tsx',
+}
+const FOUND_DEP = {
+  drizzle: 'drizzle-orm',
+  trpc: '@trpc/server',
+  'better-auth': 'better-auth',
+  'data-table': '@tanstack/react-table',
+}
+const DANGLING = {
+  trpc: ['~/trpc', '~/server/api'],
+  'better-auth': ['~/server/better-auth'],
+  drizzle: ['~/server/db'],
+  'data-table': [
+    '~/components/data-table',
+    '~/components/infinite-data-table',
+    '~/components/sortable-header',
+  ],
+}
+const ALL = Object.keys(FOUND_DIR)
+
+const allDeps = (pkg) => ({ ...pkg.dependencies, ...pkg.devDependencies })
+
+// each foundation: present iff kept (files + deps), and no dangling imports if dropped
+function assertFoundations(dir, kept, deps) {
+  for (const f of ALL) {
+    const on = kept.has(f)
+    expect(exists(`${dir}/${FOUND_DIR[f]}`), `${f} dir present=${on}`).toBe(on)
+    expect(FOUND_DEP[f] in deps, `${f} dep present=${on}`).toBe(on)
+    if (!on) expect(filesImporting(dir, DANGLING[f]), `dangling ${f} imports`).toEqual([])
+  }
+}
+
+function assertMailer(dir, result, deps) {
+  expect('resend' in deps, 'resend dep').toBe(result.mailerProvider === 'resend')
+  if (!result.keptMailer) {
+    expect(exists(`${dir}/src/server/email`), 'email dir').toBe(false)
+    expect(filesImporting(dir, ['~/server/email']), 'dangling email imports').toEqual([])
+  }
+}
+
+function assertCapabilities(dir, env, capabilities = {}) {
+  for (const cap of Object.keys(capabilities)) {
+    expect(exists(`${dir}/src/server/${cap}`), `${cap} vendored`).toBe(true)
+  }
+  if (capabilities.storage === 's3') expect(env).toContain('S3_BUCKET')
+  if (capabilities.cache === 'redis') expect(env).toContain('REDIS_URL')
+}
+
+// name, foundations (omit = all), mailer (omit = resend), capabilities
+const CONFIGS = [
+  { name: 'full' },
+  { name: 'full-caps', capabilities: { storage: 's3', cache: 'redis' } },
+  { name: 'drizzle-trpc', foundations: ['drizzle', 'trpc'], mailer: 'ses' },
+  { name: 'auth-no-trpc', foundations: ['better-auth'] },
+  { name: 'data-table-only', foundations: ['data-table'], mailer: 'none' },
+  { name: 'drizzle-only', foundations: ['drizzle'], mailer: 'none' },
+]
+
+for (const framework of ['tanstack', 'next']) {
+  describe(framework, () => {
+    for (const cfg of CONFIGS) {
+      test(cfg.name, () => {
+        const { dir, result } = build({ ...cfg, framework })
+        const kept = new Set(result.kept)
+        const pkg = readJSON(`${dir}/package.json`)
+        const deps = allDeps(pkg)
+        const env = exists(`${dir}/.env.example`) ? read(`${dir}/.env.example`) : ''
+
+        expect(pkg.name).toBe(cfg.name)
+        expect(pkg.private).toBe(true)
+        expect(exists(`${dir}/src/env.ts`)).toBe(true)
+
+        assertFoundations(dir, kept, deps)
+        assertMailer(dir, result, deps)
+
+        // env keys track the selection
+        expect(env.includes('DATABASE_URL')).toBe(kept.has('drizzle'))
+        expect(env.includes('BETTER_AUTH_SECRET')).toBe(kept.has('better-auth'))
+
+        assertCapabilities(dir, env, cfg.capabilities)
+      })
+    }
+  })
+}

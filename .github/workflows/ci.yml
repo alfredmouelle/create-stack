@@ -1,0 +1,51 @@
+name: CI
+
+# Verifies the CLI scaffolds correctly before anything is published.
+# Fast job: install-free structural matrix. Smoke job: real install + typecheck + biome
+# on a generated project, one runner per base app.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-tests:
+    name: build matrix (fast)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @alfredmouelle/create-stack test
+
+  smoke:
+    name: smoke (${{ matrix.framework }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [tanstack, next]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @alfredmouelle/create-stack test:smoke
+        env:
+          SMOKE_FRAMEWORK: ${{ matrix.framework }}
