@@ -47,11 +47,15 @@ selection flag → **non-interactive** mode (scriptable / CI).
 ## Usage
 
 ```
-create-stack [project] [flags]
+create-stack [project] [flags]            # scaffold a new project
+create-stack add [capability] [adapter]   # add capabilities to the current project
 ```
 
 `project` is the target directory (and default package name). It must be empty or
 not exist yet. In non-interactive mode it is required.
+
+`create-stack --help` prints the full flag reference; `create-stack --version` prints
+the version.
 
 ### Flags
 
@@ -137,8 +141,23 @@ boots even before you fill in the keys:
 
 Adapter deps and env keys are wired into `package.json` and `src/env.ts` automatically;
 cross-package imports (`@alfredmouelle/http`) are vendored into `src/lib/http` and
-rewritten. To add a capability to an **existing** project (or swap an adapter), use the
-`add-capability` skill.
+rewritten.
+
+### Adding capabilities later
+
+Run `create-stack add` from the root of a generated project to vendor more capabilities
+into it — same engine as the scaffold, merged incrementally so nothing already in
+`package.json` / `src/env.ts` is disturbed:
+
+```bash
+create-stack add                 # interactive multi-select + adapter picker
+create-stack add storage r2      # non-interactive: one capability + adapter
+create-stack add cache --no-install
+```
+
+It detects the framework from the project, vendors into `src/server/<capability>/`, appends
+the new env keys, and installs + verifies (unless `--no-install`). If the capability already
+exists it asks before overwriting (`--force` to skip the prompt).
 
 ## After scaffolding
 

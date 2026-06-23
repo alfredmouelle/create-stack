@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
+import { addCapability, capabilityDir } from './lib/add.mjs'
+import { ALL_FOUNDATIONS, csv, normalize, parseArgs } from './lib/args.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
   adapterChoices,
@@ -15,7 +17,7 @@ import {
   resolveAdapter,
 } from './lib/capabilities.mjs'
 import { detectPackageManager } from './lib/package-manager.mjs'
-import { isDirEmpty, run } from './lib/util.mjs'
+import { exists, isDirEmpty, join, remove, run } from './lib/util.mjs'
 
 // the PM that launched us (npx/pnpm dlx/yarn create/bun create); drives install + run.
 const pm = detectPackageManager()
@@ -27,10 +29,14 @@ const VERSION = JSON.parse(
 const HELP = `create-stack — fork a base app, strip it to your selection.
 
 Usage:
-  create-stack [project] [flags]
+  create-stack [project] [flags]          Scaffold a new project
+  create-stack add [capability] [adapter] Add capabilities to the current project
 
-Run with no flags for an interactive wizard; pass any selection flag (or --yes)
-for non-interactive mode.
+Run either command with no args for an interactive picker; pass a selection flag
+(or --yes), or a capability name, for non-interactive mode.
+
+Capabilities (for \`add\`): storage, cache, jobs, logger, analytics, error-tracking.
+\`add\` with no capability opens a multi-select; --force overwrites existing ones.
 
 Flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
@@ -47,54 +53,12 @@ Flags:
   -h, --help                       Show this help
   -v, --version                    Print version`
 
-const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
-
 const cancelled = (v) => {
   if (p.isCancel(v)) {
     p.cancel('Aborted.')
     process.exit(0)
   }
   return v
-}
-
-/** Minimal flag parser: positional dir + --key value / --flag / short -abc booleans. */
-function parseArgs(argv) {
-  const out = { _: [], flags: {} }
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i]
-    if (a.startsWith('--')) {
-      const key = a.slice(2)
-      const next = argv[i + 1]
-      if (next && !next.startsWith('-')) {
-        out.flags[key] = next
-        i++
-      } else {
-        out.flags[key] = true
-      }
-    } else if (a.length > 1 && a[0] === '-') {
-      for (const ch of a.slice(1)) out.flags[ch] = true
-    } else {
-      out._.push(a)
-    }
-  }
-  return out
-}
-
-const csv = (v) =>
-  typeof v === 'string'
-    ? v
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : []
-
-/** Resolve hard deps + mailer's better-auth requirement. */
-function normalize(picked, mailer) {
-  const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
-  if (kept.has('trpc') || kept.has('better-auth')) kept.add('drizzle')
-  let mailerProvider = mailer ?? 'resend'
-  if (kept.has('better-auth') && mailerProvider === 'none') mailerProvider = 'resend'
-  return { kept, mailerProvider }
 }
 
 /** Read --<capability> flags into { capability: adapter } (default adapter if bare). */
@@ -256,7 +220,7 @@ function execute(a) {
     `Mailer: ${keptMailer ? a.mailerProvider : '(none)'}`,
     `Capabilities: ${capEntries.map(([c, ad]) => `${c} (${ad})`).join(', ') || '(none)'}`,
     '',
-    'Add more tools later with the add-capability skill.',
+    'Add more tools later: create-stack add <capability>.',
     '',
     'Next:',
     `  cd ${a.argDir ?? a.projectName}`,
@@ -265,6 +229,91 @@ function execute(a) {
   lines.push('  cp .env.example .env   # fill in the values', `  ${pm.devCmd}`)
   p.note(lines.join('\n'), 'Done')
   p.outro(`Created ${a.projectName}`)
+}
+
+/** Which {cap, adapter} pairs to add: positional args (non-interactive), else a picker. */
+async function resolveAddSelections(args) {
+  if (args._[1]) {
+    const cap = args._[1]
+    if (!CAPABILITIES.includes(cap)) {
+      p.cancel(`Unknown capability: ${cap} — pick one of ${CAPABILITIES.join(', ')}`)
+      process.exit(1)
+    }
+    return [{ cap, adapter: resolveAdapter(cap, args._[2]) }] // resolveAdapter throws on a bad value
+  }
+  const caps = cancelled(
+    await p.multiselect({
+      message: 'Capabilities to add (space to toggle)',
+      required: true,
+      options: capabilityChoices(),
+    }),
+  )
+  const selections = []
+  for (const cap of caps) {
+    const { defaultAdapter, options } = adapterChoices(cap)
+    selections.push({
+      cap,
+      adapter: cancelled(
+        await p.select({ message: `${cap} adapter`, options, initialValue: defaultAdapter }),
+      ),
+    })
+  }
+  return selections
+}
+
+/** Drop selections whose dir already exists unless overwritten (--force or a prompt). */
+async function filterCollisions(projectDir, selections, force) {
+  const todo = []
+  for (const sel of selections) {
+    const dest = join(projectDir, capabilityDir(sel.cap))
+    if (exists(dest)) {
+      const overwrite =
+        force ||
+        cancelled(
+          await p.confirm({
+            message: `${sel.cap} already exists — overwrite?`,
+            initialValue: false,
+          }),
+        )
+      if (!overwrite) continue
+      remove(dest)
+    }
+    todo.push(sel)
+  }
+  return todo
+}
+
+/** `create-stack add [capability] [adapter]` — vendor capabilities into the cwd project. */
+async function runAdd(args) {
+  const projectDir = resolve(process.cwd())
+  if (!exists(join(projectDir, 'package.json'))) {
+    p.cancel('No package.json here — run this from the root of a create-stack project.')
+    process.exit(1)
+  }
+
+  p.intro('create-stack add')
+  const selections = await resolveAddSelections(args)
+  const todo = await filterCollisions(projectDir, selections, args.flags.force)
+  if (!todo.length) {
+    p.cancel('Nothing to add.')
+    process.exit(1)
+  }
+
+  const added = todo.map((sel) => ({ ...sel, ...addCapability({ projectDir, ...sel }) }))
+  if (!args.flags['no-install']) {
+    installAndVerify(projectDir, Object.fromEntries(added.map((a) => [a.cap, a.adapter])))
+  }
+
+  p.note(
+    added
+      .map(
+        (a) =>
+          `${a.cap} (${a.adapter}) → ${capabilityDir(a.cap)}/  env: ${a.envKeys.join(', ') || '(none)'}`,
+      )
+      .join('\n'),
+    'Added — fill the env keys in .env',
+  )
+  p.outro(`Added ${added.map((a) => a.cap).join(', ')}`)
 }
 
 async function main() {
@@ -276,6 +325,11 @@ async function main() {
   }
   if (args.flags.version || args.flags.v) {
     process.stdout.write(`${VERSION}\n`)
+    return
+  }
+
+  if (args._[0] === 'add') {
+    await runAdd(args)
     return
   }
 

@@ -6,6 +6,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ALL_FOUNDATIONS, normalize } from '../lib/args.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = resolve(here, '..', '..')
@@ -14,17 +15,9 @@ export const REPO_ROOT = resolve(here, '..', '..')
 process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 
 const { buildProject } = await import('../lib/build.mjs')
-
-const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
-
-/** Pre-resolve hard deps the way index.mjs's normalize() does, so configs stay terse. */
-function normalize(picked, mailer) {
-  const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
-  if (kept.has('trpc') || kept.has('better-auth')) kept.add('drizzle')
-  let mailerProvider = mailer ?? 'resend'
-  if (kept.has('better-auth') && mailerProvider === 'none') mailerProvider = 'resend'
-  return { kept, mailerProvider }
-}
+// Re-exported from here so the env above is set before lib/paths.mjs evaluates,
+// regardless of how a test file orders its imports.
+export const { addCapability } = await import('../lib/add.mjs')
 
 const PM = {
   name: 'pnpm',

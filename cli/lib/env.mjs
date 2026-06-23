@@ -3,7 +3,7 @@
 // the generated code mandates via `required(env.X)`) are emitted without v.optional
 // and always carry a non-empty placeholder, so the fresh project still boots/builds.
 
-import { editFile, join, write } from './util.mjs'
+import { editFile, exists, join, read, write } from './util.mjs'
 
 /** Inner valibot validator per env key (the optional wrapper is added per call). */
 const SCHEMAS = {
@@ -111,4 +111,44 @@ export function writeEnv(projectDir, keys, requiredKeys = []) {
   const body = `${lines.join('\n')}\n`
   write(join(projectDir, '.env.example'), body)
   write(join(projectDir, '.env'), body)
+}
+
+const envLine = (k, required) => `${k}=${PLACEHOLDERS[k] ?? (required ? 'changeme' : '')}`
+
+/**
+ * Append keys to an existing project's env.ts + .env files without rewriting what's
+ * there — used by `create-stack add`. Inserts into the generated `server` / `runtimeEnv`
+ * blocks (2-space-indented, the shape writeEnv emits) and skips keys already present.
+ * @param {string} projectDir
+ * @param {string[]} keys
+ * @param {string[]} [requiredKeys]
+ */
+export function appendEnv(projectDir, keys, requiredKeys = []) {
+  const required = new Set(requiredKeys)
+  const known = keys.filter((k) => SCHEMAS[k])
+
+  editFile(join(projectDir, 'src/env.ts'), (src) => {
+    const add = known.filter((k) => !new RegExp(`\\n {4}${k}:`).test(src))
+    if (!add.length) return src
+    const serverLines = add
+      .map((k) => indent(`${k}: ${renderSchema(k, required.has(k))},`))
+      .join('\n')
+    const runtimeLines = add.map((k) => indent(`${k}: process.env.${k},`)).join('\n')
+    return src
+      .replace(/( {2}server: \{[\s\S]*?)(\n {2}\},)/, `$1\n${serverLines}$2`)
+      .replace(/( {2}runtimeEnv: \{[\s\S]*?)(\n {2}\},)/, `$1\n${runtimeLines}$2`)
+  })
+
+  for (const file of ['.env.example', '.env']) {
+    const path = join(projectDir, file)
+    if (!exists(path)) continue
+    const cur = read(path)
+    const have = new Set(cur.split('\n').map((l) => l.split('=')[0]))
+    const add = known.filter((k) => !have.has(k))
+    if (!add.length) continue
+    write(
+      path,
+      `${cur.replace(/\n*$/, '')}\n${add.map((k) => envLine(k, required.has(k))).join('\n')}\n`,
+    )
+  }
 }
