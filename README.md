@@ -69,9 +69,9 @@ capability.schema.json   # the manifest schema each capability.json follows
 
 `apps/*-base` are **real starter apps** — the absolute references you fork for a
 new project. They carry the personal baseline (strict Biome, `~/*` alias, typed
-`env.ts`) and nothing app-specific; new projects are scaffolded (framework +
-foundations) with **create-stack**, and tools are added per-project with
-**add-capability**.
+`env.ts`) and nothing app-specific; new projects are scaffolded (framework, package
+manager, import alias, foundations) with **create-stack** — which can rewrite the
+`~/*` alias to your choice — and tools are added per-project with **add-capability**.
 
 ## Getting started
 

@@ -46,7 +46,8 @@ selection flag → **non-interactive** mode (scriptable / CI).
 
 - **Node** ≥ 22
 - A package manager — **pnpm**, **npm**, **yarn** or **bun**. The generated project
-  matches whichever you launch with (detected via `npm_config_user_agent`).
+  defaults to whichever you launch with (detected via `npm_config_user_agent`);
+  override it in the wizard or with `--pm`.
 - **git** on `PATH`. **rsync** is used as a fast path when present (macOS/Linux ship
   it); without it the CLI falls back to a built-in copy, so Windows works natively.
 
@@ -68,6 +69,8 @@ the version.
 | Flag | Values | Default | Description |
 | --- | --- | --- | --- |
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
+| `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project (install, scripts, workspace files). |
+| `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias: rewrites `<alias>/*` → `src/*` across sources, tsconfig and `components.json`. |
 | `--foundations` | csv of `drizzle,trpc,better-auth,data-table` | all | Foundations to keep; the rest are stripped. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. `none` is coerced to `resend` when `better-auth` is kept. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage capability (omit to skip). |
@@ -84,6 +87,9 @@ value) to vendor that capability; omit it to leave it out. Passing any selection
 flag — `--framework`, `--foundations`, `--mailer`, any capability, or `--no-install`
 (or `--yes`) — switches the CLI to non-interactive mode; missing values fall back to
 the defaults above.
+
+`--pm` and `--alias` are modifiers, not triggers: the wizard pre-selects the detected
+PM / `~`, and in non-interactive mode these flags override those defaults.
 
 ### Dependency resolution
 
@@ -104,6 +110,9 @@ pnpm dlx @alfredmouelle/create-stack my-app --yes
 # Next.js with just Drizzle + tRPC, Amazon SES mailer, don't install
 pnpm dlx @alfredmouelle/create-stack api --framework next \
   --foundations drizzle,trpc --mailer ses --no-install
+
+# Bun as package manager + '@' import alias
+pnpm dlx @alfredmouelle/create-stack my-app --framework next --pm bun --alias @
 
 # Minimal: Drizzle only, no mailer
 pnpm dlx @alfredmouelle/create-stack db-svc --foundations drizzle --mailer none
