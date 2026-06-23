@@ -7,7 +7,14 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
-import { addCapability, capabilityDir } from './lib/add.mjs'
+import {
+  ADDABLE,
+  adapterChoicesFor,
+  addableChoices,
+  addCapability,
+  resolveTargetAdapter,
+  targetDir,
+} from './lib/add.mjs'
 import { ALL_FOUNDATIONS, csv, normalize, parseArgs } from './lib/args.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
@@ -17,7 +24,7 @@ import {
   resolveAdapter,
 } from './lib/capabilities.mjs'
 import { detectPackageManager } from './lib/package-manager.mjs'
-import { exists, isDirEmpty, join, remove, run } from './lib/util.mjs'
+import { exists, isDirEmpty, join, run } from './lib/util.mjs'
 
 // the PM that launched us (npx/pnpm dlx/yarn create/bun create); drives install + run.
 const pm = detectPackageManager()
@@ -35,8 +42,9 @@ Usage:
 Run either command with no args for an interactive picker; pass a selection flag
 (or --yes), or a capability name, for non-interactive mode.
 
-Capabilities (for \`add\`): storage, cache, jobs, logger, analytics, error-tracking.
-\`add\` with no capability opens a multi-select; --force overwrites existing ones.
+Capabilities (for \`add\`): storage, cache, jobs, logger, analytics, error-tracking,
+mailer, email-kit, http. \`add\` with no capability opens a multi-select. Re-adding a
+multi-adapter capability swaps its adapter; --keep retains the previous one(s).
 
 Flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
@@ -232,55 +240,45 @@ function execute(a) {
 async function resolveAddSelections(args) {
   if (args._[1]) {
     const cap = args._[1]
-    if (!CAPABILITIES.includes(cap)) {
-      p.cancel(`Unknown capability: ${cap} — pick one of ${CAPABILITIES.join(', ')}`)
+    if (!ADDABLE.includes(cap)) {
+      p.cancel(`Unknown capability: ${cap} — pick one of ${ADDABLE.join(', ')}`)
       process.exit(1)
     }
-    return [{ cap, adapter: resolveAdapter(cap, args._[2]) }] // resolveAdapter throws on a bad value
+    return [{ cap, adapter: resolveTargetAdapter(cap, args._[2]) }] // throws on a bad adapter
   }
   const caps = cancelled(
     await p.multiselect({
       message: 'Capabilities to add (space to toggle)',
       required: true,
-      options: capabilityChoices(),
+      options: addableChoices(),
     }),
   )
   const selections = []
   for (const cap of caps) {
-    const { defaultAdapter, options } = adapterChoices(cap)
-    selections.push({
-      cap,
-      adapter: cancelled(
-        await p.select({ message: `${cap} adapter`, options, initialValue: defaultAdapter }),
-      ),
-    })
+    const choices = adapterChoicesFor(cap)
+    const adapter = choices
+      ? cancelled(
+          await p.select({
+            message: `${cap} adapter`,
+            options: choices.options,
+            initialValue: choices.defaultAdapter,
+          }),
+        )
+      : null
+    selections.push({ cap, adapter })
   }
   return selections
 }
 
-/** Drop selections whose dir already exists unless overwritten (--force or a prompt). */
-async function filterCollisions(projectDir, selections, force) {
-  const todo = []
-  for (const sel of selections) {
-    const dest = join(projectDir, capabilityDir(sel.cap))
-    if (exists(dest)) {
-      const overwrite =
-        force ||
-        cancelled(
-          await p.confirm({
-            message: `${sel.cap} already exists — overwrite?`,
-            initialValue: false,
-          }),
-        )
-      if (!overwrite) continue
-      remove(dest)
-    }
-    todo.push(sel)
-  }
-  return todo
+const addedLine = (a) => {
+  const parts = [a.adapter ? `${a.cap} (${a.adapter})` : a.cap]
+  if (a.swappedFrom) parts.push(`[swapped from ${a.swappedFrom}]`)
+  parts.push(`→ ${targetDir(a.cap)}/`)
+  if (a.envKeys.length) parts.push(`env: ${a.envKeys.join(', ')}`)
+  return parts.join('  ')
 }
 
-/** `create-stack add [capability] [adapter]` — vendor capabilities into the cwd project. */
+/** `create-stack add [capability] [adapter] [--keep]` — vendor/swap capabilities in the cwd project. */
 async function runAdd(args) {
   const projectDir = resolve(process.cwd())
   if (!exists(join(projectDir, 'package.json'))) {
@@ -289,25 +287,15 @@ async function runAdd(args) {
   }
 
   p.intro('create-stack add')
+  const keep = !!args.flags.keep
   const selections = await resolveAddSelections(args)
-  const todo = await filterCollisions(projectDir, selections, args.flags.force)
-  if (!todo.length) {
-    p.cancel('Nothing to add.')
-    process.exit(1)
-  }
-
-  const added = todo.map((sel) => ({ ...sel, ...addCapability({ projectDir, ...sel }) }))
+  const added = selections.map((sel) => ({
+    ...sel,
+    ...addCapability({ projectDir, ...sel, keep }),
+  }))
   if (!args.flags['no-install']) installAndVerify(projectDir)
 
-  p.note(
-    added
-      .map(
-        (a) =>
-          `${a.cap} (${a.adapter}) → ${capabilityDir(a.cap)}/  env: ${a.envKeys.join(', ') || '(none)'}`,
-      )
-      .join('\n'),
-    'Added — fill the env keys in .env',
-  )
+  p.note(added.map(addedLine).join('\n'), keep ? 'Added (kept existing adapters)' : 'Added')
   p.outro(`Added ${added.map((a) => a.cap).join(', ')}`)
 }
 

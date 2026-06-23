@@ -53,9 +53,11 @@ for (const cap of ['storage', 'cache', 'logger', 'analytics', 'error-tracking', 
   cpSync(join(ROOT, 'packages', cap, 'src'), join(OUT, 'packages', cap, 'src'), { recursive: true })
 }
 
-// http: vendored cross-dependency for analytics/plausible and jobs/inngest
-cpSync(join(ROOT, 'packages/http/package.json'), join(OUT, 'packages/http/package.json'))
-cpSync(join(ROOT, 'packages/http/src'), join(OUT, 'packages/http/src'), { recursive: true })
+// http + email-kit: vendored as-is by `add http` / `add email-kit` (and as cross-deps)
+for (const pkg of ['http', 'email-kit']) {
+  cpSync(join(ROOT, 'packages', pkg, 'package.json'), join(OUT, 'packages', pkg, 'package.json'))
+  cpSync(join(ROOT, 'packages', pkg, 'src'), join(OUT, 'packages', pkg, 'src'), { recursive: true })
+}
 
 // biome-ignore lint/suspicious/noConsole: build script output
 console.log(`bundled stack assets → ${OUT}`)

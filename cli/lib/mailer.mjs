@@ -2,12 +2,22 @@
 // composition root (email/index.ts) and return dep/env deltas. Mirrors the mailer manifest.
 
 import { STACK_ROOT } from './paths.mjs'
-import { copy, join, readJSON, remove, write } from './util.mjs'
+import { copy, exists, join, readJSON, remove, write } from './util.mjs'
 
 const EMAIL_DIR = 'src/server/email'
+const MAILER_PKG = join(STACK_ROOT, 'packages/mailer')
+const MAILER_ADAPTERS = ['resend', 'brevo', 'ses']
+const baseEmailDir = (framework) => join(STACK_ROOT, 'apps', `${framework}-base`, EMAIL_DIR)
 
 /** getMailer() body per provider (composition root). */
 const FACTORY = {
+  resend: {
+    import: "import { resendAdapter } from './adapters/resend/index'",
+    adapter: "resendAdapter({ apiKey: required(env.RESEND_API_KEY, 'RESEND_API_KEY') })",
+    envKeys: ['EMAIL_FROM', 'RESEND_API_KEY'],
+    requiredEnvKeys: ['RESEND_API_KEY'],
+    pkgDep: 'resend',
+  },
   brevo: {
     import: "import { brevoAdapter } from './adapters/brevo/index'",
     adapter: "brevoAdapter({ apiKey: required(env.BREVO_API_KEY, 'BREVO_API_KEY') })",
@@ -97,4 +107,33 @@ export function swapMailer(projectDir, provider) {
     envKeys: cfg.envKeys,
     requiredEnvKeys: cfg.requiredEnvKeys,
   }
+}
+
+/**
+ * Add/swap the mailer in an existing project (the `add` path). Copies the base port if
+ * absent, vendors the target adapter, and points the composition root at it. `keep`
+ * retains the other adapters (+ their deps); otherwise they're dropped for a clean swap.
+ * @returns {{ addDeps, removeDeps, envKeys, requiredEnvKeys }}
+ */
+export function vendorMailer(projectDir, framework, adapter, keep) {
+  const cfg = FACTORY[adapter]
+  if (!cfg)
+    throw new Error(`Unknown mailer adapter: ${adapter} (have ${MAILER_ADAPTERS.join(', ')})`)
+  const dir = join(projectDir, EMAIL_DIR)
+
+  if (!exists(join(dir, 'index.ts'))) copy(baseEmailDir(framework), dir) // resend baseline port
+  if (adapter !== 'resend')
+    copy(join(MAILER_PKG, 'src/adapters', adapter), join(dir, 'adapters', adapter))
+  if (!keep) for (const a of MAILER_ADAPTERS) if (a !== adapter) remove(join(dir, 'adapters', a))
+  write(join(dir, 'index.ts'), INDEX_TS(cfg))
+
+  const mailerPkg = readJSON(join(MAILER_PKG, 'package.json'))
+  const range = (d) => mailerPkg.dependencies?.[d] ?? 'latest'
+  const addDeps = Object.fromEntries(
+    [cfg.pkgDep, 'valibot', '@react-email/render'].map((d) => [d, range(d)]),
+  )
+  const removeDeps = keep
+    ? []
+    : MAILER_ADAPTERS.filter((a) => a !== adapter).map((a) => FACTORY[a].pkgDep)
+  return { addDeps, removeDeps, envKeys: cfg.envKeys, requiredEnvKeys: cfg.requiredEnvKeys }
 }

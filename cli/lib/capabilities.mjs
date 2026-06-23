@@ -6,7 +6,7 @@
 
 import { readdirSync, statSync } from 'node:fs'
 import { STACK_ROOT } from './paths.mjs'
-import { copy, exists, join, read, readJSON, write } from './util.mjs'
+import { copy, exists, join, read, readJSON, remove, write } from './util.mjs'
 
 const PKG = (cap) => join(STACK_ROOT, 'packages', cap)
 
@@ -336,43 +336,51 @@ function resolveDeps(cap, names) {
   return out
 }
 
+const JOBS_ROUTE_FILES = ['src/app/api/inngest/route.ts', 'src/routes/api/inngest.ts']
+
+/** jobs/inngest HTTP surface: serve handler + the per-framework route shim. */
+function mountInngest(projectDir, destDir, framework) {
+  write(join(destDir, 'serve.ts'), JOBS_SERVE)
+  const [next, tanstack] = JOBS_ROUTE_FILES
+  write(
+    join(projectDir, framework === 'next' ? next : tanstack),
+    framework === 'next' ? NEXT_INNGEST_ROUTE : TANSTACK_INNGEST_ROUTE,
+  )
+}
+
 /**
- * Vendor one capability into the fork.
+ * Vendor one capability into the fork. `keep` retains any adapter(s) already vendored
+ * (additive); otherwise the dest is wiped first for a clean (re-)vendor / swap.
  * @returns {{ addDeps: Record<string,string>, envKeys: string[], requiredEnvKeys: string[] }}
  */
-export function vendorCapability({ projectDir, framework, projectName, cap, adapter }) {
+export function vendorCapability({ projectDir, framework, projectName, cap, adapter, keep }) {
   const spec = CAPS[cap]
   if (!spec) throw new Error(`Unknown capability: ${cap}`)
   const aSpec = spec.adapters[adapter]
   if (!aSpec) throw new Error(`Unknown ${cap} adapter: ${adapter}`)
+  const isJobs = spec.kind === 'jobs'
 
   const manifest = readJSON(join(PKG(cap), 'capability.json'))
   const adManifest = manifest.adapters[adapter]
   const destDir = join(projectDir, spec.dir)
+
+  if (!keep) {
+    remove(destDir) // clean swap: drop the old adapter(s) + composition root
+    if (isJobs) for (const r of JOBS_ROUTE_FILES) remove(join(projectDir, r))
+  }
 
   // core (+ shared) and the chosen adapter; the barrel index.ts is replaced below.
   const files = [...manifest.sharedFiles.filter((f) => f !== 'src/index.ts'), ...adManifest.files]
   for (const f of files) copyPath(cap, f, destDir)
   stripJsExtensions(destDir) // NodeNext `.js` specifiers → extensionless (app bundler)
 
-  // composition root
   write(
     join(destDir, 'index.ts'),
-    spec.kind === 'jobs'
+    isJobs
       ? jobsRoot(adapter, projectName)
       : standardRoot({ ...spec, adapterKey: adapter, fn: aSpec.fn, args: aSpec.args }),
   )
-
-  // jobs/inngest has an HTTP surface: serve handler + per-framework route shim.
-  if (spec.kind === 'jobs' && adapter === 'inngest') {
-    write(join(destDir, 'serve.ts'), JOBS_SERVE)
-    if (framework === 'next') {
-      write(join(projectDir, 'src/app/api/inngest/route.ts'), NEXT_INNGEST_ROUTE)
-    } else {
-      write(join(projectDir, 'src/routes/api/inngest.ts'), TANSTACK_INNGEST_ROUTE)
-    }
-  }
-
+  if (isJobs && adapter === 'inngest') mountInngest(projectDir, destDir, framework)
   vendorHttp(projectDir, destDir)
 
   return {
@@ -381,4 +389,27 @@ export function vendorCapability({ projectDir, framework, projectName, cap, adap
     // a key the adapter narrows with required(env.X) must be required at boot too.
     requiredEnvKeys: (aSpec.args ?? []).filter(([, , req]) => req).map(([, key]) => key),
   }
+}
+
+/** The adapter currently wired in a vendored capability (from its index.ts import), or null. */
+export function currentAdapter(projectDir, cap) {
+  const indexPath = join(projectDir, CAPS[cap].dir, 'index.ts')
+  if (!exists(indexPath)) return null
+  return read(indexPath).match(/\.\/adapters\/([\w-]+)\/index/)?.[1] ?? null
+}
+
+/** Deps unique to `from` (not shared, not used by `to`) — safe to drop on a non-keep swap. */
+export function adapterRemovableDeps(cap, from, to) {
+  const manifest = readJSON(join(PKG(cap), 'capability.json'))
+  const stay = new Set([...(manifest.adapters[to]?.deps ?? []), ...(manifest.sharedDeps ?? [])])
+  return (manifest.adapters[from]?.deps ?? []).filter(
+    (d) => !stay.has(d) && !d.startsWith('@alfredmouelle/'),
+  )
+}
+
+/** Vendor a whole package's src/ (no manifest, no env/deps) — for email-kit & http. */
+export function vendorPackageSrc(pkgName, destDir) {
+  remove(destDir)
+  copy(join(PKG(pkgName), 'src'), destDir)
+  stripJsExtensions(destDir)
 }
