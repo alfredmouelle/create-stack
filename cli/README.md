@@ -41,7 +41,8 @@ selection flag → **non-interactive** mode (scriptable / CI).
 - **Node** ≥ 22
 - A package manager — **pnpm**, **npm**, **yarn** or **bun**. The generated project
   matches whichever you launch with (detected via `npm_config_user_agent`).
-- **git** and **rsync** available on `PATH` (macOS/Linux ship both)
+- **git** and **rsync** available on `PATH`. macOS and Linux ship both; on Windows
+  use WSL or Git Bash (which provides `rsync`).
 
 ## Usage
 
@@ -58,9 +59,9 @@ not exist yet. In non-interactive mode it is required.
 | --- | --- | --- | --- |
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
 | `--foundations` | csv of `drizzle,trpc,better-auth,data-table` | all | Foundations to keep; the rest are stripped. |
-| `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. `none` is rejected when `better-auth` is kept. |
+| `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. `none` is coerced to `resend` when `better-auth` is kept. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage capability (omit to skip). |
-| `--cache` | `redis` \| `memory` | `redis` | Key/value cache capability (omit to skip). |
+| `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache capability (omit to skip). |
 | `--jobs` | `inngest` \| `trigger` \| `memory` | `inngest` | Background jobs capability (omit to skip). `inngest` also scaffolds the serve route. |
 | `--logger` | `pino` \| `console` | `pino` | Structured logging capability (omit to skip). |
 | `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics capability (omit to skip). |
@@ -128,7 +129,7 @@ boots even before you fill in the keys:
 | Capability | Adapters | Notes |
 | --- | --- | --- |
 | `storage` | s3, r2, gcs, local | `getStorage()` accessor. |
-| `cache` | redis, memory | `getCache()` accessor. |
+| `cache` | redis, upstash, memory | `getCache()` accessor. |
 | `jobs` | inngest, trigger, memory | `inngest` also scaffolds `serve.ts` + the framework route. |
 | `logger` | pino, console | `getLogger()` accessor. |
 | `analytics` | posthog, plausible, noop | `plausible` vendors `~/lib/http`. |
@@ -153,5 +154,6 @@ pnpm dev
 - The published package is **self-contained**: the base apps, the mailer adapters
   and every capability package (`+ http`) are bundled at publish time, so `pnpm dlx`
   needs nothing but this package.
-- The generated project is a fresh git repo (`git init`, files staged) — make your
-  first commit when ready.
+- The generated project is a fresh git repo (`git init`) with an initial commit
+  created for you. If git `user.name`/`user.email` aren't set, the commit is skipped
+  and the files are left staged — set your identity and commit when ready.
