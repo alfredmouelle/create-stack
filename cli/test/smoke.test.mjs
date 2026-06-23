@@ -45,13 +45,19 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
       )
     }
 
-    // `add` path: a stripped project gaining capabilities must still compile.
+    // `add` path: adding, swapping an adapter, and vendoring a lib target must all compile.
     test(
-      `add ${framework}/storage+cache`,
+      `add-swap ${framework}`,
       () => {
-        const { dir } = build({ framework, foundations: ['drizzle'], mailer: 'none' })
-        addCapability({ projectDir: dir, cap: 'storage', adapter: 's3' })
-        addCapability({ projectDir: dir, cap: 'cache', adapter: 'redis' })
+        const { dir } = build({
+          framework,
+          foundations: ['drizzle'],
+          mailer: 'resend',
+          capabilities: { cache: 'redis' },
+        })
+        addCapability({ projectDir: dir, cap: 'cache', adapter: 'upstash' }) // swap adapter
+        addCapability({ projectDir: dir, cap: 'mailer', adapter: 'brevo' }) // mailer swap
+        addCapability({ projectDir: dir, cap: 'http', adapter: null }) // lib vendor
         verify(dir)
       },
       TIMEOUT,
