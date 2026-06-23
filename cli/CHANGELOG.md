@@ -1,0 +1,86 @@
+# Changelog
+
+All notable changes to `@alfredmouelle/create-stack` are documented here.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
+project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+**Release cadence.** Consumers always run the latest via `npx` / `pnpm dlx`, so releases
+are cut when there is user-facing value — a new framework/foundation/capability/adapter, a
+fix to the generated output, or a wizard/UX change. Internal refactors, tests, CI and
+docs-only changes accumulate under _Unreleased_ until the next meaningful release; related
+commits are batched into a single tagged version rather than one tag per commit.
+
+## [Unreleased]
+
+## [0.4.3] - 2026-06-23
+
+### Added
+
+- Configurable **import alias**: choose the `<alias>/*` prefix in the wizard or with
+  `--alias` (default `~`). Rewrites sources, `tsconfig.json` paths and `components.json`;
+  `create-stack add` aligns vendored files to the project's existing alias.
+- Choose the **package manager** in the wizard or with `--pm` (`pnpm` / `npm` / `yarn` /
+  `bun`); pre-selects the auto-detected one. The choice drives install, scripts and the
+  generated workspace files.
+
+### Changed
+
+- Base apps: date picker / range picker now have dropdown month/year navigation and
+  English labels.
+
+### Fixed
+
+- Generated composition roots no longer re-validate env vars that `env.ts` already marks
+  required — the redundant `required()` guard is dropped in capability and mailer roots,
+  with `env.ts` as the single source of truth.
+
+## [0.4.2] - 2026-06-23
+
+### Fixed
+
+- README demo GIF is served via an absolute jsDelivr URL so it renders on the npm page.
+
+## [0.4.1] - 2026-06-23
+
+### Fixed
+
+- Mark the CLI entry (`index.mjs`) executable so the `bin` runs after install.
+
+### Changed
+
+- README: npm badges, terminal demo GIF, author section.
+
+## [0.4.0] - 2026-06-23
+
+### Added
+
+- `create-stack add` — vendor capabilities into an existing project behind a port.
+- `add` extended to **mailer / email-kit / http**, with adapter swap and `--keep`.
+- `--help` / `--version` flags and short-flag parsing.
+- `cpSync` fallback when `rsync` is absent (native Windows support).
+
+### Fixed
+
+- Always re-format scaffold output so the initial commit is lint-clean for any selection.
+
+## [0.3.1] - 2026-06-23
+
+### Changed
+
+- Drop the repository link from the published package (private repo).
+
+## [0.3.0] - 2026-06-23
+
+First published release.
+
+### Added
+
+- Interactive, deterministic scaffolder: fork a base app (Next.js / TanStack Start) and
+  strip it to the selected foundations (Drizzle, tRPC, better-auth, data tables).
+- Swappable **capabilities** vendored at scaffold time (storage, cache, jobs, logger,
+  analytics, error-tracking) behind ports; Upstash Redis cache adapter.
+- Mailer providers (Resend / Brevo / SES) and a typed env module (`src/env.ts`) that
+  requires the provider/adapter keys the generated code mandates.
+- Detect the launching package manager instead of assuming pnpm.
+- Auto `git init` + initial commit after scaffolding.

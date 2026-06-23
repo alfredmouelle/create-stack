@@ -62,7 +62,8 @@ create-stack add [capability] [adapter]   # add capabilities to the current proj
 not exist yet. In non-interactive mode it is required.
 
 `create-stack --help` prints the full flag reference; `create-stack --version` prints
-the version.
+the version. Since `npx`/`pnpm dlx` always fetch the latest, see
+[`CHANGELOG.md`](./CHANGELOG.md) (shipped in the package) for what changed between versions.
 
 ### Flags
 
