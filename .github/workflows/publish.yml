@@ -1,0 +1,35 @@
+name: Publish CLI
+
+# Publishes @alfredmouelle/create-stack on every pushed v* tag.
+# Auth via npm Trusted Publishing (OIDC) — no NPM_TOKEN secret stored.
+# The version published is whatever cli/package.json holds at the tagged commit;
+# pushing a tag whose version is already on npm just fails (npm rejects republish).
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write # required to mint the OIDC token
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm >= 11.5.1; Node 22 ships npm 10.x.
+      - run: npm install -g npm@latest
+
+      # prepack (scripts/bundle.mjs) snapshots apps/ + packages/ into cli/_stack.
+      # Provenance disabled: it requires a public repo, this one is private.
+      - name: Publish
+        working-directory: cli
+        run: npm publish --access public --provenance=false
