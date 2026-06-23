@@ -14,13 +14,19 @@ const RSYNC_EXCLUDES = [
   'src/routeTree.gen.ts',
   '.env',
   '.env.local',
+  // a fresh fork must never inherit a lockfile from the source tree
+  'pnpm-lock.yaml',
+  'package-lock.json',
+  'yarn.lock',
+  'bun.lockb',
+  'bun.lock',
 ]
 
+// Native deps whose install/build scripts pnpm and bun block by default.
+const NATIVE_BUILD_DEPS = ['esbuild', 'sharp', 'lightningcss', 'protobufjs']
+
 const PNPM_WORKSPACE = `allowBuilds:
-  esbuild: true
-  sharp: true
-  lightningcss: true
-  protobufjs: true
+${NATIVE_BUILD_DEPS.map((d) => `  ${d}: true`).join('\n')}
 `
 
 // Generated explicitly: npm strips `.gitignore` from published tarballs, so the
@@ -86,20 +92,23 @@ export function forkBase(framework, projectDir) {
 }
 
 /** Make the fork standalone (Biome, pnpm workspace, .gitignore, identity). */
-export function makeStandalone(projectDir, projectName, framework) {
+export function makeStandalone(projectDir, projectName, framework, pm) {
   // fork needs its own Biome config (base inherits the monorepo root's)
   copy(join(TEMPLATES, 'biome.jsonc'), join(projectDir, 'biome.jsonc'))
 
   // Biome vcs.useIgnoreFile needs a .gitignore
   write(join(projectDir, '.gitignore'), GITIGNORE[framework === 'next' ? 'next' : 'tanstack'])
 
-  // avoid ERR_PNPM_IGNORED_BUILDS on fresh install (native build scripts)
-  write(join(projectDir, 'pnpm-workspace.yaml'), PNPM_WORKSPACE)
+  // Allow native build scripts on fresh install. pnpm blocks them (ERR_PNPM_IGNORED_BUILDS)
+  // and reads an allowlist from pnpm-workspace.yaml; bun blocks them and reads
+  // `trustedDependencies` from package.json. npm/yarn run them by default — nothing to do.
+  if (pm?.name === 'pnpm') write(join(projectDir, 'pnpm-workspace.yaml'), PNPM_WORKSPACE)
 
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
   pkg.name = projectName
   delete pkg.private // leaf project
   pkg.private = true
+  if (pm?.name === 'bun') pkg.trustedDependencies = NATIVE_BUILD_DEPS
   writeJSON(pkgPath, pkg)
 }

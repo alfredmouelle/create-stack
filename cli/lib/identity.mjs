@@ -8,7 +8,9 @@ const titleFiles = {
   tanstack: ['src/routes/__root.tsx'],
 }
 
-export function stampIdentity(projectDir, projectName, framework) {
+export function stampIdentity(projectDir, projectName, framework, pm) {
+  const installCmd = `${pm?.name ?? 'npm'} install`
+  const devCmd = pm?.devCmd ?? 'npm run dev'
   // swap placeholder title 'App' in root document/metadata
   for (const rel of titleFiles[framework === 'next' ? 'next' : 'tanstack']) {
     editFile(join(projectDir, rel), (c) => c.replaceAll("title: 'App'", `title: '${projectName}'`))
@@ -22,9 +24,9 @@ Bootstrapped from the personal reference stack.
 ## Getting started
 
 \`\`\`bash
-pnpm install
+${installCmd}
 cp .env.example .env   # fill in the values
-pnpm dev
+${devCmd}
 \`\`\`
 
 ${footer}`

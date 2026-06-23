@@ -28,7 +28,8 @@ selection flag → **non-interactive** mode (scriptable / CI).
 ## Requirements
 
 - **Node** ≥ 22
-- **pnpm** (the generated project is a pnpm project)
+- A package manager — **pnpm**, **npm**, **yarn** or **bun**. The generated project
+  matches whichever you launch with (detected via `npm_config_user_agent`).
 - **git** and **rsync** available on `PATH` (macOS/Linux ship both)
 
 ## Usage

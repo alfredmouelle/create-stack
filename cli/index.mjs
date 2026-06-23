@@ -12,7 +12,11 @@ import {
   capabilityChoices,
   resolveAdapter,
 } from './lib/capabilities.mjs'
+import { detectPackageManager } from './lib/package-manager.mjs'
 import { isDirEmpty, run } from './lib/util.mjs'
+
+// the PM that launched us (npx/pnpm dlx/yarn create/bun create); drives install + run.
+const pm = detectPackageManager()
 
 const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
 
@@ -163,24 +167,21 @@ async function collectFromPrompts(argDir) {
   return { argDir, projectName, framework, kept, mailerProvider, capabilities, doInstall }
 }
 
-const pnpmRun = (script, projectDir, opts = {}) =>
-  run('pnpm', ['--config.verify-deps-before-run=false', 'run', script], {
-    cwd: projectDir,
-    ...opts,
-  })
+const pmRun = (script, projectDir, opts = {}) =>
+  run(pm.exec, pm.runArgs(script), { cwd: projectDir, ...opts })
 
 /** Install deps, normalize vendored imports, then report typecheck + biome status. */
 function installAndVerify(projectDir, capabilities) {
-  p.log.step('pnpm install')
-  run('pnpm', ['install'], { cwd: projectDir })
+  p.log.step(`${pm.name} install`)
+  run(pm.exec, ['install'], { cwd: projectDir })
   // vendored capabilities rewrite cross-package imports (~/lib/http); let biome
   // re-sort/normalize them so the initial commit is lint-clean.
   if (Object.keys(capabilities ?? {}).length) {
-    pnpmRun('check:write', projectDir, { stdio: 'ignore' })
+    pmRun('check:write', projectDir, { stdio: 'ignore' })
   }
   p.log.step('Verifying (typecheck + biome)')
-  const tc = pnpmRun('typecheck', projectDir)
-  const lint = pnpmRun('check', projectDir)
+  const tc = pmRun('typecheck', projectDir)
+  const lint = pmRun('check', projectDir)
   p.log[tc && lint ? 'success' : 'warn'](
     tc && lint ? 'typecheck + biome clean' : 'verify reported issues (see output above)',
   )
@@ -195,7 +196,7 @@ function execute(a) {
 
   const s = p.spinner()
   s.start('Forking + stripping the base app')
-  buildProject({ ...a, projectDir })
+  buildProject({ ...a, projectDir, pm })
   s.stop('Project scaffolded')
 
   if (a.doInstall) installAndVerify(projectDir, a.capabilities)
@@ -229,8 +230,8 @@ function execute(a) {
     'Next:',
     `  cd ${a.argDir ?? a.projectName}`,
   ]
-  if (!a.doInstall) lines.push('  pnpm install')
-  lines.push('  cp .env.example .env   # fill in the values', '  pnpm dev')
+  if (!a.doInstall) lines.push(`  ${pm.name} install`)
+  lines.push('  cp .env.example .env   # fill in the values', `  ${pm.devCmd}`)
   p.note(lines.join('\n'), 'Done')
   p.outro(`Created ${a.projectName}`)
 }

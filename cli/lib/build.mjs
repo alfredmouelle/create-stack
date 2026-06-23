@@ -5,6 +5,7 @@ import { vendorCapability } from './capabilities.mjs'
 import { writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
+import { detectPackageManager } from './package-manager.mjs'
 import { forkBase, makeStandalone } from './scaffold.mjs'
 import { stripFoundations } from './strip.mjs'
 import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON } from './util.mjs'
@@ -17,6 +18,7 @@ import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON 
  * @param {Set<string>} o.kept   foundations to keep (deps pre-resolved)
  * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
  * @param {Record<string,string>} [o.capabilities]  capability → adapter (e.g. { storage: 's3' })
+ * @param {import('./package-manager.mjs').PackageManager} [o.pm]  target package manager (defaults to detected)
  * @returns {{ kept: string[], keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[] }}
  */
 export function buildProject({
@@ -26,12 +28,13 @@ export function buildProject({
   kept,
   mailerProvider,
   capabilities = {},
+  pm = detectPackageManager(),
 }) {
   const authKept = kept.has('better-auth')
   const keptMailer = mailerProvider !== 'none'
 
   forkBase(framework, projectDir)
-  makeStandalone(projectDir, projectName, framework)
+  makeStandalone(projectDir, projectName, framework, pm)
 
   const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
   const mailer = keptMailer
@@ -68,7 +71,7 @@ export function buildProject({
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   writeEnv(projectDir, envKeys)
 
-  stampIdentity(projectDir, projectName, framework)
+  stampIdentity(projectDir, projectName, framework, pm)
 
   return { kept: [...kept], keptMailer, mailerProvider, capabilities, envKeys }
 }
