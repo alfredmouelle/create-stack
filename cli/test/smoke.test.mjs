@@ -1,6 +1,5 @@
-// Heavy proof: scaffold, install deps, and run the generated project's own typecheck
-// + biome — the real guarantee that a fork actually builds. Skipped unless RUN_SMOKE=1
-// (CI sets it); SMOKE_FRAMEWORK can pin a single base to split the matrix across runners.
+// Heavy proof: scaffold, install, run the project's own typecheck + biome. Skipped unless
+// RUN_SMOKE=1; SMOKE_FRAMEWORK pins one base to split the matrix across runners.
 
 import { spawnSync } from 'node:child_process'
 import { afterAll, describe, expect, test } from 'vitest'
@@ -28,11 +27,10 @@ const pnpm = (args, cwd, opts = {}) =>
     ...opts,
   }).status
 
-/** Install, normalize vendored imports, then assert typecheck + biome are both green. */
-function verify(dir, hasCaps) {
+/** Install, re-format, then assert typecheck + biome are both green (mirrors the CLI). */
+function verify(dir) {
   expect(spawnSync('pnpm', ['install'], { cwd: dir, stdio: 'inherit' }).status).toBe(0)
-  // vendored capabilities rewrite imports; let biome normalize before linting.
-  if (hasCaps) pnpm(['run', 'check:write'], dir, { stdio: 'ignore' })
+  pnpm(['run', 'check:write'], dir, { stdio: 'ignore' })
   expect(pnpm(['run', 'typecheck'], dir), 'typecheck').toBe(0)
   expect(pnpm(['run', 'check'], dir), 'biome check').toBe(0)
 }
@@ -42,20 +40,19 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
     for (const cfg of CONFIGS) {
       test(
         `scaffold ${framework}/${cfg.name}`,
-        () => verify(build({ ...cfg, framework }).dir, !!cfg.capabilities),
+        () => verify(build({ ...cfg, framework }).dir),
         TIMEOUT,
       )
     }
 
-    // `add` path: a stripped project gaining capabilities must still compile — proves
-    // the incremental env.ts/package.json merge produces valid code.
+    // `add` path: a stripped project gaining capabilities must still compile.
     test(
       `add ${framework}/storage+cache`,
       () => {
         const { dir } = build({ framework, foundations: ['drizzle'], mailer: 'none' })
         addCapability({ projectDir: dir, cap: 'storage', adapter: 's3' })
         addCapability({ projectDir: dir, cap: 'cache', adapter: 'redis' })
-        verify(dir, true)
+        verify(dir)
       },
       TIMEOUT,
     )

@@ -8,13 +8,73 @@ const tpl = (rel) => join(TEMPLATES, rel)
 
 const ALWAYS_KEEP = new Set(['valibot'])
 
+// trpc dropped on TanStack also sheds react-query wiring deps.
+const TANSTACK_TRPC_DEPS = [
+  '@tanstack/react-query',
+  '@tanstack/react-query-devtools',
+  '@tanstack/react-router-ssr-query',
+  'superjson',
+]
+
+const DATA_TABLE_FILES = ['data-table.tsx', 'infinite-data-table.tsx', 'sortable-header.tsx']
+
+const stripDataTable = (src) => {
+  for (const f of DATA_TABLE_FILES) remove(src(join('components', f)))
+}
+
+const stripTrpc = (src, next, keptDeps, removeDeps) => {
+  remove(src('trpc'))
+  remove(src('server/api'))
+  if (next) {
+    remove(src('app/api/trpc'))
+    copy(tpl('next/layout.no-trpc.tsx'), src('app/layout.tsx'))
+    return
+  }
+  remove(src('routes/api.trpc.$.tsx'))
+  copy(tpl('tanstack/router.no-trpc.tsx'), src('router.tsx'))
+  copy(tpl('tanstack/__root.no-trpc.tsx'), src('routes/__root.tsx'))
+  for (const d of TANSTACK_TRPC_DEPS) if (!keptDeps.has(d)) removeDeps.add(d)
+}
+
+const stripAuth = (src, next, kept) => {
+  remove(src('server/better-auth'))
+  remove(src('server/db/schemas/auth.schema.ts'))
+  const dirs = next
+    ? ['app/auth', 'app/api/auth', 'app/dashboard', 'server/auth', 'features/auth']
+    : [
+        'routes/auth.tsx',
+        'routes/auth',
+        'routes/_authed.tsx',
+        'routes/_authed',
+        'routes/api/auth',
+        'features/auth',
+      ]
+  for (const d of dirs) remove(src(d))
+  // drop the auth.schema barrel line, keeping it a module so `import * as schema` resolves
+  editFile(src('server/db/schemas/index.ts'), (c) => {
+    const out = c
+      .split('\n')
+      .filter((l) => !l.includes("'./auth.schema'"))
+      .join('\n')
+    return /^export /m.test(out) ? out : `${out.trimEnd()}\nexport {}\n`
+  })
+  if (kept.has('trpc')) editFile(src('server/api/trpc.ts'), stripAuthFromTrpc)
+}
+
+const stripMailer = (src, removeDeps, removeScripts) => {
+  remove(src('server/email'))
+  remove(src('emails'))
+  for (const d of ['resend', 'react-email']) removeDeps.add(d)
+  removeScripts.add('email:dev')
+}
+
 /** @returns {{ removeDeps: string[], removeScripts: string[] }} */
 export function stripFoundations({ projectDir, framework, kept, keptMailer }) {
   const next = framework === 'next'
   const src = (p) => join(projectDir, 'src', p)
   const dropped = FOUNDATIONS.filter((f) => !kept.has(f))
 
-  // Dep diff: remove a dropped foundation's deps unless a kept one still needs it.
+  // remove a dropped foundation's deps/scripts unless a kept one still needs them
   const keptDeps = new Set([...kept].flatMap((f) => foundationDeps(f, framework)))
   const removeDeps = new Set()
   const removeScripts = new Set()
@@ -25,76 +85,10 @@ export function stripFoundations({ projectDir, framework, kept, keptMailer }) {
     for (const s of foundationScripts(f)) removeScripts.add(s)
   }
 
-  // --- data-table ---
-  if (dropped.includes('data-table')) {
-    for (const f of ['data-table.tsx', 'infinite-data-table.tsx', 'sortable-header.tsx']) {
-      remove(src(join('components', f)))
-    }
-  }
-
-  // --- trpc (delete dirs + swap root wiring) ---
-  if (dropped.includes('trpc')) {
-    remove(src('trpc'))
-    remove(src('server/api'))
-    if (next) {
-      remove(src('app/api/trpc'))
-      copy(tpl('next/layout.no-trpc.tsx'), src('app/layout.tsx'))
-    } else {
-      remove(src('routes/api.trpc.$.tsx'))
-      copy(tpl('tanstack/router.no-trpc.tsx'), src('router.tsx'))
-      copy(tpl('tanstack/__root.no-trpc.tsx'), src('routes/__root.tsx'))
-      // extra TanStack wiring deps that only make sense with trpc/react-query
-      for (const d of [
-        '@tanstack/react-query',
-        '@tanstack/react-query-devtools',
-        '@tanstack/react-router-ssr-query',
-        'superjson',
-      ]) {
-        if (!keptDeps.has(d)) removeDeps.add(d)
-      }
-    }
-  }
-
-  // --- better-auth ---
-  if (dropped.includes('better-auth')) {
-    remove(src('server/better-auth'))
-    remove(src('server/db/schemas/auth.schema.ts'))
-    if (next) {
-      remove(src('app/auth'))
-      remove(src('app/api/auth'))
-      remove(src('app/dashboard'))
-      remove(src('server/auth'))
-      remove(src('features/auth'))
-    } else {
-      remove(src('routes/auth.tsx'))
-      remove(src('routes/auth'))
-      remove(src('routes/_authed.tsx'))
-      remove(src('routes/_authed'))
-      remove(src('routes/api/auth'))
-      remove(src('features/auth'))
-    }
-    // drop the auth.schema barrel line (kept drizzle owns the barrel)
-    editFile(src('server/db/schemas/index.ts'), (c) => {
-      const out = c
-        .split('\n')
-        .filter((l) => !l.includes("'./auth.schema'"))
-        .join('\n')
-      // keep it a module even when empty, so `import * as schema` still resolves
-      return /^export /m.test(out) ? out : `${out.trimEnd()}\nexport {}\n`
-    })
-    // if trpc survives, strip auth out of its context
-    if (kept.has('trpc')) editFile(src('server/api/trpc.ts'), stripAuthFromTrpc)
-  }
-
-  // --- mailer / email-kit (inlined in the base; needed only by better-auth) ---
-  if (!keptMailer) {
-    remove(src('server/email'))
-    remove(src('emails'))
-    for (const d of ['resend', 'react-email']) removeDeps.add(d)
-    removeScripts.add('email:dev')
-  }
-
-  // --- drizzle (only droppable when nothing depends on it) ---
+  if (dropped.includes('data-table')) stripDataTable(src)
+  if (dropped.includes('trpc')) stripTrpc(src, next, keptDeps, removeDeps)
+  if (dropped.includes('better-auth')) stripAuth(src, next, kept)
+  if (!keptMailer) stripMailer(src, removeDeps, removeScripts)
   if (dropped.includes('drizzle')) {
     remove(src('server/db'))
     remove(join(projectDir, 'drizzle.config.ts'))

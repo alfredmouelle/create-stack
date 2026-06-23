@@ -165,15 +165,12 @@ async function collectFromPrompts(argDir) {
 const pmRun = (script, projectDir, opts = {}) =>
   run(pm.exec, pm.runArgs(script), { cwd: projectDir, ...opts })
 
-/** Install deps, normalize vendored imports, then report typecheck + biome status. */
-function installAndVerify(projectDir, capabilities) {
+/** Install deps, normalize formatting, then report typecheck + biome status. */
+function installAndVerify(projectDir) {
   p.log.step(`${pm.name} install`)
   run(pm.exec, ['install'], { cwd: projectDir })
-  // vendored capabilities rewrite cross-package imports (~/lib/http); let biome
-  // re-sort/normalize them so the initial commit is lint-clean.
-  if (Object.keys(capabilities ?? {}).length) {
-    pmRun('check:write', projectDir, { stdio: 'ignore' })
-  }
+  // re-format under the fork's own Biome so the initial commit is lint-clean for any selection
+  pmRun('check:write', projectDir, { stdio: 'ignore' })
   p.log.step('Verifying (typecheck + biome)')
   const tc = pmRun('typecheck', projectDir)
   const lint = pmRun('check', projectDir)
@@ -194,7 +191,7 @@ function execute(a) {
   buildProject({ ...a, projectDir, pm })
   s.stop('Project scaffolded')
 
-  if (a.doInstall) installAndVerify(projectDir, a.capabilities)
+  if (a.doInstall) installAndVerify(projectDir)
 
   // fresh repo + initial commit (also satisfies Biome vcs.useIgnoreFile).
   // commit is best-effort: skipped if git identity unset, staged tree left in place.
@@ -300,9 +297,7 @@ async function runAdd(args) {
   }
 
   const added = todo.map((sel) => ({ ...sel, ...addCapability({ projectDir, ...sel }) }))
-  if (!args.flags['no-install']) {
-    installAndVerify(projectDir, Object.fromEntries(added.map((a) => [a.cap, a.adapter])))
-  }
+  if (!args.flags['no-install']) installAndVerify(projectDir)
 
   p.note(
     added
