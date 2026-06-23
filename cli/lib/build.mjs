@@ -39,15 +39,17 @@ export function buildProject({
   const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
   const mailer = keptMailer
     ? swapMailer(projectDir, mailerProvider)
-    : { addDeps: {}, removeDeps: [], envKeys: [] }
+    : { addDeps: {}, removeDeps: [], envKeys: [], requiredEnvKeys: [] }
 
   // vendor each selected capability (core + adapter + composition root) into the fork.
   const capAddDeps = {}
   const capEnvKeys = []
+  const capRequiredEnvKeys = []
   for (const [cap, adapter] of Object.entries(capabilities)) {
     const r = vendorCapability({ projectDir, framework, projectName, cap, adapter })
     Object.assign(capAddDeps, r.addDeps)
     capEnvKeys.push(...r.envKeys)
+    capRequiredEnvKeys.push(...r.requiredEnvKeys)
   }
 
   const pkgPath = join(projectDir, 'package.json')
@@ -59,17 +61,23 @@ export function buildProject({
   writeJSON(pkgPath, pkg)
 
   const envKeys = []
-  if (kept.has('drizzle')) envKeys.push('DATABASE_URL')
+  const requiredEnvKeys = []
+  if (kept.has('drizzle')) {
+    envKeys.push('DATABASE_URL')
+    requiredEnvKeys.push('DATABASE_URL')
+  }
   if (authKept) {
     envKeys.push(
       'BETTER_AUTH_URL',
       'BETTER_AUTH_SECRET',
-      'BETTER_AUTH_GOOGLE_CLIENT_ID',
+      'BETTER_AUTH_GOOGLE_CLIENT_ID', // Google OAuth is opt-in → optional
       'BETTER_AUTH_GOOGLE_CLIENT_SECRET',
     )
+    requiredEnvKeys.push('BETTER_AUTH_URL', 'BETTER_AUTH_SECRET')
   }
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
-  writeEnv(projectDir, envKeys)
+  requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
+  writeEnv(projectDir, envKeys, requiredEnvKeys)
 
   stampIdentity(projectDir, projectName, framework, pm)
 

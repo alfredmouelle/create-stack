@@ -12,13 +12,16 @@ const FACTORY = {
     import: "import { brevoAdapter } from './adapters/brevo/index'",
     adapter: "brevoAdapter({ apiKey: required(env.BREVO_API_KEY, 'BREVO_API_KEY') })",
     envKeys: ['EMAIL_FROM', 'BREVO_API_KEY'],
+    requiredEnvKeys: ['BREVO_API_KEY'],
     pkgDep: '@getbrevo/brevo',
   },
   ses: {
     import: "import { sesAdapter } from './adapters/ses/index'",
     // SESv2 SDK reads AWS_REGION / AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY from env
+    // (or the wider AWS credential chain), so none are hard-required at boot.
     adapter: 'sesAdapter()',
     envKeys: ['EMAIL_FROM', 'AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+    requiredEnvKeys: [],
     pkgDep: '@aws-sdk/client-sesv2',
   },
 }
@@ -62,10 +65,15 @@ export async function sendEmail(params: {
 }
 `
 
-/** Swap inlined mailer to `provider` → { addDeps, removeDeps, envKeys }. 'resend' is a no-op (base default). */
+/** Swap inlined mailer to `provider` → { addDeps, removeDeps, envKeys, requiredEnvKeys }. 'resend' is a no-op (base default). */
 export function swapMailer(projectDir, provider) {
   if (provider === 'resend') {
-    return { addDeps: {}, removeDeps: [], envKeys: ['EMAIL_FROM', 'RESEND_API_KEY'] }
+    return {
+      addDeps: {},
+      removeDeps: [],
+      envKeys: ['EMAIL_FROM', 'RESEND_API_KEY'],
+      requiredEnvKeys: ['RESEND_API_KEY'],
+    }
   }
   const cfg = FACTORY[provider]
   if (!cfg) throw new Error(`Unknown mailer provider: ${provider}`)
@@ -87,5 +95,6 @@ export function swapMailer(projectDir, provider) {
     addDeps: { [cfg.pkgDep]: range },
     removeDeps: ['resend'],
     envKeys: cfg.envKeys,
+    requiredEnvKeys: cfg.requiredEnvKeys,
   }
 }

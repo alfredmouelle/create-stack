@@ -331,7 +331,7 @@ function resolveDeps(cap, names) {
 
 /**
  * Vendor one capability into the fork.
- * @returns {{ addDeps: Record<string,string>, envKeys: string[] }}
+ * @returns {{ addDeps: Record<string,string>, envKeys: string[], requiredEnvKeys: string[] }}
  */
 export function vendorCapability({ projectDir, framework, projectName, cap, adapter }) {
   const spec = CAPS[cap]
@@ -371,5 +371,7 @@ export function vendorCapability({ projectDir, framework, projectName, cap, adap
   return {
     addDeps: resolveDeps(cap, [...adManifest.deps, ...(manifest.sharedDeps ?? [])]),
     envKeys: adManifest.env,
+    // a key the adapter narrows with required(env.X) must be required at boot too.
+    requiredEnvKeys: (aSpec.args ?? []).filter(([, , req]) => req).map(([, key]) => key),
   }
 }
