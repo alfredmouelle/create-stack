@@ -1,6 +1,6 @@
 {
   "name": "@alfredmouelle/create-stack",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "description": "Interactive, deterministic installer for the personal reference stack — forks a base app (Next.js / TanStack Start) and strips it to your selection.",
   "author": {
