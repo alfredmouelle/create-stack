@@ -13,14 +13,14 @@ const baseEmailDir = (framework) => join(STACK_ROOT, 'apps', `${framework}-base`
 const FACTORY = {
   resend: {
     import: "import { resendAdapter } from './adapters/resend/index'",
-    adapter: "resendAdapter({ apiKey: required(env.RESEND_API_KEY, 'RESEND_API_KEY') })",
+    adapter: 'resendAdapter({ apiKey: env.RESEND_API_KEY })',
     envKeys: ['EMAIL_FROM', 'RESEND_API_KEY'],
     requiredEnvKeys: ['RESEND_API_KEY'],
     pkgDep: 'resend',
   },
   brevo: {
     import: "import { brevoAdapter } from './adapters/brevo/index'",
-    adapter: "brevoAdapter({ apiKey: required(env.BREVO_API_KEY, 'BREVO_API_KEY') })",
+    adapter: 'brevoAdapter({ apiKey: env.BREVO_API_KEY })',
     envKeys: ['EMAIL_FROM', 'BREVO_API_KEY'],
     requiredEnvKeys: ['BREVO_API_KEY'],
     pkgDep: '@getbrevo/brevo',
@@ -36,13 +36,8 @@ const FACTORY = {
   },
 }
 
-const REQUIRED_HELPER = `
-function required(value: string | undefined, name: string): string {
-  if (!value) throw new Error(\`\${name} is required to send email\`)
-  return value
-}
-`
-
+// env.ts is the source of truth: a kept mailer's API key is emitted as required there,
+// so env.X is already a guaranteed string — the composition root reads it directly.
 const INDEX_TS = (cfg) => `import type { ReactElement } from 'react'
 import { env } from '~/env'
 ${cfg.import}
@@ -50,7 +45,7 @@ import type { MailAddress, Mailer } from './core/port'
 import { createMailer } from './factory'
 
 export type EmailRecipient = MailAddress
-${cfg.adapter.includes('required(') ? REQUIRED_HELPER : ''}
+
 let mailer: Mailer | null = null
 function getMailer(): Mailer {
   if (!mailer) {
@@ -75,9 +70,12 @@ export async function sendEmail(params: {
 }
 `
 
-/** Swap inlined mailer to `provider` → { addDeps, removeDeps, envKeys, requiredEnvKeys }. 'resend' is a no-op (base default). */
+/** Swap inlined mailer to `provider` → { addDeps, removeDeps, envKeys, requiredEnvKeys }. */
 export function swapMailer(projectDir, provider) {
   if (provider === 'resend') {
+    // base ships the resend adapter; rewrite only the composition root so the generated
+    // project reads env directly (env.ts marks RESEND_API_KEY required) — no lazy guard.
+    write(join(projectDir, EMAIL_DIR, 'index.ts'), INDEX_TS(FACTORY.resend))
     return {
       addDeps: {},
       removeDeps: [],

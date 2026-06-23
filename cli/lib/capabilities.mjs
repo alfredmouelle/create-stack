@@ -13,7 +13,8 @@ const PKG = (cap) => join(STACK_ROOT, 'packages', cap)
 /**
  * Per-capability wiring. `dir` = vendored destination, `entry` = exported accessor
  * stem, `portType` = the interface returned. Each adapter maps constructor args to
- * env keys: [argName, ENV_KEY, required?]. A required arg is narrowed via required().
+ * env keys: [argName, ENV_KEY, required?]. A required arg is emitted as required in
+ * env.ts, so the root reads env.X directly (guaranteed string).
  */
 const CAPS = {
   storage: {
@@ -169,30 +170,18 @@ export function resolveAdapter(cap, value) {
   return value
 }
 
-const REQUIRED_HELPER = `
-function required(value: string | undefined, name: string): string {
-  if (!value) throw new Error(\`\${name} is required\`)
-  return value
-}
-`
-
-/** Object-literal body mapping constructor args to env (required ones narrowed). */
-const ctorArgs = (args) =>
-  args
-    .map(([name, key, req]) =>
-      req ? `      ${name}: required(env.${key}, '${key}'),` : `      ${name}: env.${key},`,
-    )
-    .join('\n')
+// env.ts is the single source of truth: required adapter keys are emitted without
+// v.optional there, so env.X is already a guaranteed string — no narrowing needed here.
+const ctorArgs = (args) => args.map(([name, key]) => `      ${name}: env.${key},`).join('\n')
 
 /** Lazy-singleton composition root: boots without env, constructs on first use. */
 function standardRoot({ entry, portType, adapterKey, fn, args }) {
   const getter = `get${entry[0].toUpperCase()}${entry.slice(1)}`
-  const hasRequired = args.some((a) => a[2])
   const ctor = args.length ? `${fn}({\n${ctorArgs(args)}\n    })` : `${fn}()`
   const envImport = args.length ? "import { env } from '~/env'\n" : ''
   return `${envImport}import { ${fn} } from './adapters/${adapterKey}/index'
 import type { ${portType} } from './core/port'
-${hasRequired ? REQUIRED_HELPER : ''}
+
 let instance: ${portType} | null = null
 export function ${getter}(): ${portType} {
   if (!instance) {
@@ -386,7 +375,7 @@ export function vendorCapability({ projectDir, framework, projectName, cap, adap
   return {
     addDeps: resolveDeps(cap, [...adManifest.deps, ...(manifest.sharedDeps ?? [])]),
     envKeys: adManifest.env,
-    // a key the adapter narrows with required(env.X) must be required at boot too.
+    // a key the root reads as env.X must be required in env.ts (guaranteed string).
     requiredEnvKeys: (aSpec.args ?? []).filter(([, , req]) => req).map(([, key]) => key),
   }
 }

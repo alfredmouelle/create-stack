@@ -1,7 +1,7 @@
 // Rebuilds src/env.ts `server` + `runtimeEnv` from the final key set; generates
-// .env.example + .env, deterministically. Required keys (the provider/adapter keys
-// the generated code mandates via `required(env.X)`) are emitted without v.optional
-// and always carry a non-empty placeholder, so the fresh project still boots/builds.
+// .env.example + .env, deterministically. Required keys (the provider/adapter keys a
+// composition root reads via env.X) are emitted without v.optional — so env.X is a
+// guaranteed string — and always carry a non-empty placeholder, so it boots/builds.
 
 import { editFile, exists, join, read, write } from './util.mjs'
 

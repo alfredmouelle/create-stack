@@ -49,12 +49,20 @@ function assertMailer(dir, result, deps) {
   if (!result.keptMailer) {
     expect(exists(`${dir}/src/server/email`), 'email dir').toBe(false)
     expect(filesImporting(dir, ['~/server/email']), 'dangling email imports').toEqual([])
+    return
   }
+  // env.ts is the source of truth: the root reads env directly, no redundant guard
+  const root = read(`${dir}/src/server/email/index.ts`)
+  expect(root, 'no required() guard in email root').not.toContain('function required')
+  // resend/brevo read their key straight off env (ses uses the AWS credential chain)
+  if (result.mailerProvider !== 'ses') expect(root).toContain('apiKey: env.')
 }
 
 function assertCapabilities(dir, env, capabilities = {}) {
   for (const cap of Object.keys(capabilities)) {
     expect(exists(`${dir}/src/server/${cap}`), `${cap} vendored`).toBe(true)
+    // no redundant env re-validation in the composition root
+    expect(read(`${dir}/src/server/${cap}/index.ts`)).not.toContain('function required')
   }
   if (capabilities.storage === 's3') expect(env).toContain('S3_BUCKET')
   if (capabilities.cache === 'redis') expect(env).toContain('REDIS_URL')
