@@ -4,6 +4,9 @@ packages:
   - "cli"
 allowBuilds:
   esbuild: true
+  protobufjs: true
+  sharp: true
+  lightningcss: true
 onlyBuiltDependencies:
   - esbuild
   - protobufjs
