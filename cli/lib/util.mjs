@@ -32,6 +32,16 @@ export const copy = (from, to) => {
   cpSync(from, to, { recursive: true })
 }
 
+/** Copy a dir tree, skipping entries whose basename is excluded (rsync-less fork fallback). */
+export const copyTree = (from, to, excludeBasenames = []) => {
+  const skip = new Set(excludeBasenames)
+  mkdirSync(to, { recursive: true })
+  cpSync(from, to, {
+    recursive: true,
+    filter: (src) => !skip.has(src.slice(src.lastIndexOf('/') + 1)),
+  })
+}
+
 /** Edit a file in place via (content) => content. No-op if absent. */
 export const editFile = (p, fn) => {
   if (!existsSync(p)) return false

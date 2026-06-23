@@ -2,7 +2,7 @@
 // (own Biome config, pnpm workspace + build allowlist, project name).
 
 import { STACK_ROOT, TEMPLATES } from './paths.mjs'
-import { copy, exists, join, readJSON, run, write, writeJSON } from './util.mjs'
+import { copy, copyTree, exists, join, readJSON, run, write, writeJSON } from './util.mjs'
 
 const RSYNC_EXCLUDES = [
   'node_modules',
@@ -85,10 +85,26 @@ next-env.d.ts
 export function forkBase(framework, projectDir) {
   const base = join(STACK_ROOT, 'apps', framework === 'next' ? 'next-base' : 'tanstack-base')
   if (!exists(base)) throw new Error(`Base app not found: ${base}`)
-  const args = ['-a']
-  for (const ex of RSYNC_EXCLUDES) args.push('--exclude', ex)
-  args.push(`${base}/.`, `${projectDir}/`)
-  if (!run('rsync', args)) throw new Error('rsync failed while forking the base app')
+
+  // rsync is the fast path; fall back to a filtered cpSync where it's absent (e.g. Windows).
+  if (hasRsync()) {
+    const args = ['-a']
+    for (const ex of RSYNC_EXCLUDES) args.push('--exclude', ex)
+    args.push(`${base}/.`, `${projectDir}/`)
+    if (!run('rsync', args)) throw new Error('rsync failed while forking the base app')
+    return
+  }
+  // RSYNC_EXCLUDES holds path-ish entries (e.g. src/routeTree.gen.ts); cpSync filters by
+  // basename, which is unambiguous for every excluded name in the base apps.
+  const basenames = RSYNC_EXCLUDES.map((e) => e.slice(e.lastIndexOf('/') + 1))
+  copyTree(base, projectDir, basenames)
+}
+
+let _hasRsync
+/** Is rsync on PATH? Probed once. */
+function hasRsync() {
+  if (_hasRsync === undefined) _hasRsync = run('rsync', ['--version'], { stdio: 'ignore' })
+  return _hasRsync
 }
 
 /** Make the fork standalone (Biome, pnpm workspace, .gitignore, identity). */

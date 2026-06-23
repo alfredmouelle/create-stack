@@ -41,8 +41,8 @@ selection flag → **non-interactive** mode (scriptable / CI).
 - **Node** ≥ 22
 - A package manager — **pnpm**, **npm**, **yarn** or **bun**. The generated project
   matches whichever you launch with (detected via `npm_config_user_agent`).
-- **git** and **rsync** available on `PATH`. macOS and Linux ship both; on Windows
-  use WSL or Git Bash (which provides `rsync`).
+- **git** on `PATH`. **rsync** is used as a fast path when present (macOS/Linux ship
+  it); without it the CLI falls back to a built-in copy, so Windows works natively.
 
 ## Usage
 
