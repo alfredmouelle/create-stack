@@ -26,13 +26,17 @@ interface DateRangePickerProps {
   formatLabel?: (value: DateRangeValue) => string
 }
 
-const defaultFormatLabel = (value: DateRangeValue) =>
-  `${format(parseISO(value.from), 'd MMM')} – ${format(parseISO(value.to), 'd MMM')}`
+const defaultFormatLabel = (value: DateRangeValue) => {
+  const from = parseISO(value.from)
+  const to = parseISO(value.to)
+  const pattern = from.getFullYear() === to.getFullYear() ? 'd MMM' : 'd MMM yyyy'
+  return `${format(from, pattern)} – ${format(to, pattern)}`
+}
 
 export function DateRangePicker({
   value,
   onChange,
-  placeholder = 'Plage de dates',
+  placeholder = 'Pick a range',
   numberOfMonths = 2,
   align = 'end',
   triggerVariant = 'outline',
@@ -75,7 +79,7 @@ export function DateRangePicker({
             variant={hasValue ? 'secondary' : triggerVariant}
           >
             <CalendarRange
-              className={cn('transition-opacity', hasValue && 'group-hover:opacity-0')}
+              className={cn('size-4 transition-opacity', hasValue && 'group-hover:opacity-0')}
             />
             {hasValue ? formatLabel(value) : placeholder}
           </Button>
@@ -98,10 +102,14 @@ export function DateRangePicker({
       <PopoverContent align={align} className="w-auto p-0">
         <Calendar
           autoFocus
+          captionLayout="dropdown"
+          defaultMonth={draft?.from}
+          endMonth={new Date(new Date().getFullYear() + 1, 11)}
           mode="range"
           numberOfMonths={numberOfMonths}
           onSelect={setDraft}
           selected={draft}
+          startMonth={new Date(2015, 0)}
         />
         <div className="flex items-center justify-between gap-2 border-t p-2">
           <Button
@@ -111,7 +119,7 @@ export function DateRangePicker({
             size="sm"
             variant="ghost"
           >
-            Réinitialiser
+            Reset
           </Button>
           <div className="flex gap-2">
             <Button
@@ -120,7 +128,7 @@ export function DateRangePicker({
               size="sm"
               variant="ghost"
             >
-              Annuler
+              Cancel
             </Button>
             <Button
               className="cursor-pointer"
@@ -128,7 +136,7 @@ export function DateRangePicker({
               onClick={applyDraft}
               size="sm"
             >
-              Appliquer
+              Apply
             </Button>
           </div>
         </div>
