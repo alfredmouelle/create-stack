@@ -3,7 +3,9 @@
 // Interactive by default; non-interactive when any selection flag (or --yes) is passed:
 //   create-stack my-app --framework next --foundations drizzle,trpc --mailer ses --no-install
 
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
 import { buildProject } from './lib/build.mjs'
 import {
@@ -18,6 +20,33 @@ import { isDirEmpty, run } from './lib/util.mjs'
 // the PM that launched us (npx/pnpm dlx/yarn create/bun create); drives install + run.
 const pm = detectPackageManager()
 
+const VERSION = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
+).version
+
+const HELP = `create-stack — fork a base app, strip it to your selection.
+
+Usage:
+  create-stack [project] [flags]
+
+Run with no flags for an interactive wizard; pass any selection flag (or --yes)
+for non-interactive mode.
+
+Flags:
+  --framework <tanstack|next>      Base app to fork (default tanstack)
+  --foundations <csv>              drizzle,trpc,better-auth,data-table (default all)
+  --mailer <resend|brevo|ses|none> Mailer provider (default resend)
+  --storage [s3|r2|gcs|local]      Object storage capability (omit to skip)
+  --cache [redis|upstash|memory]   Key/value cache capability (omit to skip)
+  --jobs [inngest|trigger|memory]  Background jobs capability (omit to skip)
+  --logger [pino|console]          Structured logging capability (omit to skip)
+  --analytics [posthog|plausible|noop]  Analytics capability (omit to skip)
+  --error-tracking [sentry|console]     Error reporting capability (omit to skip)
+  --no-install                     Skip install + verification
+  -y, --yes                        Non-interactive with all defaults
+  -h, --help                       Show this help
+  -v, --version                    Print version`
+
 const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
 
 const cancelled = (v) => {
@@ -28,7 +57,7 @@ const cancelled = (v) => {
   return v
 }
 
-/** Minimal flag parser: positional dir + --key value / --flag. */
+/** Minimal flag parser: positional dir + --key value / --flag / short -abc booleans. */
 function parseArgs(argv) {
   const out = { _: [], flags: {} }
   for (let i = 0; i < argv.length; i++) {
@@ -36,12 +65,14 @@ function parseArgs(argv) {
     if (a.startsWith('--')) {
       const key = a.slice(2)
       const next = argv[i + 1]
-      if (next && !next.startsWith('--')) {
+      if (next && !next.startsWith('-')) {
         out.flags[key] = next
         i++
       } else {
         out.flags[key] = true
       }
+    } else if (a.length > 1 && a[0] === '-') {
+      for (const ch of a.slice(1)) out.flags[ch] = true
     } else {
       out._.push(a)
     }
@@ -238,6 +269,15 @@ function execute(a) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
+
+  if (args.flags.help || args.flags.h) {
+    process.stdout.write(`${HELP}\n`)
+    return
+  }
+  if (args.flags.version || args.flags.v) {
+    process.stdout.write(`${VERSION}\n`)
+    return
+  }
 
   const nonInteractive =
     args.flags.yes ||
