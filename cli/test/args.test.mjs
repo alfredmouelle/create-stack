@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { csv, normalize, parseArgs } from '../lib/args.mjs'
+import { csv, isValidAlias, normalize, normalizeAlias, parseArgs } from '../lib/args.mjs'
 
 describe('parseArgs', () => {
   test('positionals + --key value', () => {
@@ -58,5 +58,34 @@ describe('normalize', () => {
   })
   test('none mailer survives without better-auth', () => {
     expect(normalize(['data-table'], 'none').mailerProvider).toBe('none')
+  })
+})
+
+describe('normalizeAlias', () => {
+  test('empty / non-string → default ~', () => {
+    expect(normalizeAlias(undefined)).toBe('~')
+    expect(normalizeAlias('')).toBe('~')
+    expect(normalizeAlias('   ')).toBe('~')
+  })
+  test('keeps common prefixes and strips a trailing slash', () => {
+    expect(normalizeAlias('@')).toBe('@')
+    expect(normalizeAlias('@/')).toBe('@')
+    expect(normalizeAlias('#')).toBe('#')
+    expect(normalizeAlias(' @app ')).toBe('@app')
+  })
+  test('throws on a malformed alias', () => {
+    expect(() => normalizeAlias('foo/bar')).toThrow()
+    expect(() => normalizeAlias('@@')).toThrow()
+    expect(() => normalizeAlias('a b')).toThrow()
+  })
+})
+
+describe('isValidAlias', () => {
+  test('accepts prefixes, rejects junk', () => {
+    expect(isValidAlias('@')).toBe(true)
+    expect(isValidAlias('~')).toBe(true)
+    expect(isValidAlias('@app')).toBe(true)
+    expect(isValidAlias('')).toBe(false)
+    expect(isValidAlias('a/b')).toBe(false)
   })
 })

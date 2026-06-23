@@ -13,8 +13,10 @@ const FRAMEWORKS = process.env.SMOKE_FRAMEWORK
 
 // One rich and one stripped config per framework — the stripped one is where dangling
 // seams would surface as a typecheck failure.
+// 'full' also pins a custom import alias — proof the '~/' rewrite leaves a tree that
+// still typechecks (bundler path resolution + every generated import).
 const CONFIGS = [
-  { name: 'full', capabilities: { storage: 's3', cache: 'redis' } },
+  { name: 'full', capabilities: { storage: 's3', cache: 'redis' }, alias: '@' },
   { name: 'drizzle-only', foundations: ['drizzle'], mailer: 'none' },
 ]
 
@@ -54,6 +56,7 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
           foundations: ['drizzle'],
           mailer: 'resend',
           capabilities: { cache: 'redis' },
+          alias: '@', // each subsequent add must vendor against '@/', not '~/'
         })
         addCapability({ projectDir: dir, cap: 'cache', adapter: 'upstash' }) // swap adapter
         addCapability({ projectDir: dir, cap: 'mailer', adapter: 'brevo' }) // mailer swap

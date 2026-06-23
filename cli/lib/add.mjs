@@ -2,6 +2,7 @@
 // deltas incrementally (same engine as the scaffold). On a multi-adapter capability a
 // re-add swaps the adapter; `keep` retains the previous one(s) alongside the new.
 
+import { detectAlias, rewriteAlias } from './alias.mjs'
 import {
   adapterChoices,
   adapterRemovableDeps,
@@ -88,10 +89,13 @@ export function addCapability({ projectDir, cap, adapter, keep }) {
   const pkg = readJSON(pkgPath)
   const framework = detectFramework(pkg)
   const projectName = pkg.name ?? 'app'
+  // vendored sources ship with '~/'; align them to whatever alias this project already uses.
+  const alias = detectAlias(projectDir)
 
   // email-kit / http: just vendor the source, no deps or env.
   if (NO_ADAPTER.has(cap)) {
     vendorPackageSrc(cap, join(projectDir, targetDir(cap)))
+    rewriteAlias(projectDir, alias)
     return { framework, projectName, addDeps: {}, envKeys: [], swappedFrom: null }
   }
 
@@ -128,5 +132,6 @@ export function addCapability({ projectDir, cap, adapter, keep }) {
   pkgAddDeps(pkg, addDeps)
   writeJSON(pkgPath, pkg)
   appendEnv(projectDir, envKeys, requiredEnvKeys)
+  rewriteAlias(projectDir, alias)
   return { framework, projectName, addDeps, envKeys, swappedFrom }
 }

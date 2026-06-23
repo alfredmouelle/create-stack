@@ -1,6 +1,7 @@
 // Pure build phase (no prompts/install): fork → strip → mailer → env → identity.
 // Shared by index.mjs (post-wizard) and the test harness.
 
+import { rewriteAlias } from './alias.mjs'
 import { vendorCapability } from './capabilities.mjs'
 import { writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
@@ -18,8 +19,9 @@ import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON 
  * @param {Set<string>} o.kept   foundations to keep (deps pre-resolved)
  * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
  * @param {Record<string,string>} [o.capabilities]  capability → adapter (e.g. { storage: 's3' })
+ * @param {string} [o.alias]  import-alias prefix to rewrite '~/' to (default '~', i.e. no-op)
  * @param {import('./package-manager.mjs').PackageManager} [o.pm]  target package manager (defaults to detected)
- * @returns {{ kept: string[], keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[] }}
+ * @returns {{ kept: string[], keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[], alias: string }}
  */
 export function buildProject({
   projectDir,
@@ -28,6 +30,7 @@ export function buildProject({
   kept,
   mailerProvider,
   capabilities = {},
+  alias = '~',
   pm = detectPackageManager(),
 }) {
   const authKept = kept.has('better-auth')
@@ -81,5 +84,8 @@ export function buildProject({
 
   stampIdentity(projectDir, projectName, framework, pm)
 
-  return { kept: [...kept], keptMailer, mailerProvider, capabilities, envKeys }
+  // last: swap '~/' for the chosen alias across everything generated above (no-op when '~').
+  rewriteAlias(projectDir, alias)
+
+  return { kept: [...kept], keptMailer, mailerProvider, capabilities, envKeys, alias }
 }

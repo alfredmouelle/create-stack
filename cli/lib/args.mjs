@@ -35,6 +35,28 @@ export const csv = (v) =>
         .filter(Boolean)
     : []
 
+// An import-alias prefix: optional @/~/# sigil + word chars (e.g. '~', '@', '#', '@app', 'src').
+export const ALIAS_RE = /^[@~#]?[\w-]*$/
+
+const cleanAlias = (v) =>
+  String(v ?? '')
+    .trim()
+    .replace(/\/+$/, '') // tolerate a typed-in trailing slash ('@/' → '@')
+
+/** Is `v` a usable alias prefix? */
+export const isValidAlias = (v) => {
+  const t = cleanAlias(v)
+  return t.length > 0 && ALIAS_RE.test(t)
+}
+
+/** Normalize an alias prefix; '' / non-string → '~'. Throws on a malformed value. */
+export function normalizeAlias(v) {
+  const t = cleanAlias(v)
+  if (!t) return '~'
+  if (!ALIAS_RE.test(t)) throw new Error(`Invalid import alias: ${JSON.stringify(v)}`)
+  return t
+}
+
 /** Resolve hard deps + mailer's better-auth requirement for a foundation selection. */
 export function normalize(picked, mailer) {
   const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))

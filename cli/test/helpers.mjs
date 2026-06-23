@@ -43,6 +43,7 @@ export function build(cfg) {
     kept,
     mailerProvider,
     capabilities: cfg.capabilities ?? {},
+    alias: cfg.alias,
     pm: PM,
   })
   return { dir: projectDir, result }

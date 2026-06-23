@@ -15,7 +15,7 @@ import {
   resolveTargetAdapter,
   targetDir,
 } from './lib/add.mjs'
-import { ALL_FOUNDATIONS, csv, normalize, parseArgs } from './lib/args.mjs'
+import { ALL_FOUNDATIONS, csv, isValidAlias, normalize, normalizeAlias, parseArgs } from './lib/args.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
   adapterChoices,
@@ -48,6 +48,7 @@ multi-adapter capability swaps its adapter; --keep retains the previous one(s).
 
 Flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
+  --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --foundations <csv>              drizzle,trpc,better-auth,data-table (default all)
   --mailer <resend|brevo|ses|none> Mailer provider (default resend)
   --storage [s3|r2|gcs|local]      Object storage capability (omit to skip)
@@ -82,11 +83,13 @@ function collectFromFlags(args) {
   const argDir = args._[0]
   if (!argDir) throw new Error('Project name is required (positional) in non-interactive mode')
   const framework = args.flags.framework === 'next' ? 'next' : 'tanstack'
+  // bare `--alias` (boolean) → keep the default rather than the literal string 'true'
+  const alias = normalizeAlias(typeof args.flags.alias === 'string' ? args.flags.alias : undefined)
   const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
   const { kept, mailerProvider } = normalize(picked, args.flags.mailer)
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
-  return { argDir, projectName: argDir, framework, kept, mailerProvider, capabilities, doInstall }
+  return { argDir, projectName: argDir, framework, alias, kept, mailerProvider, capabilities, doInstall }
 }
 
 async function collectFromPrompts(argDir) {
@@ -111,6 +114,32 @@ async function collectFromPrompts(argDir) {
       ],
     }),
   )
+
+  const aliasPick = cancelled(
+    await p.select({
+      message: 'Import alias',
+      initialValue: '~',
+      options: [
+        { value: '~', label: '~ (default)', hint: '~/components/...' },
+        { value: '@', label: '@', hint: '@/components/...' },
+        { value: '#', label: '#', hint: '#/components/...' },
+        { value: '__custom__', label: 'Custom…' },
+      ],
+    }),
+  )
+  const alias =
+    aliasPick === '__custom__'
+      ? normalizeAlias(
+          cancelled(
+            await p.text({
+              message: 'Custom import alias prefix',
+              placeholder: '@app',
+              validate: (v) =>
+                isValidAlias(v) ? undefined : 'Letters, digits, - or _, optionally prefixed by @ ~ #',
+            }),
+          ),
+        )
+      : aliasPick
 
   const picked = cancelled(
     await p.multiselect({
@@ -167,7 +196,7 @@ async function collectFromPrompts(argDir) {
   )
 
   const { kept, mailerProvider } = normalize(picked, mailer)
-  return { argDir, projectName, framework, kept, mailerProvider, capabilities, doInstall }
+  return { argDir, projectName, framework, alias, kept, mailerProvider, capabilities, doInstall }
 }
 
 const pmRun = (script, projectDir, opts = {}) =>
@@ -221,6 +250,7 @@ function execute(a) {
   const capEntries = Object.entries(a.capabilities ?? {})
   const lines = [
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
+    `Import alias: ${a.alias ?? '~'}/`,
     `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
     `Mailer: ${keptMailer ? a.mailerProvider : '(none)'}`,
     `Capabilities: ${capEntries.map(([c, ad]) => `${c} (${ad})`).join(', ') || '(none)'}`,
