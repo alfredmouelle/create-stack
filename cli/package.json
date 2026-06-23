@@ -20,11 +20,6 @@
     "trpc",
     "better-auth"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/alfredmouelle/create-stack.git",
-    "directory": "cli"
-  },
   "bin": {
     "create-stack": "./index.mjs"
   },
