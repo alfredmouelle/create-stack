@@ -15,7 +15,14 @@ import {
   resolveTargetAdapter,
   targetDir,
 } from './lib/add.mjs'
-import { ALL_FOUNDATIONS, csv, isValidAlias, normalize, normalizeAlias, parseArgs } from './lib/args.mjs'
+import {
+  ALL_FOUNDATIONS,
+  csv,
+  isValidAlias,
+  normalize,
+  normalizeAlias,
+  parseArgs,
+} from './lib/args.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
   adapterChoices,
@@ -23,11 +30,11 @@ import {
   capabilityChoices,
   resolveAdapter,
 } from './lib/capabilities.mjs'
-import { detectPackageManager } from './lib/package-manager.mjs'
+import { detectPackageManager, PM_NAMES, resolvePackageManager } from './lib/package-manager.mjs'
 import { exists, isDirEmpty, join, run } from './lib/util.mjs'
 
-// the PM that launched us (npx/pnpm dlx/yarn create/bun create); drives install + run.
-const pm = detectPackageManager()
+// PM that launched us; the wizard pre-selects it and `add`/non-interactive fall back to it.
+const detectedPm = detectPackageManager()
 
 const VERSION = JSON.parse(
   readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
@@ -48,6 +55,7 @@ multi-adapter capability swaps its adapter; --keep retains the previous one(s).
 
 Flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
+  --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --foundations <csv>              drizzle,trpc,better-auth,data-table (default all)
   --mailer <resend|brevo|ses|none> Mailer provider (default resend)
@@ -85,11 +93,23 @@ function collectFromFlags(args) {
   const framework = args.flags.framework === 'next' ? 'next' : 'tanstack'
   // bare `--alias` (boolean) → keep the default rather than the literal string 'true'
   const alias = normalizeAlias(typeof args.flags.alias === 'string' ? args.flags.alias : undefined)
+  const pmFlag = args.flags.pm ?? args.flags['package-manager']
+  const pm = typeof pmFlag === 'string' ? resolvePackageManager(pmFlag) : detectedPm
   const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
   const { kept, mailerProvider } = normalize(picked, args.flags.mailer)
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
-  return { argDir, projectName: argDir, framework, alias, kept, mailerProvider, capabilities, doInstall }
+  return {
+    argDir,
+    projectName: argDir,
+    framework,
+    alias,
+    pm,
+    kept,
+    mailerProvider,
+    capabilities,
+    doInstall,
+  }
 }
 
 async function collectFromPrompts(argDir) {
@@ -135,11 +155,26 @@ async function collectFromPrompts(argDir) {
               message: 'Custom import alias prefix',
               placeholder: '@app',
               validate: (v) =>
-                isValidAlias(v) ? undefined : 'Letters, digits, - or _, optionally prefixed by @ ~ #',
+                isValidAlias(v)
+                  ? undefined
+                  : 'Letters, digits, - or _, optionally prefixed by @ ~ #',
             }),
           ),
         )
       : aliasPick
+
+  const pm = resolvePackageManager(
+    cancelled(
+      await p.select({
+        message: 'Package manager',
+        initialValue: detectedPm.name,
+        options: PM_NAMES.map((n) => ({
+          value: n,
+          label: n === detectedPm.name ? `${n} (detected)` : n,
+        })),
+      }),
+    ),
+  )
 
   const picked = cancelled(
     await p.multiselect({
@@ -196,21 +231,31 @@ async function collectFromPrompts(argDir) {
   )
 
   const { kept, mailerProvider } = normalize(picked, mailer)
-  return { argDir, projectName, framework, alias, kept, mailerProvider, capabilities, doInstall }
+  return {
+    argDir,
+    projectName,
+    framework,
+    alias,
+    pm,
+    kept,
+    mailerProvider,
+    capabilities,
+    doInstall,
+  }
 }
 
-const pmRun = (script, projectDir, opts = {}) =>
+const pmRun = (pm, script, projectDir, opts = {}) =>
   run(pm.exec, pm.runArgs(script), { cwd: projectDir, ...opts })
 
 /** Install deps, normalize formatting, then report typecheck + biome status. */
-function installAndVerify(projectDir) {
+function installAndVerify(projectDir, pm) {
   p.log.step(`${pm.name} install`)
   run(pm.exec, ['install'], { cwd: projectDir })
   // re-format under the fork's own Biome so the initial commit is lint-clean for any selection
-  pmRun('check:write', projectDir, { stdio: 'ignore' })
+  pmRun(pm, 'check:write', projectDir, { stdio: 'ignore' })
   p.log.step('Verifying (typecheck + biome)')
-  const tc = pmRun('typecheck', projectDir)
-  const lint = pmRun('check', projectDir)
+  const tc = pmRun(pm, 'typecheck', projectDir)
+  const lint = pmRun(pm, 'check', projectDir)
   p.log[tc && lint ? 'success' : 'warn'](
     tc && lint ? 'typecheck + biome clean' : 'verify reported issues (see output above)',
   )
@@ -222,13 +267,14 @@ function execute(a) {
     p.cancel(`Target directory is not empty: ${projectDir}`)
     process.exit(1)
   }
+  const pm = a.pm ?? detectedPm
 
   const s = p.spinner()
   s.start('Forking + stripping the base app')
   buildProject({ ...a, projectDir, pm })
   s.stop('Project scaffolded')
 
-  if (a.doInstall) installAndVerify(projectDir)
+  if (a.doInstall) installAndVerify(projectDir, pm)
 
   // fresh repo + initial commit (also satisfies Biome vcs.useIgnoreFile).
   // commit is best-effort: skipped if git identity unset, staged tree left in place.
@@ -250,6 +296,7 @@ function execute(a) {
   const capEntries = Object.entries(a.capabilities ?? {})
   const lines = [
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
+    `Package manager: ${pm.name}`,
     `Import alias: ${a.alias ?? '~'}/`,
     `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
     `Mailer: ${keptMailer ? a.mailerProvider : '(none)'}`,
@@ -323,7 +370,7 @@ async function runAdd(args) {
     ...sel,
     ...addCapability({ projectDir, ...sel, keep }),
   }))
-  if (!args.flags['no-install']) installAndVerify(projectDir)
+  if (!args.flags['no-install']) installAndVerify(projectDir, detectedPm)
 
   p.note(added.map(addedLine).join('\n'), keep ? 'Added (kept existing adapters)' : 'Added')
   p.outro(`Added ${added.map((a) => a.cap).join(', ')}`)

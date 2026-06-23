@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { detectPackageManager } from '../lib/package-manager.mjs'
+import { detectPackageManager, PM_NAMES, resolvePackageManager } from '../lib/package-manager.mjs'
 
 describe('detectPackageManager', () => {
   let saved
@@ -35,5 +35,16 @@ describe('detectPackageManager', () => {
     const pm = detectPackageManager()
     expect(pm.runArgs('typecheck')).toContain('typecheck')
     expect(pm.devCmd).toBe('pnpm dev')
+  })
+})
+
+describe('resolvePackageManager', () => {
+  test('every advertised name resolves to a matching descriptor', () => {
+    expect(PM_NAMES).toEqual(['pnpm', 'npm', 'yarn', 'bun'])
+    for (const name of PM_NAMES) expect(resolvePackageManager(name).name).toBe(name)
+  })
+  test('unknown / empty → npm default', () => {
+    expect(resolvePackageManager('deno').name).toBe('npm')
+    expect(resolvePackageManager(undefined).name).toBe('npm')
   })
 })

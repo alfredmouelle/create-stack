@@ -21,11 +21,17 @@ const PACKAGE_MANAGERS = {
   bun: { name: 'bun', exec: 'bun', runArgs: (script) => ['run', script], devCmd: 'bun dev' },
 }
 
+/** Supported package-manager names, in display order. */
+export const PM_NAMES = ['pnpm', 'npm', 'yarn', 'bun']
+
+/** Resolve a name to its descriptor, falling back to npm for anything unknown. */
+export const resolvePackageManager = (name) => PACKAGE_MANAGERS[name] ?? PACKAGE_MANAGERS.npm
+
 /**
  * Resolve the package manager from npm_config_user_agent.
  * @returns {PackageManager}
  */
 export function detectPackageManager() {
   const name = (process.env.npm_config_user_agent ?? '').split('/')[0]
-  return PACKAGE_MANAGERS[name] ?? PACKAGE_MANAGERS.npm
+  return resolvePackageManager(name)
 }

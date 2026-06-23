@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ALL_FOUNDATIONS, normalize } from '../lib/args.mjs'
+import { resolvePackageManager } from '../lib/package-manager.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = resolve(here, '..', '..')
@@ -16,19 +17,14 @@ process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 const { buildProject } = await import('../lib/build.mjs')
 export const { addCapability } = await import('../lib/add.mjs')
 
-const PM = {
-  name: 'pnpm',
-  exec: 'pnpm',
-  runArgs: (s) => ['--config.verify-deps-before-run=false', 'run', s],
-  devCmd: 'pnpm dev',
-}
+const PM = resolvePackageManager('pnpm')
 
 const tmpRoots = []
 
 /**
  * Build a project from a terse config into a throwaway dir.
  * @param {{ name?: string, framework: 'next'|'tanstack', foundations?: string[],
- *   mailer?: string, capabilities?: Record<string,string> }} cfg
+ *   mailer?: string, capabilities?: Record<string,string>, alias?: string, pm?: string }} cfg
  * @returns {{ dir: string, result: object }}
  */
 export function build(cfg) {
@@ -44,7 +40,7 @@ export function build(cfg) {
     mailerProvider,
     capabilities: cfg.capabilities ?? {},
     alias: cfg.alias,
-    pm: PM,
+    pm: cfg.pm ? resolvePackageManager(cfg.pm) : PM,
   })
   return { dir: projectDir, result }
 }

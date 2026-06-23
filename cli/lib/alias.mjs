@@ -6,8 +6,26 @@
 import { readdirSync } from 'node:fs'
 import { editFile, exists, join, read } from './util.mjs'
 
-const REWRITE_EXTS = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'])
-const SKIP_DIRS = new Set(['node_modules', '.git', '.next', '.output', '.nitro', '.tanstack', 'dist'])
+const REWRITE_EXTS = new Set([
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.json',
+])
+const SKIP_DIRS = new Set([
+  'node_modules',
+  '.git',
+  '.next',
+  '.output',
+  '.nitro',
+  '.tanstack',
+  'dist',
+])
 
 // Match the alias only as a quoted module-specifier prefix (import 'X', "X", `X`) so
 // stray '~/' in comments or prose is left alone.
