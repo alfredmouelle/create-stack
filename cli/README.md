@@ -13,8 +13,8 @@
 </p>
 
 <p align="center">
-  <!-- record with: vhs docs/demo.tape -->
-  <img src="./docs/demo.gif" alt="create-stack scaffolding a project and swapping an adapter" width="640">
+  <!-- served from the npm tarball via jsDelivr; the private repo can't serve it from GitHub. record with: vhs docs/demo.tape -->
+  <img src="https://cdn.jsdelivr.net/npm/@alfredmouelle/create-stack/docs/demo.gif" alt="create-stack scaffolding a project and swapping an adapter" width="640">
 </p>
 
 ---
