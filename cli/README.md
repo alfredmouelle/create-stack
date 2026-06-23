@@ -174,7 +174,7 @@ create-stack add cache upstash --keep  # keep both adapters; composition root us
 ```bash
 cd my-app
 pnpm install            # only if you passed --no-install
-cp .env.example .env    # fill in the values
+# edit .env             # already generated with placeholders (alongside .env.example)
 pnpm dev
 ```
 

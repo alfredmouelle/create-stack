@@ -231,7 +231,7 @@ function execute(a) {
     `  cd ${a.argDir ?? a.projectName}`,
   ]
   if (!a.doInstall) lines.push(`  ${pm.name} install`)
-  lines.push('  cp .env.example .env   # fill in the values', `  ${pm.devCmd}`)
+  lines.push('  # edit .env (already generated with placeholders)', `  ${pm.devCmd}`)
   p.note(lines.join('\n'), 'Done')
   p.outro(`Created ${a.projectName}`)
 }
