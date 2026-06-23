@@ -15,7 +15,25 @@ permissions:
   contents: read
 
 jobs:
+  # Gate: a broken scaffold must never reach npm. Runs the same fast build matrix
+  # plus the full smoke (install + typecheck + biome) on both base apps.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @alfredmouelle/create-stack test
+      - run: pnpm --filter @alfredmouelle/create-stack test:smoke
+
   publish:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
