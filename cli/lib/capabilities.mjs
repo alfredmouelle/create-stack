@@ -60,6 +60,13 @@ const CAPS = {
     defaultAdapter: 'redis',
     adapters: {
       redis: { fn: 'redisAdapter', args: [['url', 'REDIS_URL', false]] },
+      upstash: {
+        fn: 'upstashAdapter',
+        args: [
+          ['url', 'UPSTASH_REDIS_REST_URL', true],
+          ['token', 'UPSTASH_REDIS_REST_TOKEN', true],
+        ],
+      },
       memory: { fn: 'memoryAdapter', args: [] },
     },
   },

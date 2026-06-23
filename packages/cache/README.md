@@ -31,6 +31,16 @@ export const cache = memoryAdapter()
 
 No call site changes — they all depend on `CachePort`, never on a backend.
 
+For edge/serverless runtimes where TCP (and `ioredis`) is unavailable, use the
+HTTP/REST `upstashAdapter` instead — same port, JSON handled by the client:
+
+```ts
+import { upstashAdapter } from '@alfredmouelle/cache'
+
+// uses UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN, or pass { url, token }
+export const cache = upstashAdapter()
+```
+
 ## Adding a backend
 
 Implement `CachePort` (`src/core/port.ts`): `name`, `get`, `set`, `delete`,

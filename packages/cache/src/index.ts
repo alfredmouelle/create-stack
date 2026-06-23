@@ -8,5 +8,11 @@ export {
   type RedisLike,
   redisAdapter,
 } from './adapters/redis/index.js'
+export { type UpstashConfig, UpstashConfigSchema } from './adapters/upstash/config.js'
+export {
+  type UpstashAdapterOptions,
+  type UpstashLike,
+  upstashAdapter,
+} from './adapters/upstash/index.js'
 export type { CachePort } from './core/port.js'
 export { CacheError } from './core/port.js'

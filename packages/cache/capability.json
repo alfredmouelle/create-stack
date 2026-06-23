@@ -10,6 +10,11 @@
       "env": ["REDIS_URL"],
       "files": ["src/adapters/redis"]
     },
+    "upstash": {
+      "deps": ["@upstash/redis"],
+      "env": ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+      "files": ["src/adapters/upstash"]
+    },
     "memory": {
       "deps": [],
       "env": [],
