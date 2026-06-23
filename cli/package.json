@@ -31,7 +31,8 @@
     "lib",
     "templates",
     "_stack",
-    "README.md"
+    "README.md",
+    "docs/demo.gif"
   ],
   "scripts": {
     "bundle": "node scripts/bundle.mjs",

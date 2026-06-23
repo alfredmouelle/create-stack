@@ -1,15 +1,21 @@
-# create-stack
+<h1 align="center">create-stack</h1>
 
-> `@alfredmouelle/create-stack`
+<p align="center">
+  Interactive, <strong>deterministic</strong> installer for a fully-wired
+  <strong>Next.js</strong> / <strong>TanStack Start</strong> stack.
+</p>
 
-**Alfred MOUELLE** — FullStack Developer
+<p align="center">
+  <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack"><img src="https://img.shields.io/npm/v/@alfredmouelle/create-stack?color=cb3837&logo=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack"><img src="https://img.shields.io/npm/dw/@alfredmouelle/create-stack?color=cb3837" alt="npm downloads"></a>
+  <img src="https://img.shields.io/npm/l/@alfredmouelle/create-stack?color=blue" alt="license">
+  <img src="https://img.shields.io/node/v/@alfredmouelle/create-stack?color=339933&logo=node.js&logoColor=white" alt="node">
+</p>
 
-[![ComeUp](https://img.shields.io/static/v1?style=for-the-badge&label=&message=ComeUp&color=yellow)](https://comeup.com/@alfredmouelle)
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/alfredmouelle)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredmouelle)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/kali47_)
-[![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:alfredmouelle@gmail.com)
-[![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)
+<p align="center">
+  <!-- record with: vhs docs/demo.tape -->
+  <img src="./docs/demo.gif" alt="create-stack scaffolding a project and swapping an adapter" width="640">
+</p>
 
 ---
 
@@ -186,3 +192,13 @@ pnpm dev
 - The generated project is a fresh git repo (`git init`) with an initial commit
   created for you. If git `user.name`/`user.email` aren't set, the commit is skipped
   and the files are left staged — set your identity and commit when ready.
+
+## Author
+
+**Alfred MOUELLE** — FullStack Developer
+
+[![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)
+[![ComeUp](https://img.shields.io/static/v1?style=for-the-badge&label=&message=ComeUp&color=yellow)](https://comeup.com/@alfredmouelle)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredmouelle)
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/kali47_)
+[![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:alfredmouelle@gmail.com)
