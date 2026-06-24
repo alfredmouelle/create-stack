@@ -27,6 +27,8 @@ const stripTrpc = (src, next, keptDeps, removeDeps) => {
   remove(src('routes/api.trpc.$.tsx'))
   copy(tpl('tanstack/router.no-trpc.tsx'), src('router.tsx'))
   copy(tpl('tanstack/__root.no-trpc.tsx'), src('routes/__root.tsx'))
+  // devtools component drops the query plugin that lived under the removed trpc dir
+  copy(tpl('tanstack/devtools.no-trpc.tsx'), src('components/devtools.tsx'))
   for (const d of TANSTACK_TRPC_DEPS) if (!keptDeps.has(d)) removeDeps.add(d)
 }
 
