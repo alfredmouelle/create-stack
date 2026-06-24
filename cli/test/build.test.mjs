@@ -12,25 +12,38 @@ const FOUND_DIR = {
   drizzle: 'src/server/db',
   trpc: 'src/trpc',
   'better-auth': 'src/server/better-auth',
-  'data-table': 'src/components/data-table.tsx',
 }
 const FOUND_DEP = {
   drizzle: 'drizzle-orm',
   trpc: '@trpc/server',
   'better-auth': 'better-auth',
-  'data-table': '@tanstack/react-table',
 }
 const DANGLING = {
   trpc: ['~/trpc', '~/server/api'],
   'better-auth': ['~/server/better-auth'],
   drizzle: ['~/server/db'],
-  'data-table': [
-    '~/components/data-table',
-    '~/components/infinite-data-table',
-    '~/components/sortable-header',
-  ],
 }
 const ALL = Object.keys(FOUND_DIR)
+
+// opt-in components are stripped from every scaffold (re-added via `create-stack component`).
+const STRIPPED_COMPONENT_FILES = [
+  'src/components/data-table.tsx',
+  'src/components/infinite-data-table.tsx',
+  'src/components/sortable-header.tsx',
+  'src/hooks/use-data-table.tsx',
+  'src/components/ui/date-picker.tsx',
+  'src/components/ui/date-range-picker.tsx',
+  'src/components/ui/calendar.tsx',
+  'src/components/ui/popover.tsx',
+  'src/lib/date.ts',
+]
+const STRIPPED_COMPONENT_DEPS = ['@tanstack/react-table', 'react-day-picker', 'date-fns']
+
+function assertComponentsStripped(dir, deps) {
+  for (const f of STRIPPED_COMPONENT_FILES)
+    expect(exists(`${dir}/${f}`), `${f} stripped`).toBe(false)
+  for (const d of STRIPPED_COMPONENT_DEPS) expect(d in deps, `${d} removed`).toBe(false)
+}
 
 const allDeps = (pkg) => ({ ...pkg.dependencies, ...pkg.devDependencies })
 
@@ -74,7 +87,6 @@ const CONFIGS = [
   { name: 'full-caps', capabilities: { storage: 's3', cache: 'redis' } },
   { name: 'drizzle-trpc', foundations: ['drizzle', 'trpc'], mailer: 'ses' },
   { name: 'auth-no-trpc', foundations: ['better-auth'] },
-  { name: 'data-table-only', foundations: ['data-table'], mailer: 'none' },
   { name: 'drizzle-only', foundations: ['drizzle'], mailer: 'none' },
 ]
 
@@ -93,6 +105,7 @@ for (const framework of ['tanstack', 'next']) {
         expect(exists(`${dir}/src/env.ts`)).toBe(true)
 
         assertFoundations(dir, kept, deps)
+        assertComponentsStripped(dir, deps)
         assertMailer(dir, result, deps)
 
         // env keys track the selection

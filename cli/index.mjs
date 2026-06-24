@@ -30,6 +30,7 @@ import {
   capabilityChoices,
   resolveAdapter,
 } from './lib/capabilities.mjs'
+import { COMPONENT_NAMES, componentChoices, vendorComponent } from './lib/component.mjs'
 import { detectPackageManager, PM_NAMES, resolvePackageManager } from './lib/package-manager.mjs'
 import { exists, isDirEmpty, join, run } from './lib/util.mjs'
 
@@ -45,19 +46,24 @@ const HELP = `create-stack — fork a base app, strip it to your selection.
 Usage:
   create-stack [project] [flags]          Scaffold a new project
   create-stack add [capability] [adapter] Add capabilities to the current project
+  create-stack component [name]           Install a standalone UI component
 
-Run either command with no args for an interactive picker; pass a selection flag
-(or --yes), or a capability name, for non-interactive mode.
+Run a command with no args for an interactive picker; pass a selection flag
+(or --yes), or a capability/component name, for non-interactive mode.
 
 Capabilities (for \`add\`): storage, cache, jobs, logger, analytics, error-tracking,
 mailer, email-kit, http. \`add\` with no capability opens a multi-select. Re-adding a
 multi-adapter capability swaps its adapter; --keep retains the previous one(s).
 
+Components (for \`component\`): date-picker, datatable. Opt-in UI kept out of the base
+bundle; \`component\` with no name opens a multi-select. Vendored files are never
+overwritten, so local edits survive a re-run — pass --force to overwrite them.
+
 Flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
-  --foundations <csv>              drizzle,trpc,better-auth,data-table (default all)
+  --foundations <csv>              drizzle,trpc,better-auth (default all)
   --mailer <resend|brevo|ses|none> Mailer provider (default resend)
   --storage [s3|r2|gcs|local]      Object storage capability (omit to skip)
   --cache [redis|upstash|memory]   Key/value cache capability (omit to skip)
@@ -185,7 +191,6 @@ async function collectFromPrompts(argDir) {
         { value: 'drizzle', label: 'Drizzle ORM', hint: 'Postgres + seed' },
         { value: 'trpc', label: 'tRPC', hint: 'needs Drizzle' },
         { value: 'better-auth', label: 'better-auth', hint: 'needs Drizzle + mailer' },
-        { value: 'data-table', label: 'Data tables', hint: 'TanStack Table' },
       ],
     }),
   )
@@ -376,6 +381,52 @@ async function runAdd(args) {
   p.outro(`Added ${added.map((a) => a.cap).join(', ')}`)
 }
 
+/** Which components to install: a positional name (non-interactive), else a picker. */
+async function resolveComponentSelections(args) {
+  if (args._[1]) {
+    const name = args._[1]
+    if (!COMPONENT_NAMES.includes(name)) {
+      p.cancel(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
+      process.exit(1)
+    }
+    return [name]
+  }
+  return cancelled(
+    await p.multiselect({
+      message: 'Components to install (space to toggle)',
+      required: true,
+      options: componentChoices(),
+    }),
+  )
+}
+
+const componentLine = (c) => {
+  const parts = [c.name]
+  if (c.copied.length) parts.push(`+${c.copied.length} file${c.copied.length > 1 ? 's' : ''}`)
+  if (c.skipped.length) parts.push(`(${c.skipped.length} kept)`)
+  const deps = Object.keys(c.addDeps)
+  if (deps.length) parts.push(`deps: ${deps.join(', ')}`)
+  return parts.join('  ')
+}
+
+/** `create-stack component [name]` — vendor a standalone UI component into the cwd project. */
+async function runComponent(args) {
+  const projectDir = resolve(process.cwd())
+  if (!exists(join(projectDir, 'package.json'))) {
+    p.cancel('No package.json here — run this from the root of a create-stack project.')
+    process.exit(1)
+  }
+
+  p.intro('create-stack component')
+  const force = !!args.flags.force
+  const names = await resolveComponentSelections(args)
+  const installed = names.map((name) => ({ name, ...vendorComponent({ projectDir, name, force }) }))
+  if (!args.flags['no-install']) installAndVerify(projectDir, detectedPm)
+
+  p.note(installed.map(componentLine).join('\n'), 'Installed')
+  p.outro(`Installed ${installed.map((c) => c.name).join(', ')}`)
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
 
@@ -390,6 +441,11 @@ async function main() {
 
   if (args._[0] === 'add') {
     await runAdd(args)
+    return
+  }
+
+  if (args._[0] === 'component') {
+    await runComponent(args)
     return
   }
 

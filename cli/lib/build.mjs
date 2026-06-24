@@ -3,13 +3,22 @@
 
 import { rewriteAlias } from './alias.mjs'
 import { vendorCapability } from './capabilities.mjs'
+import { allComponentDeps, allComponentFiles } from './component.mjs'
 import { writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
 import { detectPackageManager } from './package-manager.mjs'
 import { forkBase, makeStandalone } from './scaffold.mjs'
 import { stripFoundations } from './strip.mjs'
-import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON } from './util.mjs'
+import {
+  join,
+  pkgAddDeps,
+  pkgRemoveDeps,
+  pkgRemoveScripts,
+  readJSON,
+  remove,
+  writeJSON,
+} from './util.mjs'
 
 /**
  * @param {object} o
@@ -40,6 +49,10 @@ export function buildProject({
   makeStandalone(projectDir, projectName, framework, pm)
 
   const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
+
+  // opt-in components never ship in the default bundle — strip them; re-add via
+  // `create-stack component <name>`.
+  for (const rel of allComponentFiles()) remove(join(projectDir, rel))
   const mailer = keptMailer
     ? swapMailer(projectDir, mailerProvider)
     : { addDeps: {}, removeDeps: [], envKeys: [], requiredEnvKeys: [] }
@@ -58,7 +71,7 @@ export function buildProject({
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
   pkg.description = `${projectName} — scaffolded from the personal reference stack.`
-  pkgRemoveDeps(pkg, [...strip.removeDeps, ...mailer.removeDeps])
+  pkgRemoveDeps(pkg, [...strip.removeDeps, ...mailer.removeDeps, ...allComponentDeps()])
   pkgRemoveScripts(pkg, strip.removeScripts)
   pkgAddDeps(pkg, { ...mailer.addDeps, ...capAddDeps })
   writeJSON(pkgPath, pkg)

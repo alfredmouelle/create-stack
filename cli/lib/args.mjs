@@ -1,6 +1,6 @@
 // Pure argv parsing + selection normalization, split out of index.mjs to be unit-testable.
 
-export const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
+export const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth']
 
 /** Minimal flag parser: positional args + --key value / --flag / short -abc booleans. */
 export function parseArgs(argv) {

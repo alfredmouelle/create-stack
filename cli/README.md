@@ -21,10 +21,11 @@
 
 Interactive, **deterministic** project installer. It forks a fully-wired base app
 (**Next.js App Router** or **TanStack Start**) and strips it down to exactly the
-foundations and provider you pick — Drizzle, tRPC, better-auth, data tables, a
-mailer and optional capabilities (storage, cache, jobs, logger, analytics,
-error-tracking) — then stamps identity, generates `.env`, initializes git and
-verifies the result (typecheck + Biome).
+foundations and provider you pick — Drizzle, tRPC, better-auth, a mailer and optional
+capabilities (storage, cache, jobs, logger, analytics, error-tracking) — then stamps
+identity, generates `.env`, initializes git and verifies the result (typecheck + Biome).
+Opt-in UI components (date pickers, data tables) stay out of the base bundle and are
+added on demand with `create-stack component`.
 
 No template guesswork: the output is a real, buildable app from day one.
 
@@ -56,6 +57,7 @@ selection flag → **non-interactive** mode (scriptable / CI).
 ```
 create-stack [project] [flags]            # scaffold a new project
 create-stack add [capability] [adapter]   # add capabilities to the current project
+create-stack component [name]             # install a standalone UI component
 ```
 
 `project` is the target directory (and default package name). It must be empty or
@@ -72,7 +74,7 @@ the version. Since `npx`/`pnpm dlx` always fetch the latest, see
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
 | `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project (install, scripts, workspace files). |
 | `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias: rewrites `<alias>/*` → `src/*` across sources, tsconfig and `components.json`. |
-| `--foundations` | csv of `drizzle,trpc,better-auth,data-table` | all | Foundations to keep; the rest are stripped. |
+| `--foundations` | csv of `drizzle,trpc,better-auth` | all | Foundations to keep; the rest are stripped. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. `none` is coerced to `resend` when `better-auth` is kept. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage capability (omit to skip). |
 | `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache capability (omit to skip). |
@@ -131,7 +133,6 @@ pnpm dlx @alfredmouelle/create-stack my-app \
 - **better-auth** — email+password + verification, optional Google OAuth, session
   guards, auth UI pages.
 - **Mailer** — Resend / Brevo / SES behind one port; React Email templates.
-- **Data tables** — TanStack Table primitives (DataTable, InfiniteDataTable, …).
 - **Baseline** — Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed
   env (`src/env.ts`), Dockerfile, a generated `.gitignore` and `.env`/`.env.example`.
 
@@ -184,6 +185,33 @@ create-stack add cache upstash         # redis → upstash
 create-stack add mailer brevo          # resend → brevo
 create-stack add cache upstash --keep  # keep both adapters; composition root uses the new one
 ```
+
+## Components
+
+Some UI ships **opt-in** so it never weighs on the base bundle (the heavier deps —
+`react-day-picker`, `date-fns`, `@tanstack/react-table` — are kept out by default).
+Run `create-stack component` from the root of a generated project to vendor one in:
+its files are copied from the matching base app, its deps merged into `package.json`,
+and imports realigned to your alias — then it installs + verifies (unless `--no-install`).
+
+| Component | Vendors | Deps |
+| --- | --- | --- |
+| `date-picker` | `ui/date-picker`, `ui/date-range-picker` (+ `calendar`, `popover`, `lib/date`) | `react-day-picker`, `date-fns` |
+| `datatable` | `data-table`, `infinite-data-table`, `sortable-header`, `hooks/use-data-table` | `@tanstack/react-table` |
+
+```bash
+create-stack component              # interactive multi-select
+create-stack component date-picker  # non-interactive: one component
+create-stack component datatable --no-install
+```
+
+Re-running is safe: files that already exist are **never overwritten**, so local edits
+survive — pass `--force` to overwrite them.
+
+`datatable` ships a `useDataTable` hook (the controller that builds the table for the
+presentational `<DataTable />`): sorting + filtering + column visibility, with opt-in
+localStorage persistence (`storage.key`) and a passthrough for extra `useReactTable`
+options (pagination, row selection, …).
 
 ## After scaffolding
 

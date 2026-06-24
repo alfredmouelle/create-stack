@@ -1,7 +1,7 @@
 // Foundations the CLI can strip + the npm footprint each adds (deps/devDeps/scripts only).
 // File deletes, env keys, code seams live in strip.mjs/build.mjs (need framework-specific surgery).
 
-export const FOUNDATIONS = ['drizzle', 'trpc', 'better-auth', 'data-table']
+export const FOUNDATIONS = ['drizzle', 'trpc', 'better-auth']
 
 const DATA = {
   drizzle: {
@@ -16,9 +16,6 @@ const DATA = {
   },
   'better-auth': {
     deps: ['better-auth'],
-  },
-  'data-table': {
-    deps: ['@tanstack/react-table'],
   },
 }
 

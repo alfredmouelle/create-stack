@@ -20,10 +20,10 @@ describe('foundationScripts', () => {
     expect(foundationScripts('drizzle')).toContain('db:seed')
   })
   test('a foundation without scripts → []', () => {
-    expect(foundationScripts('data-table')).toEqual([])
+    expect(foundationScripts('better-auth')).toEqual([])
   })
 })
 
 test('FOUNDATIONS is the canonical set', () => {
-  expect(FOUNDATIONS).toEqual(['drizzle', 'trpc', 'better-auth', 'data-table'])
+  expect(FOUNDATIONS).toEqual(['drizzle', 'trpc', 'better-auth'])
 })

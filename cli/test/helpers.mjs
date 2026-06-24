@@ -16,6 +16,7 @@ process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 
 const { buildProject } = await import('../lib/build.mjs')
 export const { addCapability } = await import('../lib/add.mjs')
+export const { vendorComponent } = await import('../lib/component.mjs')
 
 const PM = resolvePackageManager('pnpm')
 

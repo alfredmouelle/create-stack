@@ -16,12 +16,6 @@ const TANSTACK_TRPC_DEPS = [
   'superjson',
 ]
 
-const DATA_TABLE_FILES = ['data-table.tsx', 'infinite-data-table.tsx', 'sortable-header.tsx']
-
-const stripDataTable = (src) => {
-  for (const f of DATA_TABLE_FILES) remove(src(join('components', f)))
-}
-
 const stripTrpc = (src, next, keptDeps, removeDeps) => {
   remove(src('trpc'))
   remove(src('server/api'))
@@ -85,7 +79,6 @@ export function stripFoundations({ projectDir, framework, kept, keptMailer }) {
     for (const s of foundationScripts(f)) removeScripts.add(s)
   }
 
-  if (dropped.includes('data-table')) stripDataTable(src)
   if (dropped.includes('trpc')) stripTrpc(src, next, keptDeps, removeDeps)
   if (dropped.includes('better-auth')) stripAuth(src, next, kept)
   if (!keptMailer) stripMailer(src, removeDeps, removeScripts)

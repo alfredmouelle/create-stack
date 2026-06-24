@@ -57,7 +57,7 @@ describe('normalize', () => {
     expect(mailerProvider).toBe('ses')
   })
   test('none mailer survives without better-auth', () => {
-    expect(normalize(['data-table'], 'none').mailerProvider).toBe('none')
+    expect(normalize(['drizzle'], 'none').mailerProvider).toBe('none')
   })
 })
 

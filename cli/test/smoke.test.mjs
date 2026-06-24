@@ -3,7 +3,7 @@
 
 import { spawnSync } from 'node:child_process'
 import { afterAll, describe, expect, test } from 'vitest'
-import { addCapability, build, cleanup } from './helpers.mjs'
+import { addCapability, build, cleanup, vendorComponent } from './helpers.mjs'
 
 afterAll(cleanup)
 
@@ -61,6 +61,24 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
         addCapability({ projectDir: dir, cap: 'cache', adapter: 'upstash' }) // swap adapter
         addCapability({ projectDir: dir, cap: 'mailer', adapter: 'brevo' }) // mailer swap
         addCapability({ projectDir: dir, cap: 'http', adapter: null }) // lib vendor
+        verify(dir)
+      },
+      TIMEOUT,
+    )
+
+    // `component` path: opt-in UI (stripped by default) must compile once vendored back —
+    // imports resolve, deps install, '~/' realigns to the project alias, hook included.
+    test(
+      `component ${framework}`,
+      () => {
+        const { dir } = build({
+          framework,
+          foundations: ['drizzle'],
+          mailer: 'none',
+          alias: '@', // vendored files must realign '~/' → '@/'
+        })
+        vendorComponent({ projectDir: dir, name: 'date-picker' })
+        vendorComponent({ projectDir: dir, name: 'datatable' })
         verify(dir)
       },
       TIMEOUT,
