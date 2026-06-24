@@ -50,31 +50,55 @@ Usage:
 
 Run a command with no args for an interactive picker; pass a selection flag
 (or --yes), or a capability/component name, for non-interactive mode.
+See \`add --help\` and \`component --help\` for their options.
 
-Capabilities (for \`add\`): storage, cache, jobs, logger, analytics, error-tracking,
-mailer, email-kit, http. \`add\` with no capability opens a multi-select. Re-adding a
-multi-adapter capability swaps its adapter; --keep retains the previous one(s).
-
-Components (for \`component\`): date-picker, datatable. Opt-in UI kept out of the base
-bundle; \`component\` with no name opens a multi-select. Vendored files are never
-overwritten, so local edits survive a re-run — pass --force to overwrite them.
-
-Flags:
+Scaffold flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --foundations <csv>              drizzle,trpc,better-auth (default all)
   --mailer <resend|brevo|ses|none> Mailer provider (default resend)
-  --storage [s3|r2|gcs|local]      Object storage capability (omit to skip)
-  --cache [redis|upstash|memory]   Key/value cache capability (omit to skip)
-  --jobs [inngest|trigger|memory]  Background jobs capability (omit to skip)
-  --logger [pino|console]          Structured logging capability (omit to skip)
-  --analytics [posthog|plausible|noop]  Analytics capability (omit to skip)
-  --error-tracking [sentry|console]     Error reporting capability (omit to skip)
   --no-install                     Skip install + verification
   -y, --yes                        Non-interactive with all defaults
   -h, --help                       Show this help
-  -v, --version                    Print version`
+  -v, --version                    Print version
+
+Capability flags (omit to skip; pass with no value for the default adapter):
+  --storage  --cache  --jobs  --logger  --analytics  --error-tracking
+  Adapters are listed in the interactive picker, or run \`add --help\`.`
+
+const ADD_HELP = `create-stack add — vendor/swap capabilities into the current project.
+
+Usage:
+  create-stack add [capability] [adapter] [flags]
+
+Run with no capability for a multi-select picker; pass a capability name (and
+optional adapter) for non-interactive mode. Re-adding a multi-adapter capability
+swaps its adapter; --keep retains the previous one(s).
+
+Capabilities: storage, cache, jobs, logger, analytics, error-tracking,
+mailer, email-kit, http.
+
+Flags:
+  --keep                           Keep existing adapter(s) when swapping
+  --no-install                     Skip install + verification
+  -h, --help                       Show this help`
+
+const COMPONENT_HELP = `create-stack component — vendor a standalone UI component into the current project.
+
+Usage:
+  create-stack component [name] [flags]
+
+Opt-in UI kept out of the base bundle. Run with no name for a multi-select
+picker; pass a name for non-interactive mode. Vendored files are never
+overwritten, so local edits survive a re-run — pass --force to overwrite them.
+
+Components: ${COMPONENT_NAMES.join(', ')}.
+
+Flags:
+  --force                          Overwrite vendored files (default: keep edits)
+  --no-install                     Skip install + verification
+  -h, --help                       Show this help`
 
 const cancelled = (v) => {
   if (p.isCancel(v)) {
@@ -430,22 +454,27 @@ async function runComponent(args) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
 
-  if (args.flags.help || args.flags.h) {
-    process.stdout.write(`${HELP}\n`)
-    return
-  }
+  const help = args.flags.help || args.flags.h
+
   if (args.flags.version || args.flags.v) {
     process.stdout.write(`${VERSION}\n`)
     return
   }
 
   if (args._[0] === 'add') {
+    if (help) return void process.stdout.write(`${ADD_HELP}\n`)
     await runAdd(args)
     return
   }
 
   if (args._[0] === 'component') {
+    if (help) return void process.stdout.write(`${COMPONENT_HELP}\n`)
     await runComponent(args)
+    return
+  }
+
+  if (help) {
+    process.stdout.write(`${HELP}\n`)
     return
   }
 
