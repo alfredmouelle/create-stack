@@ -36,8 +36,10 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
   const result = await next()
 
-  // biome-ignore lint/suspicious/noConsole: dev timing instrumentation
-  console.log(`[TRPC] ${path} took ${Date.now() - start}ms to execute`)
+  if (t._config.isDev) {
+    // biome-ignore lint/suspicious/noConsole: dev timing instrumentation
+    console.log(`[TRPC] ${path} took ${Date.now() - start}ms to execute`)
+  }
 
   return result
 })
