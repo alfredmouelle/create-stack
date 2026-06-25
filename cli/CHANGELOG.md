@@ -13,6 +13,27 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-25
+
+### Changed
+
+- **BREAKING — `data-table` is no longer a `--foundations` value.** Date pickers and data
+  tables no longer ship in the base scaffold; they are stripped from every project and
+  installed on demand with `create-stack component [name]` (`--force` overwrites local
+  edits). The `datatable` component also vendors a polished `useDataTable` hook
+  (sorting / filtering / column visibility, opt-in `localStorage` persistence,
+  `useReactTable` options passthrough).
+- Lighter dev/prod runtime in generated projects: tRPC `loggerLink` logs only downstream
+  errors in dev (not every op), the timing middleware's `console.log` is gated to dev so it
+  no longer fires in production, and the default query `staleTime` is raised from 30s to
+  60s. TanStack devtools are code-split behind a DEV-only lazy import, so they and their
+  deps are dropped from production builds.
+
+### Added
+
+- Per-subcommand help: `add --help` and `component --help` print focused usage, while the
+  global help is slimmed by collapsing the capability-adapter enumerations.
+
 ## [0.4.3] - 2026-06-23
 
 ### Added
