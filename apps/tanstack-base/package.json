@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
+    "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",

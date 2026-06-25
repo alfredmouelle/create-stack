@@ -308,10 +308,24 @@ function execute(a) {
   // fresh repo + initial commit (also satisfies Biome vcs.useIgnoreFile).
   // commit is best-effort: skipped if git identity unset, staged tree left in place.
   if (run('git', ['-C', projectDir, 'init', '-q'])) {
+    // Wire git hooks now so they're live from the first install (the .githooks
+    // dir ships with the fork). --no-verify keeps our own initial commit from
+    // tripping the freshly-armed hooks.
+    if (exists(join(projectDir, '.githooks'))) {
+      run('git', ['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
+    }
     run('git', ['-C', projectDir, 'add', '-A'])
     const committed = run(
       'git',
-      ['-C', projectDir, 'commit', '-q', '-m', 'chore: initial commit from create-stack'],
+      [
+        '-C',
+        projectDir,
+        'commit',
+        '--no-verify',
+        '-q',
+        '-m',
+        'chore: initial commit from create-stack',
+      ],
       { stdio: 'ignore' },
     )
     p.log.step(

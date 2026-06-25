@@ -1,0 +1,18 @@
+#!/bin/sh
+# Auto-fix/format staged files; block only if issues remain for manual review.
+
+if git diff --cached --quiet --diff-filter=ACM; then
+  exit 0
+fi
+
+echo "▶ pre-commit: biome check --write (staged)…"
+pnpm exec biome check --write --staged --no-errors-on-unmatched
+status=$?
+
+# Re-stage what biome auto-fixed so the fixes land in the commit.
+git diff --cached --name-only --diff-filter=ACM -z | xargs -0 git add
+
+if [ "$status" -ne 0 ]; then
+  echo "✖ Some issues couldn't be auto-fixed — please review the output above, then re-commit."
+  exit 1
+fi
