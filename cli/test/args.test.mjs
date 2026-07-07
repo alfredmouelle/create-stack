@@ -42,26 +42,33 @@ describe('csv', () => {
 
 describe('normalize', () => {
   test('trpc needs a database → falls back to drizzle', () => {
-    const { kept, database } = normalize(['trpc'], 'none', 'resend')
+    const { kept, database } = normalize(['trpc'], 'none', 'none', 'resend')
     expect([...kept]).toEqual(['trpc'])
     expect(database).toBe('drizzle')
   })
   test('better-auth needs a database + forces a real mailer', () => {
-    const { kept, database, mailerProvider } = normalize(['better-auth'], 'none', 'none')
-    expect(kept.has('better-auth')).toBe(true)
+    const { database, auth, mailerProvider } = normalize([], 'none', 'better-auth', 'none')
+    expect(auth).toBe('better-auth')
     expect(database).toBe('drizzle')
     expect(mailerProvider).toBe('resend')
   })
+  test('clerk needs neither a database nor a mailer', () => {
+    const { database, auth, mailerProvider } = normalize([], 'none', 'clerk', 'none')
+    expect(auth).toBe('clerk')
+    expect(database).toBe('none')
+    expect(mailerProvider).toBe('none')
+  })
   test('keeps the chosen ORM + mailer, drops unknown foundations', () => {
-    const { kept, database, mailerProvider } = normalize(['bogus'], 'prisma', 'ses')
+    const { kept, database, mailerProvider } = normalize(['bogus'], 'prisma', 'none', 'ses')
     expect([...kept]).toEqual([])
     expect(database).toBe('prisma')
     expect(mailerProvider).toBe('ses')
   })
-  test('a vitrine keeps none database + none mailer', () => {
-    const { kept, database, mailerProvider } = normalize([], 'none', 'none')
+  test('a vitrine keeps none database + none auth + none mailer', () => {
+    const { kept, database, auth, mailerProvider } = normalize([], 'none', 'none', 'none')
     expect([...kept]).toEqual([])
     expect(database).toBe('none')
+    expect(auth).toBe('none')
     expect(mailerProvider).toBe('none')
   })
 })

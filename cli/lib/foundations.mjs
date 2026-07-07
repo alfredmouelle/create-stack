@@ -1,17 +1,15 @@
 // Foundations the CLI can strip + the npm footprint each adds (deps/devDeps/scripts only).
 // File deletes, env keys, code seams live in strip.mjs/build.mjs (need framework-specific surgery).
 
-// The ORM is its own axis (lib/database.mjs) — foundations are what sits on top.
-export const FOUNDATIONS = ['trpc', 'better-auth']
+// The ORM (lib/database.mjs) and auth (lib/auth.mjs) are their own axes — trpc is the
+// only remaining strippable foundation.
+export const FOUNDATIONS = ['trpc']
 
 const DATA = {
   trpc: {
     deps: ['@trpc/server', '@trpc/client', '@tanstack/react-query', 'superjson', 'valibot'],
     // React Query bridge differs per framework
     perFramework: { tanstack: ['@trpc/tanstack-react-query'], next: ['@trpc/react-query'] },
-  },
-  'better-auth': {
-    deps: ['better-auth'],
   },
 }
 

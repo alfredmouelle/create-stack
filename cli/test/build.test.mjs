@@ -7,20 +7,17 @@ import { build, cleanup, exists, filesImporting, read, readJSON } from './helper
 afterAll(cleanup)
 
 // Foundation → marker dir/file, npm dep, and the import specifiers that must vanish
-// once it's stripped.
-const FOUND_DIR = {
-  trpc: 'src/trpc',
-  'better-auth': 'src/server/better-auth',
-}
-const FOUND_DEP = {
-  trpc: '@trpc/server',
-  'better-auth': 'better-auth',
-}
-const DANGLING = {
-  trpc: ['~/trpc', '~/server/api'],
-  'better-auth': ['~/server/better-auth'],
-}
+// once it's stripped. (ORM = database axis, auth = auth axis — asserted separately.)
+const FOUND_DIR = { trpc: 'src/trpc' }
+const FOUND_DEP = { trpc: '@trpc/server' }
+const DANGLING = { trpc: ['~/trpc', '~/server/api'] }
 const ALL = Object.keys(FOUND_DIR)
+
+// per-framework paths the auth axis touches
+const AUTH_PATHS = {
+  tanstack: { shell: 'src/routes/__root.tsx', signIn: 'src/routes/sign-in.$.tsx' },
+  next: { shell: 'src/app/layout.tsx', signIn: 'src/app/sign-in/[[...sign-in]]/page.tsx' },
+}
 
 // opt-in components are stripped from every scaffold (re-added via `create-stack component`).
 const STRIPPED_COMPONENT_FILES = [
@@ -51,6 +48,26 @@ function assertFoundations(dir, kept, deps) {
     expect(exists(`${dir}/${FOUND_DIR[f]}`), `${f} dir present=${on}`).toBe(on)
     expect(FOUND_DEP[f] in deps, `${f} dep present=${on}`).toBe(on)
     if (!on) expect(filesImporting(dir, DANGLING[f]), `dangling ${f} imports`).toEqual([])
+  }
+}
+
+// the auth axis: the chosen provider is wired, better-auth files gone when swapped
+function assertAuth(dir, auth, deps, framework) {
+  const paths = AUTH_PATHS[framework]
+  const baPresent = auth === 'better-auth'
+  expect(exists(`${dir}/src/server/better-auth`), `better-auth dir present=${baPresent}`).toBe(baPresent)
+  expect('better-auth' in deps, `better-auth dep present=${baPresent}`).toBe(baPresent)
+  if (!baPresent) {
+    expect(filesImporting(dir, ['~/server/better-auth']), 'dangling auth imports').toEqual([])
+  }
+
+  if (auth === 'clerk') {
+    const clerkPkg = framework === 'next' ? '@clerk/nextjs' : '@clerk/tanstack-react-start'
+    expect(clerkPkg in deps, 'clerk dep').toBe(true)
+    expect(read(`${dir}/${paths.shell}`), 'ClerkProvider in shell').toContain('ClerkProvider')
+    expect(exists(`${dir}/${paths.signIn}`), 'clerk sign-in route').toBe(true)
+  } else {
+    expect('@clerk/nextjs' in deps || '@clerk/tanstack-react-start' in deps, 'no clerk dep').toBe(false)
   }
 }
 
@@ -111,16 +128,19 @@ function assertCapabilities(dir, env, capabilities = {}) {
   if (capabilities.cache === 'redis') expect(env).toContain('REDIS_URL')
 }
 
-// name, database (omit = drizzle), foundations (omit = all), mailer (omit = resend), capabilities
+// name, database (omit=drizzle), auth (omit=better-auth), foundations (omit=[trpc]), mailer, capabilities
 const CONFIGS = [
   { name: 'full' },
   { name: 'full-caps', capabilities: { storage: 's3', cache: 'redis' } },
   { name: 'prisma-full', database: 'prisma' },
-  { name: 'prisma-no-auth', database: 'prisma', foundations: ['trpc'], mailer: 'none' },
-  { name: 'drizzle-trpc', foundations: ['trpc'], mailer: 'ses' },
-  { name: 'auth-no-trpc', foundations: ['better-auth'] },
-  { name: 'drizzle-only', foundations: [], mailer: 'none' },
-  { name: 'vitrine', database: 'none', foundations: [], mailer: 'none' },
+  { name: 'prisma-no-auth', database: 'prisma', auth: 'none', foundations: ['trpc'], mailer: 'none' },
+  { name: 'drizzle-trpc', auth: 'none', foundations: ['trpc'], mailer: 'ses' },
+  { name: 'auth-no-trpc', foundations: [] },
+  { name: 'clerk-full', auth: 'clerk' },
+  { name: 'clerk-prisma', database: 'prisma', auth: 'clerk' },
+  { name: 'clerk-vitrine', database: 'none', auth: 'clerk', foundations: [], mailer: 'none' },
+  { name: 'drizzle-only', auth: 'none', foundations: [], mailer: 'none' },
+  { name: 'vitrine', database: 'none', auth: 'none', foundations: [], mailer: 'none' },
 ]
 
 for (const framework of ['tanstack', 'next']) {
@@ -138,13 +158,15 @@ for (const framework of ['tanstack', 'next']) {
         expect(exists(`${dir}/src/env.ts`)).toBe(true)
 
         assertFoundations(dir, kept, deps)
-        assertDatabase(dir, result.database, deps, kept.has('better-auth'))
+        assertAuth(dir, result.auth, deps, framework)
+        assertDatabase(dir, result.database, deps, result.auth === 'better-auth')
         assertComponentsStripped(dir, deps)
         assertMailer(dir, result, deps)
 
         // env keys track the selection
         expect(env.includes('DATABASE_URL')).toBe(result.database !== 'none')
-        expect(env.includes('BETTER_AUTH_SECRET')).toBe(kept.has('better-auth'))
+        expect(env.includes('BETTER_AUTH_SECRET')).toBe(result.auth === 'better-auth')
+        expect(env.includes('CLERK_SECRET_KEY')).toBe(result.auth === 'clerk')
 
         assertCapabilities(dir, env, cfg.capabilities)
       })

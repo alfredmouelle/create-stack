@@ -113,6 +113,19 @@ export function writeEnv(projectDir, keys, requiredKeys = []) {
   write(join(projectDir, '.env'), body)
 }
 
+/** Append literal `KEY=value` lines to the generated .env files (for keys read outside env.ts). */
+export function appendRawEnvLines(projectDir, lines) {
+  for (const file of ['.env.example', '.env']) {
+    const path = join(projectDir, file)
+    if (!exists(path)) continue
+    const cur = read(path)
+    const have = new Set(cur.split('\n').map((l) => l.split('=')[0]))
+    const add = lines.filter((l) => !have.has(l.split('=')[0]))
+    if (!add.length) continue
+    write(path, `${cur.replace(/\n*$/, '')}\n${add.join('\n')}\n`)
+  }
+}
+
 const envLine = (k, required) => `${k}=${PLACEHOLDERS[k] ?? (required ? 'changeme' : '')}`
 
 /** Append new keys into the generated env.ts server/runtimeEnv blocks + .env files, leaving existing keys intact. */

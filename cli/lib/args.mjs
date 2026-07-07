@@ -1,6 +1,6 @@
 // Pure argv parsing + selection normalization, split out of index.mjs to be unit-testable.
 
-export const ALL_FOUNDATIONS = ['trpc', 'better-auth']
+export const ALL_FOUNDATIONS = ['trpc']
 
 /** Minimal flag parser: positional args + --key value / --flag / short -abc booleans. */
 export function parseArgs(argv) {
@@ -57,13 +57,15 @@ export function normalizeAlias(v) {
   return t
 }
 
-/** Resolve foundation deps + mailer's better-auth requirement against a database choice. */
-export function normalize(picked, database, mailer) {
+/** Resolve foundation/axis dependencies: trpc + better-auth need a db, better-auth needs a mailer. */
+export function normalize(picked, database, auth, mailer) {
   const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
-  // trpc + better-auth both need a database; fall back to the default when none was chosen.
+  const a = auth ?? 'better-auth'
+  // trpc and better-auth both need a database; clerk/none don't. Fall back to the default.
   let db = database ?? 'drizzle'
-  if ((kept.has('trpc') || kept.has('better-auth')) && db === 'none') db = 'drizzle'
+  if ((kept.has('trpc') || a === 'better-auth') && db === 'none') db = 'drizzle'
+  // better-auth sends its own emails via the mailer; clerk is hosted and needs none.
   let mailerProvider = mailer ?? 'resend'
-  if (kept.has('better-auth') && mailerProvider === 'none') mailerProvider = 'resend'
-  return { kept, database: db, mailerProvider }
+  if (a === 'better-auth' && mailerProvider === 'none') mailerProvider = 'resend'
+  return { kept, database: db, auth: a, mailerProvider }
 }

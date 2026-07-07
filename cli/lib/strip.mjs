@@ -1,8 +1,9 @@
-// Strip unselected foundations: whole-dir deletes + code-seam variants (trpc/auth).
+// Strip unselected foundations: whole-dir deletes + code-seam variants (trpc). The
+// auth axis (better-auth/clerk/none) lives in lib/auth.mjs.
 
 import { FOUNDATIONS, foundationDeps, foundationScripts } from './foundations.mjs'
 import { TEMPLATES } from './paths.mjs'
-import { copy, editFile, join, remove } from './util.mjs'
+import { copy, join, remove } from './util.mjs'
 
 const tpl = (rel) => join(TEMPLATES, rel)
 
@@ -32,23 +33,6 @@ const stripTrpc = (src, next, keptDeps, removeDeps) => {
   for (const d of TANSTACK_TRPC_DEPS) if (!keptDeps.has(d)) removeDeps.add(d)
 }
 
-const stripAuth = (src, next, kept) => {
-  remove(src('server/better-auth'))
-  const dirs = next
-    ? ['app/auth', 'app/api/auth', 'app/dashboard', 'server/auth', 'features/auth']
-    : [
-        'routes/auth.tsx',
-        'routes/auth',
-        'routes/_authed.tsx',
-        'routes/_authed',
-        'routes/api/auth',
-        'features/auth',
-      ]
-  for (const d of dirs) remove(src(d))
-  // the ORM's auth models are handled by lib/database.mjs (applyDatabase)
-  if (kept.has('trpc')) editFile(src('server/api/trpc.ts'), stripAuthFromTrpc)
-}
-
 const stripMailer = (src, removeDeps, removeScripts) => {
   remove(src('server/email'))
   remove(src('emails'))
@@ -74,21 +58,7 @@ export function stripFoundations({ projectDir, framework, kept, keptMailer }) {
   }
 
   if (dropped.includes('trpc')) stripTrpc(src, next, keptDeps, removeDeps)
-  if (dropped.includes('better-auth')) stripAuth(src, next, kept)
   if (!keptMailer) stripMailer(src, removeDeps, removeScripts)
 
   return { removeDeps: [...removeDeps], removeScripts: [...removeScripts] }
-}
-
-/** Remove better-auth coupling from a tRPC context file (both frameworks). */
-function stripAuthFromTrpc(src) {
-  return src
-    .replace(
-      "import { initTRPC, TRPCError } from '@trpc/server'",
-      "import { initTRPC } from '@trpc/server'",
-    )
-    .replace("import { auth } from '~/server/better-auth'\n", '')
-    .replace('  const session = await auth.api.getSession({ headers: opts.headers })\n', '')
-    .replace('return { db, session, ...opts }', 'return { db, ...opts }')
-    .replace(/\n+export const protectedProcedure = t\.procedure[\s\S]*$/, '\n')
 }

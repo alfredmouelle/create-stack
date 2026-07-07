@@ -2,10 +2,11 @@
 // Shared by index.mjs (post-wizard) and the test harness.
 
 import { rewriteAlias } from './alias.mjs'
+import { applyAuth } from './auth.mjs'
 import { vendorCapability } from './capabilities.mjs'
 import { allComponentDeps, allComponentFiles } from './component.mjs'
 import { applyDatabase } from './database.mjs'
-import { writeEnv } from './env.mjs'
+import { appendRawEnvLines, writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
 import { detectPackageManager } from './package-manager.mjs'
@@ -28,6 +29,7 @@ import {
  * @param {'next'|'tanstack'} o.framework
  * @param {Set<string>} o.kept   foundations to keep (deps pre-resolved)
  * @param {'drizzle'|'prisma'|'none'} o.database  ORM the app ships (default 'drizzle')
+ * @param {'better-auth'|'clerk'|'none'} o.auth  auth provider (default 'better-auth')
  * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
  * @param {Record<string,string>} [o.capabilities]  capability → adapter (e.g. { storage: 's3' })
  * @param {string} [o.alias]  import-alias prefix to rewrite '~/' to (default '~', i.e. no-op)
@@ -40,19 +42,23 @@ export function buildProject({
   framework,
   kept,
   database = 'drizzle',
+  auth = 'better-auth',
   mailerProvider,
   capabilities = {},
   alias = '~',
   pm = detectPackageManager(),
 }) {
-  const authKept = kept.has('better-auth')
+  const authUsesDb = auth === 'better-auth'
   const keptMailer = mailerProvider !== 'none'
 
   forkBase(framework, projectDir)
   makeStandalone(projectDir, projectName, framework, pm)
 
+  // strip → auth → database: stripFoundations may swap the app shell (no-trpc variants)
+  // that applyAuth then injects the provider into; applyDatabase keys its auth models on auth.
   const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
-  const db = applyDatabase({ projectDir, database, authKept })
+  const authRes = applyAuth({ projectDir, framework, auth, trpcKept: kept.has('trpc') })
+  const db = applyDatabase({ projectDir, database, authKept: authUsesDb })
 
   // opt-in components never ship in the default bundle — strip them; re-add via
   // `create-stack component <name>`.
@@ -80,9 +86,10 @@ export function buildProject({
     ...mailer.removeDeps,
     ...allComponentDeps(),
     ...db.removeDeps,
+    ...authRes.removeDeps,
   ])
   pkgRemoveScripts(pkg, [...strip.removeScripts, ...db.removeScripts])
-  pkgAddDeps(pkg, { ...mailer.addDeps, ...capAddDeps, ...db.addDeps })
+  pkgAddDeps(pkg, { ...mailer.addDeps, ...capAddDeps, ...db.addDeps, ...authRes.addDeps })
   pkgAddDeps(pkg, db.addDevDeps, 'devDependencies')
   if (Object.keys(db.setScripts).length) pkg.scripts = { ...pkg.scripts, ...db.setScripts }
   writeJSON(pkgPath, pkg)
@@ -93,7 +100,7 @@ export function buildProject({
     envKeys.push('DATABASE_URL')
     requiredEnvKeys.push('DATABASE_URL')
   }
-  if (authKept) {
+  if (auth === 'better-auth') {
     envKeys.push(
       'BETTER_AUTH_URL',
       'BETTER_AUTH_SECRET',
@@ -105,11 +112,22 @@ export function buildProject({
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
   writeEnv(projectDir, envKeys, requiredEnvKeys)
+  // Clerk reads its keys straight from the environment (not the typed env.ts).
+  if (authRes.envLines.length) appendRawEnvLines(projectDir, authRes.envLines)
 
   stampIdentity(projectDir, projectName, framework, pm)
 
   // last: swap '~/' for the chosen alias across everything generated above (no-op when '~').
   rewriteAlias(projectDir, alias)
 
-  return { kept: [...kept], database, keptMailer, mailerProvider, capabilities, envKeys, alias }
+  return {
+    kept: [...kept],
+    database,
+    auth,
+    keptMailer,
+    mailerProvider,
+    capabilities,
+    envKeys,
+    alias,
+  }
 }

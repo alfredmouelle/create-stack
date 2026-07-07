@@ -17,6 +17,6 @@ describe('foundationScripts', () => {
   })
 })
 
-test('FOUNDATIONS is the canonical set (the ORM is its own axis)', () => {
-  expect(FOUNDATIONS).toEqual(['trpc', 'better-auth'])
+test('FOUNDATIONS is the canonical set (ORM + auth are their own axes)', () => {
+  expect(FOUNDATIONS).toEqual(['trpc'])
 })

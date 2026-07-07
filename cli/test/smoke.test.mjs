@@ -21,6 +21,8 @@ const CONFIGS = [
   // Prisma exercises both seams (trpc context + better-auth adapter) on both frameworks;
   // the alias rewrite must also survive the generated-client import.
   { name: 'prisma-full', database: 'prisma', alias: '@' },
+  // Clerk strips better-auth + rewrites the tRPC context/provider on both frameworks.
+  { name: 'clerk-full', auth: 'clerk' },
 ]
 
 const TIMEOUT = 15 * 60 * 1000

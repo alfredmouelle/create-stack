@@ -24,17 +24,18 @@ const tmpRoots = []
 
 /**
  * Build a project from a terse config into a throwaway dir.
- * @param {{ name?: string, framework: 'next'|'tanstack', database?: string, foundations?: string[],
- *   mailer?: string, capabilities?: Record<string,string>, alias?: string, pm?: string }} cfg
+ * @param {{ name?: string, framework: 'next'|'tanstack', database?: string, auth?: string,
+ *   foundations?: string[], mailer?: string, capabilities?: Record<string,string>, alias?: string, pm?: string }} cfg
  * @returns {{ dir: string, result: object }}
  */
 export function build(cfg) {
   const dir = mkdtempSync(join(tmpdir(), 'create-stack-test-'))
   tmpRoots.push(dir)
   const projectDir = join(dir, cfg.name ?? 'app')
-  const { kept, database, mailerProvider } = normalize(
+  const { kept, database, auth, mailerProvider } = normalize(
     cfg.foundations ?? ALL_FOUNDATIONS,
     cfg.database,
+    cfg.auth,
     cfg.mailer,
   )
   const result = buildProject({
@@ -43,6 +44,7 @@ export function build(cfg) {
     framework: cfg.framework,
     kept,
     database,
+    auth,
     mailerProvider,
     capabilities: cfg.capabilities ?? {},
     alias: cfg.alias,

@@ -115,7 +115,7 @@ describe('mailer / lib targets', () => {
   })
 
   test('mailer can be re-added after being stripped', () => {
-    const { dir } = build({ framework: 'next', foundations: [], mailer: 'none' })
+    const { dir } = build({ framework: 'next', auth: 'none', foundations: [], mailer: 'none' })
     expect(exists(`${dir}/src/server/email`)).toBe(false)
 
     addCapability({ projectDir: dir, cap: 'mailer', adapter: 'ses' })

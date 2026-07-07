@@ -23,6 +23,7 @@ import {
   normalizeAlias,
   parseArgs,
 } from './lib/args.mjs'
+import { resolveAuth } from './lib/auth.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
   adapterChoices,
@@ -58,7 +59,8 @@ Scaffold flags:
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --database <drizzle|prisma|none> ORM the app ships (default drizzle)
-  --foundations <csv>              trpc,better-auth (default all)
+  --auth <better-auth|clerk|none>  Auth provider (default better-auth)
+  --foundations <csv>              trpc (default all)
   --mailer <resend|brevo|ses|none> Mailer provider (default resend)
   --no-install                     Skip install + verification
   -y, --yes                        Non-interactive with all defaults
@@ -128,12 +130,19 @@ function collectFromFlags(args) {
   const pmFlag = args.flags.pm ?? args.flags['package-manager']
   const pm = typeof pmFlag === 'string' ? resolvePackageManager(pmFlag) : detectedPm
   const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
-  // soft-map a legacy `--foundations drizzle|prisma` onto the database axis
+  // soft-map legacy `--foundations drizzle|prisma|better-auth` onto their axes
   const legacyDb = ['drizzle', 'prisma'].find((d) => picked.includes(d))
   const dbFlag = typeof args.flags.database === 'string' ? args.flags.database : legacyDb
-  const { kept, database, mailerProvider } = normalize(
+  const authFlag =
+    typeof args.flags.auth === 'string'
+      ? args.flags.auth
+      : picked.includes('better-auth')
+        ? 'better-auth'
+        : undefined
+  const { kept, database, auth, mailerProvider } = normalize(
     picked,
     resolveDatabase(dbFlag),
+    resolveAuth(authFlag),
     args.flags.mailer,
   )
   const capabilities = collectCapabilityFlags(args.flags)
@@ -146,6 +155,7 @@ function collectFromFlags(args) {
     pm,
     kept,
     database,
+    auth,
     mailerProvider,
     capabilities,
     doInstall,
@@ -228,34 +238,44 @@ async function collectFromPrompts(argDir) {
     }),
   )
 
-  // trpc + better-auth both require a database, so only offer them when one is chosen.
-  const picked =
-    database === 'none'
-      ? []
-      : cancelled(
-          await p.multiselect({
-            message: 'Foundations (space to toggle)',
-            required: false,
-            initialValues: [...ALL_FOUNDATIONS],
-            options: [
-              { value: 'trpc', label: 'tRPC', hint: 'typed API' },
-              { value: 'better-auth', label: 'better-auth', hint: 'needs a mailer' },
-            ],
-          }),
-        )
-  const authKept = new Set(picked).has('better-auth')
+  // better-auth needs a database; with `none` only offer the db-less providers.
+  const betterAuthOpt = {
+    value: 'better-auth',
+    label: 'better-auth',
+    hint: 'email+password, needs a mailer',
+  }
+  const authOptions = [
+    ...(database === 'none' ? [] : [betterAuthOpt]),
+    { value: 'clerk', label: 'Clerk', hint: 'hosted, no db/mailer needed' },
+    { value: 'none', label: 'None', hint: 'no auth' },
+  ]
+  const auth = cancelled(
+    await p.select({
+      message: 'Auth',
+      initialValue: database === 'none' ? 'clerk' : 'better-auth',
+      options: authOptions,
+    }),
+  )
 
+  // trpc needs a database, so only offer it when one is chosen.
+  const wantsTrpc =
+    database === 'none'
+      ? false
+      : cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: true }))
+  const picked = wantsTrpc ? ['trpc'] : []
+
+  const mailerForced = auth === 'better-auth'
   const mailerOpts = [
     { value: 'resend', label: 'Resend' },
     { value: 'brevo', label: 'Brevo' },
     { value: 'ses', label: 'Amazon SES' },
   ]
-  if (!authKept) mailerOpts.push({ value: 'none', label: 'None' })
+  if (!mailerForced) mailerOpts.push({ value: 'none', label: 'None' })
   const mailer = cancelled(
     await p.select({
-      message: authKept ? 'Mailer provider (required by better-auth)' : 'Mailer provider',
+      message: mailerForced ? 'Mailer provider (required by better-auth)' : 'Mailer provider',
       options: mailerOpts,
-      initialValue: 'resend',
+      initialValue: mailerForced ? 'resend' : 'none',
     }),
   )
 
@@ -284,7 +304,12 @@ async function collectFromPrompts(argDir) {
     await p.confirm({ message: 'Install dependencies and verify now?', initialValue: true }),
   )
 
-  const { kept, database: db, mailerProvider } = normalize(picked, database, mailer)
+  const {
+    kept,
+    database: db,
+    auth: authProvider,
+    mailerProvider,
+  } = normalize(picked, database, auth, mailer)
   return {
     argDir,
     projectName,
@@ -292,6 +317,7 @@ async function collectFromPrompts(argDir) {
     alias,
     pm,
     database: db,
+    auth: authProvider,
     kept,
     mailerProvider,
     capabilities,
@@ -355,15 +381,23 @@ function execute(a) {
 
   initGitRepo(projectDir)
 
-  const keptMailer = a.mailerProvider !== 'none'
+  p.note(summaryLines(a, pm).join('\n'), 'Done')
+  p.outro(`Created ${a.projectName}`)
+}
+
+const orNone = (v) => (v && v !== 'none' ? v : '(none)')
+
+/** The "Done" note: selection recap + next steps. */
+function summaryLines(a, pm) {
   const capEntries = Object.entries(a.capabilities ?? {})
   const lines = [
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
     `Package manager: ${pm.name}`,
     `Import alias: ${a.alias ?? '~'}/`,
-    `Database: ${a.database && a.database !== 'none' ? a.database : '(none)'}`,
+    `Database: ${orNone(a.database)}`,
+    `Auth: ${orNone(a.auth)}`,
     `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
-    `Mailer: ${keptMailer ? a.mailerProvider : '(none)'}`,
+    `Mailer: ${orNone(a.mailerProvider)}`,
     `Capabilities: ${capEntries.map(([c, ad]) => `${c} (${ad})`).join(', ') || '(none)'}`,
     '',
     'Add more tools later: create-stack add <capability>.',
@@ -373,8 +407,7 @@ function execute(a) {
   ]
   if (!a.doInstall) lines.push(`  ${pm.name} install`)
   lines.push('  # edit .env (already generated with placeholders)', `  ${pm.devCmd}`)
-  p.note(lines.join('\n'), 'Done')
-  p.outro(`Created ${a.projectName}`)
+  return lines
 }
 
 /** Which {cap, adapter} pairs to add: positional args (non-interactive), else a picker. */
@@ -516,7 +549,7 @@ async function main() {
   const nonInteractive =
     args.flags.yes ||
     args.flags.y ||
-    ['framework', 'database', 'foundations', 'mailer', 'no-install', ...CAPABILITIES].some(
+    ['framework', 'database', 'auth', 'foundations', 'mailer', 'no-install', ...CAPABILITIES].some(
       (k) => k in args.flags,
     )
 

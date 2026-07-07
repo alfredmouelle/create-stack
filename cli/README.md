@@ -56,7 +56,8 @@ create-stack component [name]             # vendor a standalone UI component
 | `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project. |
 | `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias; rewrites `<alias>/*` → `src/*` everywhere. |
 | `--database` | `drizzle` \| `prisma` \| `none` | `drizzle` | ORM the app ships. `prisma` = Prisma 7; `none` = database-less vitrine. |
-| `--foundations` | csv of `trpc,better-auth` | all | Foundations to keep; the rest are stripped. |
+| `--auth` | `better-auth` \| `clerk` \| `none` | `better-auth` | Auth provider. `clerk` is hosted (needs no db/mailer); `none` = no auth. |
+| `--foundations` | csv of `trpc` | all | Foundations to keep; the rest are stripped. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage (omit to skip). |
 | `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache (omit to skip). |
@@ -69,8 +70,9 @@ create-stack component [name]             # vendor a standalone UI component
 
 Capability flags are optional — pass one (bare = default adapter) to vendor it, omit to
 skip. Any selection flag switches to non-interactive mode; `--pm`/`--alias` are modifiers,
-not triggers. Selections are normalized: `trpc` and `better-auth` both need a database
-(fall back to `drizzle`), and `better-auth` forces a real mailer.
+not triggers. Selections are normalized: `trpc` and `better-auth` need a database (fall
+back to `drizzle`) and `better-auth` forces a real mailer, while `clerk` is hosted and
+frees both — so `--auth clerk --database none` is a valid authenticated vitrine.
 
 ```bash
 # everything, defaults, no questions
@@ -79,11 +81,14 @@ pnpm dlx @alfredmouelle/create-stack my-app --yes
 # Prisma instead of Drizzle, full stack
 pnpm dlx @alfredmouelle/create-stack my-app --database prisma
 
-# Next.js, just tRPC, SES mailer, don't install
-pnpm dlx @alfredmouelle/create-stack api --framework next --foundations trpc --mailer ses --no-install
+# Clerk instead of better-auth
+pnpm dlx @alfredmouelle/create-stack my-app --auth clerk
 
-# vitrine: no database, no mailer
-pnpm dlx @alfredmouelle/create-stack site --database none --foundations '' --mailer none
+# Next.js, just tRPC, no auth, don't install
+pnpm dlx @alfredmouelle/create-stack api --framework next --auth none --mailer none --no-install
+
+# vitrine: no database, no auth, no mailer
+pnpm dlx @alfredmouelle/create-stack site --database none --auth none --foundations '' --mailer none
 
 # with capabilities: R2 storage, Redis cache, Inngest jobs, Sentry errors
 pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-tracking
@@ -94,7 +99,7 @@ pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-
 - **Framework** — Next.js App Router *or* TanStack Start, fully wired (SSR, routing).
 - **Database** — Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), or none.
 - **tRPC v11** — typed API, SSR/RSC integration, health router.
-- **better-auth** — email+password + verification, optional Google OAuth, session guards, auth pages.
+- **Auth** — better-auth (email+password + verification, Google OAuth, auth pages) *or* Clerk (hosted: provider, middleware, sign-in/up + `UserButton`), or none.
 - **Mailer** — Resend / Brevo / SES behind one port; React Email templates.
 - **Baseline** — Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed `env.ts`, Dockerfile, generated `.gitignore` + `.env`.
 
