@@ -55,7 +55,7 @@ create-stack component [name]             # vendor a standalone UI component
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
 | `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project. |
 | `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias; rewrites `<alias>/*` → `src/*` everywhere. |
-| `--database` | `drizzle` \| `prisma` \| `none` | `drizzle` | ORM the app ships. `prisma` = Prisma 7; `none` = database-less vitrine. |
+| `--database` | `drizzle` \| `prisma` \| `convex` \| `none` | `drizzle` | Data layer. `prisma` = Prisma 7; `convex` = realtime db + API (replaces tRPC, Clerk/none auth only); `none` = database-less vitrine. |
 | `--auth` | `better-auth` \| `clerk` \| `none` | `better-auth` | Auth provider. `clerk` is hosted (needs no db/mailer); `none` = no auth. |
 | `--foundations` | csv of `trpc` | all | Foundations to keep; the rest are stripped. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
@@ -72,7 +72,8 @@ Capability flags are optional — pass one (bare = default adapter) to vendor it
 skip. Any selection flag switches to non-interactive mode; `--pm`/`--alias` are modifiers,
 not triggers. Selections are normalized: `trpc` and `better-auth` need a database (fall
 back to `drizzle`) and `better-auth` forces a real mailer, while `clerk` is hosted and
-frees both — so `--auth clerk --database none` is a valid authenticated vitrine.
+frees both — so `--auth clerk --database none` is a valid authenticated vitrine. `convex`
+is its own API layer, so it drops tRPC and pairs with Clerk or no auth (better-auth off).
 
 ```bash
 # everything, defaults, no questions
@@ -83,6 +84,9 @@ pnpm dlx @alfredmouelle/create-stack my-app --database prisma
 
 # Clerk instead of better-auth
 pnpm dlx @alfredmouelle/create-stack my-app --auth clerk
+
+# Convex (realtime db + API) with Clerk auth
+pnpm dlx @alfredmouelle/create-stack my-app --database convex --auth clerk
 
 # Next.js, just tRPC, no auth, don't install
 pnpm dlx @alfredmouelle/create-stack api --framework next --auth none --mailer none --no-install

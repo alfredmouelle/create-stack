@@ -13,6 +13,16 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+### Added
+
+- **Convex as a database choice** — `--database convex` (and a wizard option) scaffolds a
+  Convex backend instead of a SQL ORM: a committed `convex/` directory (schema, an example
+  query/mutation and the generated `_generated` client), a realtime provider wired into the
+  app shell, and a `convex-demo` page. Convex is the API too, so it replaces tRPC (dropped
+  automatically) and its own react-query wiring. Because it isn't Postgres, it pairs with
+  Clerk or no auth — better-auth is coerced off. Run `<pm> run convex` once to provision a
+  deployment; keys live in `.env` (`CONVEX_DEPLOYMENT` + `{VITE_,NEXT_PUBLIC_}CONVEX_URL`).
+
 ## [0.6.0] - 2026-07-07
 
 ### Added

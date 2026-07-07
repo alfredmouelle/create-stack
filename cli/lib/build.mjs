@@ -58,7 +58,7 @@ export function buildProject({
   // that applyAuth then injects the provider into; applyDatabase keys its auth models on auth.
   const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
   const authRes = applyAuth({ projectDir, framework, auth, trpcKept: kept.has('trpc') })
-  const db = applyDatabase({ projectDir, database, authKept: authUsesDb })
+  const db = applyDatabase({ projectDir, database, framework, auth, authKept: authUsesDb })
 
   // opt-in components never ship in the default bundle — strip them; re-add via
   // `create-stack component <name>`.
@@ -96,7 +96,8 @@ export function buildProject({
 
   const envKeys = []
   const requiredEnvKeys = []
-  if (database !== 'none') {
+  // Convex has no DATABASE_URL — it uses its own raw CONVEX_* keys (see db.envLines).
+  if (database !== 'none' && database !== 'convex') {
     envKeys.push('DATABASE_URL')
     requiredEnvKeys.push('DATABASE_URL')
   }
@@ -112,8 +113,9 @@ export function buildProject({
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
   writeEnv(projectDir, envKeys, requiredEnvKeys)
-  // Clerk reads its keys straight from the environment (not the typed env.ts).
-  if (authRes.envLines.length) appendRawEnvLines(projectDir, authRes.envLines)
+  // Clerk + Convex read their keys straight from the environment (not the typed env.ts).
+  const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
+  if (rawEnvLines.length) appendRawEnvLines(projectDir, rawEnvLines)
 
   stampIdentity(projectDir, projectName, framework, pm)
 

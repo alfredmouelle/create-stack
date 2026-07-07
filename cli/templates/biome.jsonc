@@ -11,6 +11,7 @@
       "!**/.nitro",
       "!**/routeTree.gen.ts",
       "!**/generated",
+      "!**/_generated",
       "!**/components/ui"
     ]
   },

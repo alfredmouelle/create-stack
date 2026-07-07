@@ -58,7 +58,7 @@ Scaffold flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
-  --database <drizzle|prisma|none> ORM the app ships (default drizzle)
+  --database <drizzle|prisma|convex|none> ORM the app ships (default drizzle); convex replaces tRPC
   --auth <better-auth|clerk|none>  Auth provider (default better-auth)
   --foundations <csv>              trpc (default all)
   --mailer <resend|brevo|ses|none> Mailer provider (default resend)
@@ -233,33 +233,37 @@ async function collectFromPrompts(argDir) {
       options: [
         { value: 'drizzle', label: 'Drizzle ORM', hint: 'Postgres + seed (default)' },
         { value: 'prisma', label: 'Prisma ORM', hint: 'Prisma 7 + Postgres' },
+        { value: 'convex', label: 'Convex', hint: 'realtime db + API (replaces tRPC)' },
         { value: 'none', label: 'None', hint: 'no database (vitrine)' },
       ],
     }),
   )
 
-  // better-auth needs a database; with `none` only offer the db-less providers.
+  // Convex replaces tRPC and can't back the Postgres-coupled better-auth (Clerk/none only).
+  const convex = database === 'convex'
+
+  // better-auth needs a Postgres database; with `none`/`convex` only offer db-less providers.
   const betterAuthOpt = {
     value: 'better-auth',
     label: 'better-auth',
     hint: 'email+password, needs a mailer',
   }
   const authOptions = [
-    ...(database === 'none' ? [] : [betterAuthOpt]),
+    ...(database === 'none' || convex ? [] : [betterAuthOpt]),
     { value: 'clerk', label: 'Clerk', hint: 'hosted, no db/mailer needed' },
     { value: 'none', label: 'None', hint: 'no auth' },
   ]
   const auth = cancelled(
     await p.select({
       message: 'Auth',
-      initialValue: database === 'none' ? 'clerk' : 'better-auth',
+      initialValue: database === 'none' || convex ? 'clerk' : 'better-auth',
       options: authOptions,
     }),
   )
 
-  // trpc needs a database, so only offer it when one is chosen.
+  // trpc needs a database and is subsumed by Convex, so only offer it for SQL ORMs.
   const wantsTrpc =
-    database === 'none'
+    database === 'none' || convex
       ? false
       : cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: true }))
   const picked = wantsTrpc ? ['trpc'] : []
@@ -406,6 +410,9 @@ function summaryLines(a, pm) {
     `  cd ${a.argDir ?? a.projectName}`,
   ]
   if (!a.doInstall) lines.push(`  ${pm.name} install`)
+  if (a.database === 'convex') {
+    lines.push(`  ${pm.name} run convex  # provisions a deployment + sets CONVEX_URL`)
+  }
   lines.push('  # edit .env (already generated with placeholders)', `  ${pm.devCmd}`)
   return lines
 }

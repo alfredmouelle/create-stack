@@ -17,8 +17,11 @@
     "tanstack-start",
     "nextjs",
     "drizzle",
+    "prisma",
+    "convex",
     "trpc",
-    "better-auth"
+    "better-auth",
+    "clerk"
   ],
   "bin": {
     "create-stack": "./index.mjs"

@@ -55,7 +55,9 @@ function assertFoundations(dir, kept, deps) {
 function assertAuth(dir, auth, deps, framework) {
   const paths = AUTH_PATHS[framework]
   const baPresent = auth === 'better-auth'
-  expect(exists(`${dir}/src/server/better-auth`), `better-auth dir present=${baPresent}`).toBe(baPresent)
+  expect(exists(`${dir}/src/server/better-auth`), `better-auth dir present=${baPresent}`).toBe(
+    baPresent,
+  )
   expect('better-auth' in deps, `better-auth dep present=${baPresent}`).toBe(baPresent)
   if (!baPresent) {
     expect(filesImporting(dir, ['~/server/better-auth']), 'dangling auth imports').toEqual([])
@@ -67,20 +69,39 @@ function assertAuth(dir, auth, deps, framework) {
     expect(read(`${dir}/${paths.shell}`), 'ClerkProvider in shell').toContain('ClerkProvider')
     expect(exists(`${dir}/${paths.signIn}`), 'clerk sign-in route').toBe(true)
   } else {
-    expect('@clerk/nextjs' in deps || '@clerk/tanstack-react-start' in deps, 'no clerk dep').toBe(false)
+    expect('@clerk/nextjs' in deps || '@clerk/tanstack-react-start' in deps, 'no clerk dep').toBe(
+      false,
+    )
   }
 }
 
 // the ORM axis: the chosen provider is wired, the others (and Drizzle's config) are gone
-function assertDatabase(dir, database, deps, authKept) {
-  const hasDb = database !== 'none'
-  expect(exists(`${dir}/src/server/db`), `db layer present=${hasDb}`).toBe(hasDb)
+function assertDatabase(dir, database, deps, authKept, framework) {
+  // Convex replaces the SQL data layer entirely; only drizzle/prisma keep src/server/db.
+  const hasSqlDb = database === 'drizzle' || database === 'prisma'
+  expect(exists(`${dir}/src/server/db`), `db layer present=${hasSqlDb}`).toBe(hasSqlDb)
+
+  if (database === 'convex') {
+    expect('convex' in deps, 'convex dep').toBe(true)
+    expect('drizzle-orm' in deps, 'drizzle-orm removed').toBe(false)
+    expect(exists(`${dir}/drizzle.config.ts`), 'no drizzle.config').toBe(false)
+    expect(exists(`${dir}/convex/schema.ts`), 'convex schema').toBe(true)
+    expect(exists(`${dir}/convex/_generated/api.d.ts`), 'convex generated').toBe(true)
+    const shell = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+    expect(read(`${dir}/${shell}`), 'convex provider in shell').toContain('Convex')
+    const demo =
+      framework === 'next' ? 'src/app/convex-demo/page.tsx' : 'src/routes/convex-demo.tsx'
+    expect(exists(`${dir}/${demo}`), 'convex demo route').toBe(true)
+    expect(filesImporting(dir, ['~/server/db']), 'dangling db imports').toEqual([])
+    return
+  }
 
   if (database === 'drizzle') {
     expect('drizzle-orm' in deps, 'drizzle-orm dep').toBe(true)
     expect(exists(`${dir}/drizzle.config.ts`), 'drizzle.config').toBe(true)
     expect('@prisma/client' in deps, 'no prisma dep').toBe(false)
-    if (authKept) expect(read(`${dir}/src/server/better-auth/config.ts`)).toContain('drizzleAdapter')
+    if (authKept)
+      expect(read(`${dir}/src/server/better-auth/config.ts`)).toContain('drizzleAdapter')
   } else if (database === 'prisma') {
     expect('@prisma/client' in deps, 'prisma client dep').toBe(true)
     expect('prisma' in deps, 'prisma cli dep').toBe(true)
@@ -133,12 +154,20 @@ const CONFIGS = [
   { name: 'full' },
   { name: 'full-caps', capabilities: { storage: 's3', cache: 'redis' } },
   { name: 'prisma-full', database: 'prisma' },
-  { name: 'prisma-no-auth', database: 'prisma', auth: 'none', foundations: ['trpc'], mailer: 'none' },
+  {
+    name: 'prisma-no-auth',
+    database: 'prisma',
+    auth: 'none',
+    foundations: ['trpc'],
+    mailer: 'none',
+  },
   { name: 'drizzle-trpc', auth: 'none', foundations: ['trpc'], mailer: 'ses' },
   { name: 'auth-no-trpc', foundations: [] },
   { name: 'clerk-full', auth: 'clerk' },
   { name: 'clerk-prisma', database: 'prisma', auth: 'clerk' },
   { name: 'clerk-vitrine', database: 'none', auth: 'clerk', foundations: [], mailer: 'none' },
+  { name: 'convex-none', database: 'convex', auth: 'none', mailer: 'none' },
+  { name: 'convex-clerk', database: 'convex', auth: 'clerk', mailer: 'none' },
   { name: 'drizzle-only', auth: 'none', foundations: [], mailer: 'none' },
   { name: 'vitrine', database: 'none', auth: 'none', foundations: [], mailer: 'none' },
 ]
@@ -159,14 +188,18 @@ for (const framework of ['tanstack', 'next']) {
 
         assertFoundations(dir, kept, deps)
         assertAuth(dir, result.auth, deps, framework)
-        assertDatabase(dir, result.database, deps, result.auth === 'better-auth')
+        assertDatabase(dir, result.database, deps, result.auth === 'better-auth', framework)
         assertComponentsStripped(dir, deps)
         assertMailer(dir, result, deps)
 
-        // env keys track the selection
-        expect(env.includes('DATABASE_URL')).toBe(result.database !== 'none')
+        // env keys track the selection (Convex uses raw CONVEX_* keys, no DATABASE_URL)
+        const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
+        expect(env.includes('DATABASE_URL')).toBe(sqlDb)
         expect(env.includes('BETTER_AUTH_SECRET')).toBe(result.auth === 'better-auth')
         expect(env.includes('CLERK_SECRET_KEY')).toBe(result.auth === 'clerk')
+        const convexUrlKey = framework === 'next' ? 'NEXT_PUBLIC_CONVEX_URL' : 'VITE_CONVEX_URL'
+        expect(env.includes(convexUrlKey)).toBe(result.database === 'convex')
+        expect(env.includes('CONVEX_DEPLOYMENT')).toBe(result.database === 'convex')
 
         assertCapabilities(dir, env, cfg.capabilities)
       })

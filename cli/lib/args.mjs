@@ -60,10 +60,19 @@ export function normalizeAlias(v) {
 /** Resolve foundation/axis dependencies: trpc + better-auth need a db, better-auth needs a mailer. */
 export function normalize(picked, database, auth, mailer) {
   const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
-  const a = auth ?? 'better-auth'
-  // trpc and better-auth both need a database; clerk/none don't. Fall back to the default.
+  let a = auth ?? 'better-auth'
   let db = database ?? 'drizzle'
-  if ((kept.has('trpc') || a === 'better-auth') && db === 'none') db = 'drizzle'
+
+  if (db === 'convex') {
+    // Convex is the API + realtime db: it replaces trpc, and can't back the
+    // Postgres-coupled better-auth (only Clerk or no auth).
+    kept.delete('trpc')
+    if (a === 'better-auth') a = 'none'
+  } else if ((kept.has('trpc') || a === 'better-auth') && db === 'none') {
+    // trpc and better-auth both need a database; clerk/none don't. Fall back to the default.
+    db = 'drizzle'
+  }
+
   // better-auth sends its own emails via the mailer; clerk is hosted and needs none.
   let mailerProvider = mailer ?? 'resend'
   if (a === 'better-auth' && mailerProvider === 'none') mailerProvider = 'resend'

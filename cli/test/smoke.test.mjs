@@ -23,6 +23,9 @@ const CONFIGS = [
   { name: 'prisma-full', database: 'prisma', alias: '@' },
   // Clerk strips better-auth + rewrites the tRPC context/provider on both frameworks.
   { name: 'clerk-full', auth: 'clerk' },
+  // Convex replaces the whole data layer (trpc + react-query) and composes its provider
+  // with Clerk; the alias rewrite must survive the vendored convex + provider imports.
+  { name: 'convex-clerk', database: 'convex', auth: 'clerk', mailer: 'none', alias: '@' },
 ]
 
 const TIMEOUT = 15 * 60 * 1000
@@ -56,8 +59,7 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
     if (framework === FRAMEWORKS[0]) {
       test(
         `scaffold ${framework}/prisma-only`,
-        () =>
-          verify(build({ framework, database: 'prisma', foundations: [], mailer: 'none' }).dir),
+        () => verify(build({ framework, database: 'prisma', foundations: [], mailer: 'none' }).dir),
         TIMEOUT,
       )
     }

@@ -5,7 +5,7 @@
 import { TEMPLATES } from './paths.mjs'
 import { copy, editFile, exists, join, read, readJSON, remove, write, writeJSON } from './util.mjs'
 
-export const DATABASES = ['drizzle', 'prisma']
+export const DATABASES = ['drizzle', 'prisma', 'convex']
 export const DEFAULT_DATABASE = 'drizzle'
 
 /** Resolve a flag/prompt value to a database choice, or throw. */
@@ -58,23 +58,27 @@ const PRISMA_FILES = [
   'prisma.config.ts',
 ]
 
+const CONVEX_VERSION = '^1.42.1'
+
 const empty = () => ({
   removeDeps: [],
   addDeps: {},
   addDevDeps: {},
   removeScripts: [],
   setScripts: {},
+  envLines: [],
 })
 
 /**
- * Bring the db layer to the chosen ORM. Runs before foundation-stripping so the
- * ORM (and its auth models) are in final form when auth gets stripped/rewired.
- * @returns {{ removeDeps: string[], addDeps: object, addDevDeps: object, removeScripts: string[], setScripts: object }}
+ * Bring the db layer to the chosen ORM. Runs after auth so `authKept`/`auth` are
+ * final (better-auth models tracked, the Clerk provider already in the shell).
+ * @returns {{ removeDeps: string[], addDeps: object, addDevDeps: object, removeScripts: string[], setScripts: object, envLines: string[] }}
  */
-export function applyDatabase({ projectDir, database, authKept }) {
+export function applyDatabase({ projectDir, database, framework, auth, authKept }) {
   if (database === 'drizzle') return applyDrizzle(projectDir, authKept)
   if (database === 'none') return stripDatabase(projectDir)
   if (database === 'prisma') return vendorPrisma(projectDir, authKept)
+  if (database === 'convex') return vendorConvex(projectDir, framework, auth)
   throw new Error(`Unknown database: ${database}`)
 }
 
@@ -113,6 +117,7 @@ function vendorPrisma(projectDir, authKept) {
     addDevDeps: { ...PRISMA_DEV_DEPS },
     removeScripts: [],
     setScripts: { ...PRISMA_SCRIPTS },
+    envLines: [],
   }
 }
 
@@ -170,4 +175,81 @@ function allowPrismaBuilds(projectDir) {
     }
     writeJSON(pkgPath, pkg)
   }
+}
+
+// Convex is not an ORM — it collapses db + API + realtime client. It ships a
+// committed `convex/` backend (schema + example + _generated) and a client provider
+// wired into the shell; trpc + react-query are already stripped (normalize forces them off).
+const CONVEX_URL_ENV = { tanstack: 'VITE_CONVEX_URL', next: 'NEXT_PUBLIC_CONVEX_URL' }
+
+/** Swap the SQL data layer for Convex: strip Drizzle, vendor the backend + provider. */
+function vendorConvex(projectDir, framework, auth) {
+  remove(src(projectDir, 'server/db'))
+  remove(join(projectDir, 'drizzle.config.ts'))
+
+  const frag = join(TEMPLATES, 'database/convex')
+  copy(join(frag, 'backend/convex'), join(projectDir, 'convex'))
+  if (framework === 'next') vendorConvexNext(projectDir, frag, auth)
+  else vendorConvexTanstack(projectDir, frag, auth)
+
+  const urlKey = CONVEX_URL_ENV[framework]
+  return {
+    removeDeps: [...DRIZZLE_ALL_DEPS],
+    addDeps: { convex: CONVEX_VERSION },
+    addDevDeps: {},
+    removeScripts: [...DB_SCRIPTS],
+    setScripts: { convex: 'convex dev' },
+    envLines: ['CONVEX_DEPLOYMENT=', `${urlKey}=https://example.convex.cloud`],
+  }
+}
+
+function vendorConvexTanstack(projectDir, frag, auth) {
+  copy(join(frag, 'tanstack/src/convex-env.d.ts'), src(projectDir, 'convex-env.d.ts'))
+  copy(join(frag, 'tanstack/src/routes/convex-demo.tsx'), src(projectDir, 'routes/convex-demo.tsx'))
+  injectConvexProviderTanstack(projectDir, auth)
+}
+
+function vendorConvexNext(projectDir, frag, auth) {
+  copy(join(frag, 'next/src/app/convex-demo'), src(projectDir, 'app/convex-demo'))
+  const variant = auth === 'clerk' ? 'clerk' : 'plain'
+  copy(
+    join(frag, `next/src/app/convex-provider.${variant}.tsx`),
+    src(projectDir, 'app/convex-provider.tsx'),
+  )
+  injectConvexProviderNext(projectDir)
+}
+
+const CONVEX_TANSTACK_PLAIN = `import { ConvexProvider, ConvexReactClient } from 'convex/react'
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
+`
+const CONVEX_TANSTACK_CLERK = `import { useAuth } from '@clerk/tanstack-react-start'
+import { ConvexReactClient } from 'convex/react'
+import { ConvexProviderWithClerk } from 'convex/react-clerk'
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
+`
+
+/** Wrap the shell's children in a Convex provider (ConvexProviderWithClerk when Clerk is on). */
+function injectConvexProviderTanstack(projectDir, auth) {
+  const clerk = auth === 'clerk'
+  const header = clerk ? CONVEX_TANSTACK_CLERK : CONVEX_TANSTACK_PLAIN
+  const open = clerk
+    ? '<ConvexProviderWithClerk client={convex} useAuth={useAuth}>'
+    : '<ConvexProvider client={convex}>'
+  const close = clerk ? '</ConvexProviderWithClerk>' : '</ConvexProvider>'
+  editFile(src(projectDir, 'routes/__root.tsx'), (c) =>
+    `${header}${c}`.replace('{children}', `${open}{children}${close}`),
+  )
+}
+
+const CONVEX_NEXT_IMPORT = "import { ConvexClientProvider } from '~/app/convex-provider'\n"
+
+function injectConvexProviderNext(projectDir) {
+  editFile(src(projectDir, 'app/layout.tsx'), (c) =>
+    `${CONVEX_NEXT_IMPORT}${c}`.replace(
+      '{children}',
+      '<ConvexClientProvider>{children}</ConvexClientProvider>',
+    ),
+  )
 }
