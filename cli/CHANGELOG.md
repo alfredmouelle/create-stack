@@ -13,6 +13,32 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-07
+
+### Added
+
+- **Choose your database** — new `--database` flag and wizard step: `drizzle` (default),
+  `prisma`, or `none`. `prisma` scaffolds a Prisma 7 setup (the `prisma-client` generator +
+  `@prisma/adapter-pg` reusing `pg`, a multi-file schema whose auth models track the auth
+  choice, a `postinstall` client generation, and a seed harness); `none` produces a
+  database-less vitrine. Prisma's build scripts are allowlisted so `install` stays clean on
+  pnpm/bun.
+- **Choose your auth provider** — new `--auth` flag and wizard step: `better-auth`
+  (default), `clerk`, or `none`. `clerk` vendors the provider, middleware, sign-in / sign-up
+  and a protected dashboard for both Next.js and TanStack Start. Clerk is hosted, so it needs
+  neither a database nor a mailer — `--auth clerk --database none` is a valid authenticated
+  vitrine.
+- Generated projects now ship **git hooks** (via `.githooks`, activated safely on first
+  install).
+
+### Changed
+
+- The ORM and auth are now their own axes, so `--foundations` covers only `trpc`. Selections
+  are normalized for you: `trpc` and `better-auth` pull in a database (falling back to
+  `drizzle`), `better-auth` forces a real mailer, and `clerk` frees both. Legacy
+  `--foundations drizzle|prisma|better-auth` soft-maps onto the new `--database` / `--auth`
+  flags.
+
 ## [0.5.0] - 2026-06-25
 
 ### Changed
