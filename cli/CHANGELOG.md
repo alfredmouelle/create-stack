@@ -15,6 +15,9 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Added
 
+- **GitHub Actions CI** — every scaffold now ships `.github/workflows/ci.yml` that runs
+  install + typecheck + Biome on push to `main` and on pull requests, wired to the package
+  manager you chose (pnpm / npm / yarn / bun). Mirrors the scaffold's own quality gate.
 - **Convex as a database choice** — `--database convex` (and a wizard option) scaffolds a
   Convex backend instead of a SQL ORM: a committed `convex/` directory (schema, an example
   query/mutation and the generated `_generated` client), a realtime provider wired into the

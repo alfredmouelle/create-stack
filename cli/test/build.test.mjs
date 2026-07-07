@@ -202,6 +202,12 @@ for (const framework of ['tanstack', 'next']) {
         expect(env.includes('CONVEX_DEPLOYMENT')).toBe(result.database === 'convex')
 
         assertCapabilities(dir, env, cfg.capabilities)
+
+        // every scaffold ships a CI workflow wired to the chosen pm (pnpm in tests)
+        const ci = read(`${dir}/.github/workflows/ci.yml`)
+        expect(ci).toContain('pnpm install --frozen-lockfile')
+        expect(ci).toContain('pnpm run typecheck')
+        expect(ci).toContain('pnpm run check')
       })
     }
   })

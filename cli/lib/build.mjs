@@ -4,6 +4,7 @@
 import { rewriteAlias } from './alias.mjs'
 import { applyAuth } from './auth.mjs'
 import { vendorCapability } from './capabilities.mjs'
+import { writeCiWorkflow } from './ci.mjs'
 import { allComponentDeps, allComponentFiles } from './component.mjs'
 import { applyDatabase } from './database.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
@@ -118,6 +119,8 @@ export function buildProject({
   if (rawEnvLines.length) appendRawEnvLines(projectDir, rawEnvLines)
 
   stampIdentity(projectDir, projectName, framework, pm)
+  // CI mirrors the scaffold's own gate (typecheck + biome) for the chosen pm.
+  writeCiWorkflow(projectDir, pm)
 
   // last: swap '~/' for the chosen alias across everything generated above (no-op when '~').
   rewriteAlias(projectDir, alias)

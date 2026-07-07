@@ -101,11 +101,11 @@ pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-
 ## What you get
 
 - **Framework** — Next.js App Router *or* TanStack Start, fully wired (SSR, routing).
-- **Database** — Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), or none.
+- **Database** — Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), *or* Convex (realtime db + API, subsumes tRPC), or none.
 - **tRPC v11** — typed API, SSR/RSC integration, health router.
 - **Auth** — better-auth (email+password + verification, Google OAuth, auth pages) *or* Clerk (hosted: provider, middleware, sign-in/up + `UserButton`), or none.
 - **Mailer** — Resend / Brevo / SES behind one port; React Email templates.
-- **Baseline** — Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed `env.ts`, Dockerfile, generated `.gitignore` + `.env`.
+- **Baseline** — Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow (install + typecheck + Biome), generated `.gitignore` + `.env`.
 
 Unselected pieces are removed cleanly (files, deps, env, wiring); the project is left
 **bootable and green**.
