@@ -4,6 +4,7 @@
 import { rewriteAlias } from './alias.mjs'
 import { vendorCapability } from './capabilities.mjs'
 import { allComponentDeps, allComponentFiles } from './component.mjs'
+import { applyDatabase } from './database.mjs'
 import { writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
@@ -26,6 +27,7 @@ import {
  * @param {string} o.projectName
  * @param {'next'|'tanstack'} o.framework
  * @param {Set<string>} o.kept   foundations to keep (deps pre-resolved)
+ * @param {'drizzle'|'prisma'|'none'} o.database  ORM the app ships (default 'drizzle')
  * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
  * @param {Record<string,string>} [o.capabilities]  capability → adapter (e.g. { storage: 's3' })
  * @param {string} [o.alias]  import-alias prefix to rewrite '~/' to (default '~', i.e. no-op)
@@ -37,6 +39,7 @@ export function buildProject({
   projectName,
   framework,
   kept,
+  database = 'drizzle',
   mailerProvider,
   capabilities = {},
   alias = '~',
@@ -49,6 +52,7 @@ export function buildProject({
   makeStandalone(projectDir, projectName, framework, pm)
 
   const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
+  const db = applyDatabase({ projectDir, database, authKept })
 
   // opt-in components never ship in the default bundle — strip them; re-add via
   // `create-stack component <name>`.
@@ -71,14 +75,21 @@ export function buildProject({
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
   pkg.description = `${projectName} — scaffolded from the personal reference stack.`
-  pkgRemoveDeps(pkg, [...strip.removeDeps, ...mailer.removeDeps, ...allComponentDeps()])
-  pkgRemoveScripts(pkg, strip.removeScripts)
-  pkgAddDeps(pkg, { ...mailer.addDeps, ...capAddDeps })
+  pkgRemoveDeps(pkg, [
+    ...strip.removeDeps,
+    ...mailer.removeDeps,
+    ...allComponentDeps(),
+    ...db.removeDeps,
+  ])
+  pkgRemoveScripts(pkg, [...strip.removeScripts, ...db.removeScripts])
+  pkgAddDeps(pkg, { ...mailer.addDeps, ...capAddDeps, ...db.addDeps })
+  pkgAddDeps(pkg, db.addDevDeps, 'devDependencies')
+  if (Object.keys(db.setScripts).length) pkg.scripts = { ...pkg.scripts, ...db.setScripts }
   writeJSON(pkgPath, pkg)
 
   const envKeys = []
   const requiredEnvKeys = []
-  if (kept.has('drizzle')) {
+  if (database !== 'none') {
     envKeys.push('DATABASE_URL')
     requiredEnvKeys.push('DATABASE_URL')
   }
@@ -100,5 +111,5 @@ export function buildProject({
   // last: swap '~/' for the chosen alias across everything generated above (no-op when '~').
   rewriteAlias(projectDir, alias)
 
-  return { kept: [...kept], keptMailer, mailerProvider, capabilities, envKeys, alias }
+  return { kept: [...kept], database, keptMailer, mailerProvider, capabilities, envKeys, alias }
 }

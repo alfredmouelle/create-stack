@@ -11,7 +11,7 @@ const serverHas = (dir, key) => new RegExp(`\\n {4}${key}:`).test(read(`${dir}/s
 
 describe('add', () => {
   test('vendors a capability + merges deps/env', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
 
     const res = addCapability({ projectDir: dir, cap: 'storage', adapter: 's3' })
     expect(res.framework).toBe('tanstack')
@@ -25,7 +25,7 @@ describe('add', () => {
   })
 
   test('detects next from deps', () => {
-    const { dir } = build({ framework: 'next', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'next', foundations: [], mailer: 'none' })
     expect(addCapability({ projectDir: dir, cap: 'cache', adapter: 'redis' }).framework).toBe(
       'next',
     )
@@ -33,7 +33,7 @@ describe('add', () => {
   })
 
   test('a second capability coexists with the first', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'resend' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'resend' })
     addCapability({ projectDir: dir, cap: 'storage', adapter: 's3' })
     addCapability({ projectDir: dir, cap: 'cache', adapter: 'redis' })
 
@@ -46,7 +46,7 @@ describe('add', () => {
   })
 
   test('rejects an unknown adapter', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
     expect(() => addCapability({ projectDir: dir, cap: 'storage', adapter: 'nope' })).toThrow()
   })
 })
@@ -57,7 +57,7 @@ describe('swap', () => {
   test('re-adding a capability swaps its adapter and drops the old deps', () => {
     const { dir } = build({
       framework: 'next',
-      foundations: ['drizzle'],
+      foundations: [],
       mailer: 'none',
       capabilities: { cache: 'redis' },
     })
@@ -73,7 +73,7 @@ describe('swap', () => {
   test('--keep retains the previous adapter and its deps', () => {
     const { dir } = build({
       framework: 'next',
-      foundations: ['drizzle'],
+      foundations: [],
       mailer: 'none',
       capabilities: { cache: 'redis' },
     })
@@ -88,7 +88,7 @@ describe('swap', () => {
   test('jobs swap drops the inngest serve route + shim', () => {
     const { dir } = build({
       framework: 'next',
-      foundations: ['drizzle'],
+      foundations: [],
       mailer: 'none',
       capabilities: { jobs: 'inngest' },
     })
@@ -103,7 +103,7 @@ describe('swap', () => {
 
 describe('mailer / lib targets', () => {
   test('mailer swaps the adapter behind the same port', () => {
-    const { dir } = build({ framework: 'next', foundations: ['drizzle'], mailer: 'resend' })
+    const { dir } = build({ framework: 'next', foundations: [], mailer: 'resend' })
     const res = addCapability({ projectDir: dir, cap: 'mailer', adapter: 'brevo' })
 
     expect(res.swappedFrom).toBe('resend')
@@ -115,7 +115,7 @@ describe('mailer / lib targets', () => {
   })
 
   test('mailer can be re-added after being stripped', () => {
-    const { dir } = build({ framework: 'next', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'next', foundations: [], mailer: 'none' })
     expect(exists(`${dir}/src/server/email`)).toBe(false)
 
     addCapability({ projectDir: dir, cap: 'mailer', adapter: 'ses' })
@@ -125,14 +125,14 @@ describe('mailer / lib targets', () => {
   })
 
   test('http vendors the helpers, no deps/env', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
     const res = addCapability({ projectDir: dir, cap: 'http', adapter: null })
     expect(exists(`${dir}/src/lib/http/index.ts`)).toBe(true)
     expect(res.envKeys).toEqual([])
   })
 
   test('email-kit vendors the React Email primitives', () => {
-    const { dir } = build({ framework: 'next', foundations: ['drizzle'], mailer: 'resend' })
+    const { dir } = build({ framework: 'next', foundations: [], mailer: 'resend' })
     addCapability({ projectDir: dir, cap: 'email-kit', adapter: null })
     expect(exists(`${dir}/src/emails/components/index.ts`)).toBe(true)
   })

@@ -12,7 +12,7 @@ const deps = (dir) => readJSON(`${dir}/package.json`).dependencies
 
 describe('component', () => {
   test('date-picker vendors its files + primitives + deps', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
     expect(exists(`${dir}/src/components/ui/date-picker.tsx`), 'stripped by default').toBe(false)
 
     const res = vendorComponent({ projectDir: dir, name: 'date-picker' })
@@ -25,7 +25,7 @@ describe('component', () => {
   })
 
   test('datatable vendors its files + hook + react-table (next)', () => {
-    const { dir } = build({ framework: 'next', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'next', foundations: [], mailer: 'none' })
     const res = vendorComponent({ projectDir: dir, name: 'datatable' })
     expect(res.framework).toBe('next')
     for (const f of ['data-table', 'infinite-data-table', 'sortable-header'])
@@ -35,7 +35,7 @@ describe('component', () => {
   })
 
   test('re-vendor never clobbers existing files (idempotent)', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
     const first = vendorComponent({ projectDir: dir, name: 'datatable' })
     expect(first.copied.length).toBeGreaterThan(0)
 
@@ -45,7 +45,7 @@ describe('component', () => {
   })
 
   test('--force overwrites a locally edited file', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
     vendorComponent({ projectDir: dir, name: 'datatable' })
     const file = `${dir}/src/components/data-table.tsx`
     writeFileSync(file, '// local edit\n')
@@ -59,7 +59,7 @@ describe('component', () => {
   test('aligns vendored imports to a non-default alias', () => {
     const { dir } = build({
       framework: 'tanstack',
-      foundations: ['drizzle'],
+      foundations: [],
       mailer: 'none',
       alias: '@',
     })
@@ -70,7 +70,7 @@ describe('component', () => {
   })
 
   test('rejects an unknown component', () => {
-    const { dir } = build({ framework: 'tanstack', foundations: ['drizzle'], mailer: 'none' })
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
     expect(() => vendorComponent({ projectDir: dir, name: 'nope' })).toThrow()
   })
 })

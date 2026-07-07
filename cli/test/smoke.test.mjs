@@ -17,7 +17,10 @@ const FRAMEWORKS = process.env.SMOKE_FRAMEWORK
 // still typechecks (bundler path resolution + every generated import).
 const CONFIGS = [
   { name: 'full', capabilities: { storage: 's3', cache: 'redis' }, alias: '@' },
-  { name: 'drizzle-only', foundations: ['drizzle'], mailer: 'none' },
+  { name: 'drizzle-only', foundations: [], mailer: 'none' },
+  // Prisma exercises both seams (trpc context + better-auth adapter) on both frameworks;
+  // the alias rewrite must also survive the generated-client import.
+  { name: 'prisma-full', database: 'prisma', alias: '@' },
 ]
 
 const TIMEOUT = 15 * 60 * 1000
@@ -47,13 +50,23 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
       )
     }
 
+    // Prisma without trpc/auth (one framework) — the db-only strip path must compile.
+    if (framework === FRAMEWORKS[0]) {
+      test(
+        `scaffold ${framework}/prisma-only`,
+        () =>
+          verify(build({ framework, database: 'prisma', foundations: [], mailer: 'none' }).dir),
+        TIMEOUT,
+      )
+    }
+
     // `add` path: adding, swapping an adapter, and vendoring a lib target must all compile.
     test(
       `add-swap ${framework}`,
       () => {
         const { dir } = build({
           framework,
-          foundations: ['drizzle'],
+          foundations: [],
           mailer: 'resend',
           capabilities: { cache: 'redis' },
           alias: '@', // each subsequent add must vendor against '@/', not '~/'
@@ -73,7 +86,7 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
       () => {
         const { dir } = build({
           framework,
-          foundations: ['drizzle'],
+          foundations: [],
           mailer: 'none',
           alias: '@', // vendored files must realign '~/' → '@/'
         })

@@ -9,19 +9,16 @@ afterAll(cleanup)
 // Foundation → marker dir/file, npm dep, and the import specifiers that must vanish
 // once it's stripped.
 const FOUND_DIR = {
-  drizzle: 'src/server/db',
   trpc: 'src/trpc',
   'better-auth': 'src/server/better-auth',
 }
 const FOUND_DEP = {
-  drizzle: 'drizzle-orm',
   trpc: '@trpc/server',
   'better-auth': 'better-auth',
 }
 const DANGLING = {
   trpc: ['~/trpc', '~/server/api'],
   'better-auth': ['~/server/better-auth'],
-  drizzle: ['~/server/db'],
 }
 const ALL = Object.keys(FOUND_DIR)
 
@@ -57,6 +54,39 @@ function assertFoundations(dir, kept, deps) {
   }
 }
 
+// the ORM axis: the chosen provider is wired, the others (and Drizzle's config) are gone
+function assertDatabase(dir, database, deps, authKept) {
+  const hasDb = database !== 'none'
+  expect(exists(`${dir}/src/server/db`), `db layer present=${hasDb}`).toBe(hasDb)
+
+  if (database === 'drizzle') {
+    expect('drizzle-orm' in deps, 'drizzle-orm dep').toBe(true)
+    expect(exists(`${dir}/drizzle.config.ts`), 'drizzle.config').toBe(true)
+    expect('@prisma/client' in deps, 'no prisma dep').toBe(false)
+    if (authKept) expect(read(`${dir}/src/server/better-auth/config.ts`)).toContain('drizzleAdapter')
+  } else if (database === 'prisma') {
+    expect('@prisma/client' in deps, 'prisma client dep').toBe(true)
+    expect('prisma' in deps, 'prisma cli dep').toBe(true)
+    expect('drizzle-orm' in deps, 'drizzle-orm removed').toBe(false)
+    expect('drizzle-kit' in deps, 'drizzle-kit removed').toBe(false)
+    expect(exists(`${dir}/drizzle.config.ts`), 'no drizzle.config').toBe(false)
+    expect(exists(`${dir}/prisma.config.ts`), 'prisma.config').toBe(true)
+    expect(exists(`${dir}/prisma/schema/schema.prisma`), 'prisma schema').toBe(true)
+    expect(read(`${dir}/package.json`)).toContain('prisma generate')
+    const authSchema = exists(`${dir}/prisma/schema/auth.prisma`)
+    expect(authSchema, `auth.prisma present=${authKept}`).toBe(authKept)
+    if (authKept) {
+      const cfg = read(`${dir}/src/server/better-auth/config.ts`)
+      expect(cfg).toContain('prismaAdapter')
+      expect(cfg).not.toContain('drizzleAdapter')
+    }
+  } else {
+    expect('drizzle-orm' in deps, 'drizzle-orm removed').toBe(false)
+    expect('@prisma/client' in deps, 'prisma removed').toBe(false)
+    expect(filesImporting(dir, ['~/server/db']), 'dangling db imports').toEqual([])
+  }
+}
+
 function assertMailer(dir, result, deps) {
   expect('resend' in deps, 'resend dep').toBe(result.mailerProvider === 'resend')
   if (!result.keptMailer) {
@@ -81,13 +111,16 @@ function assertCapabilities(dir, env, capabilities = {}) {
   if (capabilities.cache === 'redis') expect(env).toContain('REDIS_URL')
 }
 
-// name, foundations (omit = all), mailer (omit = resend), capabilities
+// name, database (omit = drizzle), foundations (omit = all), mailer (omit = resend), capabilities
 const CONFIGS = [
   { name: 'full' },
   { name: 'full-caps', capabilities: { storage: 's3', cache: 'redis' } },
-  { name: 'drizzle-trpc', foundations: ['drizzle', 'trpc'], mailer: 'ses' },
+  { name: 'prisma-full', database: 'prisma' },
+  { name: 'prisma-no-auth', database: 'prisma', foundations: ['trpc'], mailer: 'none' },
+  { name: 'drizzle-trpc', foundations: ['trpc'], mailer: 'ses' },
   { name: 'auth-no-trpc', foundations: ['better-auth'] },
-  { name: 'drizzle-only', foundations: ['drizzle'], mailer: 'none' },
+  { name: 'drizzle-only', foundations: [], mailer: 'none' },
+  { name: 'vitrine', database: 'none', foundations: [], mailer: 'none' },
 ]
 
 for (const framework of ['tanstack', 'next']) {
@@ -105,11 +138,12 @@ for (const framework of ['tanstack', 'next']) {
         expect(exists(`${dir}/src/env.ts`)).toBe(true)
 
         assertFoundations(dir, kept, deps)
+        assertDatabase(dir, result.database, deps, kept.has('better-auth'))
         assertComponentsStripped(dir, deps)
         assertMailer(dir, result, deps)
 
         // env keys track the selection
-        expect(env.includes('DATABASE_URL')).toBe(kept.has('drizzle'))
+        expect(env.includes('DATABASE_URL')).toBe(result.database !== 'none')
         expect(env.includes('BETTER_AUTH_SECRET')).toBe(kept.has('better-auth'))
 
         assertCapabilities(dir, env, cfg.capabilities)

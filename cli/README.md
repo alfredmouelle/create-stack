@@ -19,217 +19,142 @@
 
 ---
 
-Interactive, **deterministic** project installer. It forks a fully-wired base app
-(**Next.js App Router** or **TanStack Start**) and strips it down to exactly the
-foundations and provider you pick — Drizzle, tRPC, better-auth, a mailer and optional
-capabilities (storage, cache, jobs, logger, analytics, error-tracking) — then stamps
-identity, generates `.env`, initializes git and verifies the result (typecheck + Biome).
-Opt-in UI components (date pickers, data tables) stay out of the base bundle and are
-added on demand with `create-stack component`.
-
-No template guesswork: the output is a real, buildable app from day one.
+Forks a fully-wired **Next.js App Router** or **TanStack Start** base app and strips it
+to exactly what you pick — database, tRPC, better-auth, a mailer, optional capabilities —
+then stamps identity, writes `.env`, inits git and verifies (typecheck + Biome). No
+template guesswork: the output is a real, buildable app from day one.
 
 ## Quick start
 
 ```bash
 pnpm dlx @alfredmouelle/create-stack my-app
-# or, using the create-* convention:
+# or the create-* convention (npm / yarn create also work):
 pnpm create @alfredmouelle/stack my-app
-# npm / yarn:
-npm create @alfredmouelle/stack my-app
-yarn create @alfredmouelle/stack my-app
 ```
 
-Run with no extra flags → an **interactive wizard** asks every question. Pass any
-selection flag → **non-interactive** mode (scriptable / CI).
+No flags → an **interactive wizard**. Any selection flag → **non-interactive** (CI / scriptable).
 
-## Requirements
+Requires **Node ≥ 22**, a package manager (**pnpm** / npm / yarn / bun, auto-detected and
+used by the generated project), and **git** on `PATH`.
 
-- **Node** ≥ 22
-- A package manager — **pnpm**, **npm**, **yarn** or **bun**. The generated project
-  defaults to whichever you launch with (detected via `npm_config_user_agent`);
-  override it in the wizard or with `--pm`.
-- **git** on `PATH`. **rsync** is used as a fast path when present (macOS/Linux ship
-  it); without it the CLI falls back to a built-in copy, so Windows works natively.
-
-## Usage
+## Commands
 
 ```
 create-stack [project] [flags]            # scaffold a new project
-create-stack add [capability] [adapter]   # add capabilities to the current project
-create-stack component [name]             # install a standalone UI component
+create-stack add [capability] [adapter]   # add a capability to the current project
+create-stack component [name]             # vendor a standalone UI component
 ```
 
-`project` is the target directory (and default package name). It must be empty or
-not exist yet. In non-interactive mode it is required.
+`project` is the target dir (and default package name) — must be empty or not exist.
+`<command> --help` prints its flags; `--version` prints the version.
 
-`create-stack --help` prints the full flag reference; `create-stack --version` prints
-the version. Since `npx`/`pnpm dlx` always fetch the latest, see
-[`CHANGELOG.md`](./CHANGELOG.md) (shipped in the package) for what changed between versions.
+## Scaffold flags
 
-### Flags
-
-| Flag | Values | Default | Description |
+| Flag | Values | Default | Notes |
 | --- | --- | --- | --- |
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
-| `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project (install, scripts, workspace files). |
-| `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias: rewrites `<alias>/*` → `src/*` across sources, tsconfig and `components.json`. |
-| `--foundations` | csv of `drizzle,trpc,better-auth` | all | Foundations to keep; the rest are stripped. |
-| `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. `none` is coerced to `resend` when `better-auth` is kept. |
-| `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage capability (omit to skip). |
-| `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache capability (omit to skip). |
-| `--jobs` | `inngest` \| `trigger` \| `memory` | `inngest` | Background jobs capability (omit to skip). `inngest` also scaffolds the serve route. |
-| `--logger` | `pino` \| `console` | `pino` | Structured logging capability (omit to skip). |
-| `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics capability (omit to skip). |
-| `--error-tracking` | `sentry` \| `console` | `sentry` | Error reporting capability (omit to skip). |
-| `--no-install` | — | install on | Skip `pnpm install` + verification. |
+| `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project. |
+| `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias; rewrites `<alias>/*` → `src/*` everywhere. |
+| `--database` | `drizzle` \| `prisma` \| `none` | `drizzle` | ORM the app ships. `prisma` = Prisma 7; `none` = database-less vitrine. |
+| `--foundations` | csv of `trpc,better-auth` | all | Foundations to keep; the rest are stripped. |
+| `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
+| `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage (omit to skip). |
+| `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache (omit to skip). |
+| `--jobs` | `inngest` \| `trigger` \| `memory` | `inngest` | Background jobs (omit to skip). |
+| `--logger` | `pino` \| `console` | `pino` | Structured logging (omit to skip). |
+| `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics (omit to skip). |
+| `--error-tracking` | `sentry` \| `console` | `sentry` | Error reporting (omit to skip). |
+| `--no-install` | — | install on | Skip install + verification. |
 | `--yes`, `-y` | — | — | Non-interactive with all defaults. |
 
-Each capability flag is optional: pass it (bare for the default adapter, or with a
-value) to vendor that capability; omit it to leave it out. Passing any selection
-flag — `--framework`, `--foundations`, `--mailer`, any capability, or `--no-install`
-(or `--yes`) — switches the CLI to non-interactive mode; missing values fall back to
-the defaults above.
-
-`--pm` and `--alias` are modifiers, not triggers: the wizard pre-selects the detected
-PM / `~`, and in non-interactive mode these flags override those defaults.
-
-### Dependency resolution
-
-Selections are normalized for you:
-
-- `trpc` ⇒ pulls in `drizzle`
-- `better-auth` ⇒ pulls in `drizzle` **and** forces a real mailer (not `none`)
-
-### Examples
+Capability flags are optional — pass one (bare = default adapter) to vendor it, omit to
+skip. Any selection flag switches to non-interactive mode; `--pm`/`--alias` are modifiers,
+not triggers. Selections are normalized: `trpc` and `better-auth` both need a database
+(fall back to `drizzle`), and `better-auth` forces a real mailer.
 
 ```bash
-# Full interactive wizard
-pnpm dlx @alfredmouelle/create-stack my-app
-
-# Everything, defaults (TanStack Start + all foundations + Resend), no questions
+# everything, defaults, no questions
 pnpm dlx @alfredmouelle/create-stack my-app --yes
 
-# Next.js with just Drizzle + tRPC, Amazon SES mailer, don't install
-pnpm dlx @alfredmouelle/create-stack api --framework next \
-  --foundations drizzle,trpc --mailer ses --no-install
+# Prisma instead of Drizzle, full stack
+pnpm dlx @alfredmouelle/create-stack my-app --database prisma
 
-# Bun as package manager + '@' import alias
-pnpm dlx @alfredmouelle/create-stack my-app --framework next --pm bun --alias @
+# Next.js, just tRPC, SES mailer, don't install
+pnpm dlx @alfredmouelle/create-stack api --framework next --foundations trpc --mailer ses --no-install
 
-# Minimal: Drizzle only, no mailer
-pnpm dlx @alfredmouelle/create-stack db-svc --foundations drizzle --mailer none
+# vitrine: no database, no mailer
+pnpm dlx @alfredmouelle/create-stack site --database none --foundations '' --mailer none
 
-# With capabilities: R2 storage, Redis cache, Inngest jobs, Sentry errors
-pnpm dlx @alfredmouelle/create-stack my-app \
-  --storage r2 --cache --jobs --error-tracking
+# with capabilities: R2 storage, Redis cache, Inngest jobs, Sentry errors
+pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-tracking
 ```
 
 ## What you get
 
 - **Framework** — Next.js App Router *or* TanStack Start, fully wired (SSR, routing).
-- **Drizzle ORM** — Postgres client, schema barrel, keyset pagination, seed harness.
+- **Database** — Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), or none.
 - **tRPC v11** — typed API, SSR/RSC integration, health router.
-- **better-auth** — email+password + verification, optional Google OAuth, session
-  guards, auth UI pages.
+- **better-auth** — email+password + verification, optional Google OAuth, session guards, auth pages.
 - **Mailer** — Resend / Brevo / SES behind one port; React Email templates.
-- **Baseline** — Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed
-  env (`src/env.ts`), Dockerfile, a generated `.gitignore` and `.env`/`.env.example`.
+- **Baseline** — Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed `env.ts`, Dockerfile, generated `.gitignore` + `.env`.
 
-Unselected foundations are removed cleanly (files, deps, env vars and wiring),
-and the project is left **bootable and green** (typecheck + Biome).
+Unselected pieces are removed cleanly (files, deps, env, wiring); the project is left
+**bootable and green**.
 
 ## Capabilities
 
-Beyond the **mailer** (always baked in, chosen via `--mailer`), the CLI can vendor
-any of the swappable capabilities at scaffold time — pick them in the wizard or via
-flags. Each is copied behind a port (into `src/server/<capability>/`) with a generated
-composition root that reads typed env and constructs the adapter lazily, so the app
-boots even before you fill in the keys:
+Swappable integrations, each copied behind a port into `src/server/<capability>/` with a
+generated composition root that reads typed env and constructs the adapter lazily (so the
+app boots before you fill the keys). Deps + env keys are wired into `package.json` and
+`env.ts` automatically.
 
-| Capability | Adapters | Notes |
-| --- | --- | --- |
-| `storage` | s3, r2, gcs, local | `getStorage()` accessor. |
-| `cache` | redis, upstash, memory | `getCache()` accessor. |
-| `jobs` | inngest, trigger, memory | `inngest` also scaffolds `serve.ts` + the framework route. |
-| `logger` | pino, console | `getLogger()` accessor. |
-| `analytics` | posthog, plausible, noop | `plausible` vendors `~/lib/http`. |
-| `error-tracking` | sentry, console | `getErrorTracking()` accessor. |
+| Capability | Adapters |
+| --- | --- |
+| `storage` | s3, r2, gcs, local |
+| `cache` | redis, upstash, memory |
+| `jobs` | inngest, trigger, memory (`inngest` also scaffolds the serve route) |
+| `logger` | pino, console |
+| `analytics` | posthog, plausible, noop |
+| `error-tracking` | sentry, console |
 
-Adapter deps and env keys are wired into `package.json` and `src/env.ts` automatically;
-cross-package imports (`@alfredmouelle/http`) are vendored into `src/lib/http` and
-rewritten.
-
-### Adding capabilities later
-
-Run `create-stack add` from the root of a generated project to vendor more capabilities
-into it — same engine as the scaffold, merged incrementally so nothing already in
-`package.json` / `src/env.ts` is disturbed:
+Add more later with `create-stack add` (same engine, merged incrementally). Re-adding with
+a different adapter **swaps** it (`--keep` keeps both). Targets also include `mailer`,
+`email-kit` (React Email primitives) and `http` (fetch helpers).
 
 ```bash
-create-stack add                 # interactive multi-select + adapter picker
-create-stack add storage r2      # non-interactive: one capability + adapter
-create-stack add cache --no-install
-```
-
-Targets: the six port capabilities (`storage`, `cache`, `jobs`, `logger`, `analytics`,
-`error-tracking`) plus **`mailer`** (resend / brevo / ses), **`email-kit`** (React Email
-primitives) and **`http`** (fetch + response helpers). It detects the framework, vendors
-behind the port, appends env keys, and installs + verifies (unless `--no-install`).
-
-**Swapping an adapter** — re-add a capability with a different adapter and it swaps,
-dropping the old adapter's files + deps:
-
-```bash
-create-stack add cache upstash         # redis → upstash
-create-stack add mailer brevo          # resend → brevo
-create-stack add cache upstash --keep  # keep both adapters; composition root uses the new one
+create-stack add                 # interactive picker
+create-stack add storage r2      # one capability + adapter
+create-stack add cache upstash   # swap redis → upstash
 ```
 
 ## Components
 
-Some UI ships **opt-in** so it never weighs on the base bundle (the heavier deps —
-`react-day-picker`, `date-fns`, `@tanstack/react-table` — are kept out by default).
-Run `create-stack component` from the root of a generated project to vendor one in:
-its files are copied from the matching base app, its deps merged into `package.json`,
-and imports realigned to your alias — then it installs + verifies (unless `--no-install`).
+Opt-in UI kept out of the base bundle (its heavier deps too). Vendor one into a generated
+project — files copied, deps merged, imports realigned to your alias. Existing files are
+**never overwritten** (`--force` to override).
 
 | Component | Vendors | Deps |
 | --- | --- | --- |
-| `date-picker` | `ui/date-picker`, `ui/date-range-picker` (+ `calendar`, `popover`, `lib/date`) | `react-day-picker`, `date-fns` |
-| `datatable` | `data-table`, `infinite-data-table`, `sortable-header`, `hooks/use-data-table` | `@tanstack/react-table` |
+| `date-picker` | `ui/date-picker`, `ui/date-range-picker` (+ calendar, popover, lib/date) | react-day-picker, date-fns |
+| `datatable` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | @tanstack/react-table |
 
 ```bash
-create-stack component              # interactive multi-select
-create-stack component date-picker  # non-interactive: one component
-create-stack component datatable --no-install
+create-stack component              # interactive picker
+create-stack component date-picker  # one component
 ```
-
-Re-running is safe: files that already exist are **never overwritten**, so local edits
-survive — pass `--force` to overwrite them.
-
-`datatable` ships a `useDataTable` hook (the controller that builds the table for the
-presentational `<DataTable />`): sorting + filtering + column visibility, with opt-in
-localStorage persistence (`storage.key`) and a passthrough for extra `useReactTable`
-options (pagination, row selection, …).
 
 ## After scaffolding
 
 ```bash
 cd my-app
-pnpm install            # only if you passed --no-install
-# edit .env             # already generated with placeholders (alongside .env.example)
+pnpm install     # only if you passed --no-install
+# edit .env      # already generated with placeholders
 pnpm dev
 ```
 
-## Notes
-
-- The published package is **self-contained**: the base apps, the mailer adapters
-  and every capability package (`+ http`) are bundled at publish time, so `pnpm dlx`
-  needs nothing but this package.
-- The generated project is a fresh git repo (`git init`) with an initial commit
-  created for you. If git `user.name`/`user.email` aren't set, the commit is skipped
-  and the files are left staged — set your identity and commit when ready.
+The generated project is a fresh git repo with an initial commit (skipped, files left
+staged, if git `user.name`/`user.email` aren't set). The published package is
+self-contained — `pnpm dlx` needs nothing else.
 
 ## Author
 

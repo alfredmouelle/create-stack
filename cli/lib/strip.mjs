@@ -34,7 +34,6 @@ const stripTrpc = (src, next, keptDeps, removeDeps) => {
 
 const stripAuth = (src, next, kept) => {
   remove(src('server/better-auth'))
-  remove(src('server/db/schemas/auth.schema.ts'))
   const dirs = next
     ? ['app/auth', 'app/api/auth', 'app/dashboard', 'server/auth', 'features/auth']
     : [
@@ -46,14 +45,7 @@ const stripAuth = (src, next, kept) => {
         'features/auth',
       ]
   for (const d of dirs) remove(src(d))
-  // drop the auth.schema barrel line, keeping it a module so `import * as schema` resolves
-  editFile(src('server/db/schemas/index.ts'), (c) => {
-    const out = c
-      .split('\n')
-      .filter((l) => !l.includes("'./auth.schema'"))
-      .join('\n')
-    return /^export /m.test(out) ? out : `${out.trimEnd()}\nexport {}\n`
-  })
+  // the ORM's auth models are handled by lib/database.mjs (applyDatabase)
   if (kept.has('trpc')) editFile(src('server/api/trpc.ts'), stripAuthFromTrpc)
 }
 
@@ -84,10 +76,6 @@ export function stripFoundations({ projectDir, framework, kept, keptMailer }) {
   if (dropped.includes('trpc')) stripTrpc(src, next, keptDeps, removeDeps)
   if (dropped.includes('better-auth')) stripAuth(src, next, kept)
   if (!keptMailer) stripMailer(src, removeDeps, removeScripts)
-  if (dropped.includes('drizzle')) {
-    remove(src('server/db'))
-    remove(join(projectDir, 'drizzle.config.ts'))
-  }
 
   return { removeDeps: [...removeDeps], removeScripts: [...removeScripts] }
 }

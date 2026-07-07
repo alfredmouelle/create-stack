@@ -1,6 +1,6 @@
 // Pure argv parsing + selection normalization, split out of index.mjs to be unit-testable.
 
-export const ALL_FOUNDATIONS = ['drizzle', 'trpc', 'better-auth']
+export const ALL_FOUNDATIONS = ['trpc', 'better-auth']
 
 /** Minimal flag parser: positional args + --key value / --flag / short -abc booleans. */
 export function parseArgs(argv) {
@@ -57,11 +57,13 @@ export function normalizeAlias(v) {
   return t
 }
 
-/** Resolve hard deps + mailer's better-auth requirement for a foundation selection. */
-export function normalize(picked, mailer) {
+/** Resolve foundation deps + mailer's better-auth requirement against a database choice. */
+export function normalize(picked, database, mailer) {
   const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
-  if (kept.has('trpc') || kept.has('better-auth')) kept.add('drizzle')
+  // trpc + better-auth both need a database; fall back to the default when none was chosen.
+  let db = database ?? 'drizzle'
+  if ((kept.has('trpc') || kept.has('better-auth')) && db === 'none') db = 'drizzle'
   let mailerProvider = mailer ?? 'resend'
   if (kept.has('better-auth') && mailerProvider === 'none') mailerProvider = 'resend'
-  return { kept, mailerProvider }
+  return { kept, database: db, mailerProvider }
 }

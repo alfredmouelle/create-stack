@@ -31,6 +31,7 @@ import {
   resolveAdapter,
 } from './lib/capabilities.mjs'
 import { COMPONENT_NAMES, componentChoices, vendorComponent } from './lib/component.mjs'
+import { resolveDatabase } from './lib/database.mjs'
 import { detectPackageManager, PM_NAMES, resolvePackageManager } from './lib/package-manager.mjs'
 import { exists, isDirEmpty, join, run } from './lib/util.mjs'
 
@@ -56,7 +57,8 @@ Scaffold flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
-  --foundations <csv>              drizzle,trpc,better-auth (default all)
+  --database <drizzle|prisma|none> ORM the app ships (default drizzle)
+  --foundations <csv>              trpc,better-auth (default all)
   --mailer <resend|brevo|ses|none> Mailer provider (default resend)
   --no-install                     Skip install + verification
   -y, --yes                        Non-interactive with all defaults
@@ -126,7 +128,14 @@ function collectFromFlags(args) {
   const pmFlag = args.flags.pm ?? args.flags['package-manager']
   const pm = typeof pmFlag === 'string' ? resolvePackageManager(pmFlag) : detectedPm
   const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
-  const { kept, mailerProvider } = normalize(picked, args.flags.mailer)
+  // soft-map a legacy `--foundations drizzle|prisma` onto the database axis
+  const legacyDb = ['drizzle', 'prisma'].find((d) => picked.includes(d))
+  const dbFlag = typeof args.flags.database === 'string' ? args.flags.database : legacyDb
+  const { kept, database, mailerProvider } = normalize(
+    picked,
+    resolveDatabase(dbFlag),
+    args.flags.mailer,
+  )
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
   return {
@@ -136,6 +145,7 @@ function collectFromFlags(args) {
     alias,
     pm,
     kept,
+    database,
     mailerProvider,
     capabilities,
     doInstall,
@@ -206,18 +216,33 @@ async function collectFromPrompts(argDir) {
     ),
   )
 
-  const picked = cancelled(
-    await p.multiselect({
-      message: 'Foundations (space to toggle)',
-      required: false,
-      initialValues: [...ALL_FOUNDATIONS],
+  const database = cancelled(
+    await p.select({
+      message: 'Database',
+      initialValue: 'drizzle',
       options: [
-        { value: 'drizzle', label: 'Drizzle ORM', hint: 'Postgres + seed' },
-        { value: 'trpc', label: 'tRPC', hint: 'needs Drizzle' },
-        { value: 'better-auth', label: 'better-auth', hint: 'needs Drizzle + mailer' },
+        { value: 'drizzle', label: 'Drizzle ORM', hint: 'Postgres + seed (default)' },
+        { value: 'prisma', label: 'Prisma ORM', hint: 'Prisma 7 + Postgres' },
+        { value: 'none', label: 'None', hint: 'no database (vitrine)' },
       ],
     }),
   )
+
+  // trpc + better-auth both require a database, so only offer them when one is chosen.
+  const picked =
+    database === 'none'
+      ? []
+      : cancelled(
+          await p.multiselect({
+            message: 'Foundations (space to toggle)',
+            required: false,
+            initialValues: [...ALL_FOUNDATIONS],
+            options: [
+              { value: 'trpc', label: 'tRPC', hint: 'typed API' },
+              { value: 'better-auth', label: 'better-auth', hint: 'needs a mailer' },
+            ],
+          }),
+        )
   const authKept = new Set(picked).has('better-auth')
 
   const mailerOpts = [
@@ -259,13 +284,14 @@ async function collectFromPrompts(argDir) {
     await p.confirm({ message: 'Install dependencies and verify now?', initialValue: true }),
   )
 
-  const { kept, mailerProvider } = normalize(picked, mailer)
+  const { kept, database: db, mailerProvider } = normalize(picked, database, mailer)
   return {
     argDir,
     projectName,
     framework,
     alias,
     pm,
+    database: db,
     kept,
     mailerProvider,
     capabilities,
@@ -290,6 +316,28 @@ function installAndVerify(projectDir, pm) {
   )
 }
 
+/**
+ * Fresh repo + best-effort initial commit (also satisfies Biome vcs.useIgnoreFile).
+ * Wires git hooks first so they're live from the first install; --no-verify keeps our
+ * own commit from tripping them. Commit is skipped (tree left staged) if git identity unset.
+ */
+function initGitRepo(projectDir) {
+  if (!run('git', ['-C', projectDir, 'init', '-q'])) return
+  if (exists(join(projectDir, '.githooks'))) {
+    run('git', ['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
+  }
+  run('git', ['-C', projectDir, 'add', '-A'])
+  const msg = 'chore: initial commit from create-stack'
+  const committed = run('git', ['-C', projectDir, 'commit', '--no-verify', '-q', '-m', msg], {
+    stdio: 'ignore',
+  })
+  p.log.step(
+    committed
+      ? 'git repository initialized (initial commit created)'
+      : 'git repository initialized — set git user.name/email, then commit',
+  )
+}
+
 function execute(a) {
   const projectDir = resolve(process.cwd(), a.argDir ?? a.projectName)
   if (!isDirEmpty(projectDir)) {
@@ -305,35 +353,7 @@ function execute(a) {
 
   if (a.doInstall) installAndVerify(projectDir, pm)
 
-  // fresh repo + initial commit (also satisfies Biome vcs.useIgnoreFile).
-  // commit is best-effort: skipped if git identity unset, staged tree left in place.
-  if (run('git', ['-C', projectDir, 'init', '-q'])) {
-    // Wire git hooks now so they're live from the first install (the .githooks
-    // dir ships with the fork). --no-verify keeps our own initial commit from
-    // tripping the freshly-armed hooks.
-    if (exists(join(projectDir, '.githooks'))) {
-      run('git', ['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
-    }
-    run('git', ['-C', projectDir, 'add', '-A'])
-    const committed = run(
-      'git',
-      [
-        '-C',
-        projectDir,
-        'commit',
-        '--no-verify',
-        '-q',
-        '-m',
-        'chore: initial commit from create-stack',
-      ],
-      { stdio: 'ignore' },
-    )
-    p.log.step(
-      committed
-        ? 'git repository initialized (initial commit created)'
-        : 'git repository initialized — set git user.name/email, then commit',
-    )
-  }
+  initGitRepo(projectDir)
 
   const keptMailer = a.mailerProvider !== 'none'
   const capEntries = Object.entries(a.capabilities ?? {})
@@ -341,6 +361,7 @@ function execute(a) {
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
     `Package manager: ${pm.name}`,
     `Import alias: ${a.alias ?? '~'}/`,
+    `Database: ${a.database && a.database !== 'none' ? a.database : '(none)'}`,
     `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
     `Mailer: ${keptMailer ? a.mailerProvider : '(none)'}`,
     `Capabilities: ${capEntries.map(([c, ad]) => `${c} (${ad})`).join(', ') || '(none)'}`,
@@ -495,7 +516,7 @@ async function main() {
   const nonInteractive =
     args.flags.yes ||
     args.flags.y ||
-    ['framework', 'foundations', 'mailer', 'no-install', ...CAPABILITIES].some(
+    ['framework', 'database', 'foundations', 'mailer', 'no-install', ...CAPABILITIES].some(
       (k) => k in args.flags,
     )
 

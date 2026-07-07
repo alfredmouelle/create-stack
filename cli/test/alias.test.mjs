@@ -42,7 +42,7 @@ for (const framework of ['tanstack', 'next']) {
         name: 'add-aliased',
         framework,
         alias: '@',
-        foundations: ['drizzle'],
+        foundations: [],
         mailer: 'resend',
       })
       addCapability({ projectDir: dir, cap: 'storage', adapter: 's3' })

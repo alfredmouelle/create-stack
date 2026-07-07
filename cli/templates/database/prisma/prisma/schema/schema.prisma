@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Example model — replace with your own.
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("post")
+}
