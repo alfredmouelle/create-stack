@@ -15,6 +15,9 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Added
 
+- **Auto-generated `BETTER_AUTH_SECRET`** — when better-auth is selected, a fresh random
+  secret is written to `.env` (gitignored) so the app boots without a manual step;
+  `.env.example` keeps the shared placeholder. Uses Node's crypto (no `openssl` needed).
 - **GitHub Actions CI** — every scaffold now ships `.github/workflows/ci.yml` that runs
   install + typecheck + Biome on push to `main` and on pull requests, wired to the package
   manager you chose (pnpm / npm / yarn / bun). Mirrors the scaffold's own quality gate.

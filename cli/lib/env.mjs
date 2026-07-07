@@ -82,8 +82,10 @@ const renderSchema = (key, required) => {
  * @param {string} projectDir
  * @param {string[]} keys           ordered env keys to emit
  * @param {string[]} [requiredKeys] keys emitted without v.optional (+ guaranteed placeholder)
+ * @param {Record<string,string>} [localValues] real values for `.env` only (gitignored) —
+ *   e.g. a generated auth secret; `.env.example` keeps the shared placeholder.
  */
-export function writeEnv(projectDir, keys, requiredKeys = []) {
+export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}) {
   const required = new Set(requiredKeys)
   const seen = new Set()
   const ordered = keys.filter((k) => SCHEMAS[k] && !seen.has(k) && seen.add(k))
@@ -107,10 +109,13 @@ export function writeEnv(projectDir, keys, requiredKeys = []) {
 
   // A required key with a blank value becomes undefined (emptyStringAsUndefined) and
   // fails env validation at boot — so required keys always get a non-empty placeholder.
-  const lines = ordered.map((k) => `${k}=${PLACEHOLDERS[k] ?? (required.has(k) ? 'changeme' : '')}`)
-  const body = `${lines.join('\n')}\n`
-  write(join(projectDir, '.env.example'), body)
-  write(join(projectDir, '.env'), body)
+  const placeholder = (k) => PLACEHOLDERS[k] ?? (required.has(k) ? 'changeme' : '')
+  const render = (pick) => `${ordered.map((k) => `${k}=${pick(k)}`).join('\n')}\n`
+  write(join(projectDir, '.env.example'), render(placeholder))
+  write(
+    join(projectDir, '.env'),
+    render((k) => localValues[k] ?? placeholder(k)),
+  )
 }
 
 /** Append literal `KEY=value` lines to the generated .env files (for keys read outside env.ts). */

@@ -1,6 +1,7 @@
 // Pure build phase (no prompts/install): fork → strip → mailer → env → identity.
 // Shared by index.mjs (post-wizard) and the test harness.
 
+import { randomBytes } from 'node:crypto'
 import { rewriteAlias } from './alias.mjs'
 import { applyAuth } from './auth.mjs'
 import { vendorCapability } from './capabilities.mjs'
@@ -113,7 +114,12 @@ export function buildProject({
   }
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
-  writeEnv(projectDir, envKeys, requiredEnvKeys)
+  // better-auth needs a real secret to boot; generate one into .env (gitignored),
+  // .env.example keeps the placeholder. crypto is `openssl rand -base64 32`'s equivalent
+  // but always present (no PATH/subprocess), url-safe so it needs no quoting in .env.
+  const localEnv =
+    auth === 'better-auth' ? { BETTER_AUTH_SECRET: randomBytes(32).toString('base64url') } : {}
+  writeEnv(projectDir, envKeys, requiredEnvKeys, localEnv)
   // Clerk + Convex read their keys straight from the environment (not the typed env.ts).
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
   if (rawEnvLines.length) appendRawEnvLines(projectDir, rawEnvLines)

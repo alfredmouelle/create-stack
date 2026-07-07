@@ -201,6 +201,18 @@ for (const framework of ['tanstack', 'next']) {
         expect(env.includes(convexUrlKey)).toBe(result.database === 'convex')
         expect(env.includes('CONVEX_DEPLOYMENT')).toBe(result.database === 'convex')
 
+        // better-auth secret is generated into .env (gitignored); .env.example keeps the placeholder
+        if (result.auth === 'better-auth') {
+          const dotenv = read(`${dir}/.env`)
+          expect(dotenv).toMatch(/BETTER_AUTH_SECRET=.+/)
+          expect(dotenv, 'real secret in .env').not.toContain(
+            'BETTER_AUTH_SECRET=change-me-with-a-long-random-string',
+          )
+          expect(env, 'placeholder in .env.example').toContain(
+            'BETTER_AUTH_SECRET=change-me-with-a-long-random-string',
+          )
+        }
+
         assertCapabilities(dir, env, cfg.capabilities)
 
         // every scaffold ships a CI workflow wired to the chosen pm (pnpm in tests)
