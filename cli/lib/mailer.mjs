@@ -86,17 +86,14 @@ export function swapMailer(projectDir, provider) {
   const cfg = FACTORY[provider]
   if (!cfg) throw new Error(`Unknown mailer provider: ${provider}`)
 
-  // swap adapter files: drop resend, copy chosen adapter from package
   remove(join(projectDir, EMAIL_DIR, 'adapters/resend'))
   copy(
     join(STACK_ROOT, 'packages/mailer/src/adapters', provider),
     join(projectDir, EMAIL_DIR, 'adapters', provider),
   )
-
-  // rewrite composition root
   write(join(projectDir, EMAIL_DIR, 'index.ts'), INDEX_TS(cfg))
 
-  // dep delta — pull provider's range from mailer package manifest
+  // the provider's version range stays in lockstep with the mailer package
   const mailerPkg = readJSON(join(STACK_ROOT, 'packages/mailer/package.json'))
   const range = mailerPkg.dependencies?.[cfg.pkgDep] ?? 'latest'
   return {

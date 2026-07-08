@@ -50,7 +50,6 @@ export function applyAuth({ projectDir, framework, auth, trpcKept }) {
     return { ...empty(), removeDeps: ['better-auth'] }
   }
 
-  // clerk
   const spec = CLERK[framework]
   vendorClerk(projectDir, framework)
   if (trpcKept) editFile(src(projectDir, 'server/api/trpc.ts'), (c) => clerkifyTrpc(c, framework))

@@ -71,7 +71,7 @@ export const runCapture = (cmd, args, opts = {}) => {
 
 export { join }
 
-// --- package.json helpers (mutate parsed object in place) ---
+// package.json helpers (mutate the parsed object in place)
 
 export const pkgRemoveDeps = (pkg, names) => {
   for (const field of ['dependencies', 'devDependencies']) {

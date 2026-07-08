@@ -114,9 +114,8 @@ export function buildProject({
   }
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
-  // better-auth needs a real secret to boot; generate one into .env (gitignored),
-  // .env.example keeps the placeholder. crypto is `openssl rand -base64 32`'s equivalent
-  // but always present (no PATH/subprocess), url-safe so it needs no quoting in .env.
+  // better-auth needs a real secret to boot: generate one into .env (gitignored, never
+  // committed); .env.example keeps the placeholder. base64url needs no quoting in .env.
   const localEnv =
     auth === 'better-auth' ? { BETTER_AUTH_SECRET: randomBytes(32).toString('base64url') } : {}
   writeEnv(projectDir, envKeys, requiredEnvKeys, localEnv)
