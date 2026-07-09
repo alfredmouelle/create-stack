@@ -32,6 +32,8 @@ mailer, optional capabilities), then stamps identity, writes `.env`, inits git a
 (typecheck + Biome). No template guesswork: the output is a real, buildable app from day one.
 **Next.js App Router** and **TanStack Start** are supported today, with more frameworks on the way.
 
+> **Open source soon.** The repository is currently private; the full source will be open-sourced very soon.
+
 ## Quick start
 
 ```bash
@@ -172,6 +174,10 @@ pnpm dev
 The generated project is a fresh git repo with an initial commit (skipped, files left
 staged, if git `user.name`/`user.email` aren't set). The published package is
 self-contained: `pnpm dlx` needs nothing else.
+
+## Credits
+
+Inspired by [create-t3-app](https://create.t3.gg) and the work of [Theo Browne](https://github.com/t3dotgg). Not affiliated with or endorsed by the T3 project.
 
 ## Author
 
