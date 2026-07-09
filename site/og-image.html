@@ -1,52 +1,146 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<style>
-  /* Source for site/og-image.png (1200x630). Render: open in Chrome at 1200x630, screenshot. */
-  * { margin: 0; box-sizing: border-box; }
-  html, body { width: 1200px; height: 630px; overflow: hidden; }
-  body {
-    font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
-    background: #14151a;
-    background-image:
-      radial-gradient(1100px 500px at 82% -8%, rgba(217,79,56,.20), transparent 60%),
-      linear-gradient(0deg, #101116, #16171c);
-    color: #e9e9ea;
-    position: relative;
-  }
-  .frame { position: absolute; inset: 0; padding: 64px 72px; display: flex; flex-direction: column; }
-  .grid { position: absolute; inset: 0; opacity: .05;
-    background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
-    background-size: 44px 44px; }
-  .brand { display: flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 600; letter-spacing: -.01em; z-index: 1; }
-  .brand .sq { width: 40px; height: 40px; border-radius: 10px; background: #d94f38; color: #14151a; display: grid; place-items: center; font-size: 22px; font-weight: 700; }
-  .mid { flex: 1; display: flex; flex-direction: column; justify-content: center; z-index: 1; }
-  h1 { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 72px; line-height: 1.02; letter-spacing: -.03em; max-width: 20ch; }
-  h1 em { font-style: normal; color: #f0664c; }
-  .sub { margin-top: 22px; font-size: 24px; color: #a6a9b0; max-width: 40ch; line-height: 1.4; font-family: ui-sans-serif, system-ui, sans-serif; }
-  .term { margin-top: 34px; display: inline-flex; align-items: center; gap: 12px; background: #1c1e22; border: 1px solid #2d3036; border-radius: 12px; padding: 16px 22px; font-size: 22px; align-self: flex-start; }
-  .term .d { color: #61c454; }
-  .term .cmd { color: #e6e7ea; }
-  .foot { display: flex; align-items: center; justify-content: space-between; z-index: 1; font-size: 20px; }
-  .foot .tags { color: #7d8088; }
-  .foot .tags b { color: #d94f38; font-weight: 600; }
-  .foot .url { color: #a6a9b0; }
-</style>
-</head>
-<body>
-  <div class="grid"></div>
-  <div class="frame">
-    <div class="brand"><span class="sq">&gt;_</span>create-stack</div>
-    <div class="mid">
-      <h1>Compose your stack.<br><em>Ship a real app.</em></h1>
-      <div class="sub">An agnostic bootstrapper for your favorite framework.</div>
-      <div class="term"><span class="d">$</span><span class="cmd">pnpm dlx @alfredmouelle/create-stack my-app</span></div>
+  <head>
+    <meta charset="utf-8">
+    <style>
+    /* Source for site/og-image.png (1200x630). Render: open in Chrome at 1200x630, screenshot. */
+    * {
+      margin: 0;
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+    }
+    body {
+      font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+      background: #14151a;
+      background-image:
+        radial-gradient(1100px 500px at 82% -8%, rgba(217, 79, 56, 0.2), transparent 60%),
+        linear-gradient(0deg, #101116, #16171c);
+      color: #e9e9ea;
+      position: relative;
+    }
+    .frame {
+      position: absolute;
+      inset: 0;
+      padding: 64px 72px;
+      display: flex;
+      flex-direction: column;
+    }
+    .grid {
+      position: absolute;
+      inset: 0;
+      opacity: 0.05;
+      background-image:
+        linear-gradient(#fff 1px, transparent 1px),
+        linear-gradient(90deg, #fff 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      z-index: 1;
+    }
+    .brand .sq {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #d94f38;
+      color: #14151a;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .mid {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 1;
+    }
+    h1 {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 72px;
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      max-width: 20ch;
+    }
+    h1 em {
+      font-style: normal;
+      color: #f0664c;
+    }
+    .sub {
+      margin-top: 22px;
+      font-size: 24px;
+      color: #a6a9b0;
+      max-width: 40ch;
+      line-height: 1.4;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .term {
+      margin-top: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #1c1e22;
+      border: 1px solid #2d3036;
+      border-radius: 12px;
+      padding: 16px 22px;
+      font-size: 22px;
+      align-self: flex-start;
+    }
+    .term .d {
+      color: #61c454;
+    }
+    .term .cmd {
+      color: #e6e7ea;
+    }
+    .foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1;
+      font-size: 20px;
+    }
+    .foot .tags {
+      color: #7d8088;
+    }
+    .foot .tags b {
+      color: #d94f38;
+      font-weight: 600;
+    }
+    .foot .url {
+      color: #a6a9b0;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <div class="frame">
+      <div class="brand"><span class="sq">&gt;_</span>create-stack</div>
+      <div class="mid">
+        <h1>Compose your stack.<br><em>Ship a real app.</em></h1>
+        <div class="sub">An agnostic bootstrapper for your favorite framework.</div>
+        <div class="term">
+          <span class="d">$</span
+          ><span class="cmd">pnpm dlx @alfredmouelle/create-stack my-app</span>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="tags">
+          <b>Framework-agnostic</b>
+          &nbsp;·&nbsp; Next.js &nbsp;·&nbsp; TanStack Start
+        </div>
+        <div class="url">create-stack.alfredmouelle.com</div>
+      </div>
     </div>
-    <div class="foot">
-      <div class="tags"><b>Framework-agnostic</b> &nbsp;·&nbsp; Next.js &nbsp;·&nbsp; TanStack Start</div>
-      <div class="url">create-stack.alfredmouelle.com</div>
-    </div>
-  </div>
-</body>
+  </body>
 </html>
