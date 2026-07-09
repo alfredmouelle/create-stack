@@ -3,6 +3,11 @@
 > Personal agnostic SaaS foundation — swappable capabilities behind **ports &
 > adapters**, framework-agnostic, ready to drop into any new project.
 
+[![npm](https://img.shields.io/npm/v/@alfredmouelle/create-stack?color=cb3837&logo=npm&label=create-stack)](https://www.npmjs.com/package/@alfredmouelle/create-stack)
+[![license](https://img.shields.io/npm/l/@alfredmouelle/create-stack?color=blue)](./LICENSE)
+[![node](https://img.shields.io/node/v/@alfredmouelle/create-stack?color=339933&logo=node.js&logoColor=white)](https://nodejs.org)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+
 A pnpm + turbo monorepo where every external tool (email, storage, jobs, cache,
 logging, analytics, error tracking) lives behind a tiny **port**. App code
 depends only on the port, never on a provider — so swapping Resend for Brevo, or
