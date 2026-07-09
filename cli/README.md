@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <!-- served from the npm tarball via jsDelivr; the private repo can't serve it from GitHub. record with: vhs docs/demo.tape -->
+  <!-- served from the npm tarball via jsDelivr so it renders identically on npm and GitHub; record with: vhs docs/demo.tape -->
   <img src="https://cdn.jsdelivr.net/npm/@alfredmouelle/create-stack/docs/demo.gif" alt="create-stack scaffolding a project and swapping an adapter" width="640">
 </p>
 
@@ -32,7 +32,8 @@ mailer, optional capabilities), then stamps identity, writes `.env`, inits git a
 (typecheck + Biome). No template guesswork: the output is a real, buildable app from day one.
 **Next.js App Router** and **TanStack Start** are supported today, with more frameworks on the way.
 
-> **Open source soon.** The repository is currently private; the full source will be open-sourced very soon.
+> **Open source (MIT).** Source and issues live at
+> [github.com/alfredmouelle/create-stack](https://github.com/alfredmouelle/create-stack).
 
 ## Quick start
 
