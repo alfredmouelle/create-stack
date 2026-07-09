@@ -127,6 +127,12 @@ cover the local setup, the ports & adapters rules, and the commit convention.
 - **Config validation:** valibot · **Typed env:** `@t3-oss/env-core`
 - **Node:** >= 22
 
+## Credits
+
+Inspired by [create-t3-app](https://create.t3.gg) and the work of
+[Theo Browne](https://github.com/t3dotgg). Not affiliated with or endorsed by
+the T3 project.
+
 ---
 
 # Author
