@@ -5,7 +5,9 @@ import { spawnSync } from 'node:child_process'
 import { afterAll, describe, expect, test } from 'vitest'
 import { addCapability, build, cleanup, vendorComponent } from './helpers.mjs'
 
-afterAll(cleanup)
+// Removing many scaffolded projects (each with a full node_modules) blows past vitest's
+// default 10s hook timeout on CI runners.
+afterAll(cleanup, 2 * 60 * 1000)
 
 const FRAMEWORKS = process.env.SMOKE_FRAMEWORK
   ? [process.env.SMOKE_FRAMEWORK]
