@@ -2,7 +2,7 @@
   "name": "@alfredmouelle/create-stack",
   "version": "0.6.0",
   "type": "module",
-  "description": "Interactive, deterministic installer for the personal reference stack — forks a base app (Next.js / TanStack Start) and strips it to your selection.",
+  "description": "Framework-agnostic, deterministic installer that bootstraps a real, fully-wired app for your favorite framework (Next.js and TanStack Start today) and strips it to your selection.",
   "author": {
     "name": "Alfred MOUELLE",
     "email": "alfredmouelle@gmail.com",
@@ -14,6 +14,7 @@
     "scaffold",
     "starter",
     "boilerplate",
+    "framework-agnostic",
     "tanstack-start",
     "nextjs",
     "drizzle",

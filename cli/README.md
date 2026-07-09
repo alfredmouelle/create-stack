@@ -1,8 +1,10 @@
 <h1 align="center">create-stack</h1>
 
 <p align="center">
-  Interactive, <strong>deterministic</strong> installer for a fully-wired
-  <strong>Next.js</strong> / <strong>TanStack Start</strong> stack.
+  Interactive, <strong>deterministic</strong>, framework-agnostic installer that
+  bootstraps a real, fully-wired app for your favorite framework.
+  <br>
+  <sub><strong>Next.js</strong> and <strong>TanStack Start</strong> today, more frameworks on the way.</sub>
 </p>
 
 <p align="center">
@@ -10,6 +12,11 @@
   <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack"><img src="https://img.shields.io/npm/dw/@alfredmouelle/create-stack?color=cb3837" alt="npm downloads"></a>
   <img src="https://img.shields.io/npm/l/@alfredmouelle/create-stack?color=blue" alt="license">
   <img src="https://img.shields.io/node/v/@alfredmouelle/create-stack?color=339933&logo=node.js&logoColor=white" alt="node">
+  <a href="https://create-stack.alfredmouelle.com"><img src="https://img.shields.io/badge/website-create--stack.alfredmouelle.com-d94f38" alt="website"></a>
+</p>
+
+<p align="center">
+  <strong><a href="https://create-stack.alfredmouelle.com">Website &amp; interactive stack builder →</a></strong>
 </p>
 
 <p align="center">
@@ -19,10 +26,11 @@
 
 ---
 
-Forks a fully-wired **Next.js App Router** or **TanStack Start** base app and strips it
-to exactly what you pick — database, tRPC, better-auth, a mailer, optional capabilities —
-then stamps identity, writes `.env`, inits git and verifies (typecheck + Biome). No
-template guesswork: the output is a real, buildable app from day one.
+Framework-agnostic by design: pick your framework, get a real app. create-stack forks a
+fully-wired base app and strips it to exactly what you pick (database, tRPC, better-auth, a
+mailer, optional capabilities), then stamps identity, writes `.env`, inits git and verifies
+(typecheck + Biome). No template guesswork: the output is a real, buildable app from day one.
+**Next.js App Router** and **TanStack Start** are supported today, with more frameworks on the way.
 
 ## Quick start
 
@@ -45,7 +53,7 @@ create-stack add [capability] [adapter]   # add a capability to the current proj
 create-stack component [name]             # vendor a standalone UI component
 ```
 
-`project` is the target dir (and default package name) — must be empty or not exist.
+`project` is the target dir (and default package name), must be empty or not exist.
 `<command> --help` prints its flags; `--version` prints the version.
 
 ## Scaffold flags
@@ -65,14 +73,14 @@ create-stack component [name]             # vendor a standalone UI component
 | `--logger` | `pino` \| `console` | `pino` | Structured logging (omit to skip). |
 | `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics (omit to skip). |
 | `--error-tracking` | `sentry` \| `console` | `sentry` | Error reporting (omit to skip). |
-| `--no-install` | — | install on | Skip install + verification. |
-| `--yes`, `-y` | — | — | Non-interactive with all defaults. |
+| `--no-install` | - | install on | Skip install + verification. |
+| `--yes`, `-y` | - | - | Non-interactive with all defaults. |
 
-Capability flags are optional — pass one (bare = default adapter) to vendor it, omit to
+Capability flags are optional; pass one (bare = default adapter) to vendor it, omit to
 skip. Any selection flag switches to non-interactive mode; `--pm`/`--alias` are modifiers,
 not triggers. Selections are normalized: `trpc` and `better-auth` need a database (fall
 back to `drizzle`) and `better-auth` forces a real mailer, while `clerk` is hosted and
-frees both — so `--auth clerk --database none` is a valid authenticated vitrine. `convex`
+frees both, so `--auth clerk --database none` is a valid authenticated vitrine. `convex`
 is its own API layer, so it drops tRPC and pairs with Clerk or no auth (better-auth off).
 
 ```bash
@@ -100,12 +108,12 @@ pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-
 
 ## What you get
 
-- **Framework** — Next.js App Router *or* TanStack Start, fully wired (SSR, routing).
-- **Database** — Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), *or* Convex (realtime db + API, subsumes tRPC), or none.
-- **tRPC v11** — typed API, SSR/RSC integration, health router.
-- **Auth** — better-auth (email+password + verification, Google OAuth, auth pages) *or* Clerk (hosted: provider, middleware, sign-in/up + `UserButton`), or none.
-- **Mailer** — Resend / Brevo / SES behind one port; React Email templates.
-- **Baseline** — Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow (install + typecheck + Biome), generated `.gitignore` + `.env`.
+- **Framework**: Next.js App Router *or* TanStack Start, fully wired (SSR, routing).
+- **Database**: Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), *or* Convex (realtime db + API, subsumes tRPC), or none.
+- **tRPC v11**: typed API, SSR/RSC integration, health router.
+- **Auth**: better-auth (email+password + verification, Google OAuth, auth pages) *or* Clerk (hosted: provider, middleware, sign-in/up + `UserButton`), or none.
+- **Mailer**: Resend / Brevo / SES behind one port; React Email templates.
+- **Baseline**: Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow (install + typecheck + Biome), generated `.gitignore` + `.env`.
 
 Unselected pieces are removed cleanly (files, deps, env, wiring); the project is left
 **bootable and green**.
@@ -139,7 +147,7 @@ create-stack add cache upstash   # swap redis → upstash
 ## Components
 
 Opt-in UI kept out of the base bundle (its heavier deps too). Vendor one into a generated
-project — files copied, deps merged, imports realigned to your alias. Existing files are
+project: files copied, deps merged, imports realigned to your alias. Existing files are
 **never overwritten** (`--force` to override).
 
 | Component | Vendors | Deps |
@@ -163,11 +171,11 @@ pnpm dev
 
 The generated project is a fresh git repo with an initial commit (skipped, files left
 staged, if git `user.name`/`user.email` aren't set). The published package is
-self-contained — `pnpm dlx` needs nothing else.
+self-contained: `pnpm dlx` needs nothing else.
 
 ## Author
 
-**Alfred MOUELLE** — FullStack Developer
+**Alfred MOUELLE**, FullStack Developer
 
 [![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)
 [![ComeUp](https://img.shields.io/static/v1?style=for-the-badge&label=&message=ComeUp&color=yellow)](https://comeup.com/@alfredmouelle)
