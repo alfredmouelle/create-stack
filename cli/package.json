@@ -9,6 +9,15 @@
     "url": "https://alfredmouelle.com"
   },
   "license": "MIT",
+  "homepage": "https://create-stack.alfredmouelle.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alfredmouelle/create-stack.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/alfredmouelle/create-stack/issues"
+  },
   "keywords": [
     "create",
     "scaffold",

@@ -9,7 +9,15 @@
     "email": "alfredmouelle@gmail.com",
     "url": "https://alfredmouelle.com"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "homepage": "https://create-stack.alfredmouelle.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alfredmouelle/create-stack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alfredmouelle/create-stack/issues"
+  },
   "keywords": [
     "monorepo",
     "ports-and-adapters",
@@ -30,8 +38,8 @@
     "test:watch": "turbo run test:watch",
     "typecheck": "turbo run typecheck",
     "create-stack": "node cli/index.mjs",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
+    "check": "biome check .",
+    "check:write": "biome check --write .",
     "format": "biome format --write .",
     "link:skills": "./scripts/link-skills.sh --claude",
     "link:skills:codex": "./scripts/link-skills.sh --codex",

@@ -1,0 +1,122 @@
+# Contributing
+
+Thanks for taking the time to contribute! This document covers how to get set
+up, the conventions we follow, and how to propose changes.
+
+When contributing here or in any community space, be respectful, civil, and
+open-minded.
+
+Before you start:
+
+- Search the [issue tracker](https://github.com/alfredmouelle/create-stack/issues)
+  for an existing issue or fix.
+- For anything opinion-based (a design choice, a new provider, an API change),
+  **open an issue first** and wait for maintainer approval before writing code.
+  This avoids implementing something that ends up declined.
+
+## Prerequisites
+
+- **Node** >= 22
+- **pnpm** (the only supported package manager, see `packageManager` in `package.json`)
+
+Do not use npm, yarn, or bun: the lockfile and workspace protocol assume pnpm.
+
+## Getting started
+
+Fork the repository, then clone your fork (commands below use the
+[GitHub CLI](https://github.com/cli/cli#installation), but the web UI works too):
+
+```bash
+gh repo fork alfredmouelle/create-stack --clone
+cd create-stack
+pnpm install
+```
+
+Maintainers with write access can clone directly and skip the fork:
+
+```bash
+git clone git@github.com:alfredmouelle/create-stack.git
+```
+
+Common scripts (run at the repo root, they fan out through Turbo):
+
+| Script | Purpose |
+|---|---|
+| `pnpm build` | Build every package |
+| `pnpm test` | Run the test suite (Vitest) |
+| `pnpm test:watch` | Watch mode |
+| `pnpm typecheck` | Type-check every package |
+| `pnpm check` | Biome check |
+| `pnpm check:write` | Biome check with safe autofixes |
+| `pnpm format` | Biome formatter |
+| `pnpm create-stack` | Run the CLI locally against `cli/index.mjs` |
+
+## Repository layout
+
+| Path | What lives here |
+|---|---|
+| `cli/` | The `create-stack` CLI (scaffolder) |
+| `packages/<capability>/` | One self-contained capability: a pure-TS port + one adapter per provider + a `capability.json` manifest + tests |
+| `apps/` | Reference apps used to exercise capabilities end to end |
+| `skills/` | Agent skills shipped with the repo |
+| `site/` | The landing page |
+| `scripts/` | Repo tooling |
+
+## Architecture rules
+
+This repo is built on **ports & adapters**. When contributing to a capability:
+
+- The **port** is pure TypeScript and imports no framework and no provider SDK.
+- Each provider lives behind its **own adapter**; app code depends on the port,
+  never on a provider directly.
+- Every capability ships a `capability.json` manifest and its own tests.
+
+Adding a new provider means adding an adapter, not touching the port. If a change
+forces you to edit the port to add a provider, reconsider the boundary first.
+
+## Making a change
+
+1. Create a branch off `main`.
+2. Make your change with matching tests.
+3. Before pushing, make sure the following pass:
+
+   ```bash
+   pnpm typecheck
+   pnpm check
+   pnpm test
+   ```
+
+4. Give your change a **manual functional test** too. For CLI changes, run
+   `pnpm create-stack` and scaffold a project end to end; automated tests don't
+   catch everything a scaffolder can break.
+5. Open a pull request describing the what and the why:
+
+   ```bash
+   gh pr create --web
+   ```
+
+   Follow the commit convention below for the PR title. The changelog and
+   release are handled by the maintainer, so you don't need to add one.
+
+## Commit convention
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+type(scope): short summary
+```
+
+Common types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`. Scope is
+usually the capability or area touched, e.g. `feat(mailer): add Postmark adapter`
+or `fix(cli): handle missing package.json`.
+
+## Reporting bugs and requesting features
+
+Open a GitHub issue. For bugs, include the CLI version, your OS, the command you
+ran, and the full output. For feature requests, describe the use case before the
+proposed solution.
+
+## License
+
+By contributing, you agree that your contributions are licensed under the
+[MIT License](./LICENSE).

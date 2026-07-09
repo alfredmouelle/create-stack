@@ -79,7 +79,7 @@ manager, import alias, foundations) with **create-stack** — which can rewrite 
 pnpm install
 pnpm test         # all packages
 pnpm typecheck
-pnpm lint
+pnpm check
 ```
 
 Preview emails locally:
@@ -107,6 +107,12 @@ pnpm link:skills:codex    # → Codex  (~/.codex/prompts)
   in `src/emails/`.
 
 See [`skills/README.md`](./skills/README.md) for details.
+
+## Contributing
+
+Contributions are welcome. Please read the
+[Contributing Guidelines](./CONTRIBUTING.md) before opening an issue or PR: they
+cover the local setup, the ports & adapters rules, and the commit convention.
 
 ## Conventions
 
