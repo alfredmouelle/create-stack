@@ -13,6 +13,8 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-09
+
 ### Added
 
 - **Auto-generated `BETTER_AUTH_SECRET`** — when better-auth is selected, a fresh random
