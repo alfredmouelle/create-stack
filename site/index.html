@@ -1,49 +1,31 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>create-stack: compose your stack, ship a real app</title>
-    <meta
-      name="description"
-      content="Framework-agnostic installer that bootstraps a real, fully-wired app for your favorite framework. Pick database, auth, tRPC, a mailer and capabilities; get an app that builds on day one. Next.js and TanStack Start today, more frameworks on the way."
-    >
-    <meta
-      name="keywords"
-      content="create-stack, scaffold, boilerplate, starter, framework-agnostic, Next.js, TanStack Start, drizzle, prisma, convex, trpc, better-auth, clerk"
-    >
-    <meta name="robots" content="index, follow">
-    <meta name="author" content="Alfred MOUELLE">
-    <meta name="theme-color" content="#d94f38">
-    <link rel="canonical" href="https://create-stack.alfredmouelle.com/">
-    <meta
-      property="og:title"
-      content="create-stack: an agnostic bootstrapper for your favorite framework"
-    >
-    <meta
-      property="og:description"
-      content="Bootstrap a real, fully-wired app for your framework. Compose your stack, ship a real app."
-    >
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://create-stack.alfredmouelle.com/">
-    <meta property="og:site_name" content="create-stack">
-    <meta property="og:image" content="https://create-stack.alfredmouelle.com/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="create-stack: compose your stack, ship a real app">
-    <meta property="article:author" content="Alfred MOUELLE">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta
-      name="twitter:title"
-      content="create-stack: an agnostic bootstrapper for your favorite framework"
-    >
-    <meta
-      name="twitter:description"
-      content="Bootstrap a real, fully-wired app for your framework. Compose your stack, ship a real app."
-    >
-    <meta name="twitter:image" content="https://create-stack.alfredmouelle.com/og-image.png">
-    <meta name="twitter:creator" content="@kali47_">
-    <script type="application/ld+json">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>create-stack: compose your stack, ship a real app</title>
+<meta name="description" content="Framework-agnostic installer that bootstraps a real, fully-wired app for your favorite framework. Pick database, auth, tRPC, a mailer and capabilities; get an app that builds on day one. Next.js and TanStack Start today, more frameworks on the way.">
+<meta name="keywords" content="create-stack, scaffold, boilerplate, starter, framework-agnostic, Next.js, TanStack Start, drizzle, prisma, convex, trpc, better-auth, clerk">
+<meta name="robots" content="index, follow">
+<meta name="author" content="Alfred MOUELLE">
+<meta name="theme-color" content="#d94f38">
+<link rel="canonical" href="https://create-stack.alfredmouelle.com/">
+<meta property="og:title" content="create-stack: an agnostic bootstrapper for your favorite framework">
+<meta property="og:description" content="Bootstrap a real, fully-wired app for your framework. Compose your stack, ship a real app.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://create-stack.alfredmouelle.com/">
+<meta property="og:site_name" content="create-stack">
+<meta property="og:image" content="https://create-stack.alfredmouelle.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="create-stack: compose your stack, ship a real app">
+<meta property="article:author" content="Alfred MOUELLE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="create-stack: an agnostic bootstrapper for your favorite framework">
+<meta name="twitter:description" content="Bootstrap a real, fully-wired app for your framework. Compose your stack, ship a real app.">
+<meta name="twitter:image" content="https://create-stack.alfredmouelle.com/og-image.png">
+<meta name="twitter:creator" content="@kali47_">
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -58,1330 +40,363 @@
   "author": { "@type": "Person", "name": "Alfred MOUELLE", "url": "https://alfredmouelle.com" }
 }
 </script>
-    <style>
+<style>
+  :root {
+    --bg: #f7f6f3; --surface: #ffffff; --surface-2: #efeee9; --line: #e0ded7;
+    --line-strong: #c9c6bd; --ink: #21232a; --ink-2: #565963; --ink-3: #8a8d95;
+    --accent: #d94f38; --accent-ink: #ffffff; --accent-soft: #fbe7e2;
+    --good: #3f8f5f; --good-soft: #e3f0e8; --adjust: #b7791f; --adjust-soft: #f6ecd6;
+    --off: #a7a9af; --radius: 12px;
+    --mono: "SF Mono", SFMono-Regular, ui-monospace, "Cascadia Code", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #f7f6f3;
-      --surface: #ffffff;
-      --surface-2: #efeee9;
-      --line: #e0ded7;
-      --line-strong: #c9c6bd;
-      --ink: #21232a;
-      --ink-2: #565963;
-      --ink-3: #8a8d95;
-      --accent: #d94f38;
-      --accent-ink: #ffffff;
-      --accent-soft: #fbe7e2;
-      --good: #3f8f5f;
-      --good-soft: #e3f0e8;
-      --adjust: #b7791f;
-      --adjust-soft: #f6ecd6;
-      --off: #a7a9af;
-      --radius: 12px;
-      --mono:
-        "SF Mono", SFMono-Regular, ui-monospace, "Cascadia Code", "Cascadia Mono", Menlo, Consolas,
-        monospace;
-      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+      --bg: #131417; --surface: #1c1e22; --surface-2: #24262b; --line: #2d3036;
+      --line-strong: #3b3e44; --ink: #ebebec; --ink-2: #a6a9b0; --ink-3: #74777e;
+      --accent: #f0664c; --accent-ink: #1a0f0c; --accent-soft: #3a211b;
+      --good: #5fb37f; --good-soft: #1d2e23; --adjust: #d8a748; --adjust-soft: #322813; --off: #6a6d74;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #131417;
-        --surface: #1c1e22;
-        --surface-2: #24262b;
-        --line: #2d3036;
-        --line-strong: #3b3e44;
-        --ink: #ebebec;
-        --ink-2: #a6a9b0;
-        --ink-3: #74777e;
-        --accent: #f0664c;
-        --accent-ink: #1a0f0c;
-        --accent-soft: #3a211b;
-        --good: #5fb37f;
-        --good-soft: #1d2e23;
-        --adjust: #d8a748;
-        --adjust-soft: #322813;
-        --off: #6a6d74;
-      }
-    }
-    * {
-      box-sizing: border-box;
-    }
-    html {
-      scroll-behavior: smooth;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      html {
-        scroll-behavior: auto;
-      }
-    }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: var(--sans);
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-    }
-    h1,
-    h2,
-    h3 {
-      margin: 0;
-      text-wrap: balance;
-      letter-spacing: -0.02em;
-    }
-    p {
-      margin: 0;
-    }
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-    button {
-      font: inherit;
-      cursor: pointer;
-    }
-    .mono {
-      font-family: var(--mono);
-    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; }
+  .mono { font-family: var(--mono); }
 
-    .shell {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
+  .shell { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-    /* top bar */
-    header.bar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: color-mix(in srgb, var(--bg) 86%, transparent);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--line);
-    }
-    .bar-in {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 58px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      font-family: var(--mono);
-      font-weight: 600;
-      font-size: 15px;
-      letter-spacing: -0.01em;
-    }
-    .brand .sq {
-      width: 20px;
-      height: 20px;
-      border-radius: 5px;
-      background: var(--accent);
-      display: grid;
-      place-items: center;
-      color: var(--accent-ink);
-      font-size: 12px;
-    }
-    .bar-links {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .bar-links a {
-      font-size: 13.5px;
-      color: var(--ink-2);
-      padding: 7px 12px;
-      border-radius: 8px;
-    }
-    .bar-links a:hover {
-      color: var(--ink);
-      background: var(--surface-2);
-    }
-    @media (max-width: 600px) {
-      .bar-in {
-        height: 52px;
-      }
-      .brand {
-        white-space: nowrap;
-        font-size: 14px;
-      }
-      .bar-links {
-        gap: 2px;
-      }
-      .bar-links a {
-        padding: 6px 9px;
-        font-size: 13px;
-      }
-      .bar-links a[href^="#"] {
-        display: none;
-      }
-    }
+  /* top bar */
+  header.bar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .bar-in { display: flex; align-items: center; justify-content: space-between; height: 58px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .brand .sq { width: 20px; height: 20px; border-radius: 5px; background: var(--accent); display: grid; place-items: center; color: var(--accent-ink); font-size: 12px; }
+  .bar-links { display: flex; align-items: center; gap: 4px; }
+  .bar-links a { font-size: 13.5px; color: var(--ink-2); padding: 7px 12px; border-radius: 8px; }
+  .bar-links a:hover { color: var(--ink); background: var(--surface-2); }
+  @media (max-width: 600px) {
+    .bar-in { height: 52px; }
+    .brand { white-space: nowrap; font-size: 14px; }
+    .bar-links { gap: 2px; }
+    .bar-links a { padding: 6px 9px; font-size: 13px; }
+    .bar-links a[href^="#"] { display: none; }
+  }
 
-    /* hero */
-    .hero {
-      padding: 68px 0 30px;
-      text-align: center;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 5px 12px;
-      border-radius: 100px;
-      letter-spacing: 0.01em;
-    }
-    .hero h1 {
-      font-size: clamp(34px, 5.4vw, 60px);
-      line-height: 1.02;
-      margin: 22px auto 0;
-      max-width: 15ch;
-    }
-    .hero h1 em {
-      font-style: normal;
-      color: var(--accent);
-    }
-    .hero p.lede {
-      font-size: clamp(15px, 1.9vw, 18px);
-      color: var(--ink-2);
-      max-width: 60ch;
-      margin: 20px auto 0;
-    }
-    .install {
-      position: relative;
-      display: flex;
-      align-items: stretch;
-      margin: 30px auto 0;
-      width: 580px;
-      max-width: 100%;
-      border: 1px solid var(--line-strong);
-      border-radius: 11px;
-      background: var(--surface);
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
-    }
-    .install code {
-      flex: 1;
-      min-width: 0;
-      font-family: var(--mono);
-      font-size: 14px;
-      padding: 13px 16px;
-      color: var(--ink);
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      white-space: nowrap;
-      overflow-x: auto;
-    }
-    .install code .dollar {
-      color: var(--ink-3);
-    }
-    .install-copy {
-      border: none;
-      border-left: 1px solid var(--line);
-      background: var(--surface-2);
-      color: var(--ink-2);
-      padding: 0 15px;
-      font-size: 12.5px;
-      border-radius: 0 10px 10px 0;
-    }
-    .install-copy:hover {
-      color: var(--accent);
-      background: var(--accent-soft);
-    }
-    .pm-select {
-      position: relative;
-      display: flex;
-    }
-    .pm-trigger {
-      flex: none;
-      width: 84px;
-      border: none;
-      border-right: 1px solid var(--line);
-      background: var(--surface-2);
-      color: var(--ink);
-      font-family: var(--mono);
-      font-size: 13px;
-      padding: 0 13px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      border-radius: 10px 0 0 10px;
-    }
-    .install-copy {
-      flex: none;
-    }
-    .pm-trigger .caret {
-      color: var(--ink-3);
-      font-size: 10px;
-    }
-    .pm-trigger:hover {
-      color: var(--accent);
-    }
-    .pm-menu {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      z-index: 10;
-      min-width: 130px;
-      background: var(--surface);
-      border: 1px solid var(--line-strong);
-      border-radius: 10px;
-      padding: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.45);
-    }
-    .pm-menu[hidden] {
-      display: none;
-    }
-    .pm-opt {
-      text-align: left;
-      border: none;
-      background: transparent;
-      color: var(--ink-2);
-      font-family: var(--mono);
-      font-size: 13px;
-      padding: 8px 12px;
-      border-radius: 7px;
-    }
-    .pm-opt:hover {
-      background: var(--surface-2);
-      color: var(--ink);
-    }
-    .pm-opt.on {
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .hero .meta {
-      margin-top: 16px;
-      font-size: 12.5px;
-      color: var(--ink-3);
-      font-family: var(--mono);
-    }
+  /* hero */
+  .hero { padding: 68px 0 30px; text-align: center; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--accent-soft); padding: 5px 12px; border-radius: 100px; letter-spacing: 0.01em; }
+  .hero h1 { font-size: clamp(34px, 5.4vw, 60px); line-height: 1.02; margin: 22px auto 0; max-width: 15ch; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p.lede { font-size: clamp(15px, 1.9vw, 18px); color: var(--ink-2); max-width: 60ch; margin: 20px auto 0; }
+  .install { position: relative; display: flex; align-items: stretch; margin: 30px auto 0; width: 580px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 11px; background: var(--surface); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03); }
+  .install code { flex: 1; min-width: 0; font-family: var(--mono); font-size: 14px; padding: 13px 16px; color: var(--ink); display: flex; align-items: center; gap: 9px; white-space: nowrap; overflow-x: auto; }
+  .install code .dollar { color: var(--ink-3); }
+  .install-copy { flex: none; border: none; border-left: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); padding: 0 15px; font-size: 12.5px; border-radius: 0 10px 10px 0; }
+  .install-copy:hover { color: var(--accent); background: var(--accent-soft); }
+  .pm-select { position: relative; display: flex; }
+  .pm-trigger { flex: none; width: 84px; border: none; border-right: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-family: var(--mono); font-size: 13px; padding: 0 13px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-radius: 10px 0 0 10px; }
+  .pm-trigger .caret { color: var(--ink-3); font-size: 10px; }
+  .pm-trigger:hover { color: var(--accent); }
+  .pm-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; min-width: 130px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.45); }
+  .pm-menu[hidden] { display: none; }
+  .pm-opt { text-align: left; border: none; background: transparent; color: var(--ink-2); font-family: var(--mono); font-size: 13px; padding: 8px 12px; border-radius: 7px; }
+  .pm-opt:hover { background: var(--surface-2); color: var(--ink); }
+  .pm-opt.on { color: var(--accent); font-weight: 600; }
+  .hero .meta { margin-top: 16px; font-size: 12.5px; color: var(--ink-3); font-family: var(--mono); }
 
-    /* section heading */
-    .sec {
-      padding: 40px 0;
-    }
-    .sec-head {
-      text-align: center;
-      margin-bottom: 26px;
-    }
-    .sec-head .kicker {
-      font-family: var(--mono);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-3);
-    }
-    .sec-head h2 {
-      font-size: clamp(22px, 3vw, 30px);
-      margin-top: 8px;
-    }
-    .sec-head p {
-      color: var(--ink-2);
-      font-size: 15px;
-      margin: 10px auto 0;
-      max-width: 54ch;
-    }
+  /* section heading */
+  .sec { padding: 40px 0; }
+  .sec-head { text-align: center; margin-bottom: 26px; }
+  .sec-head .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .sec-head h2 { font-size: clamp(22px, 3vw, 30px); margin-top: 8px; }
+  .sec-head p { color: var(--ink-2); font-size: 15px; margin: 10px auto 0; max-width: 54ch; }
 
-    /* shared control bits (from prototype) */
-    .cmd-box {
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.7;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 14px 16px;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .cmd-box .flag {
-      color: var(--accent);
-    }
-    .cmd-box .val {
-      color: var(--good);
-    }
-    .copy-btn {
-      border: 1px solid var(--line-strong);
-      background: var(--surface);
-      color: var(--ink);
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 12.5px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .copy-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+  /* the terminal wizard */
+  .term { max-width: 900px; margin: 0 auto; background: #14151a; border: 1px solid #2a2c33; border-radius: 14px; overflow: hidden; box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.55); display: grid; grid-template-columns: 220px 1fr; }
+  .term-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 12px 15px; border-bottom: 1px solid #2a2c33; background: #1a1c22; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ec6a5e; } .dot.y { background: #f4bf4f; } .dot.g { background: #61c454; }
+  .term-title { margin-left: 8px; font-family: var(--mono); font-size: 12px; color: #7d8088; }
+  .steps { border-right: 1px solid #2a2c33; padding: 10px 0; background: #16171c; }
+  .step { display: flex; align-items: center; gap: 10px; padding: 10px 17px; font-size: 13px; color: #8a8d95; font-family: var(--mono); cursor: pointer; border-left: 2px solid transparent; }
+  .step:hover { color: #d4d6da; }
+  .step.active { color: #fff; border-left-color: var(--accent); background: #1d1f26; }
+  .step .k { color: #5a5d65; width: 14px; }
+  .step .val-tag { margin-left: auto; font-size: 11px; color: #6f7178; max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step.active .val-tag { color: var(--accent); }
+  .panel { padding: 22px 24px; min-height: 300px; color: #d4d6da; }
+  .panel h3 { font-size: 15px; color: #fff; margin-bottom: 3px; }
+  .panel .hint { font-family: var(--mono); font-size: 11.5px; color: #7d8088; margin-bottom: 16px; }
+  .opts { display: flex; flex-direction: column; gap: 8px; }
+  .opt { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid #2a2c33; border-radius: 9px; background: #17181e; font-family: var(--mono); font-size: 13px; color: #c4c6cc; cursor: pointer; }
+  .opt:hover:not(.disabled) { border-color: #3a3d45; }
+  .opt.sel { border-color: var(--accent); background: #241713; color: #fff; }
+  .opt.disabled { opacity: 0.38; cursor: not-allowed; }
+  .opt .radio { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid #4a4d55; flex: none; }
+  .opt.sel .radio { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px #241713; }
+  .opt .desc { margin-left: auto; font-size: 11px; color: #7d8088; }
+  .cap-chip { padding: 3px 10px; font-size: 11px; border-radius: 100px; border: 1px solid #33363d; color: #b9bbc1; font-family: var(--mono); cursor: pointer; background: transparent; }
+  .cap-chip:hover { border-color: #4a4d55; color: #fff; }
+  .cap-chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .term-foot { grid-column: 1 / -1; border-top: 1px solid #2a2c33; background: #101116; padding: 15px 20px; font-family: var(--mono); }
+  .term-prompt { font-size: 13px; color: #e6e7ea; line-height: 1.85; word-break: break-word; }
+  .term-prompt .sig { color: var(--good); }
+  .term-prompt .flag { color: #f0906c; }
+  .term-prompt .val { color: #7fc98d; }
+  .cursor { display: inline-block; width: 8px; height: 15px; background: #7fc98d; vertical-align: -2px; margin-left: 2px; }
+  @media (prefers-reduced-motion: no-preference) { .cursor { animation: blink 1.05s step-end infinite; } }
+  @keyframes blink { 50% { opacity: 0; } }
+  .term-log { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .term-line { font-size: 12px; color: var(--adjust); display: flex; gap: 8px; }
+  .term-line .arr { color: #6a6d74; }
+  .term-actions { margin-top: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .term .copy-btn { background: #1d1f26; border-color: #33363d; color: #d4d6da; }
+  .term .copy-btn:hover { border-color: var(--accent); color: #fff; }
+  .term-actions .runnote { font-size: 11.5px; color: #6f7178; }
+  .copy-btn { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 12px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  @media (max-width: 720px) {
+    .term { grid-template-columns: 1fr; }
+    .steps { display: flex; overflow-x: auto; border-right: none; border-bottom: 1px solid #2a2c33; padding: 6px; }
+    .step { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; }
+    .step.active { border-left: none; border-bottom-color: var(--accent); }
+    .step .val-tag { display: none; }
+  }
 
-    /* the terminal wizard */
-    .term {
-      max-width: 900px;
-      margin: 0 auto;
-      background: #14151a;
-      border: 1px solid #2a2c33;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.55);
-      display: grid;
-      grid-template-columns: 220px 1fr;
-    }
-    .term-head {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 15px;
-      border-bottom: 1px solid #2a2c33;
-      background: #1a1c22;
-    }
-    .dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-    }
-    .dot.r {
-      background: #ec6a5e;
-    }
-    .dot.y {
-      background: #f4bf4f;
-    }
-    .dot.g {
-      background: #61c454;
-    }
-    .term-title {
-      margin-left: 8px;
-      font-family: var(--mono);
-      font-size: 12px;
-      color: #7d8088;
-    }
-    .steps {
-      border-right: 1px solid #2a2c33;
-      padding: 10px 0;
-      background: #16171c;
-    }
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 17px;
-      font-size: 13px;
-      color: #8a8d95;
-      font-family: var(--mono);
-      cursor: pointer;
-      border-left: 2px solid transparent;
-    }
-    .step:hover {
-      color: #d4d6da;
-    }
-    .step.active {
-      color: #fff;
-      border-left-color: var(--accent);
-      background: #1d1f26;
-    }
-    .step .k {
-      color: #5a5d65;
-      width: 14px;
-    }
-    .step .val-tag {
-      margin-left: auto;
-      font-size: 11px;
-      color: #6f7178;
-      max-width: 74px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .step.active .val-tag {
-      color: var(--accent);
-    }
-    .panel {
-      padding: 22px 24px;
-      min-height: 300px;
-      color: #d4d6da;
-    }
-    .panel h3 {
-      font-size: 15px;
-      color: #fff;
-      margin-bottom: 3px;
-    }
-    .panel .hint {
-      font-family: var(--mono);
-      font-size: 11.5px;
-      color: #7d8088;
-      margin-bottom: 16px;
-    }
-    .opts {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .opt {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 11px 14px;
-      border: 1px solid #2a2c33;
-      border-radius: 9px;
-      background: #17181e;
-      font-family: var(--mono);
-      font-size: 13px;
-      color: #c4c6cc;
-      cursor: pointer;
-    }
-    .opt:hover:not(.disabled) {
-      border-color: #3a3d45;
-    }
-    .opt.sel {
-      border-color: var(--accent);
-      background: #241713;
-      color: #fff;
-    }
-    .opt.disabled {
-      opacity: 0.38;
-      cursor: not-allowed;
-    }
-    .opt .radio {
-      width: 15px;
-      height: 15px;
-      border-radius: 50%;
-      border: 1.5px solid #4a4d55;
-      flex: none;
-    }
-    .opt.sel .radio {
-      border-color: var(--accent);
-      background: var(--accent);
-      box-shadow: inset 0 0 0 3px #241713;
-    }
-    .opt .desc {
-      margin-left: auto;
-      font-size: 11px;
-      color: #7d8088;
-    }
-    .cap-chip {
-      padding: 3px 10px;
-      font-size: 11px;
-      border-radius: 100px;
-      border: 1px solid #33363d;
-      color: #b9bbc1;
-      font-family: var(--mono);
-      cursor: pointer;
-      background: transparent;
-    }
-    .cap-chip:hover {
-      border-color: #4a4d55;
-      color: #fff;
-    }
-    .cap-chip.on {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--accent-ink);
-    }
-    .term-foot {
-      grid-column: 1 / -1;
-      border-top: 1px solid #2a2c33;
-      background: #101116;
-      padding: 15px 20px;
-      font-family: var(--mono);
-    }
-    .term-prompt {
-      font-size: 13px;
-      color: #e6e7ea;
-      line-height: 1.85;
-      word-break: break-word;
-    }
-    .term-prompt .sig {
-      color: var(--good);
-    }
-    .term-prompt .flag {
-      color: #f0906c;
-    }
-    .term-prompt .val {
-      color: #7fc98d;
-    }
-    .cursor {
-      display: inline-block;
-      width: 8px;
-      height: 15px;
-      background: #7fc98d;
-      vertical-align: -2px;
-      margin-left: 2px;
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      .cursor {
-        animation: blink 1.05s step-end infinite;
-      }
-    }
-    @keyframes blink {
-      50% {
-        opacity: 0;
-      }
-    }
-    .term-log {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .term-line {
-      font-size: 12px;
-      color: var(--adjust);
-      display: flex;
-      gap: 8px;
-    }
-    .term-line .arr {
-      color: #6a6d74;
-    }
-    .term-actions {
-      margin-top: 15px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .term .copy-btn {
-      background: #1d1f26;
-      border-color: #33363d;
-      color: #d4d6da;
-    }
-    .term .copy-btn:hover {
-      border-color: var(--accent);
-      color: #fff;
-    }
-    .term-actions .runnote {
-      font-size: 11.5px;
-      color: #6f7178;
-    }
-    @media (max-width: 720px) {
-      .term {
-        grid-template-columns: 1fr;
-      }
-      .steps {
-        display: flex;
-        overflow-x: auto;
-        border-right: none;
-        border-bottom: 1px solid #2a2c33;
-        padding: 6px;
-      }
-      .step {
-        white-space: nowrap;
-        border-left: none;
-        border-bottom: 2px solid transparent;
-      }
-      .step.active {
-        border-left: none;
-        border-bottom-color: var(--accent);
-      }
-      .step .val-tag {
-        display: none;
-      }
-    }
+  /* what you get */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
+  .card { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 18px 18px 16px; }
+  .card .role { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); }
+  .card h4 { margin: 8px 0 6px; font-size: 16px; letter-spacing: -0.01em; }
+  .card p { font-size: 13.5px; color: var(--ink-2); }
+  .card .tags { margin-top: 11px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .card .tags span { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); }
 
-    /* what you get */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-    }
-    @media (max-width: 780px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .card {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 18px 18px 16px;
-    }
-    .card .role {
-      font-family: var(--mono);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--ink-3);
-    }
-    .card h4 {
-      margin: 8px 0 6px;
-      font-size: 16px;
-      letter-spacing: -0.01em;
-    }
-    .card p {
-      font-size: 13.5px;
-      color: var(--ink-2);
-    }
-    .card .tags {
-      margin-top: 11px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .card .tags span {
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: var(--surface-2);
-      color: var(--ink-2);
-    }
+  /* footer */
+  footer { border-top: 1px solid var(--line); margin-top: 30px; padding: 34px 0 56px; }
+  .foot-in { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .foot-in .who { font-size: 13.5px; color: var(--ink-2); }
+  .foot-in .who b { color: var(--ink); font-weight: 600; }
+  .foot-note { margin-top: 6px; font-size: 12.5px; color: var(--ink-3); max-width: 52ch; }
+  .foot-note a { color: var(--ink-2); border-bottom: 1px solid var(--line-strong); }
+  .foot-note a:hover { color: var(--accent); border-color: var(--accent); }
+  .foot-links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .foot-links a { font-size: 13px; color: var(--ink-2); padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); }
+  .foot-links a:hover { color: var(--accent); border-color: var(--accent); }
 
-    /* footer */
-    footer {
-      border-top: 1px solid var(--line);
-      margin-top: 30px;
-      padding: 34px 0 56px;
-    }
-    .foot-in {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    .foot-in .who {
-      font-size: 13.5px;
-      color: var(--ink-2);
-    }
-    .foot-in .who b {
-      color: var(--ink);
-      font-weight: 600;
-    }
-    .foot-note {
-      margin-top: 6px;
-      font-size: 12.5px;
-      color: var(--ink-3);
-      max-width: 52ch;
-    }
-    .foot-note a {
-      color: var(--ink-2);
-      border-bottom: 1px solid var(--line-strong);
-    }
-    .foot-note a:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-    .foot-links {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .foot-links a {
-      font-size: 13px;
-      color: var(--ink-2);
-      padding: 6px 11px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-    }
-    .foot-links a:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px); background: var(--good); color: #fff; padding: 9px 18px; border-radius: 100px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 40; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="shell bar-in">
+    <span class="brand"><span class="sq">&gt;_</span>create-stack</span>
+    <nav class="bar-links">
+      <a href="#builder">Builder</a>
+      <a href="#stack">What you get</a>
+      <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack" target="_blank" rel="noopener">npm</a>
+      <a href="https://github.com/alfredmouelle" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</header>
 
-    :focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
+<main class="shell">
+  <section class="hero">
+    <span class="eyebrow mono">@alfredmouelle/create-stack</span>
+    <h1>Compose your stack. <em>Ship a real app.</em></h1>
+    <p class="lede">
+      An agnostic bootstrapper for your favorite framework. create-stack forks a fully-wired base app and strips it to exactly what you pick: database, auth, tRPC, a mailer, capabilities. <b>Next.js</b> and <b>TanStack Start</b> today, more frameworks on the way. The output builds and boots on day one. No template guesswork.
+    </p>
+    <div class="install" id="install"></div>
+    <div class="meta">Node ≥ 22 · pnpm / npm / yarn / bun · MIT · <span style="color: var(--accent)">open source soon</span></div>
+  </section>
+
+  <section class="sec" id="builder">
+    <div class="sec-head">
+      <div class="kicker">Try it</div>
+      <h2>Build your command, live</h2>
+      <p>Pick each piece. The wizard applies the CLI's real rules and writes the exact command to copy, for your package manager.</p>
+    </div>
+    <div id="stage"></div>
+  </section>
+
+  <section class="sec" id="stack">
+    <div class="sec-head">
+      <div class="kicker">What you get</div>
+      <h2>A real app, wired end to end</h2>
+      <p>Every piece is copied in and wired: deps, env keys, composition roots. Unselected pieces are removed cleanly, so the project stays bootable and green.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="role">Framework</div><h4>Your framework, fully wired</h4><p>A real starter app you fork: SSR, routing, Tailwind v4 + shadcn, theme toggle. Next.js and TanStack Start today, more frameworks on the roadmap.</p><div class="tags"><span>Next.js</span><span>TanStack Start</span><span>more soon</span></div></div>
+      <div class="card"><div class="role">Data layer</div><h4>Drizzle, Prisma or Convex</h4><p>Postgres with driver adapter, schema, seed and keyset pagination, or Convex realtime, or none for a vitrine.</p><div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div></div>
+      <div class="card"><div class="role">Auth &amp; API</div><h4>better-auth or Clerk, tRPC v11</h4><p>Email + password with verification and Google OAuth, or hosted Clerk. Typed tRPC with SSR/RSC.</p><div class="tags"><span>better-auth</span><span>clerk</span><span>trpc</span></div></div>
+      <div class="card"><div class="role">Mailer</div><h4>Resend, Brevo or SES</h4><p>One port, React Email templates. Swap the provider with a single env change.</p><div class="tags"><span>resend</span><span>brevo</span><span>ses</span></div></div>
+      <div class="card"><div class="role">Capabilities</div><h4>Storage, cache, jobs, more</h4><p>Opt-in integrations behind a port: storage, cache, background jobs, logger, analytics, error tracking.</p><div class="tags"><span>s3/r2</span><span>redis</span><span>inngest</span><span>sentry</span></div></div>
+      <div class="card"><div class="role">Baseline</div><h4>Green from commit one</h4><p>Strict Biome, typed env.ts, Dockerfile, git hooks, a GitHub Actions CI workflow, generated .env, verified with typecheck + Biome.</p><div class="tags"><span>biome</span><span>CI</span><span>docker</span></div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="shell foot-in">
+    <div>
+      <p class="who">Built by <b>Alfred MOUELLE</b>, FullStack Developer</p>
+      <p class="foot-note">Currently a private repo, the full source is going open source very soon. Inspired by <a href="https://create.t3.gg" target="_blank" rel="noopener">create-t3-app</a> by Theo Browne.</p>
+    </div>
+    <div class="foot-links">
+      <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack" target="_blank" rel="noopener">npm</a>
+      <a href="https://github.com/alfredmouelle" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.linkedin.com/in/alfredmouelle" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://alfredmouelle.com" target="_blank" rel="noopener">Portfolio</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast">Copied to clipboard</div>
+
+<script>
+  const CAPS = [
+    { key: 'storage', flag: 'storage', label: 'Storage', adapters: ['s3', 'r2', 'gcs', 'local'], def: 's3' },
+    { key: 'cache', flag: 'cache', label: 'Cache', adapters: ['redis', 'upstash', 'memory'], def: 'redis' },
+    { key: 'jobs', flag: 'jobs', label: 'Background jobs', adapters: ['inngest', 'trigger', 'memory'], def: 'inngest' },
+    { key: 'logger', flag: 'logger', label: 'Logger', adapters: ['pino', 'console'], def: 'pino' },
+    { key: 'analytics', flag: 'analytics', label: 'Analytics', adapters: ['posthog', 'plausible', 'noop'], def: 'posthog' },
+    { key: 'errorTracking', flag: 'error-tracking', label: 'Error tracking', adapters: ['sentry', 'console'], def: 'sentry' },
+  ]
+  const state = {
+    name: 'my-app', pm: 'npm', framework: 'tanstack', database: 'drizzle', auth: 'better-auth',
+    trpc: true, mailer: 'resend',
+    caps: { storage: null, cache: null, jobs: null, logger: null, analytics: null, errorTracking: null },
+  }
+
+  // The exec form passes flags through cleanly for every package manager.
+  const PM_EXEC = { npm: 'npx', yarn: 'yarn dlx', pnpm: 'pnpm dlx', bun: 'bunx' }
+  const PMS = ['npm', 'yarn', 'pnpm', 'bun']
+  const pmPrefix = () => PM_EXEC[state.pm] + ' @alfredmouelle/create-stack'
+
+  // normalize(): faithful port of cli/lib/args.mjs
+  function normalize(s) {
+    const adj = []
+    let trpc = s.trpc, a = s.auth, db = s.database, mailer = s.mailer
+    if (db === 'convex') {
+      if (trpc) { trpc = false; adj.push({ head: 'Convex', body: 'is its own API layer → tRPC removed' }) }
+      if (a === 'better-auth') { a = 'none'; adj.push({ head: 'Convex + better-auth', body: 'better-auth needs Postgres → auth set to none (pair Convex with Clerk)' }) }
+    } else if ((trpc || a === 'better-auth') && db === 'none') {
+      db = 'drizzle'
+      adj.push({ head: 'tRPC / better-auth', body: 'need a database → Drizzle added' })
     }
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(8px);
-      background: var(--good);
-      color: #fff;
-      padding: 9px 18px;
-      border-radius: 100px;
-      font-size: 13px;
-      opacity: 0;
-      pointer-events: none;
-      transition:
-        opacity 0.2s,
-        transform 0.2s;
-      z-index: 40;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-    </style>
-  </head>
-  <body>
-    <header class="bar">
-      <div class="shell bar-in">
-        <span class="brand"><span class="sq">&gt;_</span>create-stack</span>
-        <nav class="bar-links">
-          <a href="#builder">Builder</a>
-          <a href="#stack">What you get</a>
-          <a
-            href="https://www.npmjs.com/package/@alfredmouelle/create-stack"
-            target="_blank"
-            rel="noopener"
-            >npm</a
-          >
-          <a href="https://github.com/alfredmouelle" target="_blank" rel="noopener">GitHub</a>
-        </nav>
-      </div>
-    </header>
+    if (a === 'better-auth' && mailer === 'none') { mailer = 'resend'; adj.push({ head: 'better-auth', body: 'sends its own emails → Resend added' }) }
+    return { database: db, auth: a, trpc, mailer, adjustments: adj }
+  }
+  function buildCommand(s) {
+    const e = normalize(s)
+    const parts = [{ t: pmPrefix() + ' ' + (s.name || 'my-app') }]
+    if (s.framework !== 'tanstack') parts.push({ f: '--framework', v: s.framework })
+    if (e.database !== 'drizzle') parts.push({ f: '--database', v: e.database })
+    if (e.auth !== 'better-auth') parts.push({ f: '--auth', v: e.auth })
+    if (!e.trpc && e.database !== 'convex') parts.push({ f: '--foundations', v: "''" })
+    if (e.mailer !== 'resend') parts.push({ f: '--mailer', v: e.mailer })
+    for (const c of CAPS) { const a = s.caps[c.key]; if (a) parts.push(a === c.def ? { f: '--' + c.flag } : { f: '--' + c.flag, v: a }) }
+    return { parts, eff: e, plain: parts.map((p) => (p.t ? p.t : p.v ? p.f + ' ' + p.v : p.f)).join(' ') }
+  }
+  function cmdHTML(parts) { return parts.map((p) => (p.t ? esc(p.t) : '<span class="flag">' + esc(p.f) + '</span>' + (p.v ? ' <span class="val">' + esc(p.v) + '</span>' : ''))).join(' ') }
+  function esc(s) { return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]) }
 
-    <main class="shell">
-      <section class="hero">
-        <span class="eyebrow mono">@alfredmouelle/create-stack</span>
-        <h1>Compose your stack. <em>Ship a real app.</em></h1>
-        <p class="lede">
-          An agnostic bootstrapper for your favorite framework. create-stack forks a fully-wired
-          base app and strips it to exactly what you pick: database, auth, tRPC, a mailer,
-          capabilities. <b>Next.js</b> and <b>TanStack Start</b> today, more frameworks on the way.
-          The output builds and boots on day one. No template guesswork.
-        </p>
-        <div class="install" id="install"></div>
-        <div class="meta">
-          Node ≥ 22 · pnpm / npm / yarn / bun · MIT ·
-          <span style="color: var(--accent)">open source soon</span>
-        </div>
-      </section>
-
-      <section class="sec" id="builder">
-        <div class="sec-head">
-          <div class="kicker">Try it</div>
-          <h2>Build your command, live</h2>
-          <p>
-            Pick each piece. The wizard applies the CLI's real rules and writes the exact command to
-            copy, for your package manager.
-          </p>
-        </div>
-        <div id="stage"></div>
-      </section>
-
-      <section class="sec" id="stack">
-        <div class="sec-head">
-          <div class="kicker">What you get</div>
-          <h2>A real app, wired end to end</h2>
-          <p>
-            Every piece is copied in and wired: deps, env keys, composition roots. Unselected pieces
-            are removed cleanly, so the project stays bootable and green.
-          </p>
-        </div>
-        <div class="grid">
-          <div class="card">
-            <div class="role">Framework</div>
-            <h4>Your framework, fully wired</h4>
-            <p>
-              A real starter app you fork: SSR, routing, Tailwind v4 + shadcn, theme toggle. Next.js
-              and TanStack Start today, more frameworks on the roadmap.
-            </p>
-            <div class="tags">
-              <span>Next.js</span><span>TanStack Start</span><span>more soon</span>
-            </div>
-          </div>
-          <div class="card">
-            <div class="role">Data layer</div>
-            <h4>Drizzle, Prisma or Convex</h4>
-            <p>
-              Postgres with driver adapter, schema, seed and keyset pagination, or Convex realtime,
-              or none for a vitrine.
-            </p>
-            <div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div>
-          </div>
-          <div class="card">
-            <div class="role">Auth &amp; API</div>
-            <h4>better-auth or Clerk, tRPC v11</h4>
-            <p>
-              Email + password with verification and Google OAuth, or hosted Clerk. Typed tRPC with
-              SSR/RSC.
-            </p>
-            <div class="tags"><span>better-auth</span><span>clerk</span><span>trpc</span></div>
-          </div>
-          <div class="card">
-            <div class="role">Mailer</div>
-            <h4>Resend, Brevo or SES</h4>
-            <p>One port, React Email templates. Swap the provider with a single env change.</p>
-            <div class="tags"><span>resend</span><span>brevo</span><span>ses</span></div>
-          </div>
-          <div class="card">
-            <div class="role">Capabilities</div>
-            <h4>Storage, cache, jobs, more</h4>
-            <p>
-              Opt-in integrations behind a port: storage, cache, background jobs, logger, analytics,
-              error tracking.
-            </p>
-            <div class="tags">
-              <span>s3/r2</span><span>redis</span><span>inngest</span><span>sentry</span>
-            </div>
-          </div>
-          <div class="card">
-            <div class="role">Baseline</div>
-            <h4>Green from commit one</h4>
-            <p>
-              Strict Biome, typed env.ts, Dockerfile, git hooks, a GitHub Actions CI workflow,
-              generated .env, verified with typecheck + Biome.
-            </p>
-            <div class="tags"><span>biome</span><span>CI</span><span>docker</span></div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="shell foot-in">
-        <div>
-          <p class="who">Built by <b>Alfred MOUELLE</b>, FullStack Developer</p>
-          <p class="foot-note">
-            Currently a private repo, the full source is going open source very soon. Inspired by
-            <a href="https://create.t3.gg" target="_blank" rel="noopener">create-t3-app</a>
-            by Theo Browne.
-          </p>
-        </div>
-        <div class="foot-links">
-          <a
-            href="https://www.npmjs.com/package/@alfredmouelle/create-stack"
-            target="_blank"
-            rel="noopener"
-            >npm</a
-          >
-          <a href="https://github.com/alfredmouelle" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://www.linkedin.com/in/alfredmouelle" target="_blank" rel="noopener"
-            >LinkedIn</a
-          >
-          <a href="https://alfredmouelle.com" target="_blank" rel="noopener">Portfolio</a>
-        </div>
-      </div>
-    </footer>
-
-    <div class="toast" id="toast">Copied to clipboard</div>
-
-    <script>
-    const CAPS = [
-      {
-        key: 'storage',
-        flag: 'storage',
-        label: 'Storage',
-        adapters: ['s3', 'r2', 'gcs', 'local'],
-        def: 's3',
-      },
-      {
-        key: 'cache',
-        flag: 'cache',
-        label: 'Cache',
-        adapters: ['redis', 'upstash', 'memory'],
-        def: 'redis',
-      },
-      {
-        key: 'jobs',
-        flag: 'jobs',
-        label: 'Background jobs',
-        adapters: ['inngest', 'trigger', 'memory'],
-        def: 'inngest',
-      },
-      {
-        key: 'logger',
-        flag: 'logger',
-        label: 'Logger',
-        adapters: ['pino', 'console'],
-        def: 'pino',
-      },
-      {
-        key: 'analytics',
-        flag: 'analytics',
-        label: 'Analytics',
-        adapters: ['posthog', 'plausible', 'noop'],
-        def: 'posthog',
-      },
-      {
-        key: 'errorTracking',
-        flag: 'error-tracking',
-        label: 'Error tracking',
-        adapters: ['sentry', 'console'],
-        def: 'sentry',
-      },
-    ]
-    const state = {
-      name: 'my-app',
-      pm: 'npm',
-      framework: 'tanstack',
-      database: 'drizzle',
-      auth: 'better-auth',
-      trpc: true,
-      mailer: 'resend',
-      caps: {
-        storage: null,
-        cache: null,
-        jobs: null,
-        logger: null,
-        analytics: null,
-        errorTracking: null,
-      },
-    }
-
-    // The exec form passes flags through cleanly for every package manager.
-    const PM_EXEC = { npm: 'npx', yarn: 'yarn dlx', pnpm: 'pnpm dlx', bun: 'bunx' }
-    const PMS = ['npm', 'yarn', 'pnpm', 'bun']
-    const pmPrefix = () => PM_EXEC[state.pm] + ' @alfredmouelle/create-stack'
-
-    // normalize(): faithful port of cli/lib/args.mjs
-    function normalize(s) {
-      const adj = []
-      let trpc = s.trpc,
-        a = s.auth,
-        db = s.database,
-        mailer = s.mailer
-      if (db === 'convex') {
-        if (trpc) {
-          trpc = false
-          adj.push({ head: 'Convex', body: 'is its own API layer → tRPC removed' })
-        }
-        if (a === 'better-auth') {
-          a = 'none'
-          adj.push({
-            head: 'Convex + better-auth',
-            body: 'better-auth needs Postgres → auth set to none (pair Convex with Clerk)',
-          })
-        }
-      } else if ((trpc || a === 'better-auth') && db === 'none') {
-        db = 'drizzle'
-        adj.push({ head: 'tRPC / better-auth', body: 'need a database → Drizzle added' })
-      }
-      if (a === 'better-auth' && mailer === 'none') {
-        mailer = 'resend'
-        adj.push({ head: 'better-auth', body: 'sends its own emails → Resend added' })
-      }
-      return { database: db, auth: a, trpc, mailer, adjustments: adj }
-    }
-    function buildCommand(s) {
-      const e = normalize(s)
-      const parts = [{ t: pmPrefix() + ' ' + (s.name || 'my-app') }]
-      if (s.framework !== 'tanstack') parts.push({ f: '--framework', v: s.framework })
-      if (e.database !== 'drizzle') parts.push({ f: '--database', v: e.database })
-      if (e.auth !== 'better-auth') parts.push({ f: '--auth', v: e.auth })
-      if (!e.trpc && e.database !== 'convex') parts.push({ f: '--foundations', v: "''" })
-      if (e.mailer !== 'resend') parts.push({ f: '--mailer', v: e.mailer })
-      for (const c of CAPS) {
-        const a = s.caps[c.key]
-        if (a) parts.push(a === c.def ? { f: '--' + c.flag } : { f: '--' + c.flag, v: a })
-      }
-      return {
-        parts,
-        eff: e,
-        plain: parts.map((p) => (p.t ? p.t : p.v ? p.f + ' ' + p.v : p.f)).join(' '),
-      }
-    }
-    function cmdHTML(parts) {
-      return parts
-        .map((p) =>
-          p.t
-            ? esc(p.t)
-            : '<span class="flag">' +
-              esc(p.f) +
-              '</span>' +
-              (p.v ? ' <span class="val">' + esc(p.v) + '</span>' : ''),
-        )
-        .join(' ')
-    }
-    function esc(s) {
-      return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])
-    }
-
-    function whyDisabled(axis, val) {
-      if (axis === 'auth' && val === 'better-auth' && state.database === 'convex')
-        return 'Incompatible with Convex (Postgres required)'
-      if (axis === 'trpc' && state.database === 'convex') return 'Convex replaces tRPC'
-      return null
-    }
-    function setAxis(axis, val) {
-      if (axis === 'trpc') {
-        if (whyDisabled('trpc')) return
-        state.trpc = val
-      } else {
-        if (whyDisabled(axis, val)) return
-        state[axis] = val
-      }
-      render()
-    }
-    function setCap(key, adapter) {
-      state.caps[key] = state.caps[key] === adapter ? null : adapter
-      render()
-    }
-    function toast() {
-      const t = document.getElementById('toast')
-      t.classList.add('show')
-      setTimeout(() => t.classList.remove('show'), 1400)
-    }
-    function copyText(txt) {
-      navigator.clipboard && navigator.clipboard.writeText(txt)
-      toast()
-    }
-
-    let pmMenuOpen = false
-    function renderInstall() {
-      const opts = PMS.map(
-        (pm) =>
-          '<button class="pm-opt' +
-          (state.pm === pm ? ' on' : '') +
-          '" role="option" aria-selected="' +
-          (state.pm === pm) +
-          '" data-pm="' +
-          pm +
-          '">' +
-          pm +
-          '</button>',
-      ).join('')
-      document.getElementById('install').innerHTML =
-        '<div class="pm-select">' +
-        '<button class="pm-trigger" data-pm-toggle aria-haspopup="listbox" aria-expanded="' +
-        pmMenuOpen +
-        '">' +
-        state.pm +
-        '<span class="caret">▾</span></button>' +
-        '<div class="pm-menu" role="listbox"' +
-        (pmMenuOpen ? '' : ' hidden') +
-        '>' +
-        opts +
-        '</div>' +
-        '</div>' +
-        '<code><span class="dollar">$</span> ' +
-        esc(pmPrefix() + ' my-app') +
-        '</code>' +
-        '<button class="install-copy" data-copy-install>Copy</button>'
-    }
-
-    const AXES = [
-      {
-        key: 'framework',
-        label: 'Framework',
-        hint: 'base app to fork · more frameworks coming',
-        opts: [
-          { v: 'tanstack', d: 'default' },
-          { v: 'next', d: 'App Router' },
-        ],
-      },
-      {
-        key: 'database',
-        label: 'Database',
-        hint: 'data layer',
-        opts: [
-          { v: 'drizzle', d: 'default' },
-          { v: 'prisma', d: 'Prisma 7' },
-          { v: 'convex', d: 'realtime + API' },
-          { v: 'none', d: 'vitrine' },
-        ],
-      },
-      {
-        key: 'auth',
-        label: 'Auth',
-        hint: 'auth provider',
-        opts: [
-          { v: 'better-auth', d: 'self-hosted' },
-          { v: 'clerk', d: 'hosted' },
-          { v: 'none', d: 'no auth' },
-        ],
-      },
-      {
-        key: 'trpc',
-        label: 'tRPC',
-        hint: 'typed API foundation',
-        opts: [
-          { v: true, label: 'trpc on', d: 'included' },
-          { v: false, label: 'trpc off', d: 'stripped' },
-        ],
-      },
-      {
-        key: 'mailer',
-        label: 'Mailer',
-        hint: 'transactional email',
-        opts: [
-          { v: 'resend', d: 'default' },
-          { v: 'brevo', d: '' },
-          { v: 'ses', d: 'AWS' },
-          { v: 'none', d: 'skip' },
-        ],
-      },
-    ]
-    let activeStep = 'framework'
-
-    function stepValueTag(key) {
-      if (key === 'trpc') return state.trpc ? 'on' : 'off'
-      if (key === 'caps') {
-        const n = CAPS.filter((c) => state.caps[c.key]).length
-        return n ? n + ' on' : ''
-      }
-      return state[key]
-    }
-
-    function render() {
-      const cmd = buildCommand(state),
-        eff = cmd.eff
-      const stepsHTML =
-        AXES.map(
-          (ax) =>
-            '<div class="step ' +
-            (activeStep === ax.key ? 'active' : '') +
-            '" data-step="' +
-            ax.key +
-            '"><span class="k">$</span>' +
-            ax.label +
-            '<span class="val-tag">' +
-            esc(stepValueTag(ax.key)) +
-            '</span></div>',
-        ).join('') +
-        '<div class="step ' +
-        (activeStep === 'caps' ? 'active' : '') +
-        '" data-step="caps"><span class="k">+</span>Capabilities<span class="val-tag">' +
-        esc(stepValueTag('caps')) +
-        '</span></div>'
-
-      let panel
-      if (activeStep === 'caps') {
-        panel =
-          '<h3>Capabilities</h3><div class="hint">optional integrations, each behind a port</div><div class="opts">' +
-          CAPS.map((c) => {
-            const cur = state.caps[c.key]
-            return (
-              '<div class="opt' +
-              (cur ? ' sel' : '') +
-              '" style="cursor:default"><span class="radio"></span><span>' +
-              c.label +
-              '</span><span class="desc" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' +
-              c.adapters
-                .map(
-                  (ad) =>
-                    '<button class="cap-chip' +
-                    (cur === ad ? ' on' : '') +
-                    '" data-cap="' +
-                    c.key +
-                    '" data-adapter="' +
-                    ad +
-                    '">' +
-                    ad +
-                    '</button>',
-                )
-                .join('') +
-              '</span></div>'
-            )
-          }).join('') +
-          '</div>'
-      } else {
-        const ax = AXES.find((a) => a.key === activeStep)
-        panel =
-          '<h3>' +
-          ax.label +
-          '</h3><div class="hint">? ' +
-          ax.hint +
-          '</div><div class="opts">' +
-          ax.opts
-            .map((o) => {
-              const val = o.v,
-                sel = state[ax.key] === val,
-                dis = whyDisabled(ax.key, val)
-              return (
-                '<div class="opt' +
-                (sel ? ' sel' : '') +
-                (dis ? ' disabled' : '') +
-                '"' +
-                (dis ? '' : ' data-set="' + ax.key + '" data-val="' + val + '"') +
-                '><span class="radio"></span><span>' +
-                (o.label || val) +
-                '</span><span class="desc">' +
-                (dis || o.d || '') +
-                '</span></div>'
-              )
-            })
-            .join('') +
-          '</div>'
-      }
-
-      const log = eff.adjustments.length
-        ? eff.adjustments
-            .map(
-              (a) =>
-                '<div class="term-line"><span class="arr">&rarr;</span><span>' +
-                esc(a.head) +
-                ' ' +
-                esc(a.body) +
-                '</span></div>',
-            )
-            .join('')
-        : '<div class="term-line" style="color:#5a5d65"><span class="arr">&rarr;</span>coherent selection, no adjustments</div>'
-
-      document.getElementById('stage').innerHTML =
-        '<div class="term"><div class="term-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">create-stack: interactive</span></div>' +
-        '<div class="steps">' +
-        stepsHTML +
-        '</div><div class="panel">' +
-        panel +
-        '</div>' +
-        '<div class="term-foot"><div class="term-prompt"><span class="sig">$</span> ' +
-        cmdHTML(cmd.parts) +
-        '<span class="cursor"></span></div><div class="term-log">' +
-        log +
-        '</div>' +
-        '<div class="term-actions"><button class="copy-btn" data-copy-cmd>⎘ Copy command</button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
-    }
-
-    document.addEventListener('click', (e) => {
-      const pmOpt = e.target.closest('[data-pm]')
-      if (pmOpt) {
-        state.pm = pmOpt.dataset.pm
-        pmMenuOpen = false
-        renderInstall()
-        render()
-        return
-      }
-      if (e.target.closest('[data-pm-toggle]')) {
-        pmMenuOpen = !pmMenuOpen
-        renderInstall()
-        return
-      }
-      if (pmMenuOpen) {
-        pmMenuOpen = false
-        renderInstall()
-      }
-      const step = e.target.closest('[data-step]')
-      if (step) {
-        activeStep = step.dataset.step
-        render()
-        return
-      }
-      const cap = e.target.closest('[data-cap]')
-      if (cap) {
-        setCap(cap.dataset.cap, cap.dataset.adapter)
-        return
-      }
-      const set = e.target.closest('[data-set]')
-      if (set) {
-        setAxis(
-          set.dataset.set,
-          set.dataset.val === 'true' ? true : set.dataset.val === 'false' ? false : set.dataset.val,
-        )
-        return
-      }
-      if (e.target.closest('[data-copy-cmd]')) {
-        copyText(buildCommand(state).plain)
-        return
-      }
-      if (e.target.closest('[data-copy-install]')) {
-        copyText(pmPrefix() + ' my-app')
-        return
-      }
-    })
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && pmMenuOpen) {
-        pmMenuOpen = false
-        renderInstall()
-      }
-    })
-
-    renderInstall()
+  function whyDisabled(axis, val) {
+    if (axis === 'auth' && val === 'better-auth' && state.database === 'convex') return 'Incompatible with Convex (Postgres required)'
+    if (axis === 'trpc' && state.database === 'convex') return 'Convex replaces tRPC'
+    return null
+  }
+  function setAxis(axis, val) {
+    if (axis === 'trpc') { if (whyDisabled('trpc')) return; state.trpc = val }
+    else { if (whyDisabled(axis, val)) return; state[axis] = val }
     render()
-    </script>
-  </body>
+  }
+  function setCap(key, adapter) { state.caps[key] = state.caps[key] === adapter ? null : adapter; render() }
+  function toast() { const t = document.getElementById('toast'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1400) }
+  function copyText(txt) { navigator.clipboard && navigator.clipboard.writeText(txt); toast() }
+
+  let pmMenuOpen = false
+  function renderInstall() {
+    const opts = PMS.map((pm) => '<button class="pm-opt' + (state.pm === pm ? ' on' : '') + '" role="option" aria-selected="' + (state.pm === pm) + '" data-pm="' + pm + '">' + pm + '</button>').join('')
+    document.getElementById('install').innerHTML =
+      '<div class="pm-select">' +
+      '<button class="pm-trigger" data-pm-toggle aria-haspopup="listbox" aria-expanded="' + pmMenuOpen + '">' + state.pm + '<span class="caret">▾</span></button>' +
+      '<div class="pm-menu" role="listbox"' + (pmMenuOpen ? '' : ' hidden') + '>' + opts + '</div>' +
+      '</div>' +
+      '<code><span class="dollar">$</span> ' + esc(pmPrefix() + ' my-app') + '</code>' +
+      '<button class="install-copy" data-copy-install>Copy</button>'
+  }
+
+  const AXES = [
+    { key: 'framework', label: 'Framework', hint: 'base app to fork · more frameworks coming', opts: [{ v: 'tanstack', d: 'default' }, { v: 'next', d: 'App Router' }] },
+    { key: 'database', label: 'Database', hint: 'data layer', opts: [{ v: 'drizzle', d: 'default' }, { v: 'prisma', d: 'Prisma 7' }, { v: 'convex', d: 'realtime + API' }, { v: 'none', d: 'vitrine' }] },
+    { key: 'auth', label: 'Auth', hint: 'auth provider', opts: [{ v: 'better-auth', d: 'self-hosted' }, { v: 'clerk', d: 'hosted' }, { v: 'none', d: 'no auth' }] },
+    { key: 'trpc', label: 'tRPC', hint: 'typed API foundation', opts: [{ v: true, label: 'trpc on', d: 'included' }, { v: false, label: 'trpc off', d: 'stripped' }] },
+    { key: 'mailer', label: 'Mailer', hint: 'transactional email', opts: [{ v: 'resend', d: 'default' }, { v: 'brevo', d: '' }, { v: 'ses', d: 'AWS' }, { v: 'none', d: 'skip' }] },
+  ]
+  let activeStep = 'framework'
+
+  function stepValueTag(key) {
+    if (key === 'trpc') return state.trpc ? 'on' : 'off'
+    if (key === 'caps') { const n = CAPS.filter((c) => state.caps[c.key]).length; return n ? n + ' on' : '' }
+    return state[key]
+  }
+
+  function render() {
+    const cmd = buildCommand(state), eff = cmd.eff
+    const stepsHTML = AXES.map((ax) => '<div class="step ' + (activeStep === ax.key ? 'active' : '') + '" data-step="' + ax.key + '"><span class="k">$</span>' + ax.label + '<span class="val-tag">' + esc(stepValueTag(ax.key)) + '</span></div>').join('') +
+      '<div class="step ' + (activeStep === 'caps' ? 'active' : '') + '" data-step="caps"><span class="k">+</span>Capabilities<span class="val-tag">' + esc(stepValueTag('caps')) + '</span></div>'
+
+    let panel
+    if (activeStep === 'caps') {
+      panel = '<h3>Capabilities</h3><div class="hint">optional integrations, each behind a port</div><div class="opts">' +
+        CAPS.map((c) => {
+          const cur = state.caps[c.key]
+          return '<div class="opt' + (cur ? ' sel' : '') + '" style="cursor:default"><span class="radio"></span><span>' + c.label + '</span><span class="desc" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' +
+            c.adapters.map((ad) => '<button class="cap-chip' + (cur === ad ? ' on' : '') + '" data-cap="' + c.key + '" data-adapter="' + ad + '">' + ad + '</button>').join('') + '</span></div>'
+        }).join('') + '</div>'
+    } else {
+      const ax = AXES.find((a) => a.key === activeStep)
+      panel = '<h3>' + ax.label + '</h3><div class="hint">? ' + ax.hint + '</div><div class="opts">' +
+        ax.opts.map((o) => {
+          const val = o.v, sel = state[ax.key] === val, dis = whyDisabled(ax.key, val)
+          return '<div class="opt' + (sel ? ' sel' : '') + (dis ? ' disabled' : '') + '"' + (dis ? '' : ' data-set="' + ax.key + '" data-val="' + val + '"') + '><span class="radio"></span><span>' + (o.label || val) + '</span><span class="desc">' + (dis || o.d || '') + '</span></div>'
+        }).join('') + '</div>'
+    }
+
+    const log = eff.adjustments.length
+      ? eff.adjustments.map((a) => '<div class="term-line"><span class="arr">&rarr;</span><span>' + esc(a.head) + ' ' + esc(a.body) + '</span></div>').join('')
+      : '<div class="term-line" style="color:#5a5d65"><span class="arr">&rarr;</span>coherent selection, no adjustments</div>'
+
+    document.getElementById('stage').innerHTML =
+      '<div class="term"><div class="term-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">create-stack: interactive</span></div>' +
+      '<div class="steps">' + stepsHTML + '</div><div class="panel">' + panel + '</div>' +
+      '<div class="term-foot"><div class="term-prompt"><span class="sig">$</span> ' + cmdHTML(cmd.parts) + '<span class="cursor"></span></div><div class="term-log">' + log + '</div>' +
+      '<div class="term-actions"><button class="copy-btn" data-copy-cmd>⎘ Copy command</button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
+  }
+
+  document.addEventListener('click', (e) => {
+    const pmOpt = e.target.closest('[data-pm]'); if (pmOpt) { state.pm = pmOpt.dataset.pm; pmMenuOpen = false; renderInstall(); render(); return }
+    if (e.target.closest('[data-pm-toggle]')) { pmMenuOpen = !pmMenuOpen; renderInstall(); return }
+    if (pmMenuOpen) { pmMenuOpen = false; renderInstall() }
+    const step = e.target.closest('[data-step]'); if (step) { activeStep = step.dataset.step; render(); return }
+    const cap = e.target.closest('[data-cap]'); if (cap) { setCap(cap.dataset.cap, cap.dataset.adapter); return }
+    const set = e.target.closest('[data-set]'); if (set) { setAxis(set.dataset.set, set.dataset.val === 'true' ? true : set.dataset.val === 'false' ? false : set.dataset.val); return }
+    if (e.target.closest('[data-copy-cmd]')) { copyText(buildCommand(state).plain); return }
+    if (e.target.closest('[data-copy-install]')) { copyText(pmPrefix() + ' my-app'); return }
+  })
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pmMenuOpen) { pmMenuOpen = false; renderInstall() } })
+
+  renderInstall()
+  render()
+</script>
+</body>
 </html>
