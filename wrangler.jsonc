@@ -1,0 +1,9 @@
+{
+  // Static-assets-only Worker: serves the landing in site/ (no server code).
+  // Cloudflare's "Deploy command: npx wrangler deploy" uses this file.
+  "name": "create-stack",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./site"
+  }
+}
