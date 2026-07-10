@@ -1,6 +1,7 @@
 // Fork a base app into the target dir + make it standalone
 // (own Biome config, pnpm workspace + build allowlist, project name).
 
+import { mkdirSync } from 'node:fs'
 import { STACK_ROOT, TEMPLATES } from './paths.mjs'
 import { copy, copyTree, exists, join, readJSON, run, write, writeJSON } from './util.mjs'
 
@@ -85,6 +86,9 @@ next-env.d.ts
 export function forkBase(framework, projectDir) {
   const base = join(STACK_ROOT, 'apps', framework === 'next' ? 'next-base' : 'tanstack-base')
   if (!exists(base)) throw new Error(`Base app not found: ${base}`)
+
+  // rsync does not create missing parent dirs; a monorepo forks into apps/web whose apps/ parent is absent.
+  mkdirSync(projectDir, { recursive: true })
 
   // rsync is the fast path; fall back to a filtered cpSync where it's absent (e.g. Windows).
   if (hasRsync()) {
