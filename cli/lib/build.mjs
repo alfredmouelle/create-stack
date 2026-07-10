@@ -87,7 +87,7 @@ export function buildProject({
 
   const pkgPath = join(appDir, 'package.json')
   const pkg = readJSON(pkgPath)
-  pkg.description = `${projectName} — scaffolded from the personal reference stack.`
+  pkg.description = `${projectName}: a fully-wired app scaffolded with create-stack.`
   pkgRemoveDeps(pkg, [
     ...strip.removeDeps,
     ...mailer.removeDeps,

@@ -2,11 +2,6 @@
   "name": "@alfredmouelle/tanstack-base",
   "private": true,
   "type": "module",
-  "author": {
-    "name": "Alfred MOUELLE",
-    "email": "alfredmouelle@gmail.com",
-    "url": "https://alfredmouelle.com"
-  },
   "scripts": {
     "dev": "vite dev --port 3000",
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",

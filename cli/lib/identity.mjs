@@ -19,7 +19,7 @@ export function stampIdentity(projectDir, projectName, framework, pm) {
   const footer = read(join(TEMPLATES, 'README-author.md'))
   const readme = `# ${projectName}
 
-Bootstrapped from the personal reference stack.
+Bootstrapped with [create-stack](https://create-stack.alfredmouelle.com).
 
 ## Getting started
 
