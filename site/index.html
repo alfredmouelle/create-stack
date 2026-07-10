@@ -164,6 +164,7 @@
   .opt .radio { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid #4a4d55; flex: none; }
   .opt.sel .radio { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px #241713; }
   .opt .desc { margin-left: auto; font-size: 11px; color: #7d8088; }
+  .opt > span:not(.radio):not(.desc) { text-transform: capitalize; }
   .cap-chip { padding: 3px 10px; font-size: 11px; border-radius: 100px; border: 1px solid #33363d; color: #b9bbc1; font-family: var(--mono); cursor: pointer; background: transparent; }
   .cap-chip:hover { border-color: #4a4d55; color: #fff; }
   .cap-chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
