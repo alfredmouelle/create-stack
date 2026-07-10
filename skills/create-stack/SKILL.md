@@ -1,14 +1,12 @@
 ---
 name: create-stack
 description: >-
-  Scaffold a brand-new project on the personal reference stack by running the
-  published create-stack CLI (@alfredmouelle/create-stack). Use whenever the user
-  wants to start / initialise a new project, a new app, or a fresh codebase —
-  Next.js App Router or TanStack Start, wired with drizzle, trpc, better-auth,
-  data-table and a mailer. Triggers: "nouveau projet", "initialise un projet",
-  "crée une app", "démarre un projet", "scaffold", "create-stack", "mets en place
-  ma base". Always forks the base app via the CLI — it does NOT convert an
-  existing scaffold. Pairs with add-capability for swappable tools added later.
+  Scaffold a brand-new project by running the published create-stack CLI
+  (@alfredmouelle/create-stack): forks a base app (Next.js App Router or TanStack
+  Start), optionally inside a Turborepo/Nx monorepo, then strips it to the chosen
+  database, auth, tRPC, mailer and capabilities. Use when the user wants to start
+  a new project/app/codebase ("nouveau projet", "crée une app", "scaffold",
+  "create-stack"). To add a tool to an existing project, use add-capability instead.
 ---
 
 # Create a project with create-stack

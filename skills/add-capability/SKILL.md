@@ -1,13 +1,11 @@
 ---
 name: add-capability
 description: >-
-  Adds a swappable capability (mailer, storage, jobs, cache, logger,
-  analytics, error-tracking, email-kit, http) from the personal reference stack
-  into the current project, using a chosen provider/adapter. Trigger when the
-  user wants to add a tool/integration to a project in an agnostic way, e.g.
-  "ajoute Resend", "intègre le storage R2", "mets en place les jobs Inngest",
-  "ajoute l'envoi d'emails", "setup analytics PostHog". Each capability is added
-  behind a port so the provider can be swapped later without refactoring.
+  Add a swappable capability (mailer, storage, jobs, cache, logger, analytics,
+  error-tracking, email-kit, http) into the current project behind a port, using
+  a chosen provider/adapter. Use when the user wants to add a tool/integration in
+  an agnostic way ("ajoute Resend", "intègre le storage R2", "mets en place les
+  jobs Inngest").
 ---
 
 # Add a capability (ports & adapters)
