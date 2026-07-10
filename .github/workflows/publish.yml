@@ -1,9 +1,6 @@
 name: Publish CLI
 
-# Publishes @alfredmouelle/create-stack on every pushed v* tag.
-# Auth via npm Trusted Publishing (OIDC) — no NPM_TOKEN secret stored.
-# The version published is whatever cli/package.json holds at the tagged commit;
-# pushing a tag whose version is already on npm just fails (npm rejects republish).
+# Publishes cli/package.json's version on a pushed v* tag, via Trusted Publishing (OIDC).
 
 on:
   push:
@@ -15,8 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  # Gate: a broken scaffold must never reach npm. Runs the same fast build matrix
-  # plus the full smoke (install + typecheck + biome) on both base apps.
+  # Gate: a broken scaffold must never reach npm.
   test:
     runs-on: ubuntu-latest
     steps:
@@ -41,13 +37,10 @@ jobs:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
 
-      # Trusted publishing needs npm >= 11.5.1; Node 22 ships npm 10.x. Pin to 11.x
-      # (not a floating @latest) so the "Cannot find module 'sigstore'" breakage in a
-      # bad @latest can't reach us again (see npm/cli#9722, fixed by #9740).
+      # OIDC publishing needs npm >= 11.5.1; pin 11.x, a bad @latest broke it (npm/cli#9722).
       - run: npm install -g npm@11
 
-      # prepack (scripts/bundle.mjs) snapshots apps/ + packages/ into cli/_stack.
-      # Repo is public, so trusted publishing generates provenance automatically.
+      # Public repo, so trusted publishing attaches provenance on its own.
       - name: Publish
         working-directory: cli
         run: npm publish --access public
