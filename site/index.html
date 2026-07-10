@@ -10,6 +10,7 @@
 <meta name="author" content="Alfred MOUELLE">
 <meta name="theme-color" content="#d94f38">
 <link rel="canonical" href="https://create-stack.alfredmouelle.com/">
+<link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <meta property="og:title" content="create-stack: an agnostic bootstrapper for your favorite framework">
 <meta property="og:description" content="Bootstrap a real, fully-wired app for your framework. Compose your stack, ship a real app.">
 <meta property="og:type" content="website">
@@ -41,6 +42,17 @@
 }
 </script>
 <style>
+  /* Geist Variable, self-hosted to match the scaffolded base apps (@fontsource-variable/geist). */
+  @font-face {
+    font-family: "Geist Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
+    src: url("/fonts/geist-latin-wght-normal.woff2") format("woff2-variations");
+    unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  }
+  @font-face {
+    font-family: "Geist Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
+    src: url("/fonts/geist-latin-ext-wght-normal.woff2") format("woff2-variations");
+    unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+  }
   :root {
     --bg: #f7f6f3; --surface: #ffffff; --surface-2: #efeee9; --line: #e0ded7;
     --line-strong: #c9c6bd; --ink: #21232a; --ink-2: #565963; --ink-3: #8a8d95;
@@ -48,7 +60,7 @@
     --good: #3f8f5f; --good-soft: #e3f0e8; --adjust: #b7791f; --adjust-soft: #f6ecd6;
     --off: #a7a9af; --radius: 12px;
     --mono: "SF Mono", SFMono-Regular, ui-monospace, "Cascadia Code", "Cascadia Mono", Menlo, Consolas, monospace;
-    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+    --sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -91,20 +103,34 @@
   .hero h1 { font-size: clamp(34px, 5.4vw, 60px); line-height: 1.02; margin: 22px auto 0; max-width: 15ch; }
   .hero h1 em { font-style: normal; color: var(--accent); }
   .hero p.lede { font-size: clamp(15px, 1.9vw, 18px); color: var(--ink-2); max-width: 60ch; margin: 20px auto 0; }
-  .install { position: relative; display: flex; align-items: stretch; margin: 30px auto 0; width: 580px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 11px; background: var(--surface); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03); }
-  .install code { flex: 1; min-width: 0; font-family: var(--mono); font-size: 14px; padding: 13px 16px; color: var(--ink); display: flex; align-items: center; gap: 9px; white-space: nowrap; overflow-x: auto; }
-  .install code .dollar { color: var(--ink-3); }
-  .install-copy { flex: none; border: none; border-left: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); padding: 0 15px; font-size: 12.5px; border-radius: 0 10px 10px 0; }
-  .install-copy:hover { color: var(--accent); background: var(--accent-soft); }
-  .pm-select { position: relative; display: flex; }
-  .pm-trigger { flex: none; width: 84px; border: none; border-right: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-family: var(--mono); font-size: 13px; padding: 0 13px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-radius: 10px 0 0 10px; }
-  .pm-trigger .caret { color: var(--ink-3); font-size: 10px; }
-  .pm-trigger:hover { color: var(--accent); }
-  .pm-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; min-width: 130px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.45); }
+  .install { margin: 30px auto 0; width: 580px; max-width: 100%; }
+  /* Dark terminal card, matching the wizard below + the OG image (one terminal language). */
+  .term-card { border: 1px solid #2a2c33; border-radius: 13px; background: #14151a; box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.6); text-align: left; }
+  .term-card-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #2a2c33; background: #1a1c22; border-radius: 12px 12px 0 0; }
+  .term-card-title { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 14px; color: #7d8088; }
+  .term-card-title .cs-prompt { color: #e9e9ea; font-weight: 700; letter-spacing: -0.03em; }
+  .term-card-body { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+  .term-card-body code { flex: 1; min-width: 0; font-family: var(--mono); font-size: 14px; color: #e9e9ea; display: flex; align-items: center; gap: 9px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .term-card-body code::-webkit-scrollbar { display: none; }
+  .term-card-body code .dollar { color: #6f7178; }
+  .install-copy { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid #2d3036; background: transparent; color: #a6a9b0; border-radius: 8px; opacity: 1; transition: opacity 0.12s ease, color 0.12s, border-color 0.12s, background 0.12s; }
+  .install-copy:hover { color: var(--accent); border-color: var(--accent); background: rgba(217, 79, 56, 0.14); }
+  .install-copy.copied, .install-copy.copied:hover { opacity: 1; color: #61c454; border-color: rgba(97, 196, 84, 0.45); background: rgba(97, 196, 84, 0.14); }
+  /* Reveal on hover for pointer devices; keep it always visible on touch (no hover). */
+  @media (hover: hover) and (pointer: fine) {
+    .install-copy { opacity: 0; }
+    .term-card:hover .install-copy, .install-copy:focus-visible { opacity: 1; }
+  }
+  .pm-select { position: relative; }
+  .pm-trigger { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #2d3036; background: #24262b; color: #e9e9ea; font-family: var(--mono); font-size: 13px; padding: 5px 10px; border-radius: 8px; }
+  .pm-trigger .caret { color: #7d8088; }
+  .pm-trigger:hover { border-color: #3b3e44; }
+  .pm-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; min-width: 150px; background: #1c1e22; border: 1px solid #2d3036; border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.6); }
   .pm-menu[hidden] { display: none; }
-  .pm-opt { text-align: left; border: none; background: transparent; color: var(--ink-2); font-family: var(--mono); font-size: 13px; padding: 8px 12px; border-radius: 7px; }
-  .pm-opt:hover { background: var(--surface-2); color: var(--ink); }
-  .pm-opt.on { color: var(--accent); font-weight: 600; }
+  .pm-opt { display: flex; align-items: center; gap: 8px; text-align: left; border: none; background: transparent; color: #a6a9b0; font-family: var(--mono); font-size: 13px; padding: 7px 10px; border-radius: 7px; }
+  .pm-opt .check { width: 14px; display: inline-flex; justify-content: center; color: var(--accent); }
+  .pm-opt:hover { background: #24262b; color: #fff; }
+  .pm-opt.on { color: #fff; font-weight: 600; }
   .hero .meta { margin-top: 16px; font-size: 12.5px; color: var(--ink-3); font-family: var(--mono); }
 
   /* section heading */
@@ -277,8 +303,11 @@
 
   // The exec form passes flags through cleanly for every package manager.
   const PM_EXEC = { npm: 'npx', yarn: 'yarn dlx', pnpm: 'pnpm dlx', bun: 'bunx' }
-  const PMS = ['npm', 'yarn', 'pnpm', 'bun']
+  const PMS = ['pnpm', 'bun', 'yarn', 'npm']
   const pmPrefix = () => PM_EXEC[state.pm] + ' @alfredmouelle/create-stack'
+  const COPY_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+  const CHECK_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+  const CHEVRON = '<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
 
   // normalize(): faithful port of cli/lib/args.mjs
   function normalize(s) {
@@ -327,14 +356,24 @@
 
   let pmMenuOpen = false
   function renderInstall() {
-    const opts = PMS.map((pm) => '<button class="pm-opt' + (state.pm === pm ? ' on' : '') + '" role="option" aria-selected="' + (state.pm === pm) + '" data-pm="' + pm + '">' + pm + '</button>').join('')
+    const opts = PMS.map((pm) => {
+      const on = state.pm === pm
+      return '<button class="pm-opt' + (on ? ' on' : '') + '" role="option" aria-selected="' + on + '" data-pm="' + pm + '"><span class="check">' + (on ? '✓' : '') + '</span>' + pm + '</button>'
+    }).join('')
     document.getElementById('install').innerHTML =
+      '<div class="term-card">' +
+      '<div class="term-card-head">' +
+      '<span class="term-card-title"><span class="cs-prompt">&gt;_</span> Terminal</span>' +
       '<div class="pm-select">' +
-      '<button class="pm-trigger" data-pm-toggle aria-haspopup="listbox" aria-expanded="' + pmMenuOpen + '">' + state.pm + '<span class="caret">▾</span></button>' +
+      '<button class="pm-trigger" data-pm-toggle aria-haspopup="listbox" aria-expanded="' + pmMenuOpen + '">' + state.pm + CHEVRON + '</button>' +
       '<div class="pm-menu" role="listbox"' + (pmMenuOpen ? '' : ' hidden') + '>' + opts + '</div>' +
       '</div>' +
+      '</div>' +
+      '<div class="term-card-body">' +
       '<code><span class="dollar">$</span> ' + esc(pmPrefix() + ' my-app') + '</code>' +
-      '<button class="install-copy" data-copy-install>Copy</button>'
+      '<button class="install-copy" data-copy-install aria-label="Copy command">' + COPY_ICON + '</button>' +
+      '</div>' +
+      '</div>'
   }
 
   const AXES = [
@@ -394,7 +433,14 @@
     const cap = e.target.closest('[data-cap]'); if (cap) { setCap(cap.dataset.cap, cap.dataset.adapter); return }
     const set = e.target.closest('[data-set]'); if (set) { setAxis(set.dataset.set, set.dataset.val === 'true' ? true : set.dataset.val === 'false' ? false : set.dataset.val); return }
     if (e.target.closest('[data-copy-cmd]')) { copyText(buildCommand(state).plain); return }
-    if (e.target.closest('[data-copy-install]')) { copyText(pmPrefix() + ' my-app'); return }
+    const copyBtn = e.target.closest('[data-copy-install]')
+    if (copyBtn) {
+      copyText(pmPrefix() + ' my-app')
+      copyBtn.classList.add('copied'); copyBtn.innerHTML = CHECK_ICON
+      clearTimeout(copyBtn._t)
+      copyBtn._t = setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.innerHTML = COPY_ICON }, 1300)
+      return
+    }
   })
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pmMenuOpen) { pmMenuOpen = false; renderInstall() } })
 
