@@ -233,6 +233,7 @@
     </div>
     <div class="grid">
       <div class="card"><div class="role">Framework</div><h4>Your framework, fully wired</h4><p>A real starter app you fork: SSR, routing, Tailwind v4 + shadcn, theme toggle. Next.js and TanStack Start today, more frameworks on the roadmap.</p><div class="tags"><span>Next.js</span><span>TanStack Start</span><span>more soon</span></div></div>
+      <div class="card"><div class="role">Structure</div><h4>Standalone or monorepo</h4><p>Ship a single app, or drop it into a Turborepo or Nx monorepo (app in apps/web) with workspace, task caching and hoisted git hooks wired for you.</p><div class="tags"><span>standalone</span><span>turborepo</span><span>nx</span></div></div>
       <div class="card"><div class="role">Data layer</div><h4>Drizzle, Prisma or Convex</h4><p>Postgres with driver adapter, schema, seed and keyset pagination, or Convex realtime, or none for a vitrine.</p><div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div></div>
       <div class="card"><div class="role">Auth &amp; API</div><h4>better-auth or Clerk, tRPC v11</h4><p>Email + password with verification and Google OAuth, or hosted Clerk. Typed tRPC with SSR/RSC.</p><div class="tags"><span>better-auth</span><span>clerk</span><span>trpc</span></div></div>
       <div class="card"><div class="role">Mailer</div><h4>Resend, Brevo or SES</h4><p>One port, React Email templates. Swap the provider with a single env change.</p><div class="tags"><span>resend</span><span>brevo</span><span>ses</span></div></div>
@@ -269,7 +270,7 @@
     { key: 'errorTracking', flag: 'error-tracking', label: 'Error tracking', adapters: ['sentry', 'console'], def: 'sentry' },
   ]
   const state = {
-    name: 'my-app', pm: 'npm', framework: 'tanstack', database: 'drizzle', auth: 'better-auth',
+    name: 'my-app', pm: 'npm', framework: 'tanstack', monorepo: 'none', database: 'drizzle', auth: 'better-auth',
     trpc: true, mailer: 'resend',
     caps: { storage: null, cache: null, jobs: null, logger: null, analytics: null, errorTracking: null },
   }
@@ -297,6 +298,9 @@
     const e = normalize(s)
     const parts = [{ t: pmPrefix() + ' ' + (s.name || 'my-app') }]
     if (s.framework !== 'tanstack') parts.push({ f: '--framework', v: s.framework })
+    // --monorepo is bare for turborepo (its default), valued for nx
+    if (s.monorepo === 'turborepo') parts.push({ f: '--monorepo' })
+    else if (s.monorepo === 'nx') parts.push({ f: '--monorepo', v: 'nx' })
     if (e.database !== 'drizzle') parts.push({ f: '--database', v: e.database })
     if (e.auth !== 'better-auth') parts.push({ f: '--auth', v: e.auth })
     if (!e.trpc && e.database !== 'convex') parts.push({ f: '--foundations', v: "''" })
@@ -335,6 +339,7 @@
 
   const AXES = [
     { key: 'framework', label: 'Framework', hint: 'base app to fork · more frameworks coming', opts: [{ v: 'tanstack', d: 'default' }, { v: 'next', d: 'App Router' }] },
+    { key: 'monorepo', label: 'Monorepo', hint: 'project structure · app lands in apps/web', opts: [{ v: 'none', d: 'standalone (default)' }, { v: 'turborepo', d: 'Turborepo' }, { v: 'nx', d: 'Nx' }] },
     { key: 'database', label: 'Database', hint: 'data layer', opts: [{ v: 'drizzle', d: 'default' }, { v: 'prisma', d: 'Prisma 7' }, { v: 'convex', d: 'realtime + API' }, { v: 'none', d: 'vitrine' }] },
     { key: 'auth', label: 'Auth', hint: 'auth provider', opts: [{ v: 'better-auth', d: 'self-hosted' }, { v: 'clerk', d: 'hosted' }, { v: 'none', d: 'no auth' }] },
     { key: 'trpc', label: 'tRPC', hint: 'typed API foundation', opts: [{ v: true, label: 'trpc on', d: 'included' }, { v: false, label: 'trpc off', d: 'stripped' }] },

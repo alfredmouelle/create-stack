@@ -64,6 +64,7 @@ create-stack component [name]             # vendor a standalone UI component
 | Flag | Values | Default | Notes |
 | --- | --- | --- | --- |
 | `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
+| `--monorepo` | `turbo` \| `nx` | standalone | Scaffold into a monorepo (app in `apps/web`) orchestrated by Turborepo or Nx. Bare `--monorepo` = turbo; omit for a standalone app. |
 | `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project. |
 | `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias; rewrites `<alias>/*` → `src/*` everywhere. |
 | `--database` | `drizzle` \| `prisma` \| `convex` \| `none` | `drizzle` | Data layer. `prisma` = Prisma 7; `convex` = realtime db + API (replaces tRPC, Clerk/none auth only); `none` = database-less vitrine. |
@@ -102,6 +103,9 @@ pnpm dlx @alfredmouelle/create-stack my-app --database convex --auth clerk
 # Next.js, just tRPC, no auth, don't install
 pnpm dlx @alfredmouelle/create-stack api --framework next --auth none --mailer none --no-install
 
+# inside an Nx monorepo (app lands in apps/web)
+pnpm dlx @alfredmouelle/create-stack my-app --monorepo nx
+
 # vitrine: no database, no auth, no mailer
 pnpm dlx @alfredmouelle/create-stack site --database none --auth none --foundations '' --mailer none
 
@@ -112,6 +116,7 @@ pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-
 ## What you get
 
 - **Framework**: Next.js App Router *or* TanStack Start, fully wired (SSR, routing).
+- **Structure**: standalone app *or* a Turborepo/Nx monorepo (app in `apps/web`) with workspace, task caching, delegated scripts and hoisted git hooks.
 - **Database**: Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), *or* Convex (realtime db + API, subsumes tRPC), or none.
 - **tRPC v11**: typed API, SSR/RSC integration, health router.
 - **Auth**: better-auth (email+password + verification, Google OAuth, auth pages) *or* Clerk (hosted: provider, middleware, sign-in/up + `UserButton`), or none.

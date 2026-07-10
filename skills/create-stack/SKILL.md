@@ -29,6 +29,7 @@ defaults below.
 
 - **project dir** — required (positional).
 - **framework** — `tanstack` (default) or `next`.
+- **monorepo** — `none` (default, standalone) | `turbo` | `nx` (orchestrator for the app in `apps/web`).
 - **foundations** — any of `drizzle,trpc,better-auth,data-table` (default: all).
   `trpc` and `better-auth` pull in `drizzle`; `better-auth` forces a real mailer.
 - **mailer** — `resend` (default) | `brevo` | `ses` | `none` (`none` is rejected
@@ -41,6 +42,7 @@ pnpm dlx @alfredmouelle/create-stack@latest <project-dir> \
   --framework <next|tanstack> \
   --foundations <csv> \
   --mailer <resend|brevo|ses|none>
+# add --monorepo turbo|nx to scaffold into a monorepo (app in apps/web)
 # add --no-install to skip install+verify, or --yes for all-defaults
 ```
 
