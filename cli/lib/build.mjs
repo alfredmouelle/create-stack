@@ -137,7 +137,15 @@ export function buildProject({
 
   // wrap the app in a monorepo root (root package.json + tool config + workspace, hooks, biome/gitignore).
   if (monorepo)
-    wrapMonorepo({ rootDir: projectDir, appDir, projectName, framework, pm, tool: monorepo })
+    wrapMonorepo({
+      rootDir: projectDir,
+      appDir,
+      projectName,
+      framework,
+      pm,
+      tool: monorepo,
+      appNativeBuilds: db.nativeBuilds,
+    })
 
   return {
     kept: [...kept],

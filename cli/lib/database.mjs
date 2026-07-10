@@ -67,12 +67,13 @@ const empty = () => ({
   removeScripts: [],
   setScripts: {},
   envLines: [],
+  nativeBuilds: [],
 })
 
 /**
  * Bring the db layer to the chosen ORM. Runs after auth so `authKept`/`auth` are
  * final (better-auth models tracked, the Clerk provider already in the shell).
- * @returns {{ removeDeps: string[], addDeps: object, addDevDeps: object, removeScripts: string[], setScripts: object, envLines: string[] }}
+ * @returns {{ removeDeps: string[], addDeps: object, addDevDeps: object, removeScripts: string[], setScripts: object, envLines: string[], nativeBuilds: string[] }}
  */
 export function applyDatabase({ projectDir, database, framework, auth, authKept }) {
   if (database === 'drizzle') return applyDrizzle(projectDir, authKept)
@@ -118,6 +119,7 @@ function vendorPrisma(projectDir, authKept) {
     removeScripts: [],
     setScripts: { ...PRISMA_SCRIPTS },
     envLines: [],
+    nativeBuilds: [...PRISMA_BUILD_DEPS],
   }
 }
 
@@ -200,6 +202,7 @@ function vendorConvex(projectDir, framework, auth) {
     removeScripts: [...DB_SCRIPTS],
     setScripts: { convex: 'convex dev' },
     envLines: ['CONVEX_DEPLOYMENT=', `${urlKey}=https://example.convex.cloud`],
+    nativeBuilds: [],
   }
 }
 

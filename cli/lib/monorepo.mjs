@@ -20,7 +20,7 @@ const wsGlobs = ['apps/*', 'packages/*']
 const pnpmWorkspace = (allowBuilds) => `packages:
 ${wsGlobs.map((g) => `  - ${g}`).join('\n')}
 allowBuilds:
-${allowBuilds.map((d) => `  ${d}: true`).join('\n')}
+${allowBuilds.map((d) => `  ${d.includes('/') ? `'${d}'` : d}: true`).join('\n')}
 `
 
 const rootGitignore = (cacheDir) => `node_modules
@@ -119,13 +119,22 @@ ${toolLabel} orchestrates \`dev\`, \`build\`, \`typecheck\`, \`check\` and \`che
  * @param {'next'|'tanstack'} o.framework
  * @param {import('./package-manager.mjs').PackageManager} o.pm
  * @param {'turborepo'|'nx'} o.tool
+ * @param {string[]} [o.appNativeBuilds]  build scripts the app's variant needs allowed (e.g. Prisma engines)
  */
-export function wrapMonorepo({ rootDir, appDir, projectName, framework, pm, tool }) {
+export function wrapMonorepo({
+  rootDir,
+  appDir,
+  projectName,
+  framework,
+  pm,
+  tool,
+  appNativeBuilds = [],
+}) {
   const spec = TOOLS[tool]
   if (!spec) throw new Error(`Unknown monorepo tool: ${tool}`)
   const isPnpm = pm?.name === 'pnpm'
-  // the app's native deps plus any the orchestrator itself needs to build on install.
-  const nativeBuilds = [...NATIVE_BUILD_DEPS, ...spec.nativeBuilds]
+  // the app's native deps (base + variant, e.g. Prisma) plus any the orchestrator itself needs on install.
+  const nativeBuilds = [...NATIVE_BUILD_DEPS, ...spec.nativeBuilds, ...appNativeBuilds]
 
   // biome is an app-only devDep, but the hoisted root hooks run it from the repo root, so pin it there too.
   const appPkg = readJSON(join(appDir, 'package.json'))
