@@ -55,8 +55,7 @@ export function buildProject({
 }) {
   const authUsesDb = auth === 'better-auth'
   const keptMailer = mailerProvider !== 'none'
-  // In a monorepo the app is forked into apps/web and wrapped in a Turborepo root at the end.
-  // Every app-level step below targets appDir; root wiring (CI, then wrapMonorepo) uses projectDir.
+  // in a monorepo the app is forked into apps/web; app-level steps target appDir, root wiring uses projectDir.
   const appDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
 
   forkBase(framework, appDir)
@@ -130,15 +129,13 @@ export function buildProject({
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
   stampIdentity(appDir, projectName, framework, pm)
-  // CI mirrors the scaffold's own gate (typecheck + biome) for the chosen pm; it lives at the
-  // repo root (== appDir when standalone) and delegates to turbo via the root scripts in a monorepo.
+  // CI lives at the repo root (projectDir); the monorepo root scripts delegate it to the orchestrator.
   writeCiWorkflow(projectDir, pm)
 
   // swap '~/' for the chosen alias across everything generated above (no-op when '~').
   rewriteAlias(appDir, alias)
 
-  // wrap the standalone app in a monorepo root (Turborepo or Nx): root package.json + tool
-  // config + workspace, hoisted git hooks, root biome/gitignore.
+  // wrap the app in a monorepo root (root package.json + tool config + workspace, hooks, biome/gitignore).
   if (monorepo)
     wrapMonorepo({ rootDir: projectDir, appDir, projectName, framework, pm, tool: monorepo })
 

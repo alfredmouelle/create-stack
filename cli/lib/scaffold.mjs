@@ -109,7 +109,7 @@ function hasRsync() {
 /**
  * Make the fork standalone (Biome, pnpm workspace, .gitignore, identity).
  * In a monorepo the app inherits the generated root's Biome config + workspace file,
- * and the native-build allowlist lives at the root — so those are skipped here (see monorepo.mjs).
+ * and the native-build allowlist lives at the root, so those are skipped here (see monorepo.mjs).
  */
 export function makeStandalone(projectDir, projectName, framework, pm, { monorepo = false } = {}) {
   // fork needs its own Biome config (base inherits the monorepo root's); in a generated
@@ -122,8 +122,7 @@ export function makeStandalone(projectDir, projectName, framework, pm, { monorep
   // Allow native build scripts on fresh install. pnpm blocks them (ERR_PNPM_IGNORED_BUILDS)
   // and reads an allowlist from pnpm-workspace.yaml; bun blocks them and reads
   // `trustedDependencies` from package.json. npm/yarn run them by default — nothing to do.
-  // In a monorepo pnpm only reads the root workspace file and bun installs from the root,
-  // so both are handled by wrapMonorepo instead.
+  // in a monorepo pnpm reads only the root workspace file and bun installs from the root, so wrapMonorepo handles both.
   if (pm?.name === 'pnpm' && !monorepo)
     write(join(projectDir, 'pnpm-workspace.yaml'), PNPM_WORKSPACE)
 

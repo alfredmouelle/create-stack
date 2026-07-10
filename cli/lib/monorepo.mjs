@@ -1,17 +1,14 @@
-// Wrap a forked standalone app in a monorepo (Turborepo or Nx): root package.json (scripts
-// delegated to the chosen orchestrator), the tool's config file (build outputs per framework),
-// workspace glob + native-build allowlist, root Biome/.gitignore, and the app's git hooks
-// hoisted to the git root. The orchestrator sits on top of the pm workspace, like turbo/nx do.
+// Wrap a forked app in a Turborepo/Nx monorepo: root package.json + tool config + workspace, hoisted git hooks, root biome/gitignore.
 
 import { TEMPLATES } from './paths.mjs'
 import { NATIVE_BUILD_DEPS } from './scaffold.mjs'
-import { copy, exists, join, remove, runCapture, write, writeJSON } from './util.mjs'
+import { copy, exists, join, readJSON, remove, write, writeJSON } from './util.mjs'
 
 const VERSIONS = { turbo: '^2.10.0', nx: '^23.0.0' }
 
-// Build artifacts to cache, per framework (basenames; each tool prefixes them as it needs).
+// Build outputs to cache per framework (basenames; each tool prefixes them). Next's build cache is excluded.
 const OUTPUTS = {
-  next: ['.next/**'],
+  next: ['.next/**', '!.next/cache/**'],
   tanstack: ['.output/**', '.nitro/**', 'dist/**'],
 }
 
@@ -40,7 +37,7 @@ const PREPARE =
 
 function turboConfig(rootDir, framework) {
   // turbo caches build; check:write is a codemod (rewrites source), so it must never be cached.
-  const outputs = framework === 'next' ? ['.next/**', '!.next/cache/**'] : OUTPUTS.tanstack
+  const outputs = OUTPUTS[framework] ?? []
   writeJSON(join(rootDir, 'turbo.json'), {
     $schema: 'https://turbo.build/schema.json',
     tasks: {
@@ -54,8 +51,10 @@ function turboConfig(rootDir, framework) {
 }
 
 function nxConfig(rootDir, framework) {
-  // nx caches only what targetDefaults opt in; check:write stays uncached (mutates source).
-  const outputs = (OUTPUTS[framework] ?? []).map((o) => `{projectRoot}/${o}`)
+  // prefix outputs with {projectRoot}, keeping negative globs (!); check:write stays out of targetDefaults so it is uncached.
+  const outputs = (OUTPUTS[framework] ?? []).map((o) =>
+    o.startsWith('!') ? `!{projectRoot}/${o.slice(1)}` : `{projectRoot}/${o}`,
+  )
   writeJSON(join(rootDir, 'nx.json'), {
     $schema: './node_modules/nx/schemas/nx-schema.json',
     targetDefaults: {
@@ -74,7 +73,7 @@ const TOOLS = {
     label: 'Turborepo',
     dep: ['turbo', VERSIONS.turbo],
     cacheDir: '.turbo',
-    // turbo installs a prebuilt binary via optionalDependencies — no build script to allow.
+    // turbo installs a prebuilt binary via optionalDependencies, so no build script to allow.
     nativeBuilds: [],
     scripts: runScripts((t) => `turbo run ${t}`),
     writeConfig: turboConfig,
@@ -83,21 +82,12 @@ const TOOLS = {
     label: 'Nx',
     dep: ['nx', VERSIONS.nx],
     cacheDir: '.nx',
-    // nx runs a postinstall (native bindings); pnpm/bun block it unless it's allowed, and nx then
-    // fails every command re-running install. Allow it alongside the app's native deps.
+    // nx's postinstall (native bindings) is blocked by pnpm/bun unless allowed, else nx re-runs install and fails.
     nativeBuilds: ['nx'],
-    // dev is a single continuous task; the rest fan out across the workspace. check:write's
-    // colon-name is unambiguous under -t (avoids nx's project:target parsing).
+    // dev is one continuous task; the rest fan out via run-many (check:write's colon-name is safe under -t).
     scripts: { ...runScripts((t) => `nx run-many -t ${t}`), dev: 'nx run web:dev' },
     writeConfig: nxConfig,
   },
-}
-
-// Corepack needs an exact version; only pin packageManager when we can read one, else let the
-// orchestrator infer the manager from the lockfile after install.
-function packageManagerField(pm) {
-  const v = runCapture(pm.exec, ['--version'])
-  return /^\d+\.\d+\.\d+/.test(v) ? `${pm.name}@${v}` : undefined
 }
 
 function rootReadme(name, pm, toolLabel) {
@@ -107,8 +97,8 @@ ${toolLabel} monorepo scaffolded with [create-stack](https://create-stack.alfred
 
 ## Structure
 
-- \`apps/web\` — the application.
-- \`packages/\` — shared packages (empty; add your own here).
+- \`apps/web\`: the application.
+- \`packages/\`: shared packages (empty; add your own here).
 
 ## Getting started
 
@@ -137,15 +127,20 @@ export function wrapMonorepo({ rootDir, appDir, projectName, framework, pm, tool
   // the app's native deps plus any the orchestrator itself needs to build on install.
   const nativeBuilds = [...NATIVE_BUILD_DEPS, ...spec.nativeBuilds]
 
+  // biome is an app-only devDep, but the hoisted root hooks run it from the repo root, so pin it there too.
+  const appPkg = readJSON(join(appDir, 'package.json'))
+  const biomeVersion = appPkg.devDependencies?.['@biomejs/biome']
+
   const rootPkg = {
     name: projectName,
     version: '0.1.0',
     private: true,
     scripts: { ...spec.scripts, prepare: PREPARE },
-    devDependencies: { [spec.dep[0]]: spec.dep[1] },
+    devDependencies: {
+      [spec.dep[0]]: spec.dep[1],
+      ...(biomeVersion ? { '@biomejs/biome': biomeVersion } : {}),
+    },
   }
-  const pmField = packageManagerField(pm)
-  if (pmField) rootPkg.packageManager = pmField
   // pnpm declares workspaces in pnpm-workspace.yaml; npm/yarn/bun in package.json.
   if (!isPnpm) rootPkg.workspaces = wsGlobs
   // bun installs from the root, so its native-build allowlist lives on the root package.json.
@@ -161,9 +156,10 @@ export function wrapMonorepo({ rootDir, appDir, projectName, framework, pm, tool
   write(join(rootDir, '.gitignore'), rootGitignore(spec.cacheDir))
   write(join(rootDir, 'README.md'), rootReadme(projectName, pm, spec.label))
   write(join(rootDir, 'packages/.gitkeep'), '')
+  // drop stampIdentity's app README; the root one is canonical (its app-dir install/dev steps are wrong in a workspace).
+  remove(join(appDir, 'README.md'))
 
-  // hoist the app's git hooks to the git root (the app is no longer the repo root, so its own
-  // `prepare` guard no-ops — the root prepare + initGitRepo wire core.hooksPath instead).
+  // hoist the app's git hooks to the git root; its own prepare guard no-ops there, root prepare wires them.
   const appHooks = join(appDir, '.githooks')
   if (exists(appHooks)) {
     copy(appHooks, join(rootDir, '.githooks'))

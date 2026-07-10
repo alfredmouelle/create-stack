@@ -73,9 +73,11 @@ for (const framework of ['tanstack', 'next']) {
           spec.assertCheckWriteUncached(cfg)
           expect(spec.typecheckDeps(cfg), 'typecheck dependsOn ^build').toEqual(['^build'])
 
-          // biome lives at the root; the app inherits it
+          // biome lives at the root; the app inherits it. biome is also a root devDep so the
+          // hoisted git hooks can resolve `biome` from the repo root (pnpm/bun do not hoist it).
           expect(exists(`${dir}/biome.jsonc`), 'root biome').toBe(true)
           expect(exists(`${app}/biome.jsonc`), 'no app biome').toBe(false)
+          expect(rootPkg.devDependencies['@biomejs/biome'], 'biome in root devDeps').toBeTruthy()
 
           // the tool's cache dir is gitignored at the root
           expect(read(`${dir}/.gitignore`), 'cache dir ignored').toContain(spec.cacheDir)
@@ -84,8 +86,9 @@ for (const framework of ['tanstack', 'next']) {
           expect(exists(`${dir}/.githooks/pre-commit`), 'root hooks').toBe(true)
           expect(exists(`${app}/.githooks`), 'no app hooks').toBe(false)
 
-          // scaffolding: README + empty packages/
+          // scaffolding: one canonical root README (the app-level one is dropped), empty packages/
           expect(exists(`${dir}/README.md`), 'root README').toBe(true)
+          expect(exists(`${app}/README.md`), 'no app README').toBe(false)
           expect(exists(`${dir}/packages/.gitkeep`), 'packages placeholder').toBe(true)
 
           // CI lives at the root and drives the (delegating) root scripts

@@ -11,7 +11,7 @@ description: >-
 
 # Create a project with create-stack
 
-Scaffolding is delegated to the **published CLI** — a deterministic, self-contained
+Scaffolding is delegated to the **published CLI**: a deterministic, self-contained
 installer. Do not fork the base apps or reproduce the wiring by hand; just run it.
 
 ```
@@ -25,12 +25,12 @@ bash there is no TTY, so collect the user's choices in conversation, then run it
 **non-interactively with flags**. Ask only for what's ambiguous; otherwise use the
 defaults below.
 
-- **project dir** — required (positional).
-- **framework** — `tanstack` (default) or `next`.
-- **monorepo** — `none` (default, standalone) | `turbo` | `nx` (orchestrator for the app in `apps/web`).
-- **foundations** — any of `drizzle,trpc,better-auth,data-table` (default: all).
+- **project dir**: required (positional).
+- **framework**: `tanstack` (default) or `next`.
+- **monorepo**: `none` (default, standalone) | `turbo` | `nx` (orchestrator for the app in `apps/web`).
+- **foundations**: any of `drizzle,trpc,better-auth,data-table` (default: all).
   `trpc` and `better-auth` pull in `drizzle`; `better-auth` forces a real mailer.
-- **mailer** — `resend` (default) | `brevo` | `ses` | `none` (`none` is rejected
+- **mailer**: `resend` (default) | `brevo` | `ses` | `none` (`none` is rejected
   when `better-auth` is kept).
 
 ## Run it (non-interactive — how the agent runs it)
