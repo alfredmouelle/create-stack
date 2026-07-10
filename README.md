@@ -1,7 +1,7 @@
-# Stack
+# create-stack
 
-> Personal agnostic SaaS foundation — swappable capabilities behind **ports &
-> adapters**, framework-agnostic, ready to drop into any new project.
+> An opinionated, framework-agnostic SaaS foundation. Swappable capabilities
+> behind tiny **ports & adapters**, ready to drop into any new project.
 
 [![npm](https://img.shields.io/npm/v/@alfredmouelle/create-stack?color=cb3837&logo=npm&label=create-stack)](https://www.npmjs.com/package/@alfredmouelle/create-stack)
 [![license](https://img.shields.io/npm/l/@alfredmouelle/create-stack?color=blue)](./LICENSE)
@@ -10,19 +10,35 @@
 
 A pnpm + turbo monorepo where every external tool (email, storage, jobs, cache,
 logging, analytics, error tracking) lives behind a tiny **port**. App code
-depends only on the port, never on a provider — so swapping Resend for Brevo, or
+depends only on the port, never on a provider, so swapping Resend for Brevo, or
 S3 for R2, is one line in a composition root, not a refactor.
 
-Two companion skills turn this repo into automation: **`create-stack`** (scaffold a
-new project by running the published CLI) and **`add-capability`** (drop a
-capability into a project behind a port).
+> **Two package names, one project.** `@alfredmouelle/create-stack` is the
+> published CLI you install to scaffold a project. `@alfredmouelle/stack` is this
+> repo: the private (unpublished) monorepo that develops and ships that CLI.
+
+## Quickstart
+
+Scaffold a new project (framework + foundations + mailer, deps installed, git
+initialized):
+
+```bash
+pnpm create @alfredmouelle/stack@latest my-app
+# equivalent, explicit form (npm / yarn create also work):
+pnpm dlx @alfredmouelle/create-stack@latest my-app
+```
+
+You pick the framework, monorepo orchestrator, package manager, import alias and
+foundations interactively; the CLI forks the matching base app and wires them in.
 
 ## Why
 
 Every new SaaS started the same way: clean the boilerplate, set up the linter,
 re-install the same libs, re-wire the same integrations. This repo captures those
-patterns once, the way I like them — and the agnostic part means a tool is never
-welded to the codebase: it sits behind an adapter and can be replaced wholesale.
+patterns once. It is opinionated by design (these are the defaults I ship with),
+but the agnostic part means a tool is never welded to the codebase: it sits
+behind an adapter and can be replaced wholesale. Fork it, or bend the defaults to
+your own taste.
 
 ## Capabilities
 
@@ -32,25 +48,25 @@ imports a framework.
 
 | Capability | Port | Adapters |
 |---|---|---|
-| **mailer** ⭐ _reference_ | `send()` — body is always a React Email component, rendered to HTML + text | Resend · Brevo |
-| **email-kit** | composable React Email primitives + **swappable theme** + local preview (`email dev`) | — |
+| **mailer** _reference_ | `send()`: body is always a React Email component, rendered to HTML + text | Resend · Brevo |
+| **email-kit** | composable React Email primitives + **swappable theme** + local preview (`email dev`) | n/a |
 | **storage** | `put` / `get` / `delete` / `exists` / `getSignedUrl` | S3 · Cloudflare R2 · GCS · local |
 | **jobs** | `defineJob` / `trigger` | Inngest · in-memory |
 | **cache** | `get` / `set` / `has` / `delete` / `wrap` | Redis · in-memory |
 | **logger** | `trace`…`error` / `child` | pino · console |
 | **analytics** | `capture` / `identify` / `flush` | PostHog · noop |
 | **error-tracking** | `captureException` / `captureMessage` / `setUser` | Sentry · console |
-| **http** | `apiFetch` (typed fetch) + Web-standard `WebhookHandler` | — _(for APIs without an SDK)_ |
+| **http** | `apiFetch` (typed fetch) + Web-standard `WebhookHandler` | n/a _(for APIs without an SDK)_ |
 
 Design rules:
 
-- **Pure core.** `packages/*` have zero framework code — the port and adapters
+- **Pure core.** `packages/*` have zero framework code: the port and adapters
   depend only on the provider SDK and Web/Node standards.
 - **Official SDKs** are always preferred over hand-rolled fetch (except `http`,
   whose whole job is fetch).
 - **Provider selection by env var**, static imports. (Switch to lazy import +
   per-adapter subexports only if a target deploys to the edge.)
-- **Don't abstract what you won't swap** — no port for things with a single
+- **Don't abstract what you won't swap**: no port for things with a single
   obvious implementation.
 
 ## Structure
@@ -60,8 +76,8 @@ packages/
   mailer/  email-kit/  storage/  jobs/
   cache/  logger/  analytics/  error-tracking/  http/
 apps/
-  next-base/        # real Next.js (App Router) starter — fork for a new project
-  tanstack-base/    # real TanStack Start starter — fork for a new project
+  next-base/        # real Next.js (App Router) starter, fork for a new project
+  tanstack-base/    # real TanStack Start starter, fork for a new project
 cli/                # create-stack: the published installer that forks a base app
   index.mjs  lib/  templates/   # (biome.jsonc + # Author footer + wiring variants)
 skills/
@@ -72,13 +88,15 @@ scripts/
 capability.schema.json   # the manifest schema each capability.json follows
 ```
 
-`apps/*-base` are **real starter apps** — the absolute references you fork for a
+`apps/*-base` are **real starter apps**, the absolute references you fork for a
 new project. They carry the personal baseline (strict Biome, `~/*` alias, typed
 `env.ts`) and nothing app-specific; new projects are scaffolded (framework, monorepo
 orchestrator, package manager, import alias, foundations) with **create-stack** (which can
 rewrite the `~/*` alias to your choice), and tools are added per-project with **add-capability**.
 
-## Getting started
+## Development
+
+Working on the repo itself (capabilities, CLI, bases):
 
 ```bash
 pnpm install
@@ -96,17 +114,17 @@ pnpm --filter @alfredmouelle/email-kit email:dev   # react-email studio on :3001
 ## Skills
 
 The skills live here (versioned) and are symlinked into the agent's config, so
-editing them in this repo updates what the agent uses — no copy step.
+editing them in this repo updates what the agent uses, no copy step.
 
 ```bash
 pnpm link:skills          # → Claude (~/.claude/skills)
 pnpm link:skills:codex    # → Codex  (~/.codex/prompts)
 ```
 
-- **`/create-stack`** — scaffold a new project by running the published
+- **`/create-stack`**: scaffold a new project by running the published
   `@alfredmouelle/create-stack` CLI (framework + foundations + mailer, installs &
   inits git).
-- **`/add-capability <capability> <adapter>`** — vendor a capability into the
+- **`/add-capability <capability> <adapter>`**: vendor a capability into the
   current project behind a port (e.g. `/add-capability mailer resend`). Server
   capabilities land in `src/server/<cap>/`, pure utils in `src/lib/`, templates
   in `src/emails/`.
@@ -132,6 +150,10 @@ cover the local setup, the ports & adapters rules, and the commit convention.
 Inspired by [create-t3-app](https://create.t3.gg) and the work of
 [Theo Browne](https://github.com/t3dotgg). Not affiliated with or endorsed by
 the T3 project.
+
+## License
+
+[MIT](./LICENSE) © Alfred MOUELLE
 
 ---
 

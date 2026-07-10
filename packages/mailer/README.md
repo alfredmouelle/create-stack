@@ -1,7 +1,7 @@
 # @alfredmouelle/mailer
 
 Transactional email behind a tiny port. Bodies are **always** React Email
-components — the mailer renders them to HTML + plain text before they reach the
+components: the mailer renders them to HTML + plain text before they reach the
 provider, so application code never touches raw HTML.
 
 ## Usage
@@ -10,13 +10,13 @@ provider, so application code never touches raw HTML.
 import { createMailer, resendAdapter } from '@alfredmouelle/mailer'
 import { WelcomeEmail } from './emails/welcome'
 
-// composition root — pick the provider here, once
+// composition root: pick the provider here, once
 export const mailer = createMailer({
   from: 'Acme <no-reply@acme.com>',
   adapter: resendAdapter({ apiKey: process.env.RESEND_API_KEY! }),
 })
 
-// anywhere in the app — depends only on the Mailer port
+// anywhere in the app: depends only on the Mailer port
 await mailer.send({
   to: 'user@example.com',
   subject: 'Welcome',
@@ -34,7 +34,7 @@ import { brevoAdapter } from '@alfredmouelle/mailer'
 adapter: brevoAdapter({ apiKey: process.env.BREVO_API_KEY! })
 ```
 
-Or Amazon SES (SESv2) — credentials resolve from the standard AWS chain (env,
+Or Amazon SES (SESv2): credentials resolve from the standard AWS chain (env,
 profile, IAM role) when omitted:
 
 ```ts
@@ -44,9 +44,9 @@ adapter: sesAdapter({ region: process.env.AWS_REGION })
 ```
 
 The SES adapter sends via the `SendEmail` Simple content path. Attachments need
-a raw MIME message, which it does not build — passing `attachments` throws.
+a raw MIME message, which it does not build; passing `attachments` throws.
 
-No call site changes — they all depend on `Mailer`, never on a provider.
+No call site changes: they all depend on `Mailer`, never on a provider.
 
 ## Templates & theming
 

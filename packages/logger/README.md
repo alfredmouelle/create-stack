@@ -9,10 +9,10 @@ composition root and never leaks into call sites.
 ```ts
 import { pinoAdapter } from '@alfredmouelle/logger'
 
-// composition root — pick the backend here, once
+// composition root: pick the backend here, once
 export const logger = pinoAdapter({ level: 'info', bindings: { app: 'web' } })
 
-// anywhere in the app — depends only on the Logger port
+// anywhere in the app: depends only on the Logger port
 logger.info('user signed in', { userId: '42' })
 
 // pin context for a request / job
@@ -30,7 +30,7 @@ import { consoleAdapter } from '@alfredmouelle/logger'
 export const logger = consoleAdapter({ level: 'debug' })
 ```
 
-No call-site changes — they all depend on `Logger`, never on a backend.
+No call-site changes: they all depend on `Logger`, never on a backend.
 
 ## Adding a backend
 

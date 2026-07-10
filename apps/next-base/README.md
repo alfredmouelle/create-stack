@@ -1,18 +1,18 @@
 # next-base
 
-Reference Next.js (App Router) app — fork it to start a new project. Comes wired
+Reference Next.js (App Router) app: fork it to start a new project. Comes wired
 with the full personal foundation:
 
-- **baseline** — `~/*` alias, typed `env.ts`, strict Biome, Tailwind v4 + shadcn
+- **baseline**: `~/*` alias, typed `env.ts`, strict Biome, Tailwind v4 + shadcn
   (Geist, dark mode)
-- **data** — Drizzle (Postgres) + drizzle-kit, faker seed harness
-- **auth** — better-auth (email/password + verification, optional Google) + a full
+- **data**: Drizzle (Postgres) + drizzle-kit, faker seed harness
+- **auth**: better-auth (email/password + verification, optional Google) + a full
   auth UI (sign-in/up, forgot/reset, verify) with shadcn `Form` (react-hook-form +
   valibot)
-- **email** — mailer (Resend) + email-kit templates (`email:dev` studio)
-- **API** — tRPC with the `api.x.useQuery` hooks + RSC hydration
-- **UI utilities** — theme toggle (light/dark/system), DataTable, DatePicker
-- **deploy** — multi-stage `Dockerfile` (standalone output) for a VPS
+- **email**: mailer (Resend) + email-kit templates (`email:dev` studio)
+- **API**: tRPC with the `api.x.useQuery` hooks + RSC hydration
+- **UI utilities**: theme toggle (light/dark/system), DataTable, DatePicker
+- **deploy**: multi-stage `Dockerfile` (standalone output) for a VPS
 
 ```bash
 pnpm --filter @alfredmouelle/next-base dev    # http://localhost:3000

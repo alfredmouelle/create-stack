@@ -9,7 +9,7 @@ Swap providers without touching call sites.
 ```ts
 import { inngestAdapter } from '@alfredmouelle/jobs'
 
-// composition root — pick the provider here, once
+// composition root: pick the provider here, once
 export const jobs = inngestAdapter({
   id: 'my-app',
   eventKey: process.env.INNGEST_EVENT_KEY,
@@ -24,7 +24,7 @@ jobs.defineJob<{ userId: string }>({
   },
 })
 
-// anywhere in the app — depends only on the JobsPort
+// anywhere in the app: depends only on the JobsPort
 await jobs.trigger({ name: 'user/created', data: { userId: '123' } })
 ```
 
@@ -43,11 +43,11 @@ export const handler = inngestServeHandler(jobs, serve, {
 })
 ```
 
-The same `FetchHandler` mounts unchanged in either framework — only the route
+The same `FetchHandler` mounts unchanged in either framework; only the route
 shim differs. This is the canonical wiring (no demo app needed):
 
 ```ts
-// Next.js — src/app/api/inngest/route.ts
+// Next.js: src/app/api/inngest/route.ts
 import { handler } from '~/server/jobs/serve'
 export const GET = handler
 export const POST = handler
@@ -55,7 +55,7 @@ export const PUT = handler
 ```
 
 ```ts
-// TanStack Start — src/routes/api/inngest.ts
+// TanStack Start: src/routes/api/inngest.ts
 import { createFileRoute } from '@tanstack/react-router'
 import { handler } from '~/server/jobs/serve'
 
@@ -121,7 +121,7 @@ minimal about it. `JobsPort` models only **events** (`trigger`) and
 multi-step durable functions (`step.run`, `step.waitForEvent`), concurrency
 limits, retries, cron triggers, fan-out, and typed event schemas.
 
-None of that is in the port — by design. Keeping the port tiny is what makes it
+None of that is in the port, by design. Keeping the port tiny is what makes it
 swappable (the `memory` adapter is ~30 lines). When you need real Inngest
 features, **reach for the SDK directly** via `adapter.client` rather than
 widening the port. Treat `@alfredmouelle/jobs` as the seam for the simple 80% case; drop

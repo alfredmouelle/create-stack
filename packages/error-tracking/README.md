@@ -1,7 +1,7 @@
 # @alfredmouelle/error-tracking
 
 Error reporting behind a tiny port. Capture exceptions, messages, breadcrumbs
-and user context, then ship them to a provider — application code depends only
+and user context, then ship them to a provider; application code depends only
 on the `ErrorTrackingPort`, never on the provider SDK.
 
 ## Usage
@@ -9,13 +9,13 @@ on the `ErrorTrackingPort`, never on the provider SDK.
 ```ts
 import { sentryAdapter } from '@alfredmouelle/error-tracking'
 
-// composition root — pick the provider here, once
+// composition root: pick the provider here, once
 export const errors = sentryAdapter({
   dsn: process.env.SENTRY_DSN!,
   environment: process.env.SENTRY_ENVIRONMENT,
 })
 
-// anywhere in the app — depends only on the ErrorTrackingPort
+// anywhere in the app: depends only on the ErrorTrackingPort
 try {
   await risky()
 } catch (err) {
@@ -28,7 +28,7 @@ errors.addBreadcrumb({ message: 'cart opened', category: 'ui' })
 
 ## Swapping provider
 
-Use the console adapter in dev/tests — no SDK, no network:
+Use the console adapter in dev/tests (no SDK, no network):
 
 ```ts
 import { consoleAdapter } from '@alfredmouelle/error-tracking'
@@ -36,7 +36,7 @@ import { consoleAdapter } from '@alfredmouelle/error-tracking'
 export const errors = consoleAdapter()
 ```
 
-No call site changes — they all depend on `ErrorTrackingPort`.
+No call site changes: they all depend on `ErrorTrackingPort`.
 
 ## Adding a provider
 

@@ -1,7 +1,7 @@
 # @alfredmouelle/analytics
 
 Product analytics behind a tiny port. Capture events and identify users through
-a swappable adapter — application code depends only on `AnalyticsPort`, never on
+a swappable adapter; application code depends only on `AnalyticsPort`, never on
 a provider.
 
 ## Usage
@@ -9,13 +9,13 @@ a provider.
 ```ts
 import { posthogAdapter } from '@alfredmouelle/analytics'
 
-// composition root — pick the provider here, once
+// composition root: pick the provider here, once
 export const analytics = posthogAdapter({
   apiKey: process.env.POSTHOG_API_KEY!,
   host: process.env.POSTHOG_HOST,
 })
 
-// anywhere in the app — depends only on the AnalyticsPort
+// anywhere in the app: depends only on the AnalyticsPort
 analytics.capture({
   event: 'user_signed_up',
   distinctId: 'user_123',
@@ -32,7 +32,7 @@ await analytics.shutdown()
 enqueue work and return immediately. Use `flush()` to drain pending events and
 `shutdown()` to flush + release resources.
 
-## Swapping provider — Plausible
+## Swapping provider: Plausible
 
 Use the privacy-first Plausible adapter (server-side Events API). Set the site
 domain; the page `url`, `referrer` and client `ip` are read from each event's
@@ -63,7 +63,7 @@ import { noopAdapter } from '@alfredmouelle/analytics'
 export const analytics = noopAdapter()
 ```
 
-No call site changes — they all depend on `AnalyticsPort`.
+No call site changes: they all depend on `AnalyticsPort`.
 
 ## Adding a provider
 

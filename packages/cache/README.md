@@ -8,10 +8,10 @@ call sites work against Redis in production and an in-memory map in dev/tests.
 ```ts
 import { redisAdapter } from '@alfredmouelle/cache'
 
-// composition root — pick the backend here, once
+// composition root: pick the backend here, once
 export const cache = redisAdapter({ url: process.env.REDIS_URL! })
 
-// anywhere in the app — depends only on the CachePort
+// anywhere in the app: depends only on the CachePort
 await cache.set('user:1', { name: 'Alfred' }, 60)
 const user = await cache.get<{ name: string }>('user:1')
 
@@ -29,10 +29,10 @@ import { memoryAdapter } from '@alfredmouelle/cache'
 export const cache = memoryAdapter()
 ```
 
-No call site changes — they all depend on `CachePort`, never on a backend.
+No call site changes: they all depend on `CachePort`, never on a backend.
 
 For edge/serverless runtimes where TCP (and `ioredis`) is unavailable, use the
-HTTP/REST `upstashAdapter` instead — same port, JSON handled by the client:
+HTTP/REST `upstashAdapter` instead (same port, JSON handled by the client):
 
 ```ts
 import { upstashAdapter } from '@alfredmouelle/cache'

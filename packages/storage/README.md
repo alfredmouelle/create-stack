@@ -10,13 +10,13 @@ the composition root.
 ```ts
 import { s3Adapter, type StoragePort } from '@alfredmouelle/storage'
 
-// composition root — pick the provider here, once
+// composition root: pick the provider here, once
 export const storage: StoragePort = s3Adapter({
   bucket: process.env.S3_BUCKET!,
   region: process.env.S3_REGION!,
 })
 
-// anywhere in the app — depends only on the StoragePort
+// anywhere in the app: depends only on the StoragePort
 await storage.put('avatars/alfred.png', bytes, { contentType: 'image/png' })
 const data = await storage.get('avatars/alfred.png') // Uint8Array | null
 const url = await storage.getSignedUrl('avatars/alfred.png', { operation: 'get' })
@@ -35,7 +35,7 @@ export const storage = gcsAdapter({ bucket: process.env.GCS_BUCKET! })
 ```ts
 import { r2Adapter } from '@alfredmouelle/storage'
 
-// Cloudflare R2 is S3-compatible — same behavior, R2 endpoint + `auto` region.
+// Cloudflare R2 is S3-compatible: same behavior, R2 endpoint + `auto` region.
 export const storage = r2Adapter({
   bucket: process.env.R2_BUCKET!,
   accountId: process.env.R2_ACCOUNT_ID!,
@@ -47,11 +47,11 @@ export const storage = r2Adapter({
 ```ts
 import { localAdapter } from '@alfredmouelle/storage'
 
-// dev/tests only — getSignedUrl returns `${publicBaseUrl}/${key}`, it does NOT sign.
+// dev/tests only: getSignedUrl returns `${publicBaseUrl}/${key}`, it does NOT sign.
 export const storage = localAdapter({ baseDir: '.storage', publicBaseUrl: '/files' })
 ```
 
-No call site changes — they all depend on `StoragePort`, never on a provider.
+No call site changes: they all depend on `StoragePort`, never on a provider.
 
 ## Adding a provider
 

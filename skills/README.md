@@ -2,7 +2,7 @@
 
 Claude Code skills that automate working with this reference stack. They live
 here (versioned with the stack) and are **symlinked** into the user-level skills
-directory so editing them here updates what Claude uses — no copy step.
+directory so editing them here updates what Claude uses, no copy step.
 
 - **create-stack**: scaffold a brand-new project by running the published
   `@alfredmouelle/create-stack` CLI: pick a framework (Next.js / TanStack Start),
@@ -39,5 +39,5 @@ with `$CLAUDE_SKILLS_DIR` / `$CODEX_PROMPTS_DIR`.
 
 The script is idempotent: it refreshes existing links and backs up any real
 file/dir it would overwrite. Run it once per machine (or after adding a new
-skill folder); after that, edits here are live immediately — the agent reads
+skill folder); after that, edits here are live immediately. The agent reads
 through the symlink.

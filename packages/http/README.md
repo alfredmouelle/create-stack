@@ -6,7 +6,7 @@ of Web-standard helpers that both Next.js and TanStack Start understand.
 > Use this for talking to APIs that have **no official SDK**. When a provider
 > ships an SDK, prefer the SDK (see `@alfredmouelle/mailer`, `@alfredmouelle/storage`, …).
 
-## `apiFetch` — typed fetch wrapper
+## `apiFetch`: typed fetch wrapper
 
 URL/query building, JSON encoding, timeouts, content-negotiated parsing, and
 rich typed errors. Non-2xx responses throw.

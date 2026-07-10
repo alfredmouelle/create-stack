@@ -1,7 +1,7 @@
 # @alfredmouelle/email-kit
 
 Composable React Email primitives with a **swappable theme**. Build templates
-once; restyle every email by passing a theme override — no template changes.
+once; restyle every email by passing a theme override, no template changes.
 
 ## Primitives
 
