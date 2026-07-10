@@ -20,6 +20,22 @@ pnpm --filter @alfredmouelle/next-base dev    # http://localhost:3000
 
 Add more swappable tools with **add-capability**.
 
+## Coming from ESLint + Prettier?
+
+This stack uses [Biome](https://biomejs.dev) instead. One tool, no config
+juggling, near-instant. The mental map:
+
+| You knew                           | Here                               |
+| ---------------------------------- | ---------------------------------- |
+| `eslint . && prettier --check .`   | `pnpm check`                       |
+| `eslint --fix && prettier --write` | `pnpm check:write`                 |
+| `.eslintrc` + `.prettierrc`        | a single `biome.jsonc`             |
+| `// eslint-disable-next-line foo`  | `// biome-ignore lint/foo: reason` |
+
+Format-on-save (VS Code + Zed) and the pre-commit hook are already wired.
+Prefer ESLint? Nothing stops you from swapping it in, but the whole base is
+tuned for Biome.
+
 # Author
 
 Alfred MOUELLE | FullStack Developer
