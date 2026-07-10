@@ -36,11 +36,11 @@ a create-stack scaffold at all, or the integration needs judgement the CLI doesn
 
 ## Reference stack location
 
-Default: `/Users/alfredmouelle/Developer/stack`. Override with `$STACK_REPO` if
-set. Verify it exists before anything:
+Default: `/Users/alfredmouelle/Developer/create-stack`. Override with `$STACK_REPO`
+if set. Verify it exists before anything:
 
 ```bash
-STACK=${STACK_REPO:-/Users/alfredmouelle/Developer/stack}
+STACK=${STACK_REPO:-/Users/alfredmouelle/Developer/create-stack}
 ls "$STACK/packages" || echo "MISSING: ask the user where the reference stack is"
 ```
 
