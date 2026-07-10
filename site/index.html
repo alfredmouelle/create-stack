@@ -182,6 +182,10 @@
   .term .copy-btn { background: #1d1f26; border-color: #33363d; color: #d4d6da; }
   .term .copy-btn:hover { border-color: var(--accent); color: #fff; }
   .term-actions .runnote { font-size: 11.5px; color: #6f7178; }
+  .pm-pills { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid #33363d; border-radius: 9px; background: #1d1f26; }
+  .pm-pill { border: none; background: transparent; color: #a6a9b0; font-family: var(--mono); font-size: 12px; padding: 4px 9px; border-radius: 6px; }
+  .pm-pill:hover { color: #fff; }
+  .pm-pill.on { background: rgba(217, 79, 56, 0.16); color: #fff; font-weight: 600; }
   .copy-btn { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 12px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; }
   .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
   @media (max-width: 720px) {
@@ -422,7 +426,9 @@
       '<div class="term"><div class="term-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">create-stack: interactive</span></div>' +
       '<div class="steps">' + stepsHTML + '</div><div class="panel">' + panel + '</div>' +
       '<div class="term-foot"><div class="term-prompt"><span class="sig">$</span> ' + cmdHTML(cmd.parts) + '<span class="cursor"></span></div><div class="term-log">' + log + '</div>' +
-      '<div class="term-actions"><button class="copy-btn" data-copy-cmd>⎘ Copy command</button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
+      '<div class="term-actions"><div class="pm-pills" role="group" aria-label="Package manager">' +
+      PMS.map((pm) => '<button class="pm-pill' + (state.pm === pm ? ' on' : '') + '" data-pm="' + pm + '">' + pm + '</button>').join('') +
+      '</div><button class="copy-btn" data-copy-cmd>⎘ Copy command</button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
   }
 
   document.addEventListener('click', (e) => {
