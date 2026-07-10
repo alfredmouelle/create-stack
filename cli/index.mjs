@@ -141,7 +141,7 @@ function collectFromFlags(args) {
       : picked.includes('better-auth')
         ? 'better-auth'
         : undefined
-  const { kept, database, auth, mailerProvider } = normalize(
+  const { kept, database, auth, mailerProvider, adjustments } = normalize(
     picked,
     resolveDatabase(dbFlag),
     resolveAuth(authFlag),
@@ -160,6 +160,7 @@ function collectFromFlags(args) {
     database,
     auth,
     mailerProvider,
+    adjustments,
     capabilities,
     monorepo,
     doInstall,
@@ -330,6 +331,7 @@ async function collectFromPrompts(argDir) {
     database: db,
     auth: authProvider,
     mailerProvider,
+    adjustments,
   } = normalize(picked, database, auth, mailer)
   return {
     argDir,
@@ -341,6 +343,7 @@ async function collectFromPrompts(argDir) {
     auth: authProvider,
     kept,
     mailerProvider,
+    adjustments,
     capabilities,
     monorepo,
     doInstall,
@@ -393,6 +396,8 @@ function execute(a) {
     process.exit(1)
   }
   const pm = a.pm ?? detectedPm
+
+  for (const adjustment of a.adjustments ?? []) p.log.warn(adjustment)
 
   const s = p.spinner()
   s.start('Forking + stripping the base app')

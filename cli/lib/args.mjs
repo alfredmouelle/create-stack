@@ -68,21 +68,32 @@ export function normalizeAlias(v) {
 /** Resolve foundation/axis dependencies: trpc + better-auth need a db, better-auth needs a mailer. */
 export function normalize(picked, database, auth, mailer) {
   const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
+  const adjustments = []
   let a = auth ?? 'better-auth'
   let db = database ?? 'drizzle'
 
   if (db === 'convex') {
     // Convex is the API + realtime db: it replaces trpc, and can't back the
     // Postgres-coupled better-auth (only Clerk or no auth).
-    kept.delete('trpc')
-    if (a === 'better-auth') a = 'none'
+    if (kept.has('trpc')) {
+      kept.delete('trpc')
+      adjustments.push('Convex is its own API layer, tRPC removed')
+    }
+    if (a === 'better-auth') {
+      a = 'none'
+      adjustments.push('better-auth needs Postgres, auth set to none (pair Convex with Clerk)')
+    }
   } else if ((kept.has('trpc') || a === 'better-auth') && db === 'none') {
     // trpc and better-auth both need a database; clerk/none don't. Fall back to the default.
     db = 'drizzle'
+    adjustments.push('tRPC / better-auth need a database, Drizzle added')
   }
 
   // better-auth sends its own emails via the mailer; clerk is hosted and needs none.
   let mailerProvider = mailer ?? 'resend'
-  if (a === 'better-auth' && mailerProvider === 'none') mailerProvider = 'resend'
-  return { kept, database: db, auth: a, mailerProvider }
+  if (a === 'better-auth' && mailerProvider === 'none') {
+    mailerProvider = 'resend'
+    adjustments.push('better-auth sends its own emails, Resend added')
+  }
+  return { kept, database: db, auth: a, mailerProvider, adjustments }
 }
