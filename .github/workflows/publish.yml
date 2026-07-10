@@ -8,7 +8,7 @@ name: Publish CLI
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   id-token: write # required to mint the OIDC token
@@ -39,13 +39,15 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
-      # Trusted publishing needs npm >= 11.5.1; Node 22 ships npm 10.x.
-      - run: npm install -g npm@latest
+      # Trusted publishing needs npm >= 11.5.1; Node 22 ships npm 10.x. Pin to 11.x
+      # (not a floating @latest) so the "Cannot find module 'sigstore'" breakage in a
+      # bad @latest can't reach us again (see npm/cli#9722, fixed by #9740).
+      - run: npm install -g npm@11
 
       # prepack (scripts/bundle.mjs) snapshots apps/ + packages/ into cli/_stack.
-      # Provenance disabled: it requires a public repo, this one is private.
+      # Repo is public, so trusted publishing generates provenance automatically.
       - name: Publish
         working-directory: cli
-        run: npm publish --access public --provenance=false
+        run: npm publish --access public
