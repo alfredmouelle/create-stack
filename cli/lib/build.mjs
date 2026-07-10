@@ -11,6 +11,7 @@ import { applyDatabase } from './database.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
+import { wrapMonorepo } from './monorepo.mjs'
 import { detectPackageManager } from './package-manager.mjs'
 import { forkBase, makeStandalone } from './scaffold.mjs'
 import { stripFoundations } from './strip.mjs'
@@ -35,8 +36,9 @@ import {
  * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
  * @param {Record<string,string>} [o.capabilities]  capability → adapter (e.g. { storage: 's3' })
  * @param {string} [o.alias]  import-alias prefix to rewrite '~/' to (default '~', i.e. no-op)
+ * @param {false|'turborepo'|'nx'} [o.monorepo]  wrap the app in a monorepo (app forked into apps/web)
  * @param {import('./package-manager.mjs').PackageManager} [o.pm]  target package manager (defaults to detected)
- * @returns {{ kept: string[], keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[], alias: string }}
+ * @returns {{ kept: string[], keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[], alias: string, monorepo: boolean }}
  */
 export function buildProject({
   projectDir,
@@ -48,25 +50,29 @@ export function buildProject({
   mailerProvider,
   capabilities = {},
   alias = '~',
+  monorepo = false,
   pm = detectPackageManager(),
 }) {
   const authUsesDb = auth === 'better-auth'
   const keptMailer = mailerProvider !== 'none'
+  // In a monorepo the app is forked into apps/web and wrapped in a Turborepo root at the end.
+  // Every app-level step below targets appDir; root wiring (CI, then wrapMonorepo) uses projectDir.
+  const appDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
 
-  forkBase(framework, projectDir)
-  makeStandalone(projectDir, projectName, framework, pm)
+  forkBase(framework, appDir)
+  makeStandalone(appDir, monorepo ? 'web' : projectName, framework, pm, { monorepo: !!monorepo })
 
   // strip → auth → database: stripFoundations may swap the app shell (no-trpc variants)
   // that applyAuth then injects the provider into; applyDatabase keys its auth models on auth.
-  const strip = stripFoundations({ projectDir, framework, kept, keptMailer })
-  const authRes = applyAuth({ projectDir, framework, auth, trpcKept: kept.has('trpc') })
-  const db = applyDatabase({ projectDir, database, framework, auth, authKept: authUsesDb })
+  const strip = stripFoundations({ projectDir: appDir, framework, kept, keptMailer })
+  const authRes = applyAuth({ projectDir: appDir, framework, auth, trpcKept: kept.has('trpc') })
+  const db = applyDatabase({ projectDir: appDir, database, framework, auth, authKept: authUsesDb })
 
   // opt-in components never ship in the default bundle — strip them; re-add via
   // `create-stack component <name>`.
-  for (const rel of allComponentFiles()) remove(join(projectDir, rel))
+  for (const rel of allComponentFiles()) remove(join(appDir, rel))
   const mailer = keptMailer
-    ? swapMailer(projectDir, mailerProvider)
+    ? swapMailer(appDir, mailerProvider)
     : { addDeps: {}, removeDeps: [], envKeys: [], requiredEnvKeys: [] }
 
   // vendor each selected capability (core + adapter + composition root) into the fork.
@@ -74,13 +80,13 @@ export function buildProject({
   const capEnvKeys = []
   const capRequiredEnvKeys = []
   for (const [cap, adapter] of Object.entries(capabilities)) {
-    const r = vendorCapability({ projectDir, framework, projectName, cap, adapter })
+    const r = vendorCapability({ projectDir: appDir, framework, projectName, cap, adapter })
     Object.assign(capAddDeps, r.addDeps)
     capEnvKeys.push(...r.envKeys)
     capRequiredEnvKeys.push(...r.requiredEnvKeys)
   }
 
-  const pkgPath = join(projectDir, 'package.json')
+  const pkgPath = join(appDir, 'package.json')
   const pkg = readJSON(pkgPath)
   pkg.description = `${projectName} — scaffolded from the personal reference stack.`
   pkgRemoveDeps(pkg, [
@@ -118,17 +124,23 @@ export function buildProject({
   // committed); .env.example keeps the placeholder. base64url needs no quoting in .env.
   const localEnv =
     auth === 'better-auth' ? { BETTER_AUTH_SECRET: randomBytes(32).toString('base64url') } : {}
-  writeEnv(projectDir, envKeys, requiredEnvKeys, localEnv)
+  writeEnv(appDir, envKeys, requiredEnvKeys, localEnv)
   // Clerk + Convex read their keys straight from the environment (not the typed env.ts).
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
-  if (rawEnvLines.length) appendRawEnvLines(projectDir, rawEnvLines)
+  if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
-  stampIdentity(projectDir, projectName, framework, pm)
-  // CI mirrors the scaffold's own gate (typecheck + biome) for the chosen pm.
+  stampIdentity(appDir, projectName, framework, pm)
+  // CI mirrors the scaffold's own gate (typecheck + biome) for the chosen pm; it lives at the
+  // repo root (== appDir when standalone) and delegates to turbo via the root scripts in a monorepo.
   writeCiWorkflow(projectDir, pm)
 
-  // last: swap '~/' for the chosen alias across everything generated above (no-op when '~').
-  rewriteAlias(projectDir, alias)
+  // swap '~/' for the chosen alias across everything generated above (no-op when '~').
+  rewriteAlias(appDir, alias)
+
+  // wrap the standalone app in a monorepo root (Turborepo or Nx): root package.json + tool
+  // config + workspace, hoisted git hooks, root biome/gitignore.
+  if (monorepo)
+    wrapMonorepo({ rootDir: projectDir, appDir, projectName, framework, pm, tool: monorepo })
 
   return {
     kept: [...kept],
@@ -139,5 +151,6 @@ export function buildProject({
     capabilities,
     envKeys,
     alias,
+    monorepo,
   }
 }

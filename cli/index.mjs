@@ -22,6 +22,7 @@ import {
   normalize,
   normalizeAlias,
   parseArgs,
+  resolveMonorepo,
 } from './lib/args.mjs'
 import { resolveAuth } from './lib/auth.mjs'
 import { buildProject } from './lib/build.mjs'
@@ -56,6 +57,7 @@ See \`add --help\` and \`component --help\` for their options.
 
 Scaffold flags:
   --framework <tanstack|next>      Base app to fork (default tanstack)
+  --monorepo [turbo|nx]            Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --database <drizzle|prisma|convex|none> ORM the app ships (default drizzle); convex replaces tRPC
@@ -147,6 +149,7 @@ function collectFromFlags(args) {
   )
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
+  const monorepo = resolveMonorepo(args.flags.monorepo)
   return {
     argDir,
     projectName: argDir,
@@ -158,6 +161,7 @@ function collectFromFlags(args) {
     auth,
     mailerProvider,
     capabilities,
+    monorepo,
     doInstall,
   }
 }
@@ -184,6 +188,19 @@ async function collectFromPrompts(argDir) {
       ],
     }),
   )
+
+  const monorepoPick = cancelled(
+    await p.select({
+      message: 'Monorepo',
+      initialValue: 'none',
+      options: [
+        { value: 'none', label: 'Single app', hint: 'standalone project (default)' },
+        { value: 'turborepo', label: 'Turborepo', hint: 'app in apps/web, orchestrated by turbo' },
+        { value: 'nx', label: 'Nx', hint: 'app in apps/web, orchestrated by nx' },
+      ],
+    }),
+  )
+  const monorepo = monorepoPick === 'none' ? false : monorepoPick
 
   const aliasPick = cancelled(
     await p.select({
@@ -325,6 +342,7 @@ async function collectFromPrompts(argDir) {
     kept,
     mailerProvider,
     capabilities,
+    monorepo,
     doInstall,
   }
 }
@@ -394,8 +412,11 @@ const orNone = (v) => (v && v !== 'none' ? v : '(none)')
 /** The "Done" note: selection recap + next steps. */
 function summaryLines(a, pm) {
   const capEntries = Object.entries(a.capabilities ?? {})
+  const appRel = a.monorepo ? 'apps/web/' : ''
+  const monoLabel = a.monorepo === 'nx' ? 'Nx' : a.monorepo === 'turborepo' ? 'Turborepo' : null
   const lines = [
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
+    `Monorepo: ${monoLabel ? `${monoLabel} (app in apps/web)` : '(none)'}`,
     `Package manager: ${pm.name}`,
     `Import alias: ${a.alias ?? '~'}/`,
     `Database: ${orNone(a.database)}`,
@@ -411,9 +432,10 @@ function summaryLines(a, pm) {
   ]
   if (!a.doInstall) lines.push(`  ${pm.name} install`)
   if (a.database === 'convex') {
-    lines.push(`  ${pm.name} run convex  # provisions a deployment + sets CONVEX_URL`)
+    const prefix = a.monorepo ? 'cd apps/web && ' : ''
+    lines.push(`  ${prefix}${pm.name} run convex  # provisions a deployment + sets CONVEX_URL`)
   }
-  lines.push('  # edit .env (already generated with placeholders)', `  ${pm.devCmd}`)
+  lines.push(`  # edit ${appRel}.env (already generated with placeholders)`, `  ${pm.devCmd}`)
   return lines
 }
 
@@ -556,9 +578,16 @@ async function main() {
   const nonInteractive =
     args.flags.yes ||
     args.flags.y ||
-    ['framework', 'database', 'auth', 'foundations', 'mailer', 'no-install', ...CAPABILITIES].some(
-      (k) => k in args.flags,
-    )
+    [
+      'framework',
+      'database',
+      'auth',
+      'foundations',
+      'mailer',
+      'monorepo',
+      'no-install',
+      ...CAPABILITIES,
+    ].some((k) => k in args.flags)
 
   const answers = nonInteractive ? collectFromFlags(args) : await collectFromPrompts(args._[0])
 

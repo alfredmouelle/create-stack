@@ -26,6 +26,14 @@ export function parseArgs(argv) {
   return out
 }
 
+/** Normalize the --monorepo flag: absent → false, bare/`turbo` → 'turborepo', `nx` → 'nx'. */
+export function resolveMonorepo(v) {
+  if (v == null || v === false) return false
+  if (v === true || v === 'turbo' || v === 'turborepo') return 'turborepo'
+  if (v === 'nx') return 'nx'
+  throw new Error(`Invalid --monorepo value: ${JSON.stringify(v)} (expected 'turbo' or 'nx')`)
+}
+
 /** Split a comma list into trimmed, non-empty tokens. */
 export const csv = (v) =>
   typeof v === 'string'

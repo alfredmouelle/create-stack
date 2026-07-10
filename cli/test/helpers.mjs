@@ -48,6 +48,7 @@ export function build(cfg) {
     mailerProvider,
     capabilities: cfg.capabilities ?? {},
     alias: cfg.alias,
+    monorepo: cfg.monorepo ?? false,
     pm: cfg.pm ? resolvePackageManager(cfg.pm) : PM,
   })
   return { dir: projectDir, result }
