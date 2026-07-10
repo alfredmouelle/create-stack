@@ -38,9 +38,9 @@ mailer, optional capabilities), then stamps identity, writes `.env`, inits git a
 ## Quick start
 
 ```bash
-pnpm dlx @alfredmouelle/create-stack my-app
+pnpm dlx @alfredmouelle/create-stack@latest my-app
 # or the create-* convention (npm / yarn create also work):
-pnpm create @alfredmouelle/stack my-app
+pnpm create @alfredmouelle/stack@latest my-app
 ```
 
 No flags → an **interactive wizard**. Any selection flag → **non-interactive** (CI / scriptable).
