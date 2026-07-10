@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://create-stack.alfredmouelle.com/sitemap.xml
+LLM: https://create-stack.alfredmouelle.com/llms.txt

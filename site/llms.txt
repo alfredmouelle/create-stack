@@ -1,0 +1,30 @@
+# create-stack
+
+> Framework-agnostic installer that bootstraps a real, fully-wired app for your favorite framework. You pick database, auth, tRPC, a mailer and capabilities; create-stack forks a maximal base app and strips it to exactly your choices. The output builds and boots on day one. No template guesswork. Next.js and TanStack Start today, more frameworks on the way.
+
+## How it works
+
+- create-stack forks a fully-wired base app and strips it to exactly what you pick. Every selected piece is copied in and wired (deps, env keys, composition roots); unselected pieces are removed cleanly so the project stays bootable and green.
+- Requirements: Node >= 22, works with pnpm / npm / yarn / bun. MIT licensed, open source.
+- Verified on generation with typecheck and Biome, so the scaffold is green from the first commit.
+
+## What you can compose
+
+- **Framework**: a real starter app you fork, with SSR, routing, Tailwind v4 + shadcn, theme toggle. Next.js and TanStack Start today, more on the roadmap.
+- **Structure**: standalone app, or a Turborepo or Nx monorepo (app in `apps/web`) with workspace, task caching and hoisted git hooks.
+- **Data layer**: Drizzle (Postgres with driver adapter, schema, seed, keyset pagination), Prisma, or Convex (realtime), or none for a vitrine.
+- **Auth & API**: better-auth (email + password with verification, Google OAuth) or hosted Clerk; typed tRPC v11 with SSR/RSC.
+- **Mailer**: Resend, Brevo or SES behind one port with React Email templates; swap providers with a single env change.
+- **Capabilities**: opt-in integrations behind a port: storage (S3/R2), cache (Redis), background jobs (Inngest), logger, analytics, error tracking (Sentry).
+- **Baseline**: strict Biome (replaces ESLint + Prettier), typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow, and a generated `.env`.
+
+## Links
+
+- [Website and command builder](https://create-stack.alfredmouelle.com/): interactive wizard that applies the CLI's real rules and writes the exact command to copy for your package manager.
+- [npm package](https://www.npmjs.com/package/@alfredmouelle/create-stack): `@alfredmouelle/create-stack`.
+- [GitHub repository](https://github.com/alfredmouelle/create-stack): source, issues and roadmap.
+
+## About
+
+- Built by Alfred MOUELLE, FullStack Developer ([portfolio](https://alfredmouelle.com), [LinkedIn](https://www.linkedin.com/in/alfredmouelle)).
+- Open source under the [MIT license](https://opensource.org/licenses/MIT). Inspired by [create-t3-app](https://create.t3.gg) by Theo Browne.
