@@ -36,7 +36,7 @@ const stripTrpc = (src, next, keptDeps, removeDeps) => {
 const stripMailer = (src, removeDeps, removeScripts) => {
   remove(src('server/email'))
   remove(src('emails'))
-  for (const d of ['resend', 'react-email']) removeDeps.add(d)
+  for (const d of ['resend', 'react-email', '@react-email/ui']) removeDeps.add(d)
   removeScripts.add('email:dev')
 }
 
