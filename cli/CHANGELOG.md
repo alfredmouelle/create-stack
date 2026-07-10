@@ -13,6 +13,32 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-10
+
+### Added
+
+- **Monorepo scaffolding**: new `--monorepo [turbo|nx]` flag and wizard step. Instead of a
+  standalone app, create-stack can place the app in `apps/web` inside a Turborepo or Nx
+  monorepo. It generates the root `package.json` (scripts delegated to the orchestrator),
+  `turbo.json` / `nx.json` with per-framework build outputs, the workspace config and
+  native-build allowlist, a shared Biome config at the root, and hoists the app's git hooks
+  to the repo root. Bare `--monorepo` uses Turborepo; omit it for a standalone app.
+
+### Changed
+
+- **Redesigned landing page**: freshly scaffolded projects now open on a polished hero
+  ("Everything's wired. Start building.") with a terminal panel and Documentation / GitHub
+  links, replacing the bare placeholder, built on the existing design system (theme-aware,
+  links open in a new tab).
+
+### Fixed
+
+- **Package-manager-agnostic git hooks**: the generated pre-commit / pre-push hooks no
+  longer assume pnpm. They run via `npx` / `npm run`, so they work on projects scaffolded
+  with npm, yarn or bun, and inside a monorepo (where Biome now resolves at the repo root).
+- **Clean app metadata**: base-app templates no longer carry the maintainer's author
+  fields, so scaffolded projects start without stray author metadata.
+
 ## [0.7.0] - 2026-07-09
 
 ### Added
