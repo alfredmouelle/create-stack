@@ -2,13 +2,13 @@
 # Full validation before sharing — typecheck + tests.
 
 echo "▶ pre-push: typecheck…"
-if ! pnpm typecheck; then
+if ! npm run typecheck; then
   echo "✖ Typecheck failed."
   exit 1
 fi
 
 echo "▶ pre-push: tests…"
-if ! pnpm test --if-present; then
+if ! npm test --if-present; then
   echo "✖ Tests failed."
   exit 1
 fi

@@ -6,7 +6,7 @@ if git diff --cached --quiet --diff-filter=ACM; then
 fi
 
 echo "▶ pre-commit: biome check --write (staged)…"
-pnpm exec biome check --write --staged --no-errors-on-unmatched
+npx --no-install biome check --write --staged --no-errors-on-unmatched
 status=$?
 
 # Re-stage what biome auto-fixed so the fixes land in the commit.
