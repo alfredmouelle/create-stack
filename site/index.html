@@ -428,7 +428,7 @@
       '<div class="term-foot"><div class="term-prompt"><span class="sig">$</span> ' + cmdHTML(cmd.parts) + '<span class="cursor"></span></div><div class="term-log">' + log + '</div>' +
       '<div class="term-actions"><div class="pm-pills" role="group" aria-label="Package manager">' +
       PMS.map((pm) => '<button class="pm-pill' + (state.pm === pm ? ' on' : '') + '" data-pm="' + pm + '">' + pm + '</button>').join('') +
-      '</div><button class="copy-btn" data-copy-cmd>⎘ Copy command</button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
+      '</div><button class="copy-btn" data-copy-cmd>Copy command</button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
   }
 
   document.addEventListener('click', (e) => {

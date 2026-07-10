@@ -13,6 +13,27 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-10
+
+### Changed
+
+- **Neutral project metadata**: base-app `package.json` files no longer carry author
+  fields, and the scaffolded project's description is now generic ("scaffolded with
+  create-stack") rather than referencing the personal reference stack.
+
+### Fixed
+
+- **Prisma in a monorepo**: Prisma's engine build scripts (`prisma`, `@prisma/engines`)
+  are now allowlisted in the monorepo root workspace, so `install` runs them and
+  `db:migrate` / `db:studio` / `db:generate` work without a manual approve-builds step.
+  Also fixes an invalid root `pnpm-workspace.yaml` (unquoted scoped keys) that aborted
+  install outright.
+- **Email preview**: scaffolded projects now ship `@react-email/ui`, so `email:dev`
+  launches the React Email preview server directly instead of prompting to install a
+  missing package on first run.
+- **Monorepo fork**: the fork destination's parent directory is created before copying,
+  fixing scaffolds that target `apps/web`.
+
 ## [0.8.0] - 2026-07-10
 
 ### Added
