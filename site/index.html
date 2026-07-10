@@ -195,7 +195,9 @@
     .step { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; }
     .step.active { border-left: none; border-bottom-color: var(--accent); }
     .step .val-tag { display: none; }
-    .term-actions .runnote { display: none; }
+    .term-actions .pm-pills { flex: 1; justify-content: space-between; }
+    .term-actions .copy-suffix { display: none; }
+    .term-actions .runnote { flex-basis: 100%; text-align: center; }
   }
 
   /* what you get */
@@ -430,7 +432,7 @@
       '<div class="term-foot"><div class="term-prompt"><span class="sig">$</span> ' + cmdHTML(cmd.parts) + '<span class="cursor"></span></div><div class="term-log">' + log + '</div>' +
       '<div class="term-actions"><div class="pm-pills" role="group" aria-label="Package manager">' +
       PMS.map((pm) => '<button class="pm-pill' + (state.pm === pm ? ' on' : '') + '" data-pm="' + pm + '">' + pm + '</button>').join('') +
-      '</div><button class="copy-btn" data-copy-cmd>Copy command</button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
+      '</div><button class="copy-btn" data-copy-cmd>Copy<span class="copy-suffix"> command</span></button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
   }
 
   document.addEventListener('click', (e) => {
