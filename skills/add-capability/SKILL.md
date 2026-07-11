@@ -10,46 +10,77 @@ description: >-
 
 # Add a capability (ports & adapters)
 
-Adds one capability to the current project from the **reference stack**, wired
-behind a port so the provider is swappable later by changing one line + env vars.
+Adds one capability to the current project from the reference stack, wired behind
+a port so the provider is swappable later by changing one line + env vars. The
+reference is used **local-first**: a checkout of the stack on this machine (so you
+test the latest, even uncommitted, version), falling back to the **published
+`@alfredmouelle/create-stack` package** (it bundles the whole `_stack/`) / the
+**public repo** `https://github.com/alfredmouelle/create-stack` when the checkout
+isn't present. No hard dependency on the machine — it just prefers it when there.
 
-## Prefer the CLI for create-stack projects
+## Which CLI to run — local first, online fallback
 
-If the target is a **create-stack-generated project** and you want a standard
-capability/adapter, use the CLI — it does all of the below deterministically:
-
-```bash
-create-stack add <capability> [adapter]   # e.g. create-stack add storage r2
-create-stack add                          # interactive multi-select
-create-stack add cache upstash            # re-add = swap the adapter
-create-stack add cache upstash --keep     # keep the previous adapter alongside
-```
-
-It covers every capability here — `storage`, `cache`, `jobs`, `logger`,
-`analytics`, `error-tracking`, `mailer`, `email-kit`, `http` — detecting the
-framework, vendoring behind the port, merging deps/env, and installing + verifying.
-
-**Use this skill instead when** the CLI can't: the project diverged from the
-create-stack conventions (non-`~/` alias, hand-edited `env.ts`), an SDK is already
-installed at a different major (verify with find-docs and align), the project isn't
-a create-stack scaffold at all, or the integration needs judgement the CLI doesn't make.
-
-## Reference stack location
-
-Default: `/Users/alfredmouelle/Developer/create-stack`. Override with `$STACK_REPO`
-if set. Verify it exists before anything:
+Define the `cs` helper (local checkout wins, published package is the fallback), then
+call `cs …` **in the same command block** — a fresh shell per bash call won't keep the
+function:
 
 ```bash
 STACK=${STACK_REPO:-/Users/alfredmouelle/Developer/create-stack}
-ls "$STACK/packages" || echo "MISSING: ask the user where the reference stack is"
+cs() { if [ -f "$STACK/cli/index.mjs" ]; then node "$STACK/cli/index.mjs" "$@";
+       else pnpm dlx @alfredmouelle/create-stack@latest "$@"; fi; }   # local wins, else online
 ```
 
-Each capability lives in `$STACK/packages/<capability>/` with a
-`capability.json` manifest that drives this whole skill. Available capabilities:
-`mailer`, `email-kit`, `storage`, `jobs`, `cache`, `logger`, `analytics`,
-`error-tracking`, `http`.
+## Prefer the CLI — it does everything, self-contained
 
-## Step 1 — Resolve capability + adapter
+The CLI vendors any capability deterministically from the stack (local checkout or
+its bundled `_stack/`). Run it **in the target project**:
+
+```bash
+cs add <capability> [adapter]
+#   e.g. add storage r2      add cache upstash      add jobs inngest
+cs add                 # interactive multi-select
+cs add cache upstash   # re-add = swap the adapter
+cs add cache upstash --keep   # keep the old adapter too
+```
+
+It covers every capability — `storage`, `cache`, `jobs`, `logger`, `analytics`,
+`error-tracking`, `mailer`, `email-kit`, `http` — detecting the framework,
+vendoring behind the port, merging deps/env, and installing + verifying. For a
+create-stack-generated project (and most others), **this is the whole skill** —
+run it, then report.
+
+## Manual vendoring — only when the CLI can't
+
+Fall back to the steps below **only when** the CLI can't: the project diverged
+from the create-stack conventions (non-`~/` alias, hand-edited `env.ts`), an SDK
+is already installed at a different major (verify with find-docs and align), the
+project isn't a create-stack scaffold at all, or the integration needs judgement
+the CLI doesn't make.
+
+### Get the reference — local checkout first, online fallback
+
+Reuse the local `$STACK` from the CLI-resolution block above if it's a full
+checkout; otherwise shallow-clone the public repo into a throwaway dir. Either way
+`$STACK/packages/<capability>/` is the source of truth:
+
+```bash
+STACK=${STACK_REPO:-/Users/alfredmouelle/Developer/create-stack}
+if [ ! -d "$STACK/packages" ]; then           # no local checkout → fetch online
+  STACK=$(mktemp -d); CLONED=1
+  git clone --depth 1 --filter=blob:none --sparse \
+    https://github.com/alfredmouelle/create-stack "$STACK"
+  git -C "$STACK" sparse-checkout set packages apps
+fi
+ls "$STACK/packages"   # capabilities available
+```
+
+Each capability lives in `$STACK/packages/<capability>/` with a `capability.json`
+manifest that drives the rest. Available: `mailer`, `email-kit`, `storage`, `jobs`,
+`cache`, `logger`, `analytics`, `error-tracking`, `http`. (You can also read a
+single manifest without cloning via
+`https://raw.githubusercontent.com/alfredmouelle/create-stack/main/packages/<capability>/capability.json`.)
+
+### Step 1 — Resolve capability + adapter
 
 Parse the user request (and any skill args like `mailer resend`):
 - **capability**: which package. If ambiguous, list the capabilities above and ask.
@@ -74,7 +105,7 @@ The manifest shape:
 }
 ```
 
-## Step 2 — Understand the target project
+### Step 2 — Understand the target project
 
 Detect, by reading the project (not guessing):
 - **Package manager**: `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock` / `bun.lockb`.
@@ -95,10 +126,11 @@ Detect, by reading the project (not guessing):
   adapter targets (e.g. `resend` v6 vs an adapter written for v4), flag it and
   align to the installed/latest version before vendoring.
 
-## Step 3 — Vendor the code (own it, don't depend on it)
+### Step 3 — Vendor the code (own it, don't depend on it)
 
-The reference packages are private. Integration **copies the source** into the
-project so the project owns and can tweak it — that's the whole agnostic point.
+The reference packages are distributed only inside the CLI / the public repo you
+just cloned. Integration **copies the source** into the project so the project
+owns and can tweak it — that's the whole agnostic point.
 
 **Destination depends on the capability's nature** (the personal layout —
 `src/server/<cap>/`, `src/lib/http/`, `src/emails/`):
@@ -135,7 +167,7 @@ For each referenced `@alfredmouelle/<x>`: recursively add it too (same process, 
 own destination per the table above), then rewrite the import from `@alfredmouelle/<x>`
 to the project's `~/` alias path. Leave no `@alfredmouelle/*` import behind.
 
-## Step 4 — Install dependencies (current versions)
+### Step 4 — Install dependencies (current versions)
 
 Collect `sharedDeps` + chosen adapter `deps` (+ `peerDeps` if the project lacks
 them). Before installing, confirm the **current** major via the find-docs skill /
@@ -146,7 +178,7 @@ shape — flag any mismatch). Install with the detected package manager:
 pnpm add <deps...>        # or npm install / yarn add / bun add
 ```
 
-## Step 5 — Wire env
+### Step 5 — Wire env
 
 For each var in the adapter's `env` (+ a `<CAPABILITY>_PROVIDER` selector when it
 helps):
@@ -154,7 +186,7 @@ helps):
 - If the project has a typed `env.ts`, add validated entries (mirror the style in
   `$STACK/apps/*-base/src/env.ts`: `optionalString`, picklist for the provider).
 
-## Step 6 — Wire the composition root
+### Step 6 — Wire the composition root
 
 Create or extend a single composition root (`<srcRoot>/server/services.ts` or
 the project's equivalent) that imports the vendored factory/adapter and exports
@@ -174,13 +206,15 @@ capability exposes an HTTP surface (jobs webhook, provider callbacks), mount it
 with the framework shim from the capability's README (Next route handler vs
 TanStack `createFileRoute`) — the base apps show it mounted in context.
 
-## Step 7 — Verify
+### Step 7 — Verify
 
 - Typecheck (`tsc --noEmit` or the project's script). Resolve any leftover
   `@alfredmouelle/*` import or missing dep.
 - If the project runs biome/eslint, format the new files to match.
 - Report to the user, concise: capability + adapter added, files vendored, deps
   installed, env vars to fill, and the one-line swap to change provider later.
+- If you cloned online, remove the throwaway dir: `[ -n "$CLONED" ] && rm -rf "$STACK"`.
+  Never delete a local `$STACK` checkout.
 
 ## Guardrails
 
@@ -190,3 +224,5 @@ TanStack `createFileRoute`) — the base apps show it mounted in context.
 - Don't abstract what isn't being swapped — integrate only the requested capability.
 - Match the project's existing conventions (alias, env style, formatter) over the
   reference repo's when they differ.
+- Never hard-depend on the local checkout: it's the preferred source when present,
+  but the skill must still work by falling back to the CLI / a fresh online clone.
