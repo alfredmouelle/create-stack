@@ -11,6 +11,9 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   capture_pageview: 'history_change',
   capture_pageleave: true,
   capture_dead_clicks: true,
+  // Drop all events during local development so testing never pollutes the stats.
+  before_send: (event) =>
+    location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? null : event,
 })
 </script>
 <title>create-stack: compose your stack, ship a real app</title>

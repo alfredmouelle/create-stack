@@ -17,6 +17,43 @@
 - **Mailer**: Resend, Brevo or SES behind one port with React Email templates; swap providers with a single env change.
 - **Capabilities**: opt-in integrations behind a port: storage (S3/R2), cache (Redis), background jobs (Inngest), logger, analytics, error tracking (Sentry).
 - **Baseline**: strict Biome (replaces ESLint + Prettier), typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow, and a generated `.env`.
+- **UI components**: opt-in components installed after scaffolding with `create-stack component <name>` into `components/ui`: `date-picker`, `datatable`, and `await`-able dialogs built on react-call (`confirm`, `alert`, `prompt`, `choice`, `confirm-passphrase`, `confirm-otp`) whose `<Root />` is auto-mounted, so you call them from anywhere.
+
+## Using the UI components
+
+Run inside a generated project. Files are copied into `components/ui`, deps merged, imports
+realigned to your alias, and for the dialogs the `<Root />` is mounted in your app shell:
+
+```bash
+create-stack component                 # interactive picker
+create-stack component confirm prompt  # one or several at once
+```
+
+The dialogs are built on [react-call](https://react-call.desko.dev) and `await`-ed from
+anywhere; their Root is already mounted, so there is nothing to wire:
+
+```tsx
+const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })
+if (ok) deleteProject()
+
+await Alert.call({ title: 'Saved', description: 'Your changes are live.' })
+
+const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' }) // string | null
+
+const dest = await Choice.call({
+  title: 'Move to',
+  options: [{ label: 'Inbox', value: 'inbox' }, { label: 'Archive', value: 'archive' }],
+}) // string | null
+
+// the confirm button enables only when the input matches the phrase
+const confirmed = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: repo.name })
+
+// verify runs on submit; returning false keeps the dialog open with an error
+const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => api.checkOtp(code) })
+```
+
+`date-picker` and `datatable` are regular components: `<DatePicker value={date} onChange={setDate} />`
+and `<DataTable columns={columns} data={rows} />`.
 
 ## Links
 
