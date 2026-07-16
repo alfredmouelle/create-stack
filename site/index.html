@@ -201,6 +201,15 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   .pm-pill.on { background: rgba(217, 79, 56, 0.16); color: #fff; font-weight: 600; }
   .copy-btn { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 12px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; }
   .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .comp { max-width: 900px; margin: 0 auto; background: #14151a; border: 1px solid #2a2c33; border-radius: 14px; overflow: hidden; box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.55); }
+  .comp-body { padding: 20px 22px; }
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .comp-foot { border-top: 1px solid #2a2c33; background: #101116; padding: 15px 20px; font-family: var(--mono); }
+  .comp .copy-btn { background: #1d1f26; border-color: #33363d; color: #d4d6da; }
+  .comp .copy-btn:hover { border-color: var(--accent); color: #fff; }
+  .comp .copy-btn[disabled] { opacity: 0.45; pointer-events: none; }
+  .comp .ph { color: #6f7178; }
+  @media (max-width: 640px) { .comp-grid { grid-template-columns: 1fr; } }
   @media (max-width: 720px) {
     .term { grid-template-columns: 1fr; }
     .steps { display: flex; overflow-x: auto; border-right: none; border-bottom: 1px solid #2a2c33; padding: 6px; }
@@ -271,6 +280,15 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     <div id="stage"></div>
   </section>
 
+  <section class="sec" id="components">
+    <div class="sec-head">
+      <div class="kicker">Add UI</div>
+      <h2>Drop in UI components</h2>
+      <p>Opt-in components you install into an existing project, straight into components/ui. Pick a few, copy the command, and run it inside your app.</p>
+    </div>
+    <div id="components-stage"></div>
+  </section>
+
   <section class="sec" id="stack">
     <div class="sec-head">
       <div class="kicker">What you get</div>
@@ -317,7 +335,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   ]
   const state = {
     name: 'my-app', pm: 'npm', framework: 'tanstack', monorepo: 'none', database: 'drizzle', auth: 'better-auth',
-    trpc: true, mailer: 'resend',
+    trpc: true, mailer: 'resend', alias: '~',
     caps: { storage: null, cache: null, jobs: null, logger: null, analytics: null, errorTracking: null },
   }
 
@@ -354,6 +372,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     if (e.auth !== 'better-auth') parts.push({ f: '--auth', v: e.auth })
     if (!e.trpc && e.database !== 'convex') parts.push({ f: '--foundations', v: "''" })
     if (e.mailer !== 'resend') parts.push({ f: '--mailer', v: e.mailer })
+    if (s.alias !== '~') parts.push({ f: '--alias', v: s.alias })
     for (const c of CAPS) { const a = s.caps[c.key]; if (a) parts.push(a === c.def ? { f: '--' + c.flag } : { f: '--' + c.flag, v: a }) }
     return { parts, eff: e, plain: parts.map((p) => (p.t ? p.t : p.v ? p.f + ' ' + p.v : p.f)).join(' ') }
   }
@@ -372,7 +391,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   }
   function setCap(key, adapter) { state.caps[key] = state.caps[key] === adapter ? null : adapter; render() }
   function toast() { const t = document.getElementById('toast'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1400) }
-  function copyText(txt, props) { navigator.clipboard && navigator.clipboard.writeText(txt); toast(); if (window.posthog) posthog.capture('command_copied', Object.assign({ command: txt }, props)) }
+  function copyText(txt, props, event) { navigator.clipboard && navigator.clipboard.writeText(txt); toast(); if (window.posthog) posthog.capture(event || 'command_copied', Object.assign({ command: txt }, props)) }
 
   let pmMenuOpen = false
   function renderInstall() {
@@ -396,6 +415,36 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
       '</div>'
   }
 
+  const UI_COMPONENTS = [
+    { key: 'confirm', label: 'Confirm', hint: 'await a yes/no' },
+    { key: 'alert', label: 'Alert', hint: 'await an acknowledgement' },
+    { key: 'prompt', label: 'Prompt', hint: 'await a text input' },
+    { key: 'choice', label: 'Choice', hint: 'await a pick from a list' },
+    { key: 'confirm-passphrase', label: 'Confirm · passphrase', hint: 'type an exact phrase' },
+    { key: 'confirm-otp', label: 'Confirm · OTP', hint: 'verify a code' },
+    { key: 'date-picker', label: 'Date picker', hint: 'single + range' },
+    { key: 'datatable', label: 'Data table', hint: 'sortable + infinite' },
+  ]
+  const compSel = new Set()
+
+  function renderComponents() {
+    const sel = [...compSel]
+    const grid = UI_COMPONENTS.map((c) => {
+      const on = compSel.has(c.key)
+      return '<div class="opt' + (on ? ' sel' : '') + '" data-comp="' + c.key + '"><span class="radio"></span><span>' + esc(c.label) + '</span><span class="desc">' + esc(c.hint) + '</span></div>'
+    }).join('')
+    const cmd = '<span class="sig">$</span> ' + esc(pmPrefix()) + ' <span class="flag">component</span> ' +
+      (sel.length ? sel.map((n) => '<span class="val">' + esc(n) + '</span>').join(' ') : '<span class="ph">&lt;name…&gt;</span>')
+    document.getElementById('components-stage').innerHTML =
+      '<div class="comp"><div class="term-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">create-stack: components</span></div>' +
+      '<div class="comp-body"><div class="comp-grid">' + grid + '</div></div>' +
+      '<div class="comp-foot"><div class="term-prompt">' + cmd + '<span class="cursor"></span></div>' +
+      '<div class="term-actions"><div class="pm-pills" role="group" aria-label="Package manager">' +
+      PMS.map((pm) => '<button class="pm-pill' + (state.pm === pm ? ' on' : '') + '" data-pm="' + pm + '">' + pm + '</button>').join('') +
+      '</div><button class="copy-btn" data-copy-comp' + (sel.length ? '' : ' disabled') + '>Copy<span class="copy-suffix"> command</span></button>' +
+      '<span class="runnote">run it inside your project</span></div></div></div>'
+  }
+
   const AXES = [
     { key: 'framework', label: 'Framework', hint: 'base app to fork · more frameworks coming', opts: [{ v: 'tanstack', d: 'default' }, { v: 'next', d: 'App Router' }] },
     { key: 'monorepo', label: 'Monorepo', hint: 'project structure · app lands in apps/web', opts: [{ v: 'none', d: 'standalone (default)' }, { v: 'turborepo', d: 'Turborepo' }, { v: 'nx', d: 'Nx' }] },
@@ -403,6 +452,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     { key: 'auth', label: 'Auth', hint: 'auth provider', opts: [{ v: 'better-auth', d: 'self-hosted' }, { v: 'clerk', d: 'hosted' }, { v: 'none', d: 'no auth' }] },
     { key: 'trpc', label: 'tRPC', hint: 'typed API foundation', opts: [{ v: true, label: 'trpc on', d: 'included' }, { v: false, label: 'trpc off', d: 'stripped' }] },
     { key: 'mailer', label: 'Mailer', hint: 'transactional email', opts: [{ v: 'resend', d: 'default' }, { v: 'brevo', d: '' }, { v: 'ses', d: 'AWS' }, { v: 'none', d: 'skip' }] },
+    { key: 'alias', label: 'Import alias', hint: "path prefix for ~/… imports", opts: [{ v: '~', d: 'default' }, { v: '@', d: 'common' }, { v: '#', d: 'node subpath' }] },
   ]
   let activeStep = 'framework'
 
@@ -448,7 +498,14 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   }
 
   document.addEventListener('click', (e) => {
-    const pmOpt = e.target.closest('[data-pm]'); if (pmOpt) { state.pm = pmOpt.dataset.pm; pmMenuOpen = false; renderInstall(); render(); return }
+    const pmOpt = e.target.closest('[data-pm]'); if (pmOpt) { state.pm = pmOpt.dataset.pm; pmMenuOpen = false; renderInstall(); render(); renderComponents(); return }
+    const comp = e.target.closest('[data-comp]'); if (comp) { const k = comp.dataset.comp; compSel.has(k) ? compSel.delete(k) : compSel.add(k); renderComponents(); return }
+    if (e.target.closest('[data-copy-comp]')) {
+      if (!compSel.size) return
+      const names = [...compSel]
+      copyText(pmPrefix() + ' component ' + names.join(' '), { source: 'components', pm: state.pm, components: names, count: names.length }, 'component_command_copied')
+      return
+    }
     if (e.target.closest('[data-pm-toggle]')) { pmMenuOpen = !pmMenuOpen; renderInstall(); return }
     if (pmMenuOpen) { pmMenuOpen = false; renderInstall() }
     const step = e.target.closest('[data-step]'); if (step) { activeStep = step.dataset.step; render(); return }
@@ -457,7 +514,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     if (e.target.closest('[data-copy-cmd]')) {
       const caps = CAPS.filter((c) => state.caps[c.key]).map((c) => c.key + ':' + state.caps[c.key])
       const stack = [state.framework, state.monorepo, state.database, state.auth, 'trpc:' + (state.trpc ? 'on' : 'off'), state.mailer].concat(caps).join(' · ')
-      copyText(buildCommand(state).plain, { source: 'wizard', pm: state.pm, framework: state.framework, monorepo: state.monorepo, database: state.database, auth: state.auth, trpc: state.trpc, mailer: state.mailer, capabilities: caps, stack: stack })
+      copyText(buildCommand(state).plain, { source: 'wizard', pm: state.pm, framework: state.framework, monorepo: state.monorepo, database: state.database, auth: state.auth, trpc: state.trpc, mailer: state.mailer, alias: state.alias, capabilities: caps, stack: stack })
       return
     }
     const copyBtn = e.target.closest('[data-copy-install]')
@@ -473,6 +530,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 
   renderInstall()
   render()
+  renderComponents()
 </script>
 </body>
 </html>
