@@ -93,11 +93,13 @@ Flags:
 const COMPONENT_HELP = `create-stack component — vendor a standalone UI component into the current project.
 
 Usage:
-  create-stack component [name] [flags]
+  create-stack component [name...] [flags]
 
 Opt-in UI kept out of the base bundle. Run with no name for a multi-select
-picker; pass a name for non-interactive mode. Vendored files are never
-overwritten, so local edits survive a re-run — pass --force to overwrite them.
+picker; pass one or more names for non-interactive mode. Vendored files are
+never overwritten, so local edits survive a re-run — pass --force to overwrite
+them. Callable components (confirm, alert, prompt…) also mount their Root in
+your root layout automatically.
 
 Components: ${COMPONENT_NAMES.join(', ')}.
 
@@ -507,15 +509,17 @@ async function runAdd(args) {
   p.outro(`Added ${added.map((a) => a.cap).join(', ')}`)
 }
 
-/** Which components to install: a positional name (non-interactive), else a picker. */
+/** Which components to install: positional names (non-interactive), else a picker. */
 async function resolveComponentSelections(args) {
-  if (args._[1]) {
-    const name = args._[1]
-    if (!COMPONENT_NAMES.includes(name)) {
-      p.cancel(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
-      process.exit(1)
+  const names = args._.slice(1)
+  if (names.length) {
+    for (const name of names) {
+      if (!COMPONENT_NAMES.includes(name)) {
+        p.cancel(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
+        process.exit(1)
+      }
     }
-    return [name]
+    return names
   }
   return cancelled(
     await p.multiselect({
@@ -532,6 +536,8 @@ const componentLine = (c) => {
   if (c.skipped.length) parts.push(`(${c.skipped.length} kept)`)
   const deps = Object.keys(c.addDeps)
   if (deps.length) parts.push(`deps: ${deps.join(', ')}`)
+  if (c.mounted) parts.push(`mounted <${c.rootName} />`)
+  else if (c.rootName) parts.push(`add <${c.rootName} /> to your root layout`)
   return parts.join('  ')
 }
 
