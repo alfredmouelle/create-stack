@@ -53,7 +53,7 @@ used by the generated project), and **git** on `PATH`.
 ```
 create-stack [project] [flags]            # scaffold a new project
 create-stack add [capability] [adapter]   # add a capability to the current project
-create-stack component [name]             # vendor a standalone UI component
+create-stack component [name...]          # vendor standalone UI component(s)
 ```
 
 `project` is the target dir (and default package name), must be empty or not exist.
@@ -154,18 +154,27 @@ create-stack add cache upstash   # swap redis → upstash
 
 ## Components
 
-Opt-in UI kept out of the base bundle (its heavier deps too). Vendor one into a generated
-project: files copied, deps merged, imports realigned to your alias. Existing files are
-**never overwritten** (`--force` to override).
+Opt-in UI kept out of the base bundle (its heavier deps too). Vendor one or several into a
+generated project: files copied, deps merged, imports realigned to your alias. Existing files
+are **never overwritten** (`--force` to override). The callable dialogs are built on
+[react-call](https://react-call.desko.dev) and also mount their `<Root />` in your app shell
+(tanstack `__root`, next root layout) automatically, so `.call()` works right after install.
 
 | Component | Vendors | Deps |
 | --- | --- | --- |
 | `date-picker` | `ui/date-picker`, `ui/date-range-picker` (+ calendar, popover, lib/date) | react-day-picker, date-fns |
 | `datatable` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | @tanstack/react-table |
+| `confirm` | `ui/confirm` (+ alert-dialog) — `await` a yes/no | react-call |
+| `alert` | `ui/alert` (+ alert-dialog) — `await` an acknowledgement | react-call |
+| `prompt` | `ui/prompt` (+ dialog) — `await` a text input | react-call |
+| `choice` | `ui/choice` (+ dialog) — `await` a pick from a list | react-call |
+| `confirm-passphrase` | `ui/confirm-passphrase` (+ dialog) — type an exact phrase to confirm | react-call |
+| `confirm-otp` | `ui/confirm-otp` (+ dialog, input-otp) — verify an OTP code to confirm | react-call, input-otp |
 
 ```bash
-create-stack component              # interactive picker
-create-stack component date-picker  # one component
+create-stack component                 # interactive picker
+create-stack component date-picker     # one component
+create-stack component confirm prompt  # several at once
 ```
 
 ## After scaffolding
