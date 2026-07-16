@@ -177,6 +177,28 @@ create-stack component date-picker     # one component
 create-stack component confirm prompt  # several at once
 ```
 
+The callable dialogs are `await`-ed from anywhere; their `<Root />` is already mounted, so
+there is nothing to wire:
+
+```tsx
+const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })
+if (ok) deleteProject()
+
+await Alert.call({ title: 'Saved', description: 'Your changes are live.' })
+
+const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' }) // string | null
+
+const dest = await Choice.call({
+  title: 'Move to',
+  options: [{ label: 'Inbox', value: 'inbox' }, { label: 'Archive', value: 'archive' }],
+}) // string | null
+
+const confirmed = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: repo.name })
+
+// verify runs on submit; returning false keeps the dialog open with an error
+const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => api.checkOtp(code) })
+```
+
 ## After scaffolding
 
 ```bash

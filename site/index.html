@@ -209,6 +209,9 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   .comp .copy-btn:hover { border-color: var(--accent); color: #fff; }
   .comp .copy-btn[disabled] { opacity: 0.45; pointer-events: none; }
   .comp .ph { color: #6f7178; }
+  .opt .usage-btn { margin-left: 10px; border: 1px solid #33363d; background: transparent; color: #7d8088; font-family: var(--mono); font-size: 11px; line-height: 1; padding: 4px 7px; border-radius: 6px; cursor: pointer; }
+  .opt .usage-btn:hover, .opt .usage-btn.on { color: #fff; border-color: var(--accent); }
+  .comp-code { grid-column: 1 / -1; margin: -2px 0 2px; padding: 11px 14px; background: #0d0e12; border: 1px solid #2a2c33; border-radius: 9px; color: #cfd2d8; font-family: var(--mono); font-size: 12px; overflow-x: auto; white-space: pre; }
   @media (max-width: 640px) { .comp-grid { grid-template-columns: 1fr; } }
   @media (max-width: 720px) {
     .term { grid-template-columns: 1fr; }
@@ -416,22 +419,24 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   }
 
   const UI_COMPONENTS = [
-    { key: 'confirm', label: 'Confirm', hint: 'await a yes/no' },
-    { key: 'alert', label: 'Alert', hint: 'await an acknowledgement' },
-    { key: 'prompt', label: 'Prompt', hint: 'await a text input' },
-    { key: 'choice', label: 'Choice', hint: 'await a pick from a list' },
-    { key: 'confirm-passphrase', label: 'Confirm · passphrase', hint: 'type an exact phrase' },
-    { key: 'confirm-otp', label: 'Confirm · OTP', hint: 'verify a code' },
-    { key: 'date-picker', label: 'Date picker', hint: 'single + range' },
-    { key: 'datatable', label: 'Data table', hint: 'sortable + infinite' },
+    { key: 'confirm', label: 'Confirm', hint: 'await a yes/no', code: "const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })" },
+    { key: 'alert', label: 'Alert', hint: 'await an acknowledgement', code: "await Alert.call({ title: 'Saved', description: 'Your changes are live.' })" },
+    { key: 'prompt', label: 'Prompt', hint: 'await a text input', code: "const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' })" },
+    { key: 'choice', label: 'Choice', hint: 'await a pick from a list', code: "const dest = await Choice.call({ title: 'Move to', options: [{ label: 'Inbox', value: 'inbox' }] })" },
+    { key: 'confirm-passphrase', label: 'Confirm · passphrase', hint: 'type an exact phrase', code: "const ok = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: 'my-repo' })" },
+    { key: 'confirm-otp', label: 'Confirm · OTP', hint: 'verify a code', code: "const ok = await ConfirmOtp.call({ title: 'Enter code', verify: (c) => api.checkOtp(c) })" },
+    { key: 'date-picker', label: 'Date picker', hint: 'single + range', code: '<DatePicker value={date} onChange={setDate} />' },
+    { key: 'datatable', label: 'Data table', hint: 'sortable + infinite', code: '<DataTable columns={columns} data={rows} />' },
   ]
   const compSel = new Set()
+  let usageKey = null
 
   function renderComponents() {
     const sel = [...compSel]
     const grid = UI_COMPONENTS.map((c) => {
       const on = compSel.has(c.key)
-      return '<div class="opt' + (on ? ' sel' : '') + '" data-comp="' + c.key + '"><span class="radio"></span><span>' + esc(c.label) + '</span><span class="desc">' + esc(c.hint) + '</span></div>'
+      const opt = '<div class="opt' + (on ? ' sel' : '') + '" data-comp="' + c.key + '"><span class="radio"></span><span>' + esc(c.label) + '</span><span class="desc">' + esc(c.hint) + '</span><button class="usage-btn' + (usageKey === c.key ? ' on' : '') + '" data-usage="' + c.key + '" aria-label="Show usage">&lt;/&gt;</button></div>'
+      return usageKey === c.key ? opt + '<pre class="comp-code">' + esc(c.code) + '</pre>' : opt
     }).join('')
     const cmd = '<span class="sig">$</span> ' + esc(pmPrefix()) + ' <span class="flag">component</span> ' +
       (sel.length ? sel.map((n) => '<span class="val">' + esc(n) + '</span>').join(' ') : '<span class="ph">&lt;name…&gt;</span>')
@@ -499,6 +504,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 
   document.addEventListener('click', (e) => {
     const pmOpt = e.target.closest('[data-pm]'); if (pmOpt) { state.pm = pmOpt.dataset.pm; pmMenuOpen = false; renderInstall(); render(); renderComponents(); return }
+    const usage = e.target.closest('[data-usage]'); if (usage) { const k = usage.dataset.usage; usageKey = usageKey === k ? null : k; renderComponents(); return }
     const comp = e.target.closest('[data-comp]'); if (comp) { const k = comp.dataset.comp; compSel.has(k) ? compSel.delete(k) : compSel.add(k); renderComponents(); return }
     if (e.target.closest('[data-copy-comp]')) {
       if (!compSel.size) return

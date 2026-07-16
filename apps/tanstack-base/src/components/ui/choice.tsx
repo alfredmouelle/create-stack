@@ -1,5 +1,8 @@
 'use client'
 
+// Await it from anywhere; the <Choice /> Root is auto-mounted by `create-stack component`.
+// const value = await Choice.call({ title: 'Move to', options: [{ label: 'Inbox', value: 'inbox' }] })
+
 import { createCallable } from 'react-call'
 
 import { Button } from '~/components/ui/button'

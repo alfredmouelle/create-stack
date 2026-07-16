@@ -1,5 +1,8 @@
 'use client'
 
+// Await it from anywhere; the <Alert /> Root is auto-mounted by `create-stack component`.
+// await Alert.call({ title: 'Saved', description: 'Your changes are live.' })
+
 import { createCallable } from 'react-call'
 
 import {
