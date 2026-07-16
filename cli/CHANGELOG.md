@@ -13,6 +13,28 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-16
+
+### Added
+
+- **Callable UI components**: six opt-in dialogs installable with
+  `create-stack component <name>` — `confirm`, `alert`, `prompt`, `choice`,
+  `confirm-passphrase` and `confirm-otp`. Built on
+  [react-call](https://react-call.desko.dev), they are `await`-able from anywhere
+  (`const ok = await Confirm.call({ … })`); installing one vendors its dialog plus the
+  shadcn primitives it needs (dialog / alert-dialog / input-otp) and auto-mounts its
+  `<Root />` in the app shell (TanStack `__root`, Next root layout), so `.call()` works
+  right after install. `create-stack component` now also accepts several names at once.
+- **Selection warnings**: the scaffold now reports when a choice triggers an automatic
+  adjustment (e.g. Convex removing tRPC, better-auth pulling in a database) instead of
+  adjusting silently.
+
+### Changed
+
+- **Warm default theme**: both base apps now ship a warm-paper background with a terracotta
+  accent (light + dark) and a tighter radius scale, matching the create-stack site so a
+  fresh scaffold looks on-brand out of the box.
+
 ## [0.8.1] - 2026-07-10
 
 ### Changed
