@@ -13,6 +13,8 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-20
+
 ### Changed
 
 - **BREAKING: capabilities now come in two kinds, and the vendored layout is flatter.**
@@ -60,6 +62,13 @@ commits are batched into a single tagged version rather than one tag per commit.
   v4 (set `INNGEST_SIGNING_KEY` and the SDK reads it).
 - **Mailer dependency**: the manifest declared `@react-email/render`, which nothing
   imports (the code imports `react-email`), and installed it at `latest`. Dropped.
+- **Monorepo scaffolds could not build.** The generated root `package.json` had no
+  `packageManager` field, which turbo 2.10 requires to resolve a workspace, so
+  `--monorepo turbo` failed on the first build. Both turbo and Nx roots now pin it.
+- **Sentry started up pointing at a placeholder DSN.** `SENTRY_DSN` was seeded with a
+  fake value, so a fresh project logged `Invalid Sentry Dsn` and shipped events nowhere.
+  It is now left empty, which the new module reads as "Sentry off" until you configure it.
+- The run summary no longer prints `jobs (null)` for a capability that has no adapter.
 
 ## [0.9.0] - 2026-07-16
 
