@@ -113,3 +113,14 @@ for (const framework of ['tanstack', 'next']) {
     }
   }
 }
+
+test('the root pins a packageManager, which turbo requires to resolve the workspace', () => {
+  const { dir } = build({
+    framework: 'next',
+    foundations: [],
+    mailer: 'none',
+    monorepo: 'turborepo',
+  })
+  const root = readJSON(`${dir}/package.json`)
+  expect(root.packageManager).toMatch(/^(pnpm|npm|yarn|bun)@\d+\.\d+\.\d+$/)
+})

@@ -6,6 +6,9 @@ import { copy, exists, join, readJSON, remove, write, writeJSON } from './util.m
 
 const VERSIONS = { turbo: '^2.10.0', nx: '^23.0.0' }
 
+// `packageManager` needs an exact version, so these are floors, not ranges.
+const PM_VERSIONS = { pnpm: '11.1.3', npm: '11.0.0', yarn: '4.6.0', bun: '1.2.0' }
+
 // Build outputs to cache per framework (basenames; each tool prefixes them). Next's build cache is excluded.
 const OUTPUTS = {
   next: ['.next/**', '!.next/cache/**'],
@@ -144,6 +147,8 @@ export function wrapMonorepo({
     name: projectName,
     version: '0.1.0',
     private: true,
+    // turbo >= 2.10 refuses to resolve a workspace without it.
+    packageManager: `${pm?.name ?? 'pnpm'}@${PM_VERSIONS[pm?.name] ?? PM_VERSIONS.pnpm}`,
     scripts: { ...spec.scripts, prepare: PREPARE },
     devDependencies: {
       [spec.dep[0]]: spec.dep[1],
