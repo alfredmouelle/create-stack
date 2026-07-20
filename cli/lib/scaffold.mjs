@@ -23,11 +23,16 @@ const RSYNC_EXCLUDES = [
   'bun.lock',
 ]
 
-// Native deps whose install/build scripts pnpm and bun block by default.
-export const NATIVE_BUILD_DEPS = ['esbuild', 'sharp', 'lightningcss', 'protobufjs']
+// Deps whose install/build scripts pnpm and bun block by default. @sentry/cli
+// downloads its binary in a postinstall, so error-tracking can't install without it.
+export const NATIVE_BUILD_DEPS = ['esbuild', 'sharp', 'lightningcss', 'protobufjs', '@sentry/cli']
+
+// Scoped names have to be quoted to stay valid YAML keys.
+const allowBuildsYaml = (deps) =>
+  deps.map((d) => `  ${d.includes('/') ? `'${d}'` : d}: true`).join('\n')
 
 const PNPM_WORKSPACE = `allowBuilds:
-${NATIVE_BUILD_DEPS.map((d) => `  ${d}: true`).join('\n')}
+${allowBuildsYaml(NATIVE_BUILD_DEPS)}
 `
 
 // Generated explicitly: npm strips `.gitignore` from published tarballs, so the

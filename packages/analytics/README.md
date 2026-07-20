@@ -67,5 +67,5 @@ No call site changes: they all depend on `AnalyticsPort`.
 
 ## Adding a provider
 
-Implement `AnalyticsPort` (`src/core/port.ts`): a `name`, `capture`, `identify`,
+Implement `AnalyticsPort` (`src/port.ts`): a `name`, `capture`, `identify`,
 `flush`, and `shutdown`. Look at `src/adapters/posthog` (SDK-based) as a template.

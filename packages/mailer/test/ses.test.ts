@@ -1,6 +1,6 @@
 import { describe, expect, it, type Mock, vi } from 'vitest'
-import { type SesClientLike, sesAdapter } from '../src/adapters/ses/index.js'
-import { MailerError, type RenderedMessage } from '../src/core/port.js'
+import { type SesClientLike, sesAdapter } from '../src/adapters/ses.js'
+import { MailerError, type RenderedMessage } from '../src/port.js'
 
 function rendered(overrides: Partial<RenderedMessage> = {}): RenderedMessage {
   return {

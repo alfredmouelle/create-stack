@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type RedisLike, redisAdapter } from '../src/adapters/redis/index.js'
+import { type RedisLike, redisAdapter } from '../src/adapters/redis.js'
 
 function mockClient(overrides: Partial<RedisLike> = {}) {
   const client: RedisLike = {

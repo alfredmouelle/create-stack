@@ -5,7 +5,8 @@ import {
   PutObjectCommand,
 } from '@aws-sdk/client-s3'
 import { describe, expect, it, type Mock, vi } from 'vitest'
-import { type S3ClientLike, type S3Presigner, s3Adapter } from '../src/adapters/s3/index.js'
+import { type S3ClientLike, type S3Presigner, s3Adapter } from '../src/adapters/s3.js'
+import { StorageError } from '../src/port.js'
 
 type SendMock = Mock<(command: unknown) => Promise<unknown>>
 type PresignMock = Mock<S3Presigner>
@@ -22,9 +23,15 @@ function makeAdapter(send: SendMock, presign?: PresignMock) {
 
 describe('s3Adapter', () => {
   it('throws at construction when the bucket is missing', () => {
-    expect(() =>
-      s3Adapter({ bucket: '', region: 'eu-west-1', client: { send: vi.fn() } }),
-    ).toThrow()
+    expect(() => s3Adapter({ bucket: '', region: 'eu-west-1', client: { send: vi.fn() } })).toThrow(
+      StorageError,
+    )
+  })
+
+  it('throws at construction when the region is missing', () => {
+    expect(() => s3Adapter({ bucket: 'my-bucket', region: '', client: { send: vi.fn() } })).toThrow(
+      StorageError,
+    )
   })
 
   it('put issues a PutObjectCommand with Bucket/Key/Body/ContentType', async () => {

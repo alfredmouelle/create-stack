@@ -56,6 +56,6 @@ local preview studio (`pnpm --filter @alfredmouelle/email-kit email:dev`).
 
 ## Adding a provider
 
-Implement `MailerAdapter` (`src/core/port.ts`): a `name` and a `send(message: RenderedMessage)`
+Implement `MailerAdapter` (`src/port.ts`): a `name` and a `send(message: RenderedMessage)`
 that returns `{ id }`. The message arrives already rendered and address-normalized.
-Look at `src/adapters/resend` (SDK-based) or `src/adapters/brevo` (fetch-based) as templates.
+Look at `src/adapters/resend.ts` (SDK-based) or `src/adapters/brevo.ts` (fetch-based) as templates.

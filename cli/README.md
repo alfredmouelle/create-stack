@@ -73,15 +73,15 @@ create-stack component [name...]          # vendor standalone UI component(s)
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage (omit to skip). |
 | `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache (omit to skip). |
-| `--jobs` | `inngest` \| `trigger` \| `memory` | `inngest` | Background jobs (omit to skip). |
+| `--jobs` | - | - | Background jobs on Inngest (omit to skip). Single provider: takes no value. |
 | `--logger` | `pino` \| `console` | `pino` | Structured logging (omit to skip). |
 | `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics (omit to skip). |
-| `--error-tracking` | `sentry` \| `console` | `sentry` | Error reporting (omit to skip). |
+| `--error-tracking` | - | - | Error reporting on Sentry (omit to skip). Single provider: takes no value. |
 | `--no-install` | - | install on | Skip install + verification. |
 | `--yes`, `-y` | - | - | Non-interactive with all defaults. |
 
-Capability flags are optional; pass one (bare = default adapter) to vendor it, omit to
-skip. Any selection flag switches to non-interactive mode; `--pm`/`--alias` are modifiers,
+Capability flags are optional; pass one (bare = default adapter, or the only provider) to
+vendor it, omit to skip. Any selection flag switches to non-interactive mode; `--pm`/`--alias` are modifiers,
 not triggers. Selections are normalized: `trpc` and `better-auth` need a database (fall
 back to `drizzle`) and `better-auth` forces a real mailer, while `clerk` is hosted and
 frees both, so `--auth clerk --database none` is a valid authenticated vitrine. `convex`
@@ -128,28 +128,39 @@ Unselected pieces are removed cleanly (files, deps, env, wiring); the project is
 
 ## Capabilities
 
-Swappable integrations, each copied behind a port into `src/server/<capability>/` with a
-generated composition root that reads typed env and constructs the adapter lazily (so the
-app boots before you fill the keys). Deps + env keys are wired into `package.json` and
-`env.ts` automatically.
+Integrations copied into `src/server/<capability>/`, with deps and env keys wired into
+`package.json` and `env.ts` automatically. They come in two kinds.
+
+**Ports**, swappable: `port.ts` holds the interface, `adapters/<name>.ts` the chosen
+provider, and a generated composition root reads typed env and constructs the adapter
+lazily (so the app boots before you fill the keys).
 
 | Capability | Adapters |
 | --- | --- |
 | `storage` | s3, r2, gcs, local |
 | `cache` | redis, upstash, memory |
-| `jobs` | inngest, trigger, memory (`inngest` also scaffolds the serve route) |
 | `logger` | pino, console |
 | `analytics` | posthog, plausible, noop |
-| `error-tracking` | sentry, console |
+| `mailer` | resend, brevo, ses |
 
-Add more later with `create-stack add` (same engine, merged incrementally). Re-adding with
-a different adapter **swaps** it (`--keep` keeps both). Targets also include `mailer`,
-`email-kit` (React Email primitives) and `http` (fetch helpers).
+**Modules**, one provider used directly, no adapter to pick:
+
+| Capability | Provider | What lands |
+| --- | --- | --- |
+| `jobs` | Inngest | the client, an example typed event + function, and the serve route for your framework |
+| `error-tracking` | Sentry | shared `init` options plus the framework wiring (`onRequestError` / global-error for Next, the Vite plugin, instrumentation files and middlewares for TanStack Start) |
+| `email-kit` | n/a | React Email primitives and theme |
+| `http` | n/a | typed fetch helpers |
+
+Add more later with `create-stack add` (same engine, merged incrementally). Re-adding a
+port with a different adapter **swaps** it (`--keep` keeps both); re-adding a module
+re-vendors it.
 
 ```bash
 create-stack add                 # interactive picker
 create-stack add storage r2      # one capability + adapter
 create-stack add cache upstash   # swap redis → upstash
+create-stack add jobs            # module: no adapter argument
 ```
 
 ## Components

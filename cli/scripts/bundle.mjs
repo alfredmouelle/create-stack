@@ -38,12 +38,13 @@ for (const base of ['next-base', 'tanstack-base']) {
 }
 
 // mailer: adapters + manifest (provider swap reads its dep ranges)
+cpSync(join(ROOT, 'packages/mailer/capability.json'), join(OUT, 'packages/mailer/capability.json'))
 cpSync(join(ROOT, 'packages/mailer/package.json'), join(OUT, 'packages/mailer/package.json'))
 cpSync(join(ROOT, 'packages/mailer/src/adapters'), join(OUT, 'packages/mailer/src/adapters'), {
   recursive: true,
 })
 
-// capabilities: manifest + package.json (dep ranges) + src (core + adapters, vendored on demand)
+// capabilities: manifest + package.json (dep ranges) + src (port/module + adapters, vendored on demand)
 for (const cap of ['storage', 'cache', 'logger', 'analytics', 'error-tracking', 'jobs']) {
   cpSync(
     join(ROOT, 'packages', cap, 'capability.json'),
@@ -55,6 +56,10 @@ for (const cap of ['storage', 'cache', 'logger', 'analytics', 'error-tracking', 
 
 // http + email-kit: vendored as-is by `add http` / `add email-kit` (and as cross-deps)
 for (const pkg of ['http', 'email-kit']) {
+  cpSync(
+    join(ROOT, 'packages', pkg, 'capability.json'),
+    join(OUT, 'packages', pkg, 'capability.json'),
+  )
   cpSync(join(ROOT, 'packages', pkg, 'package.json'), join(OUT, 'packages', pkg, 'package.json'))
   cpSync(join(ROOT, 'packages', pkg, 'src'), join(OUT, 'packages', pkg, 'src'), { recursive: true })
 }

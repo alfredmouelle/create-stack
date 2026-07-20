@@ -13,10 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@alfredmouelle/http": "workspace:*",
-    "@trigger.dev/sdk": "^4.4.6",
-    "inngest": "^4.7.0",
-    "valibot": "^1.4.1"
+    "inngest": "^4.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

@@ -55,9 +55,9 @@ No call site changes: they all depend on `StoragePort`, never on a provider.
 
 ## Adding a provider
 
-Implement `StoragePort` (`src/core/port.ts`): a `name` plus `put` / `get` /
+Implement `StoragePort` (`src/port.ts`): a `name` plus `put` / `get` /
 `delete` / `exists` / `getSignedUrl`. `get` returns `null` for a missing key and
-`delete` is a no-op on a missing key. Validate config with `valibot` at
-construction so misconfiguration fails fast. Look at `src/adapters/s3`
-(SDK-based, injectable client + presigner) or `src/adapters/local`
+`delete` is a no-op on a missing key. Check required options at
+construction so misconfiguration fails fast. Look at `src/adapters/s3.ts`
+(SDK-based, injectable client + presigner) or `src/adapters/local.ts`
 (filesystem) as templates.

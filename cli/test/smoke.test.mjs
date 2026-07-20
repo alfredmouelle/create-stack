@@ -28,6 +28,14 @@ const CONFIGS = [
   // Convex replaces the whole data layer (trpc + react-query) and composes its provider
   // with Clerk; the alias rewrite must survive the vendored convex + provider imports.
   { name: 'convex-clerk', database: 'convex', auth: 'clerk', mailer: 'none', alias: '@' },
+  // The two single-provider modules: their generated wiring (Inngest client + functions
+  // + route shim, Sentry init + instrumentation files) has to compile for real.
+  {
+    name: 'modules',
+    foundations: [],
+    mailer: 'none',
+    capabilities: { jobs: null, 'error-tracking': null },
+  },
 ]
 
 const TIMEOUT = 15 * 60 * 1000

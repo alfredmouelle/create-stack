@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type PinoLike, pinoAdapter } from '../src/adapters/pino/index.js'
+import { type PinoLike, pinoAdapter } from '../src/adapters/pino.js'
 
 function mockPino(): PinoLike {
   const self: PinoLike = {

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "http",
+  "kind": "module",
+  "description": "Web-standard HTTP helpers: typed handlers, JSON and error responses. Zero dependencies, no provider behind it.",
+  "env": [],
+  "deps": [],
+  "files": ["src/api.ts", "src/responses.ts", "src/types.ts", "src/index.ts"]
+}

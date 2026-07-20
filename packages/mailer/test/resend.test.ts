@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type ResendClient, resendAdapter } from '../src/adapters/resend/index.js'
-import { MailerError, type RenderedMessage } from '../src/core/port.js'
+import { type ResendClient, resendAdapter } from '../src/adapters/resend.js'
+import { MailerError, type RenderedMessage } from '../src/port.js'
 
 function rendered(overrides: Partial<RenderedMessage> = {}): RenderedMessage {
   return {
@@ -15,7 +15,7 @@ function rendered(overrides: Partial<RenderedMessage> = {}): RenderedMessage {
 
 describe('resendAdapter', () => {
   it('throws at construction when the api key is missing', () => {
-    expect(() => resendAdapter({ apiKey: '' })).toThrow()
+    expect(() => resendAdapter({ apiKey: '' })).toThrow(MailerError)
   })
 
   it('maps the rendered message to the Resend payload', async () => {

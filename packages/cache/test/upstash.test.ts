@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type UpstashLike, upstashAdapter } from '../src/adapters/upstash/index.js'
+import { type UpstashLike, upstashAdapter } from '../src/adapters/upstash.js'
 
 function mockClient(overrides: Partial<UpstashLike> = {}) {
   const client: UpstashLike = {

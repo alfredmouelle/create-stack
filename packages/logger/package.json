@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "pino": "^10.3.1",
-    "valibot": "^1.4.1"
+    "pino": "^10.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

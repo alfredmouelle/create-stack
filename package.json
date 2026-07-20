@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Agnostic SaaS foundation: swappable capabilities behind ports & adapters (mailer, storage, jobs, cache, logger, analytics, error-tracking), framework-agnostic, with create-stack & add-capability skills.",
+  "description": "Agnostic SaaS foundation: swappable capabilities behind ports & adapters (mailer, storage, cache, logger, analytics) plus single-provider modules (jobs on Inngest, error-tracking on Sentry), framework-agnostic, with create-stack & add-capability skills.",
   "author": {
     "name": "Alfred MOUELLE",
     "email": "alfredmouelle@gmail.com",
@@ -48,10 +48,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
+    "tsdown": "^0.22.3",
     "turbo": "^2.9.18",
     "typescript": "^5.9.3",
-    "tsdown": "^0.22.3",
-    "vitest": "^4.1.9",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9"
   }
 }

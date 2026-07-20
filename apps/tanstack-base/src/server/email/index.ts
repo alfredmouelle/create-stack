@@ -1,8 +1,8 @@
 import type { ReactElement } from 'react'
 import { env } from '~/env'
-import { resendAdapter } from './adapters/resend/index'
-import type { MailAddress, Mailer } from './core/port'
+import { resendAdapter } from './adapters/resend'
 import { createMailer } from './factory'
+import type { MailAddress, Mailer } from './port'
 
 export type EmailRecipient = MailAddress
 

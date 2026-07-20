@@ -2,7 +2,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { localAdapter } from '../src/adapters/local/index.js'
+import { localAdapter } from '../src/adapters/local.js'
+import { StorageError } from '../src/port.js'
 
 describe('localAdapter', () => {
   let baseDir: string
@@ -13,6 +14,10 @@ describe('localAdapter', () => {
 
   afterEach(async () => {
     await rm(baseDir, { recursive: true, force: true })
+  })
+
+  it('throws at construction when baseDir is missing', () => {
+    expect(() => localAdapter({ baseDir: '' })).toThrow(StorageError)
   })
 
   it('round-trips bytes through put/get (incl. nested keys)', async () => {

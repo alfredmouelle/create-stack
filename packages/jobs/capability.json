@@ -1,26 +1,10 @@
 {
   "$schema": "../../capability.schema.json",
   "name": "jobs",
-  "description": "Background jobs / events behind a swappable port. Event-driven: define jobs against named events and trigger them; the adapter handles delivery and execution.",
-  "port": "src/core/port.ts",
-  "defaultAdapter": "inngest",
-  "adapters": {
-    "inngest": {
-      "deps": ["inngest"],
-      "env": ["INNGEST_EVENT_KEY", "INNGEST_SIGNING_KEY"],
-      "files": ["src/adapters/inngest"]
-    },
-    "trigger": {
-      "deps": ["@trigger.dev/sdk"],
-      "env": ["TRIGGER_SECRET_KEY"],
-      "files": ["src/adapters/trigger"]
-    },
-    "memory": {
-      "deps": [],
-      "env": [],
-      "files": ["src/adapters/memory"]
-    }
-  },
-  "sharedDeps": ["valibot"],
-  "sharedFiles": ["src/core", "src/index.ts"]
+  "kind": "module",
+  "description": "Background jobs on Inngest, used directly. Durable multi-step functions, typed events, cron and fan-out stay available because nothing is hidden behind a port.",
+  "provider": "inngest",
+  "deps": ["inngest"],
+  "env": ["INNGEST_EVENT_KEY", "INNGEST_SIGNING_KEY"],
+  "files": ["src/serve.ts", "src/index.ts"]
 }

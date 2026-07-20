@@ -1,17 +1,20 @@
 # create-stack
 
 > An opinionated, framework-agnostic SaaS foundation. Swappable capabilities
-> behind tiny **ports & adapters**, ready to drop into any new project.
+> behind tiny **ports & adapters**, single-provider **modules** for the rest,
+> ready to drop into any new project.
 
 [![npm](https://img.shields.io/npm/v/@alfredmouelle/create-stack?color=cb3837&logo=npm&label=create-stack)](https://www.npmjs.com/package/@alfredmouelle/create-stack)
 [![license](https://img.shields.io/npm/l/@alfredmouelle/create-stack?color=blue)](./LICENSE)
 [![node](https://img.shields.io/node/v/@alfredmouelle/create-stack?color=339933&logo=node.js&logoColor=white)](https://nodejs.org)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-A pnpm + turbo monorepo where every external tool (email, storage, jobs, cache,
-logging, analytics, error tracking) lives behind a tiny **port**. App code
-depends only on the port, never on a provider, so swapping Resend for Brevo, or
-S3 for R2, is one line in a composition root, not a refactor.
+A pnpm + turbo monorepo where the external tools worth swapping (email, storage,
+cache, logging, analytics) live behind a tiny **port**. App code depends only on
+the port, never on a provider, so swapping Resend for Brevo, or S3 for R2, is one
+line in a composition root, not a refactor. The tools that are not worth swapping
+(jobs on Inngest, error tracking on Sentry) are vendored as **modules** and used
+directly, wiring included.
 
 > **Two package names, one project.** `@alfredmouelle/create-stack` is the
 > published CLI you install to scaffold a project. `@alfredmouelle/stack` is this
@@ -42,32 +45,48 @@ your own taste.
 
 ## Capabilities
 
-Each `packages/<capability>/` is a self-contained capability: a pure-TS port +
-one adapter per provider + a `capability.json` manifest + tests. The core never
-imports a framework.
+Each `packages/<capability>/` is a self-contained capability with a
+`capability.json` manifest and tests. The `kind` field in that manifest is the
+source of truth: a **port** has several adapters and is swappable at the
+composition root, a **module** has one provider (or none) and is used directly.
+
+### Ports (swappable)
+
+`src/port.ts` holds the interface, `src/adapters/<name>.ts` one adapter per
+provider.
 
 | Capability | Port | Adapters |
 |---|---|---|
-| **mailer** _reference_ | `send()`: body is always a React Email component, rendered to HTML + text | Resend · Brevo |
-| **email-kit** | composable React Email primitives + **swappable theme** + local preview (`email dev`) | n/a |
+| **mailer** _reference_ | `send()`: body is always a React Email component, rendered to HTML + text | Resend · Brevo · SES |
 | **storage** | `put` / `get` / `delete` / `exists` / `getSignedUrl` | S3 · Cloudflare R2 · GCS · local |
-| **jobs** | `defineJob` / `trigger` | Inngest · in-memory |
-| **cache** | `get` / `set` / `has` / `delete` / `wrap` | Redis · in-memory |
+| **cache** | `get` / `set` / `has` / `delete` / `wrap` | Redis · Upstash · in-memory |
 | **logger** | `trace`…`error` / `child` | pino · console |
-| **analytics** | `capture` / `identify` / `flush` | PostHog · noop |
-| **error-tracking** | `captureException` / `captureMessage` / `setUser` | Sentry · console |
+| **analytics** | `capture` / `identify` / `flush` | PostHog · Plausible · noop |
+
+### Modules (used directly)
+
+| Capability | What it is | Provider |
+|---|---|---|
+| **jobs** | the Inngest client plus the serve wiring: durable steps, cron, concurrency, fan-out and typed events stay reachable | Inngest |
+| **error-tracking** | shared `Sentry.init` options plus the per-framework files (`onRequestError`, instrumentation, `global-error`); the steps that edit files you own are printed, not applied | Sentry |
+| **email-kit** | composable React Email primitives + **swappable theme** + local preview (`email dev`) | n/a |
 | **http** | `apiFetch` (typed fetch) + Web-standard `WebhookHandler` | n/a _(for APIs without an SDK)_ |
 
 Design rules:
 
-- **Pure core.** `packages/*` have zero framework code: the port and adapters
-  depend only on the provider SDK and Web/Node standards.
+- **Pure core.** `packages/*` have zero framework code, except where the
+  framework integration *is* the product (the error-tracking wiring).
 - **Official SDKs** are always preferred over hand-rolled fetch (except `http`,
   whose whole job is fetch).
 - **Provider selection by env var**, static imports. (Switch to lazy import +
   per-adapter subexports only if a target deploys to the edge.)
-- **Don't abstract what you won't swap**: no port for things with a single
-  obvious implementation.
+- **Don't abstract what you won't swap.** No port for a single obvious
+  implementation, and none either when the port would have to hide what makes the
+  provider worth using: the jobs port modelled neither durable steps, nor cron,
+  nor concurrency, nor fan-out, so real code reached past it immediately; and
+  Sentry's value (Server Component errors via `onRequestError`, source maps,
+  preloaded OTel instrumentation, per-request scope isolation) is structurally
+  out of reach of a `captureException` wrapper.
 
 ## Structure
 
@@ -124,10 +143,10 @@ pnpm link:skills:codex    # → Codex  (~/.codex/prompts)
 - **`/create-stack`**: scaffold a new project by running the published
   `@alfredmouelle/create-stack` CLI (framework + foundations + mailer, installs &
   inits git).
-- **`/add-capability <capability> <adapter>`**: vendor a capability into the
-  current project behind a port (e.g. `/add-capability mailer resend`). Server
-  capabilities land in `src/server/<cap>/`, pure utils in `src/lib/`, templates
-  in `src/emails/`.
+- **`/add-capability <capability> [adapter]`**: vendor a capability into the
+  current project (e.g. `/add-capability mailer resend`). Ports take an adapter
+  argument, modules take none. Server capabilities land in `src/server/<cap>/`,
+  pure utils in `src/lib/`, templates in `src/emails/`.
 
 See [`skills/README.md`](./skills/README.md) for details.
 
@@ -142,7 +161,7 @@ cover the local setup, the ports & adapters rules, and the commit convention.
 - **Package manager:** pnpm · **Tasks:** turbo · **Build:** tsdown · **Tests:** vitest
 - **Lint/format:** Biome v2, strict (no semicolons, single quotes, trailing
   commas, `~/*` import alias)
-- **Config validation:** valibot · **Typed env:** `@t3-oss/env-core`
+- **Schema validation (apps):** valibot · **Typed env:** `@t3-oss/env-core`
 - **Node:** >= 22
 
 ## Credits

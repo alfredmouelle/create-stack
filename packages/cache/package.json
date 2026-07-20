@@ -14,8 +14,7 @@
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
-    "ioredis": "^5.11.1",
-    "valibot": "^1.4.1"
+    "ioredis": "^5.11.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

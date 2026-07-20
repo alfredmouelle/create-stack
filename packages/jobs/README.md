@@ -1,57 +1,95 @@
 # @alfredmouelle/jobs
 
-Background jobs / events behind a tiny, event-driven port. Define jobs against
-named events and `trigger` them; the adapter handles delivery and execution.
-Swap providers without touching call sites.
+Background jobs on [Inngest](https://www.inngest.com), used **directly**. This is
+not a port: there is no `JobsPort`, no adapter, no swappable provider. The only
+thing vendored is the HTTP wiring, because that is the only part that is actually
+reusable.
+
+## Why there is no port here
+
+There used to be one. It modelled events (`trigger`) and single-event handlers
+(`defineJob`), and it deliberately excluded everything that makes a job runner
+worth using: durable multi-step functions (`step.run`, `step.waitForEvent`),
+concurrency limits, retries, cron triggers, fan-out, typed event schemas.
+
+That made the port a lowest common denominator. Real code reached past it for
+`adapter.client` on day one, so the seam cost a layer and bought nothing. Worse,
+it froze a v3-era `createFunction(config, trigger, handler)` call behind a
+structural mock, so the unit tests stayed green while the vendored code threw
+against Inngest v4.
+
+Jobs are now written against the SDK. You lose the ability to swap to Trigger.dev
+by changing one line, which was never real anyway: the two products have
+different execution models, and porting means rewriting the handlers regardless.
 
 ## Usage
 
-```ts
-import { inngestAdapter } from '@alfredmouelle/jobs'
+Declare typed events once, then trigger and handle them.
 
-// composition root: pick the provider here, once
-export const jobs = inngestAdapter({
+```ts
+// src/server/jobs/events.ts
+import { eventType, staticSchema } from 'inngest'
+
+export const userSignedUp = eventType('user/signed-up', {
+  schema: staticSchema<{ userId: string }>(),
+})
+```
+
+```ts
+// src/server/jobs/index.ts, the composition root, generated for you
+import { Inngest } from 'inngest'
+import { env } from '~/env'
+
+export const jobs = new Inngest({
   id: 'my-app',
-  eventKey: process.env.INNGEST_EVENT_KEY,
+  eventKey: env.INNGEST_EVENT_KEY,
+  isDev: env.NODE_ENV === 'development',
 })
-
-// register jobs (collected on the adapter for serving)
-jobs.defineJob<{ userId: string }>({
-  id: 'send-welcome',
-  event: 'user/created',
-  handler: async ({ data }) => {
-    await sendWelcomeEmail(data.userId)
-  },
-})
-
-// anywhere in the app: depends only on the JobsPort
-await jobs.trigger({ name: 'user/created', data: { userId: '123' } })
 ```
-
-### Serving (Inngest)
-
-Inngest invokes your functions over HTTP. Wire the collected `functions` into a
-Web-standard `FetchHandler` and mount it in your framework:
 
 ```ts
-import { serve } from 'inngest/edge'
-import { inngestServeHandler } from '@alfredmouelle/jobs'
+// src/server/jobs/functions.ts
+import { userSignedUp } from './events'
+import { jobs } from './index'
 
-// FetchHandler: Request -> Response, mountable in Next.js or TanStack Start
-export const handler = inngestServeHandler(jobs, serve, {
-  signingKey: process.env.INNGEST_SIGNING_KEY,
-})
+export const sendWelcome = jobs.createFunction(
+  { id: 'send-welcome', triggers: [{ event: userSignedUp }] },
+  async ({ event, step }) => {
+    // event.data is typed from the eventType, and step gives you durability
+    await step.run('send', () => sendWelcomeEmail(event.data.userId))
+  },
+)
+
+export const functions = [sendWelcome]
 ```
 
-The same `FetchHandler` mounts unchanged in either framework; only the route
-shim differs. This is the canonical wiring (no demo app needed):
+Trigger from anywhere. `create()` is what carries the types through `send`:
+
+```ts
+import { userSignedUp } from '~/server/jobs/events'
+import { jobs } from '~/server/jobs'
+
+await jobs.send(userSignedUp.create({ userId: '123' }))
+```
+
+## Serving
+
+Inngest invokes your functions over HTTP. `jobsHandler` wraps Inngest's
+framework-agnostic `edge` handler, so one handler mounts under either framework:
+
+```ts
+// src/server/jobs/serve.ts
+import { jobsHandler } from './serve'
+import { functions } from './functions'
+import { jobs } from './index'
+
+export const handler = jobsHandler({ client: jobs, functions })
+```
 
 ```ts
 // Next.js: src/app/api/inngest/route.ts
 import { handler } from '~/server/jobs/serve'
-export const GET = handler
-export const POST = handler
-export const PUT = handler
+export { handler as GET, handler as POST, handler as PUT }
 ```
 
 ```ts
@@ -70,65 +108,29 @@ export const Route = createFileRoute('/api/inngest')({
 })
 ```
 
-### Trigger.dev
+`PUT` is what Inngest calls to sync your function list, so do not drop it.
 
-Swap the composition root to the `trigger` adapter. Each `defineJob` becomes a
-Trigger.dev task; `trigger` fans an event out to every task subscribed to it.
+## Signing key
 
-```ts
-import { triggerDevAdapter } from '@alfredmouelle/jobs'
+`jobsHandler` takes no `signingKey`, because `serve()` has no such option in
+Inngest v4. It belongs on the client or, more usually, in `INNGEST_SIGNING_KEY`,
+which the SDK reads on its own.
 
-export const jobs = triggerDevAdapter({
-  secretKey: process.env.TRIGGER_SECRET_KEY,
-})
+## Env
 
-jobs.defineJob<{ userId: string }>({
-  id: 'send-welcome',
-  event: 'user/created',
-  handler: async ({ data }) => sendWelcomeEmail(data.userId),
-})
+| Variable | Purpose |
+| --- | --- |
+| `INNGEST_EVENT_KEY` | Sending events in production. |
+| `INNGEST_SIGNING_KEY` | Authenticating Inngest's calls to your serve endpoint. |
 
-await jobs.trigger({ name: 'user/created', data: { userId: '123' } })
-```
+## Testing jobs
 
-Trigger.dev discovers tasks by scanning the `dirs` in `trigger.config.ts`.
-Re-export the collected tasks from a file inside one of those dirs so the CLI
-picks them up:
+There is no `memory` adapter to swap in. Test the handler as the plain function
+it is, which is both simpler and closer to what runs in production:
 
 ```ts
-// src/trigger/index.ts
-import { jobs } from '../server/jobs'
-export const tasks = jobs.tasks
+const result = await sendWelcome.fn({ event: userSignedUp.create({ userId: '1' }), step })
 ```
 
-## Dev & tests
-
-Use the in-process `memoryAdapter` to run job logic synchronously, no network:
-
-```ts
-import { memoryAdapter } from '@alfredmouelle/jobs'
-
-const jobs = memoryAdapter()
-jobs.defineJob({ id: 'x', event: 'user/created', handler })
-await jobs.trigger({ name: 'user/created', data: { userId: '1' } }) // runs handler inline
-```
-
-## The abstraction leak
-
-This is the leakiest capability in the stack, and the port is deliberately
-minimal about it. `JobsPort` models only **events** (`trigger`) and
-**single-event handlers** (`defineJob`). Inngest's real model is far richer:
-multi-step durable functions (`step.run`, `step.waitForEvent`), concurrency
-limits, retries, cron triggers, fan-out, and typed event schemas.
-
-None of that is in the port, by design. Keeping the port tiny is what makes it
-swappable (the `memory` adapter is ~30 lines). When you need real Inngest
-features, **reach for the SDK directly** via `adapter.client` rather than
-widening the port. Treat `@alfredmouelle/jobs` as the seam for the simple 80% case; drop
-to Inngest for the powerful 20%.
-
-## Adding a provider
-
-Implement `JobsPort` (`src/core/port.ts`): a `name`, `defineJob`, and `trigger`.
-Look at `src/adapters/inngest` (SDK-based) or `src/adapters/memory` (in-process)
-as templates.
+For an end-to-end run, the Inngest dev server executes your real functions
+against the real runtime: `npx inngest-cli@latest dev`.

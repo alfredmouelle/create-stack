@@ -1,6 +1,6 @@
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { describe, expect, it, type Mock, vi } from 'vitest'
-import { r2Adapter, type S3ClientLike, type S3Presigner } from '../src/index.js'
+import { r2Adapter, type S3ClientLike, type S3Presigner, StorageError } from '../src/index.js'
 
 type SendMock = Mock<(command: unknown) => Promise<unknown>>
 type PresignMock = Mock<S3Presigner>
@@ -23,7 +23,15 @@ describe('r2Adapter', () => {
   })
 
   it('throws at construction when account id is missing', () => {
-    expect(() => r2Adapter({ bucket: 'b', accountId: '', client: { send: vi.fn() } })).toThrow()
+    expect(() => r2Adapter({ bucket: 'b', accountId: '', client: { send: vi.fn() } })).toThrow(
+      StorageError,
+    )
+  })
+
+  it('throws at construction when the bucket is missing', () => {
+    expect(() => r2Adapter({ bucket: '', accountId: 'acc123', client: { send: vi.fn() } })).toThrow(
+      StorageError,
+    )
   })
 
   it('delegates put to the S3-compatible client', async () => {

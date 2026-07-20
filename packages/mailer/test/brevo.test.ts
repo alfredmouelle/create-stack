@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type BrevoClientLike, brevoAdapter } from '../src/adapters/brevo/index.js'
-import { MailerError, type RenderedMessage } from '../src/core/port.js'
+import { type BrevoClientLike, brevoAdapter } from '../src/adapters/brevo.js'
+import { MailerError, type RenderedMessage } from '../src/port.js'
 
 function rendered(overrides: Partial<RenderedMessage> = {}): RenderedMessage {
   return {
@@ -22,7 +22,7 @@ function fakeClient(send: SendFn = vi.fn(async () => ({ messageId: '<abc@brevo>'
 
 describe('brevoAdapter', () => {
   it('throws at construction when the api key is missing', () => {
-    expect(() => brevoAdapter({ apiKey: '' })).toThrow()
+    expect(() => brevoAdapter({ apiKey: '' })).toThrow(MailerError)
   })
 
   it('maps the rendered message to the Brevo request', async () => {

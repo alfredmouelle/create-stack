@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type PostHogLike, posthogAdapter } from '../src/adapters/posthog/index.js'
+import { type PostHogLike, posthogAdapter } from '../src/adapters/posthog.js'
 
 function mockClient(): PostHogLike {
   return {

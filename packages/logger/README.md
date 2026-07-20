@@ -34,6 +34,6 @@ No call-site changes: they all depend on `Logger`, never on a backend.
 
 ## Adding a backend
 
-Implement `Logger` (`src/core/port.ts`): a `name`, the five level methods
-`(msg, fields?)`, and `child(bindings)`. Look at `src/adapters/pino`
-(SDK-based) or `src/adapters/console` (pure) as templates.
+Implement `Logger` (`src/port.ts`): a `name`, the five level methods
+`(msg, fields?)`, and `child(bindings)`. Look at `src/adapters/pino.ts`
+(SDK-based) or `src/adapters/console.ts` (pure) as templates.

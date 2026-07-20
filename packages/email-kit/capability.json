@@ -1,0 +1,10 @@
+{
+  "$schema": "../../capability.schema.json",
+  "name": "email-kit",
+  "kind": "module",
+  "description": "React Email building blocks and theme shared by transactional templates. No provider behind it: sending is the mailer's job.",
+  "env": [],
+  "deps": [],
+  "peerDeps": ["react", "react-dom", "react-email"],
+  "files": ["src/components.tsx", "src/context.tsx", "src/theme.ts", "src/index.ts"]
+}

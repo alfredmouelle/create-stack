@@ -1,6 +1,24 @@
-import { normalizeAddress, normalizeRecipients } from './core/address.js'
-import type { Mailer, MailerAdapter, MailRecipient, RenderedMessage } from './core/port.js'
-import { type EmailRenderer, renderEmail } from './core/render.js'
+import type { ReactElement } from 'react'
+import { render as renderReactEmail } from 'react-email'
+import { normalizeAddress, normalizeRecipients } from './address.js'
+import type { Mailer, MailerAdapter, MailRecipient, RenderedMessage } from './port.js'
+
+export interface RenderedBody {
+  html: string
+  text: string
+}
+
+/** Turns a React Email component into HTML + plain text. */
+export type EmailRenderer = (react: ReactElement) => Promise<RenderedBody>
+
+/** Default renderer via `react-email`. */
+export const renderEmail: EmailRenderer = async (react) => {
+  const [html, text] = await Promise.all([
+    renderReactEmail(react),
+    renderReactEmail(react, { plainText: true }),
+  ])
+  return { html, text }
+}
 
 export interface CreateMailerOptions {
   /** Provider implementation (Resend, Brevo, …). */

@@ -70,7 +70,8 @@ Scaffold flags:
   -v, --version                    Print version
 
 Capability flags (omit to skip; pass with no value for the default adapter):
-  --storage  --cache  --jobs  --logger  --analytics  --error-tracking
+  --storage  --cache  --logger  --analytics    swappable behind a port
+  --jobs  --error-tracking                     single provider, no adapter to pick
   Adapters are listed in the interactive picker, or run \`add --help\`.`
 
 const ADD_HELP = `create-stack add — vendor/swap capabilities into the current project.
@@ -82,8 +83,9 @@ Run with no capability for a multi-select picker; pass a capability name (and
 optional adapter) for non-interactive mode. Re-adding a multi-adapter capability
 swaps its adapter; --keep retains the previous one(s).
 
-Capabilities: storage, cache, jobs, logger, analytics, error-tracking,
-mailer, email-kit, http.
+Swappable behind a port: storage, cache, logger, analytics, mailer.
+Single provider (no adapter): jobs (inngest), error-tracking (sentry).
+No provider at all: email-kit, http.
 
 Flags:
   --keep                           Keep existing adapter(s) when swapping
@@ -167,6 +169,24 @@ function collectFromFlags(args) {
     monorepo,
     doInstall,
   }
+}
+
+/** Ask which adapter to use for each picked capability; a module has nothing to pick. */
+async function pickAdapters(caps) {
+  const out = {}
+  for (const cap of caps) {
+    const choices = adapterChoices(cap)
+    out[cap] = choices
+      ? cancelled(
+          await p.select({
+            message: `${cap} adapter`,
+            options: choices.options,
+            initialValue: choices.defaultAdapter,
+          }),
+        )
+      : null
+  }
+  return out
 }
 
 async function collectFromPrompts(argDir) {
@@ -305,24 +325,14 @@ async function collectFromPrompts(argDir) {
 
   const capPicked = cancelled(
     await p.multiselect({
-      message: 'Capabilities (space to toggle, swappable behind a port)',
+      message: 'Capabilities (space to toggle)',
       required: false,
       initialValues: [],
       options: capabilityChoices(),
     }),
   )
 
-  const capabilities = {}
-  for (const cap of capPicked) {
-    const { defaultAdapter, options } = adapterChoices(cap)
-    capabilities[cap] = cancelled(
-      await p.select({
-        message: `${cap} adapter`,
-        options,
-        initialValue: defaultAdapter,
-      }),
-    )
-  }
+  const capabilities = await pickAdapters(capPicked)
 
   const doInstall = cancelled(
     await p.confirm({ message: 'Install dependencies and verify now?', initialValue: true }),
@@ -403,7 +413,7 @@ function execute(a) {
 
   const s = p.spinner()
   s.start('Forking + stripping the base app')
-  buildProject({ ...a, projectDir, pm })
+  const built = buildProject({ ...a, projectDir, pm })
   s.stop('Project scaffolded')
 
   if (a.doInstall) installAndVerify(projectDir, pm)
@@ -411,6 +421,7 @@ function execute(a) {
   initGitRepo(projectDir)
 
   p.note(summaryLines(a, pm).join('\n'), 'Done')
+  if (built.manualSteps?.length) p.note(built.manualSteps.join('\n'), 'Finish by hand')
   p.outro(`Created ${a.projectName}`)
 }
 
@@ -430,7 +441,8 @@ function summaryLines(a, pm) {
     `Auth: ${orNone(a.auth)}`,
     `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
     `Mailer: ${orNone(a.mailerProvider)}`,
-    `Capabilities: ${capEntries.map(([c, ad]) => `${c} (${ad})`).join(', ') || '(none)'}`,
+    // a module has no adapter, so it shows bare rather than as `cap (null)`
+    `Capabilities: ${capEntries.map(([c, ad]) => (ad ? `${c} (${ad})` : c)).join(', ') || '(none)'}`,
     '',
     'Add more tools later: create-stack add <capability>.',
     '',
@@ -506,6 +518,11 @@ async function runAdd(args) {
   if (!args.flags['no-install']) installAndVerify(projectDir, detectedPm)
 
   p.note(added.map(addedLine).join('\n'), keep ? 'Added (kept existing adapters)' : 'Added')
+
+  // Wiring that means editing files the project owns, so the user applies it.
+  const steps = added.flatMap((a) => (a.manualSteps ?? []).map((s) => `${a.cap}: ${s}`))
+  if (steps.length) p.note(steps.join('\n'), 'Finish by hand')
+
   p.outro(`Added ${added.map((a) => a.cap).join(', ')}`)
 }
 

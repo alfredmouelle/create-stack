@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type GcsFileLike, type GcsStorageLike, gcsAdapter } from '../src/adapters/gcs/index.js'
+import { type GcsFileLike, type GcsStorageLike, gcsAdapter } from '../src/adapters/gcs.js'
+import { StorageError } from '../src/port.js'
 
 function makeClient(file: Partial<GcsFileLike>) {
   const fileHandle = file as GcsFileLike
@@ -11,7 +12,7 @@ function makeClient(file: Partial<GcsFileLike>) {
 
 describe('gcsAdapter', () => {
   it('throws at construction when the bucket is missing', () => {
-    expect(() => gcsAdapter({ bucket: '', client: { bucket: vi.fn() } })).toThrow()
+    expect(() => gcsAdapter({ bucket: '', client: { bucket: vi.fn() } })).toThrow(StorageError)
   })
 
   it('put saves the file with contentType', async () => {

@@ -3,6 +3,7 @@ import {
   adapterChoices,
   CAPABILITIES,
   capabilityChoices,
+  hasAdapters,
   resolveAdapter,
 } from '../lib/capabilities.mjs'
 
@@ -21,8 +22,34 @@ describe('resolveAdapter', () => {
   })
 })
 
+describe('ports vs modules', () => {
+  test('a module has no adapter to pick', () => {
+    expect(hasAdapters('jobs')).toBe(false)
+    expect(hasAdapters('error-tracking')).toBe(false)
+    expect(adapterChoices('jobs')).toBeNull()
+  })
+
+  test('a port does', () => {
+    for (const cap of ['storage', 'cache', 'logger', 'analytics']) {
+      expect(hasAdapters(cap), cap).toBe(true)
+    }
+  })
+
+  test('a bare module flag resolves to no adapter', () => {
+    // what the site's command builder emits: `--jobs`, `--error-tracking`
+    expect(resolveAdapter('jobs', true)).toBeNull()
+    expect(resolveAdapter('error-tracking', true)).toBeNull()
+    expect(resolveAdapter('jobs', undefined)).toBeNull()
+  })
+
+  test('naming an adapter for a module is rejected, not ignored', () => {
+    expect(() => resolveAdapter('jobs', 'trigger')).toThrow(/no adapter to choose/)
+    expect(() => resolveAdapter('error-tracking', 'console')).toThrow(/no adapter to choose/)
+  })
+})
+
 describe('choices', () => {
-  test('CAPABILITIES is the swappable set', () => {
+  test('CAPABILITIES covers ports and modules', () => {
     expect(CAPABILITIES).toEqual(
       expect.arrayContaining(['storage', 'cache', 'jobs', 'logger', 'analytics', 'error-tracking']),
     )

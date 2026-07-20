@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import type { MailerAdapter, RenderedMessage } from '../src/core/port.js'
 import { createMailer } from '../src/factory.js'
+import type { MailerAdapter, RenderedMessage } from '../src/port.js'
 
 function fakeAdapter() {
   const sent: RenderedMessage[] = []

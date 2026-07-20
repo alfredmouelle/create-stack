@@ -13,6 +13,54 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING: capabilities now come in two kinds, and the vendored layout is flatter.**
+  `kind` in `capability.json` is the source of truth: a _port_ (`storage`, `cache`,
+  `logger`, `analytics`, `mailer`) keeps several adapters and stays swappable at the
+  composition root, while a _module_ (`jobs`, `error-tracking`, plus the provider-less
+  `http` and `email-kit`) has a single provider used directly, with no adapter to pick.
+  Vendored files moved with it: `src/server/<cap>/core/port.ts` is now
+  `src/server/<cap>/port.ts`, and `src/server/<cap>/adapters/<name>/index.ts` is now
+  `src/server/<cap>/adapters/<name>.ts`. Projects generated before this release carry the
+  old tree; re-running `create-stack add <capability>` re-vendors it cleanly in the new
+  shape (it wipes the capability directory first, so drop any local edits you want to keep
+  beforehand).
+- **`jobs` is Inngest, used directly.** The scaffold now writes the real Inngest client,
+  a typed example event and function, and the serve route, instead of a `defineJob` /
+  `trigger` port. The port modelled neither durable steps, nor cron, nor concurrency, nor
+  fan-out, so real code reached past it for the underlying client on day one.
+- **`error-tracking` is Sentry, wired the way Sentry documents it.** The capability now
+  ships shared `Sentry.init` options plus the per-framework files it can write on its own
+  (Next: `instrumentation.ts` with `onRequestError`, the server/edge/client configs and
+  `global-error.tsx`; TanStack Start: `instrument.server.mjs` and `instrument.client.tsx`).
+  The steps that mean editing files you own (`withSentryConfig` in `next.config.ts`, the
+  `sentryTanstackStart` plugin, `wrapFetchWithSentry`, the request/function middlewares)
+  are printed at the end of the run instead of being applied. Server-Component errors,
+  source maps, preloaded OTel instrumentation and per-request scope isolation are
+  unreachable from a `captureException` wrapper, which is what the old port was.
+- `--jobs` and `--error-tracking` take no value: passing an adapter name now errors instead
+  of being silently accepted.
+- Capability packages no longer depend on `valibot`. The per-capability `config.ts` schemas
+  are gone; they only asserted "non-empty string" on values that `env.ts` already validates.
+
+### Removed
+
+- **Adapters that were never a real swap**: `trigger` and `memory` for `jobs`, `console`
+  for `error-tracking`. `--jobs trigger`, `--jobs memory` and `--error-tracking console`
+  are no longer valid.
+
+### Fixed
+
+- **`jobs` was broken at runtime in every scaffolded project.** The Inngest adapter called
+  the v3 three-argument `createFunction(config, trigger, handler)` while the package pins
+  `inngest@^4.7.0`, whose signature takes two arguments. A structural cast hid it from
+  typecheck and the unit tests mocked the v3 shape, so it stayed green while throwing in
+  the generated app. Same for `signingKey` passed to `serve()`, which is not an option in
+  v4 (set `INNGEST_SIGNING_KEY` and the SDK reads it).
+- **Mailer dependency**: the manifest declared `@react-email/render`, which nothing
+  imports (the code imports `react-email`), and installed it at `latest`. Dropped.
+
 ## [0.9.0] - 2026-07-16
 
 ### Added

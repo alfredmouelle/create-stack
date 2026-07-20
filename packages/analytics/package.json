@@ -14,8 +14,7 @@
   },
   "dependencies": {
     "@alfredmouelle/http": "workspace:*",
-    "posthog-node": "^5.38.2",
-    "valibot": "^1.4.1"
+    "posthog-node": "^5.38.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

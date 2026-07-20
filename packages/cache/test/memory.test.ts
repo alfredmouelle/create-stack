@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { memoryAdapter } from '../src/adapters/memory/index.js'
+import { memoryAdapter } from '../src/adapters/memory.js'
 
 describe('memoryAdapter', () => {
   beforeEach(() => {

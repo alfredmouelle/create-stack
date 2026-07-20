@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { consoleAdapter } from '../src/adapters/console/index.js'
+import { consoleAdapter } from '../src/adapters/console.js'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -10,6 +10,18 @@ describe('consoleAdapter', () => {
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => {})
     const info = vi.spyOn(console, 'info').mockImplementation(() => {})
     const logger = consoleAdapter({ level: 'info' })
+
+    logger.debug('nope')
+    logger.info('yep')
+
+    expect(debug).not.toHaveBeenCalled()
+    expect(info).toHaveBeenCalledTimes(1)
+  })
+
+  it('defaults to info level when none is given', () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const logger = consoleAdapter()
 
     logger.debug('nope')
     logger.info('yep')

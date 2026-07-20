@@ -1,21 +1,21 @@
 {
   "$schema": "../../capability.schema.json",
   "name": "error-tracking",
-  "description": "Error reporting behind a swappable port. Capture exceptions, messages, breadcrumbs and user context, then ship them to a provider.",
-  "port": "src/core/port.ts",
-  "defaultAdapter": "sentry",
-  "adapters": {
-    "sentry": {
-      "deps": ["@sentry/node"],
-      "env": ["SENTRY_DSN", "SENTRY_ENVIRONMENT"],
-      "files": ["src/adapters/sentry"]
+  "kind": "module",
+  "description": "Error tracking on Sentry, wired the way Sentry documents it. The framework integration is the product: server-component errors, source maps and auto-instrumentation are unreachable from a captureException wrapper.",
+  "provider": "sentry",
+  "env": ["SENTRY_DSN", "SENTRY_ENVIRONMENT"],
+  "files": ["src/options.ts", "src/index.ts"],
+  "frameworks": {
+    "next": {
+      "deps": ["@sentry/nextjs"]
     },
-    "console": {
-      "deps": [],
-      "env": [],
-      "files": ["src/adapters/console"]
+    "tanstack": {
+      "deps": ["@sentry/tanstackstart-react"]
     }
   },
-  "sharedDeps": ["valibot"],
-  "sharedFiles": ["src/core", "src/index.ts"]
+  "versions": {
+    "@sentry/nextjs": "^10.59.0",
+    "@sentry/tanstackstart-react": "^10.59.0"
+  }
 }

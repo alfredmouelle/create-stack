@@ -64,7 +64,6 @@ const PLACEHOLDERS = {
   UPSTASH_REDIS_REST_TOKEN: 'change-me',
   POSTHOG_API_KEY: 'phc_change_me',
   PLAUSIBLE_DOMAIN: 'example.com',
-  SENTRY_DSN: 'https://change-me@o0.ingest.sentry.io/0',
 }
 
 const indent = (s) => `    ${s}`

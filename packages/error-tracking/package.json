@@ -12,10 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@sentry/node": "^10.59.0",
-    "valibot": "^1.4.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.10.2",
     "tsdown": "^0.22.3",

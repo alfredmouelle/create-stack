@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { noopAdapter } from '../src/adapters/noop/index.js'
+import { noopAdapter } from '../src/adapters/noop.js'
 
 describe('noopAdapter', () => {
   it('exposes the noop name', () => {

@@ -1,22 +1,26 @@
-export { type BrevoConfig, BrevoConfigSchema } from './adapters/brevo/config.js'
 export {
   type BrevoAdapterOptions,
   type BrevoClientLike,
   brevoAdapter,
-} from './adapters/brevo/index.js'
-export { type ResendConfig, ResendConfigSchema } from './adapters/resend/config.js'
+} from './adapters/brevo.js'
 export {
   type ResendAdapterOptions,
   type ResendClient,
   resendAdapter,
-} from './adapters/resend/index.js'
-export { type SesConfig, SesConfigSchema } from './adapters/ses/config.js'
+} from './adapters/resend.js'
 export {
   type SesAdapterOptions,
   type SesClientLike,
   sesAdapter,
-} from './adapters/ses/index.js'
-export { formatAddress, normalizeAddress, normalizeRecipients } from './core/address.js'
+} from './adapters/ses.js'
+export { formatAddress, normalizeAddress, normalizeRecipients } from './address.js'
+export {
+  type CreateMailerOptions,
+  createMailer,
+  type EmailRenderer,
+  type RenderedBody,
+  renderEmail,
+} from './factory.js'
 export type {
   MailAddress,
   MailAttachment,
@@ -26,7 +30,5 @@ export type {
   MailRecipient,
   RenderedMessage,
   SentMail,
-} from './core/port.js'
-export { MailerError } from './core/port.js'
-export { type EmailRenderer, type RenderedBody, renderEmail } from './core/render.js'
-export { type CreateMailerOptions, createMailer } from './factory.js'
+} from './port.js'
+export { MailerError } from './port.js'

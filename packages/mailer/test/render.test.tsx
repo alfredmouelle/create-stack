@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { renderEmail } from '../src/core/render.js'
+import { renderEmail } from '../src/factory.js'
 import { WelcomeEmail } from './templates/welcome.js'
 
 describe('renderEmail', () => {

@@ -15,7 +15,7 @@
 - **Data layer**: Drizzle (Postgres with driver adapter, schema, seed, keyset pagination), Prisma, or Convex (realtime), or none for a vitrine.
 - **Auth & API**: better-auth (email + password with verification, Google OAuth) or hosted Clerk; typed tRPC v11 with SSR/RSC.
 - **Mailer**: Resend, Brevo or SES behind one port with React Email templates; swap providers with a single env change.
-- **Capabilities**: opt-in integrations behind a port: storage (S3/R2), cache (Redis), background jobs (Inngest), logger, analytics, error tracking (Sentry).
+- **Capabilities**: opt-in integrations, in two kinds. Behind a swappable port: storage (S3/R2/GCS/local), cache (Redis/Upstash/memory), logger (Pino/console), analytics (PostHog/Plausible). Single provider, used directly because a port would hide what makes them useful: background jobs (Inngest, with durable steps, cron and typed events) and error tracking (Sentry, with server-component errors, tracing and source maps).
 - **Baseline**: strict Biome (replaces ESLint + Prettier), typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow, and a generated `.env`.
 - **UI components**: opt-in components installed after scaffolding with `create-stack component <name>` into `components/ui`: `date-picker`, `datatable`, and `await`-able dialogs built on react-call (`confirm`, `alert`, `prompt`, `choice`, `confirm-passphrase`, `confirm-otp`) whose `<Root />` is auto-mounted, so you call them from anywhere.
 

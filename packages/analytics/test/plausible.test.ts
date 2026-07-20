@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { plausibleAdapter } from '../src/adapters/plausible/index.js'
+import { plausibleAdapter } from '../src/adapters/plausible.js'
 
 function mockFetch(status = 202) {
   return vi.fn(async () => new Response(null, { status }))

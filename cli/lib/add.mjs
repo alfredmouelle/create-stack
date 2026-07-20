@@ -8,7 +8,10 @@ import {
   adapterRemovableDeps,
   CAPABILITIES,
   capabilityChoices,
+  capabilityDir,
   currentAdapter,
+  hasAdapters,
+  MANUAL_STEPS,
   resolveAdapter,
   vendorCapability,
   vendorPackageSrc,
@@ -31,7 +34,7 @@ const NO_ADAPTER = new Set(['email-kit', 'http']) // single implementation, noth
 export const ADDABLE = [...CAPABILITIES, 'mailer', 'email-kit', 'http']
 
 /** Vendored destination dir (relative to the project) for a target. */
-export const targetDir = (cap) => EXTRA_DIR[cap] ?? `src/server/${cap}`
+export const targetDir = (cap) => EXTRA_DIR[cap] ?? capabilityDir(cap) ?? `src/server/${cap}`
 
 /** Options for the interactive `add` multi-select. */
 export const addableChoices = () => [
@@ -76,13 +79,37 @@ export function detectFramework(pkg) {
 
 const currentMailerAdapter = (projectDir) => {
   const idx = join(projectDir, EXTRA_DIR.mailer, 'index.ts')
-  return exists(idx) ? (read(idx).match(/\.\/adapters\/([\w-]+)\/index/)?.[1] ?? null) : null
+  return exists(idx) ? (read(idx).match(/\.\/adapters\/([\w-]+)['"]/)?.[1] ?? null) : null
+}
+
+/**
+ * Vendor the target and report what changed. The mailer predates the capability
+ * manifests and keeps its own engine; everything else goes through vendorCapability.
+ * @returns {{ swappedFrom: string|null, removeDeps?: string[], addDeps, envKeys, requiredEnvKeys }}
+ */
+function vendor({ projectDir, framework, projectName, cap, adapter, keep }) {
+  if (cap === 'mailer') {
+    const from = currentMailerAdapter(projectDir)
+    return {
+      swappedFrom: from && from !== adapter ? from : null,
+      ...vendorMailer(projectDir, framework, adapter, keep),
+    }
+  }
+
+  // A module has no adapter, so nothing can have been swapped away from.
+  const from = hasAdapters(cap) ? currentAdapter(projectDir, cap) : null
+  const swappedFrom = from && from !== adapter ? from : null
+  return {
+    swappedFrom,
+    removeDeps: swappedFrom && !keep ? adapterRemovableDeps(cap, from, adapter) : [],
+    ...vendorCapability({ projectDir, framework, projectName, cap, adapter, keep }),
+  }
 }
 
 /**
  * Vendor `cap` (+ `adapter`) into the project, swapping the adapter on a re-add unless
  * `keep` is set.
- * @returns {{ framework, projectName, addDeps, envKeys, swappedFrom: string|null }}
+ * @returns {{ framework, projectName, addDeps, envKeys, swappedFrom: string|null, manualSteps: string[] }}
  */
 export function addCapability({ projectDir, cap, adapter, keep }) {
   const pkgPath = join(projectDir, 'package.json')
@@ -96,42 +123,29 @@ export function addCapability({ projectDir, cap, adapter, keep }) {
   if (NO_ADAPTER.has(cap)) {
     vendorPackageSrc(cap, join(projectDir, targetDir(cap)))
     rewriteAlias(projectDir, alias)
-    return { framework, projectName, addDeps: {}, envKeys: [], swappedFrom: null }
+    return { framework, projectName, addDeps: {}, envKeys: [], swappedFrom: null, manualSteps: [] }
   }
 
-  let addDeps
-  let removeDeps = []
-  let envKeys
-  let requiredEnvKeys
-  let swappedFrom = null
-
-  if (cap === 'mailer') {
-    const from = currentMailerAdapter(projectDir)
-    swappedFrom = from && from !== adapter ? from : null
-    ;({ addDeps, removeDeps, envKeys, requiredEnvKeys } = vendorMailer(
-      projectDir,
-      framework,
-      adapter,
-      keep,
-    ))
-  } else {
-    const from = currentAdapter(projectDir, cap)
-    swappedFrom = from && from !== adapter ? from : null
-    if (swappedFrom && !keep) removeDeps = adapterRemovableDeps(cap, from, adapter)
-    ;({ addDeps, envKeys, requiredEnvKeys } = vendorCapability({
-      projectDir,
-      framework,
-      projectName,
-      cap,
-      adapter,
-      keep,
-    }))
-  }
+  const {
+    swappedFrom,
+    removeDeps = [],
+    addDeps,
+    envKeys,
+    requiredEnvKeys,
+  } = vendor({
+    projectDir,
+    framework,
+    projectName,
+    cap,
+    adapter,
+    keep,
+  })
 
   pkgRemoveDeps(pkg, removeDeps)
   pkgAddDeps(pkg, addDeps)
   writeJSON(pkgPath, pkg)
   appendEnv(projectDir, envKeys, requiredEnvKeys)
   rewriteAlias(projectDir, alias)
-  return { framework, projectName, addDeps, envKeys, swappedFrom }
+  const manualSteps = MANUAL_STEPS[cap]?.[framework] ?? []
+  return { framework, projectName, addDeps, envKeys, swappedFrom, manualSteps }
 }

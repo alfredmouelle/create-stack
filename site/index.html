@@ -307,7 +307,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
       <div class="card"><div class="role">Data layer</div><h4>Drizzle, Prisma or Convex</h4><p>Postgres with driver adapter, schema, seed and keyset pagination, or Convex realtime, or none for a vitrine.</p><div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div></div>
       <div class="card"><div class="role">Auth &amp; API</div><h4>better-auth or Clerk, tRPC v11</h4><p>Email + password with verification and Google OAuth, or hosted Clerk. Typed tRPC with SSR/RSC.</p><div class="tags"><span>better-auth</span><span>clerk</span><span>trpc</span></div></div>
       <div class="card"><div class="role">Mailer</div><h4>Resend, Brevo or SES</h4><p>One port, React Email templates. Swap the provider with a single env change.</p><div class="tags"><span>resend</span><span>brevo</span><span>ses</span></div></div>
-      <div class="card"><div class="role">Capabilities</div><h4>Storage, cache, jobs, more</h4><p>Opt-in integrations behind a port: storage, cache, background jobs, logger, analytics, error tracking.</p><div class="tags"><span>s3/r2</span><span>redis</span><span>inngest</span><span>sentry</span></div></div>
+      <div class="card"><div class="role">Capabilities</div><h4>Storage, cache, jobs, more</h4><p>Opt-in integrations. Storage, cache, logger and analytics sit behind a swappable port; jobs and error tracking use Inngest and Sentry directly, where a port would only get in the way.</p><div class="tags"><span>s3/r2</span><span>redis</span><span>inngest</span><span>sentry</span></div></div>
       <div class="card"><div class="role">Baseline</div><h4>Green from commit one</h4><p>Strict Biome (one tool, replaces ESLint + Prettier), typed env.ts, Dockerfile, git hooks, a GitHub Actions CI workflow, generated .env, verified with typecheck + Biome.</p><div class="tags"><span>biome</span><span>CI</span><span>docker</span></div></div>
     </div>
   </section>
@@ -334,10 +334,11 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   const CAPS = [
     { key: 'storage', flag: 'storage', label: 'Storage', adapters: ['s3', 'r2', 'gcs', 'local'], def: 's3' },
     { key: 'cache', flag: 'cache', label: 'Cache', adapters: ['redis', 'upstash', 'memory'], def: 'redis' },
-    { key: 'jobs', flag: 'jobs', label: 'Background jobs', adapters: ['inngest', 'trigger', 'memory'], def: 'inngest' },
+    // jobs and error tracking have a single provider: one chip, so the flag stays bare
+    { key: 'jobs', flag: 'jobs', label: 'Background jobs', adapters: ['inngest'], def: 'inngest' },
     { key: 'logger', flag: 'logger', label: 'Logger', adapters: ['pino', 'console'], def: 'pino' },
     { key: 'analytics', flag: 'analytics', label: 'Analytics', adapters: ['posthog', 'plausible', 'noop'], def: 'posthog' },
-    { key: 'errorTracking', flag: 'error-tracking', label: 'Error tracking', adapters: ['sentry', 'console'], def: 'sentry' },
+    { key: 'errorTracking', flag: 'error-tracking', label: 'Error tracking', adapters: ['sentry'], def: 'sentry' },
   ]
   const state = {
     name: 'my-app', pm: 'npm', framework: 'tanstack', monorepo: 'none', database: 'drizzle', auth: 'better-auth',
@@ -477,7 +478,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 
     let panel
     if (activeStep === 'caps') {
-      panel = '<h3>Capabilities</h3><div class="hint">optional integrations, each behind a port</div><div class="opts">' +
+      panel = '<h3>Capabilities</h3><div class="hint">optional integrations: pick an adapter where there is one to swap</div><div class="opts">' +
         CAPS.map((c) => {
           const cur = state.caps[c.key]
           return '<div class="opt' + (cur ? ' sel' : '') + '" style="cursor:default"><span class="radio"></span><span>' + c.label + '</span><span class="desc" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' +

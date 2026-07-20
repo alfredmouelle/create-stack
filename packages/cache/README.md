@@ -43,7 +43,7 @@ export const cache = upstashAdapter()
 
 ## Adding a backend
 
-Implement `CachePort` (`src/core/port.ts`): `name`, `get`, `set`, `delete`,
-`has`, and `wrap`. Reuse `wrapValue` (`src/core/wrap.ts`) for the read-through
-`wrap` so the logic stays in one place. Look at `src/adapters/redis` (SDK-based)
-or `src/adapters/memory` (in-process) as templates.
+Implement `CachePort` (`src/port.ts`): `name`, `get`, `set`, `delete`,
+`has`, and `wrap`. Reuse `wrapValue` (`src/wrap.ts`) for the read-through
+`wrap` so the logic stays in one place. Look at `src/adapters/redis.ts` (SDK-based)
+or `src/adapters/memory.ts` (in-process) as templates.

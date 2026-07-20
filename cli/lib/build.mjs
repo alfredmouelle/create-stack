@@ -4,7 +4,7 @@
 import { randomBytes } from 'node:crypto'
 import { rewriteAlias } from './alias.mjs'
 import { applyAuth } from './auth.mjs'
-import { vendorCapability } from './capabilities.mjs'
+import { MANUAL_STEPS, vendorCapability } from './capabilities.mjs'
 import { writeCiWorkflow } from './ci.mjs'
 import { allComponentDeps, allComponentFiles } from './component.mjs'
 import { applyDatabase } from './database.mjs'
@@ -148,6 +148,10 @@ export function buildProject({
     })
 
   return {
+    // wiring that means editing files the project owns; surfaced, never applied
+    manualSteps: Object.keys(capabilities).flatMap((cap) =>
+      (MANUAL_STEPS[cap]?.[framework] ?? []).map((step) => `${cap}: ${step}`),
+    ),
     kept: [...kept],
     database,
     auth,
