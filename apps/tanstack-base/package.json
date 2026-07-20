@@ -8,7 +8,7 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "email:dev": "email dev --dir src/emails --port 3001",
     "typecheck": "tsr generate && tsc --noEmit",
     "check": "biome check .",
