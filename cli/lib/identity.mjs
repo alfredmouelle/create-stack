@@ -27,6 +27,10 @@ export function stampIdentity(projectDir, projectName, framework, pm) {
   for (const rel of titleFiles[framework === 'next' ? 'next' : 'tanstack']) {
     editFile(join(projectDir, rel), (c) => c.replaceAll("title: 'App'", `title: '${projectName}'`))
   }
+  // the web manifest carries the same placeholder, and it names the installed PWA
+  editFile(join(projectDir, 'public/manifest.json'), (c) =>
+    c.replaceAll('"App"', `"${projectName}"`),
+  )
 
   const footer = read(join(TEMPLATES, 'README-author.md'))
   const readme = `# ${projectName}
