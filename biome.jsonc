@@ -4,6 +4,7 @@
   "files": {
     "includes": [
       "**",
+      "!**/public",
       "!**/dist",
       "!**/.turbo",
       "!**/.next",

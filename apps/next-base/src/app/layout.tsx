@@ -7,6 +7,13 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'App',
   description: 'Next.js base.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      // the SVG carries the dark-mode variant; browsers that support it win over the .ico
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

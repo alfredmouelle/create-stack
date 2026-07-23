@@ -36,6 +36,17 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         rel: 'stylesheet',
         href: appCss,
       },
+      {
+        rel: 'icon',
+        href: '/favicon.ico',
+        sizes: '32x32',
+      },
+      // the SVG carries the dark-mode variant; browsers that support it win over the .ico
+      {
+        rel: 'icon',
+        href: '/favicon.svg',
+        type: 'image/svg+xml',
+      },
     ],
   }),
   shellComponent: RootDocument,
