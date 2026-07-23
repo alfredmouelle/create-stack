@@ -41,7 +41,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         href: '/favicon.ico',
         sizes: '32x32',
       },
-      // the SVG carries the dark-mode variant; browsers that support it win over the .ico
       {
         rel: 'icon',
         href: '/favicon.svg',

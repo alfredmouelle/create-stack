@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32' },
-      // the SVG carries the dark-mode variant; browsers that support it win over the .ico
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
   },

@@ -7,6 +7,13 @@ export const metadata: Metadata = {
   title: 'App',
   description: 'Next.js base.',
   authors: [{ name: 'Alfred MOUELLE', url: 'https://alfredmouelle.com' }],
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+  },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
