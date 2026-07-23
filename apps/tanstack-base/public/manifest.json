@@ -1,6 +1,7 @@
 {
   "short_name": "App",
   "name": "App",
+  "description": "A fully-wired app scaffolded with create-stack.",
   "icons": [
     {
       "src": "favicon.ico",
