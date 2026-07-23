@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
+import { packageName } from '../lib/identity.mjs'
 import { copyTree, isDirEmpty, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts } from '../lib/util.mjs'
 
 const tmps = []
@@ -30,6 +31,23 @@ describe('package.json helpers', () => {
     const pkg = { scripts: { build: 'x', 'db:seed': 'y' } }
     pkgRemoveScripts(pkg, ['db:seed'])
     expect(pkg.scripts).toEqual({ build: 'x' })
+  })
+})
+
+describe('packageName', () => {
+  test('a plain name is kept as is', () => {
+    expect(packageName('my-app')).toBe('my-app')
+  })
+  test('a path names the package after its last segment', () => {
+    expect(packageName('./apps/api')).toBe('api')
+    expect(packageName('/tmp/cs-r2-check/')).toBe('cs-r2-check')
+  })
+  test('npm-hostile characters are normalized away', () => {
+    expect(packageName('My App')).toBe('my-app')
+    expect(packageName('_hidden.')).toBe('hidden.')
+  })
+  test('falls back when nothing usable is left', () => {
+    expect(packageName('___')).toBe('app')
   })
 })
 

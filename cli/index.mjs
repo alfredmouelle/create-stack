@@ -34,6 +34,7 @@ import {
 } from './lib/capabilities.mjs'
 import { COMPONENT_NAMES, componentChoices, vendorComponent } from './lib/component.mjs'
 import { resolveDatabase } from './lib/database.mjs'
+import { packageName } from './lib/identity.mjs'
 import { detectPackageManager, PM_NAMES, resolvePackageManager } from './lib/package-manager.mjs'
 import { exists, isDirEmpty, join, run } from './lib/util.mjs'
 
@@ -413,7 +414,7 @@ function execute(a) {
 
   const s = p.spinner()
   s.start('Forking + stripping the base app')
-  const built = buildProject({ ...a, projectDir, pm })
+  const built = buildProject({ ...a, projectDir, projectName: packageName(projectDir), pm })
   s.stop('Project scaffolded')
 
   if (a.doInstall) installAndVerify(projectDir, pm)

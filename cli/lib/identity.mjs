@@ -1,7 +1,19 @@
 // Stamp project identity: title/meta + README ending with the `# Author` footer verbatim.
 
+import { basename } from 'node:path'
 import { TEMPLATES } from './paths.mjs'
 import { editFile, join, read, write } from './util.mjs'
+
+/**
+ * Project name from the target path. The argument doubles as a directory, so it can be a
+ * path (`./apps/api`) — only its last segment names the package, and npm rejects anything
+ * but lowercase URL-safe characters.
+ */
+export const packageName = (target) =>
+  basename(target.replace(/[/\\]+$/, ''))
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^[._-]+|-+$/g, '') || 'app'
 
 const titleFiles = {
   next: ['src/app/layout.tsx'],
