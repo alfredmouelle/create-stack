@@ -13,6 +13,35 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-23
+
+### Added
+
+- **R2 jurisdictions**: `R2_JURISDICTION` (`eu` or `fedramp`) now reaches the storage
+  composition root, so a jurisdiction-restricted bucket talks to its own endpoint host
+  instead of the default one. Leave it empty for a standard bucket.
+- **On-brand icons and web manifest** in both base apps: the create-stack mark as a
+  `.ico` and a dark-mode-aware `.svg`, 192/512 PNGs, and a manifest wired into the head
+  and named after your project — so an installed PWA carries your app, not a sample.
+- [`@total-typescript/ts-reset`](https://github.com/total-typescript/ts-reset) in both base
+  apps, which tightens `JSON.parse`, `.filter(Boolean)` and friends across your code.
+
+### Changed
+
+- **Picking R2 no longer vendors an S3 adapter.** The R2 adapter used to wrap the S3 one,
+  so `src/server/storage/adapters/` shipped an `s3.ts` you never asked for. It is now
+  standalone, and the directory holds only the adapter you chose.
+
+### Fixed
+
+- **R2 presigned uploads.** The adapter now disables the AWS SDK v3 default flexible
+  checksums, which R2 rejects: on a presigned PUT the CRC32 is computed at signing time,
+  without the body, so it could never match.
+- **A project name derived from a path.** `create-stack ./apps/api` stamped the whole path
+  into `package.json`, the README and the document title, which npm rejects outright. Only
+  the last segment names the package now, normalized to what npm accepts.
+- A freshly scaffolded Next app no longer 404s on `/favicon.ico`.
+
 ## [0.10.0] - 2026-07-20
 
 ### Changed
