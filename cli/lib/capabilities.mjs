@@ -42,6 +42,7 @@ const PORTS = {
         args: [
           ['bucket', 'R2_BUCKET', true],
           ['accountId', 'R2_ACCOUNT_ID', true],
+          ['jurisdiction', 'R2_JURISDICTION', false],
           ['accessKeyId', 'R2_ACCESS_KEY_ID', false],
           ['secretAccessKey', 'R2_SECRET_ACCESS_KEY', false],
         ],

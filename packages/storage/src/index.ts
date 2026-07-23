@@ -6,7 +6,13 @@ export {
   gcsAdapter,
 } from './adapters/gcs.js'
 export { type LocalAdapterOptions, localAdapter } from './adapters/local.js'
-export { type R2AdapterOptions, r2Adapter } from './adapters/r2.js'
+export {
+  type R2AdapterOptions,
+  type R2ClientLike,
+  type R2Jurisdiction,
+  type R2Presigner,
+  r2Adapter,
+} from './adapters/r2.js'
 export {
   type S3AdapterOptions,
   type S3ClientLike,

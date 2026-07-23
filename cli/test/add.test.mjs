@@ -46,6 +46,21 @@ describe('add', () => {
     expect(serverHas(dir, 'RESEND_API_KEY')).toBe(true) // pre-existing mailer key untouched
   })
 
+  test('r2 vendors only its own adapter and wires the jurisdiction', () => {
+    const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
+    addCapability({ projectDir: dir, cap: 'storage', adapter: 'r2' })
+
+    expect(exists(`${dir}/src/server/storage/adapters/r2.ts`)).toBe(true)
+    // R2 is S3-compatible, but a project that picked R2 has no business seeing an S3 adapter
+    expect(exists(`${dir}/src/server/storage/adapters/s3.ts`)).toBe(false)
+    // jurisdiction-restricted buckets need their own endpoint, so the key must reach the root
+    expect(serverHas(dir, 'R2_JURISDICTION')).toBe(true)
+    expect(read(`${dir}/src/server/storage/index.ts`)).toContain(
+      'jurisdiction: env.R2_JURISDICTION,',
+    )
+    expect(read(`${dir}/.env.example`)).toMatch(/^R2_JURISDICTION=$/m)
+  })
+
   test('rejects an unknown adapter', () => {
     const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
     expect(() => addCapability({ projectDir: dir, cap: 'storage', adapter: 'nope' })).toThrow()

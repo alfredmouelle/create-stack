@@ -13,8 +13,14 @@
     },
     "r2": {
       "deps": ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
-      "env": ["R2_BUCKET", "R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"],
-      "files": ["src/adapters/r2.ts", "src/adapters/s3.ts"]
+      "env": [
+        "R2_BUCKET",
+        "R2_ACCOUNT_ID",
+        "R2_JURISDICTION",
+        "R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY"
+      ],
+      "files": ["src/adapters/r2.ts"]
     },
     "gcs": {
       "deps": ["@google-cloud/storage"],

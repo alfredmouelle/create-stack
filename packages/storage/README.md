@@ -39,6 +39,8 @@ import { r2Adapter } from '@alfredmouelle/storage'
 export const storage = r2Adapter({
   bucket: process.env.R2_BUCKET!,
   accountId: process.env.R2_ACCOUNT_ID!,
+  // `eu` or `fedramp`, only for a jurisdiction-restricted bucket: it picks the matching endpoint.
+  jurisdiction: process.env.R2_JURISDICTION as 'eu' | undefined,
   accessKeyId: process.env.R2_ACCESS_KEY_ID,
   secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
 })

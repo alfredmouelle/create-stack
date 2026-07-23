@@ -1,12 +1,13 @@
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { describe, expect, it, type Mock, vi } from 'vitest'
-import { r2Adapter, type S3ClientLike, type S3Presigner, StorageError } from '../src/index.js'
+import { r2Endpoint } from '../src/adapters/r2.js'
+import { type R2ClientLike, type R2Presigner, r2Adapter, StorageError } from '../src/index.js'
 
 type SendMock = Mock<(command: unknown) => Promise<unknown>>
-type PresignMock = Mock<S3Presigner>
+type PresignMock = Mock<R2Presigner>
 
 function makeAdapter(send: SendMock, presign?: PresignMock) {
-  const client: S3ClientLike = { send }
+  const client: R2ClientLike = { send }
   return r2Adapter({
     bucket: 'my-bucket',
     accountId: 'acc123',
@@ -56,5 +57,16 @@ describe('r2Adapter', () => {
 
     expect(url).toBe('https://signed.test/get')
     expect(presign.mock.calls[0]?.[1]).toBeInstanceOf(GetObjectCommand)
+  })
+})
+
+describe('r2Endpoint', () => {
+  it('uses the default host when no jurisdiction is set', () => {
+    expect(r2Endpoint('acc123')).toBe('https://acc123.r2.cloudflarestorage.com')
+  })
+
+  it('inserts the jurisdiction into the host', () => {
+    expect(r2Endpoint('acc123', 'eu')).toBe('https://acc123.eu.r2.cloudflarestorage.com')
+    expect(r2Endpoint('acc123', 'fedramp')).toBe('https://acc123.fedramp.r2.cloudflarestorage.com')
   })
 })

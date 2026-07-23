@@ -22,6 +22,8 @@ const SCHEMAS = {
   S3_REGION: 'v.pipe(v.string(), v.minLength(1))',
   R2_BUCKET: 'v.pipe(v.string(), v.minLength(1))',
   R2_ACCOUNT_ID: 'v.pipe(v.string(), v.minLength(1))',
+  // Only for jurisdiction-restricted buckets: it selects the matching R2 endpoint.
+  R2_JURISDICTION: "v.picklist(['eu', 'fedramp'])",
   R2_ACCESS_KEY_ID: 'v.pipe(v.string(), v.minLength(1))',
   R2_SECRET_ACCESS_KEY: 'v.pipe(v.string(), v.minLength(1))',
   GCS_BUCKET: 'v.pipe(v.string(), v.minLength(1))',
