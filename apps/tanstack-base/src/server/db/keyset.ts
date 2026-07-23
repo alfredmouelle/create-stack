@@ -9,7 +9,9 @@ export const encodeCursor = (value: string, id: string): string =>
 
 export const decodeCursor = (cursor: string): { value: string; id: string } | null => {
   try {
-    const [value, id] = JSON.parse(Buffer.from(cursor, 'base64url').toString())
+    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString())
+    if (!Array.isArray(parsed)) return null
+    const [value, id] = parsed
     if (typeof value !== 'string' || typeof id !== 'string') return null
     return { value, id }
   } catch {
