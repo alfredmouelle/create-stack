@@ -90,7 +90,7 @@ const CLERK_TANSTACK_IMPORT = "import { ClerkProvider } from '@clerk/tanstack-re
 function injectClerkProviderTanstack(projectDir) {
   editFile(src(projectDir, 'routes/__root.tsx'), (c) =>
     `${CLERK_TANSTACK_IMPORT}${c}`
-      .replace('<html lang="en">', '<ClerkProvider>\n<html lang="en">')
+      .replace('<html lang="en" suppressHydrationWarning>', '<ClerkProvider>\n<html lang="en" suppressHydrationWarning>')
       .replace('</html>', '</html>\n</ClerkProvider>'),
   )
 }
