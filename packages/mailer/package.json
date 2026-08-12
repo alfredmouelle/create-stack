@@ -13,9 +13,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-sesv2": "^3.1073.0",
-    "@getbrevo/brevo": "^5.0.4",
-    "resend": "^6.14.0"
+    "@aws-sdk/client-sesv2": "^3.1107.0",
+    "@getbrevo/brevo": "^6.0.3",
+    "resend": "^6.19.0"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -23,14 +23,14 @@
     "react-email": "^6.6.3"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.0.1",
-    "@types/react-dom": "^19.0.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-email": "^6.6.3",
-    "tsdown": "^0.22.3",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.9"
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-email": "^6.9.2",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }

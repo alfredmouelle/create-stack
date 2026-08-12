@@ -60,9 +60,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@clack/prompts": "^1.6.0"
+    "@clack/prompts": "^1.7.0"
   },
   "devDependencies": {
-    "vitest": "^4.1.9"
+    "@types/node": "^22.20.1",
+    "vitest": "^4.1.10"
   }
 }

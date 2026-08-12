@@ -47,11 +47,11 @@
     "unlink:skills:codex": "./scripts/link-skills.sh --codex --unlink"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.0",
-    "tsdown": "^0.22.3",
-    "turbo": "^2.9.18",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.9"
+    "@biomejs/biome": "^2.5.8",
+    "tsdown": "^0.22.14",
+    "turbo": "^2.10.9",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
   }
 }
