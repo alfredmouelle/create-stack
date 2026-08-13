@@ -171,6 +171,17 @@ const CREATION_AXES = {
   Mail: ['mail', 'mailer'],
   Monorepo: ['mono', 'monorepo'],
   'Package manager': ['pm', 'package-manager'],
+  'Import alias': ['alias'],
+  'Recommended stack acceptance': ['y', 'yes'],
+  ...Object.fromEntries(
+    CAPABILITIES.map((capability) => [
+      capability
+        .split('-')
+        .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+        .join(' '),
+      [capability],
+    ]),
+  ),
 }
 
 function validateCreationInvocation(args) {
@@ -569,7 +580,7 @@ function creationPlanLines(a, pm) {
     `Import alias: ${a.alias ?? '~'}/`,
     `Database: ${orNone(a.database)}`,
     `Auth: ${orNone(a.auth)}`,
-    `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
+    `tRPC: ${a.kept.has('trpc') ? 'yes' : 'no'}`,
     `Mailer: ${orNone(a.mailerProvider)}`,
     `Capabilities: ${capabilities.join(', ') || '(none)'}`,
     `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
