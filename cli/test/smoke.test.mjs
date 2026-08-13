@@ -1,148 +1,104 @@
-// Heavy proof: scaffold, install, run the project's own typecheck + biome. Skipped unless
-// RUN_SMOKE=1; SMOKE_FRAMEWORK pins one base to split the matrix across runners.
+// Installed-project certification through the same executable CLI users invoke. Skipped
+// unless RUN_SMOKE=1; SMOKE_FRAMEWORK pins one base to split the matrix across runners.
 
 import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, test } from 'vitest'
-import { addCapability, build, cleanup, vendorComponent } from './helpers.mjs'
 
-// Removing many scaffolded projects (each with a full node_modules) blows past vitest's
-// default 10s hook timeout on CI runners.
-afterAll(cleanup, 2 * 60 * 1000)
+const testDirectory = dirname(fileURLToPath(import.meta.url))
+const cliRoot = resolve(testDirectory, '..')
+const repoRoot = resolve(cliRoot, '..')
+const cliEntry = resolve(cliRoot, 'index.mjs')
+const roots = []
+
+afterAll(
+  () => {
+    for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
+  },
+  2 * 60 * 1000,
+)
 
 const FRAMEWORKS = process.env.SMOKE_FRAMEWORK
   ? [process.env.SMOKE_FRAMEWORK]
   : ['tanstack', 'next']
+const TIMEOUT = 15 * 60 * 1000
 
-// One rich and one stripped config per framework — the stripped one is where dangling
-// seams would surface as a typecheck failure.
-// 'full' also pins a custom import alias — proof the '~/' rewrite leaves a tree that
-// still typechecks (bundler path resolution + every generated import).
-const CONFIGS = [
+function run(command, args, cwd) {
+  return spawnSync(command, args, {
+    cwd,
+    stdio: 'inherit',
+    timeout: TIMEOUT,
+    env: {
+      ...process.env,
+      CREATE_STACK_STACK_ROOT: repoRoot,
+      NO_COLOR: '1',
+      npm_config_user_agent: 'pnpm/11.1.3',
+    },
+  }).status
+}
+
+function runCli(args, cwd) {
+  expect(run(process.execPath, [cliEntry, ...args], cwd), `create-stack ${args.join(' ')}`).toBe(0)
+}
+
+function verify(projectDir) {
+  expect(run('pnpm', ['run', 'typecheck'], projectDir), 'installed project typecheck').toBe(0)
+  expect(run('pnpm', ['run', 'check'], projectDir), 'installed project format check').toBe(0)
+}
+
+function scaffold(framework, workflow, options) {
+  const root = mkdtempSync(join(tmpdir(), `create-stack-smoke-${framework}-${workflow}-`))
+  roots.push(root)
+  runCli(['app', '--framework', framework, '--no-git', ...options], root)
+  return { root, projectDir: join(root, 'app') }
+}
+
+const CREATION_WORKFLOWS = [
+  { name: 'recommended', options: [] },
+  { name: 'minimal', options: ['--minimal'] },
   {
-    name: 'full',
-    capabilities: { storage: 's3', cache: 'redis' },
-    alias: '@',
-    checkGeneratedFormatting: true,
+    name: 'independent-trpc',
+    options: ['--minimal', '--trpc'],
   },
   {
-    name: 'minimal',
-    database: 'none',
-    auth: 'none',
-    foundations: [],
-    mailer: 'none',
-    checkGeneratedFormatting: true,
-  },
-  {
-    name: 'trpc-data-only',
-    auth: 'none',
-    foundations: ['trpc'],
-    mailer: 'none',
-    checkGeneratedFormatting: true,
-  },
-  {
-    name: 'trpc-auth-only',
-    database: 'none',
-    auth: 'clerk',
-    foundations: ['trpc'],
-    mailer: 'none',
-    checkGeneratedFormatting: true,
-  },
-  {
-    name: 'trpc-only',
-    database: 'none',
-    auth: 'none',
-    foundations: ['trpc'],
-    mailer: 'none',
-    checkGeneratedFormatting: true,
-  },
-  { name: 'drizzle-only', foundations: [], mailer: 'none' },
-  // Prisma exercises both seams (trpc context + better-auth adapter) on both frameworks;
-  // the alias rewrite must also survive the generated-client import.
-  { name: 'prisma-full', database: 'prisma', alias: '@' },
-  // Clerk strips better-auth + rewrites the tRPC context/provider on both frameworks.
-  { name: 'clerk-full', auth: 'clerk' },
-  // Convex replaces the whole data layer (trpc + react-query) and composes its provider
-  // with Clerk; the alias rewrite must survive the vendored convex + provider imports.
-  { name: 'convex-clerk', database: 'convex', auth: 'clerk', mailer: 'none', alias: '@' },
-  // The two single-provider modules: their generated wiring (Inngest client + functions
-  // + route shim, Sentry init + instrumentation files) has to compile for real.
-  {
-    name: 'modules',
-    foundations: [],
-    mailer: 'none',
-    capabilities: { jobs: null, 'error-tracking': null },
+    name: 'convex',
+    options: ['--database', 'convex', '--auth', 'clerk'],
   },
 ]
 
-const TIMEOUT = 15 * 60 * 1000
-
-const pnpm = (args, cwd, opts = {}) =>
-  spawnSync('pnpm', ['--config.verify-deps-before-run=false', ...args], {
-    cwd,
-    stdio: 'inherit',
-    ...opts,
-  }).status
-
-/** Install, then assert the project typechecks and passes Biome. */
-function verify(dir, { checkGeneratedFormatting = false } = {}) {
-  expect(spawnSync('pnpm', ['install'], { cwd: dir, stdio: 'inherit' }).status).toBe(0)
-  if (!checkGeneratedFormatting) pnpm(['run', 'check:write'], dir, { stdio: 'ignore' })
-  expect(pnpm(['run', 'typecheck'], dir), 'typecheck').toBe(0)
-  expect(pnpm(['run', 'check'], dir), 'biome check').toBe(0)
-}
-
-describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
+describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
   for (const framework of FRAMEWORKS) {
-    for (const cfg of CONFIGS) {
+    for (const workflow of CREATION_WORKFLOWS) {
       test(
-        `scaffold ${framework}/${cfg.name}`,
-        () => verify(build({ ...cfg, framework }).dir, cfg),
+        `${framework}/${workflow.name}`,
+        () => verify(scaffold(framework, workflow.name, workflow.options).projectDir),
         TIMEOUT,
       )
     }
 
-    // Prisma without trpc/auth (one framework) — the db-only strip path must compile.
-    if (framework === FRAMEWORKS[0]) {
-      test(
-        `scaffold ${framework}/prisma-only`,
-        () => verify(build({ framework, database: 'prisma', foundations: [], mailer: 'none' }).dir),
-        TIMEOUT,
-      )
-    }
-
-    // `add` path: adding, swapping an adapter, and vendoring a lib target must all compile.
     test(
-      `add-swap ${framework}`,
+      `${framework}/provider-change`,
       () => {
-        const { dir } = build({
-          framework,
-          foundations: [],
-          mailer: 'resend',
-          capabilities: { cache: 'redis' },
-          alias: '@', // each subsequent add must vendor against '@/', not '~/'
-        })
-        addCapability({ projectDir: dir, cap: 'cache', adapter: 'upstash' }) // swap adapter
-        addCapability({ projectDir: dir, cap: 'mailer', adapter: 'brevo' }) // mailer swap
-        addCapability({ projectDir: dir, cap: 'http', adapter: null }) // lib vendor
-        verify(dir)
+        const { projectDir } = scaffold(framework, 'provider-change', [
+          '--minimal',
+          '--cache',
+          'redis',
+        ])
+        runCli(['add', 'cache', 'upstash'], projectDir)
+        verify(projectDir)
       },
       TIMEOUT,
     )
 
-    // `component` path: opt-in UI (stripped by default) must compile once vendored back —
-    // imports resolve, deps install, '~/' realigns to the project alias, hook included.
     test(
-      `component ${framework}`,
+      `${framework}/mixed-addition`,
       () => {
-        const { dir } = build({
-          framework,
-          foundations: [],
-          mailer: 'none',
-          alias: '@', // vendored files must realign '~/' → '@/'
-        })
-        vendorComponent({ projectDir: dir, name: 'date-picker' })
-        vendorComponent({ projectDir: dir, name: 'data-table' })
-        verify(dir)
+        const { projectDir } = scaffold(framework, 'mixed-addition', ['--minimal'])
+        runCli(['add', '--with', 'jobs', '--with', 'component=alert'], projectDir)
+        verify(projectDir)
       },
       TIMEOUT,
     )

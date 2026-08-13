@@ -1,6 +1,6 @@
 'use client'
 
-// Await it from anywhere; the <Prompt /> Root is auto-mounted by `create-stack component`.
+// Await it from anywhere; the <Prompt /> Root is auto-mounted by `create-stack add component`.
 // const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' })
 
 import { useId, useState } from 'react'

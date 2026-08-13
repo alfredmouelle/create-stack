@@ -31,8 +31,9 @@ pnpm create @alfredmouelle/stack@latest my-app
 pnpm dlx @alfredmouelle/create-stack@latest my-app
 ```
 
-You pick the framework, monorepo orchestrator, package manager, import alias and
-foundations interactively; the CLI forks the matching base app and wires them in.
+You pick the framework, monorepo orchestrator, package manager, import alias, database,
+authentication, tRPC, mailer, and capabilities interactively; the CLI forks the matching
+base app and wires them in.
 
 ## Why
 
@@ -110,7 +111,7 @@ capability.schema.json   # the manifest schema each capability.json follows
 `apps/*-base` are **real starter apps**, the absolute references you fork for a
 new project. They carry the personal baseline (strict Biome, `~/*` alias, typed
 `env.ts`) and nothing app-specific; new projects are scaffolded (framework, monorepo
-orchestrator, package manager, import alias, foundations) with **create-stack** (which can
+orchestrator, package manager, import alias, and stack axes) with **create-stack** (which can
 rewrite the `~/*` alias to your choice), and tools are added per-project with **add-capability**.
 
 ## Development
@@ -141,7 +142,7 @@ pnpm link:skills:codex    # → Codex  (~/.codex/prompts)
 ```
 
 - **`/create-stack`**: scaffold a new project by running the published
-  `@alfredmouelle/create-stack` CLI (framework + foundations + mailer, installs &
+  `@alfredmouelle/create-stack` CLI (framework + stack axes + capabilities, installs &
   inits git).
 - **`/add-capability <capability> [adapter]`**: vendor a capability into the
   current project (e.g. `/add-capability mailer resend`). Ports take an adapter

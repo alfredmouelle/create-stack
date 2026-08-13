@@ -1,7 +1,5 @@
 // Pure argv parsing + selection normalization, split out of index.mjs to be unit-testable.
 
-export const ALL_FOUNDATIONS = ['trpc']
-
 const BOOLEAN_LONG_OPTIONS = new Set([
   'yes',
   'help',
@@ -124,17 +122,17 @@ export function normalizeAlias(v) {
 }
 
 /** Resolve prompt/test selections: better-auth needs a db and a mailer. */
-export function normalize(picked, database, auth, mailer) {
-  const kept = new Set(picked.filter((f) => ALL_FOUNDATIONS.includes(f)))
+export function normalize(trpc, database, auth, mailer) {
   const adjustments = []
+  let includeTrpc = trpc
   let a = auth ?? 'better-auth'
   let db = database ?? 'drizzle'
 
   if (db === 'convex') {
     // Convex is the API + realtime db: it replaces trpc, and can't back the
     // Postgres-coupled better-auth (only Clerk or no auth).
-    if (kept.has('trpc')) {
-      kept.delete('trpc')
+    if (includeTrpc) {
+      includeTrpc = false
       adjustments.push('Convex is its own API layer, tRPC removed')
     }
     if (a === 'better-auth') {
@@ -153,5 +151,5 @@ export function normalize(picked, database, auth, mailer) {
     mailerProvider = 'resend'
     adjustments.push('better-auth sends its own emails, Resend added')
   }
-  return { kept, database: db, auth: a, mailerProvider, adjustments }
+  return { trpc: includeTrpc, database: db, auth: a, mailerProvider, adjustments }
 }

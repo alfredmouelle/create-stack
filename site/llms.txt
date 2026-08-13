@@ -17,7 +17,7 @@
 - **Mailer**: Resend, Brevo or SES behind one port with React Email templates; swap providers with a single env change.
 - **Capabilities**: opt-in integrations, in two kinds. Behind a swappable port: storage (S3/R2/GCS/local), cache (Redis/Upstash/memory), logger (Pino/console), analytics (PostHog/Plausible). Single provider, used directly because a port would hide what makes them useful: background jobs (Inngest, with durable steps, cron and typed events) and error tracking (Sentry, with server-component errors, tracing and source maps).
 - **Baseline**: strict Biome (replaces ESLint + Prettier), typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow, and a generated `.env`.
-- **UI components**: opt-in components installed after scaffolding with `create-stack component <name>` into `components/ui`: `date-picker`, `datatable`, and `await`-able dialogs built on react-call (`confirm`, `alert`, `prompt`, `choice`, `confirm-passphrase`, `confirm-otp`) whose `<Root />` is auto-mounted, so you call them from anywhere.
+- **UI components**: opt-in components installed after scaffolding with `create-stack add component <name>`: `date-picker`, `data-table`, and `await`-able dialogs built on react-call (`confirm`, `alert`, `prompt`, `choice`, `confirm-passphrase`, `confirm-otp`) whose `<Root />` is auto-mounted, so you call them from anywhere.
 
 ## Using the UI components
 
@@ -25,8 +25,9 @@ Run inside a generated project. Files are copied into `components/ui`, deps merg
 realigned to your alias, and for the dialogs the `<Root />` is mounted in your app shell:
 
 ```bash
-create-stack component                 # interactive picker
-create-stack component confirm prompt  # one or several at once
+create-stack add                                      # interactive grouped picker
+create-stack add component confirm                    # one component
+create-stack add --with component=confirm --with component=prompt
 ```
 
 The dialogs are built on [react-call](https://react-call.desko.dev) and `await`-ed from
@@ -52,7 +53,7 @@ const confirmed = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: 
 const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => api.checkOtp(code) })
 ```
 
-`date-picker` and `datatable` are regular components: `<DatePicker value={date} onChange={setDate} />`
+`date-picker` and `data-table` are regular components: `<DatePicker value={date} onChange={setDate} />`
 and `<DataTable columns={columns} data={rows} />`.
 
 ## Links

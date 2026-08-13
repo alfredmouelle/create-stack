@@ -5,7 +5,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ALL_FOUNDATIONS, normalize } from '../lib/args.mjs'
+import { normalize } from '../lib/args.mjs'
 import { resolvePackageManager } from '../lib/package-manager.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -25,15 +25,15 @@ const tmpRoots = []
 /**
  * Build a project from a terse config into a throwaway dir.
  * @param {{ name?: string, framework: 'next'|'tanstack', database?: string, auth?: string,
- *   foundations?: string[], mailer?: string, capabilities?: Record<string,string>, alias?: string, pm?: string }} cfg
+ *   trpc?: boolean, mailer?: string, capabilities?: Record<string,string>, alias?: string, pm?: string }} cfg
  * @returns {{ dir: string, result: object }}
  */
 export function build(cfg) {
   const dir = mkdtempSync(join(tmpdir(), 'create-stack-test-'))
   tmpRoots.push(dir)
   const projectDir = join(dir, cfg.name ?? 'app')
-  const { kept, database, auth, mailerProvider } = normalize(
-    cfg.foundations ?? ALL_FOUNDATIONS,
+  const { trpc, database, auth, mailerProvider } = normalize(
+    cfg.trpc ?? true,
     cfg.database,
     cfg.auth,
     cfg.mailer,
@@ -42,7 +42,7 @@ export function build(cfg) {
     projectDir,
     projectName: cfg.name ?? 'app',
     framework: cfg.framework,
-    kept,
+    trpc,
     database,
     auth,
     mailerProvider,

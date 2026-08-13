@@ -6,7 +6,7 @@ export const requiredInProduction = <T extends v.GenericSchema>(schema: T) =>
   process.env.NODE_ENV === 'production' ? schema : v.optional(schema)
 
 /**
- * Typed env. Foundations + capabilities extend `server` and `runtimeEnv` with
+ * Typed env. Stack options and capabilities extend `server` and `runtimeEnv` with
  * the keys they need.
  */
 export const env = createEnv({

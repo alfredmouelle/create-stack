@@ -1,6 +1,6 @@
 'use client'
 
-// Await it from anywhere; the <Confirm /> Root is auto-mounted by `create-stack component`.
+// Await it from anywhere; the <Confirm /> Root is auto-mounted by `create-stack add component`.
 // const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })
 
 import { createCallable } from 'react-call'

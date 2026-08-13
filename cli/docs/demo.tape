@@ -18,7 +18,7 @@ Type "cd $(mktemp -d) && clear" Enter
 Show
 
 # 1. scaffold a project (with a redis cache)
-Type "create-stack my-app --framework next --foundations drizzle,trpc --cache redis --no-install"
+Type "create-stack my-app --framework next --database drizzle --trpc --cache redis --no-install"
 Sleep 600ms
 Enter
 Sleep 3s

@@ -361,9 +361,9 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     if (db === 'convex') {
       if (trpc) { trpc = false; adj.push({ head: 'Convex', body: 'is its own API layer → tRPC removed' }) }
       if (a === 'better-auth') { a = 'none'; adj.push({ head: 'Convex + better-auth', body: 'better-auth needs Postgres → auth set to none (pair Convex with Clerk)' }) }
-    } else if ((trpc || a === 'better-auth') && db === 'none') {
+    } else if (a === 'better-auth' && db === 'none') {
       db = 'drizzle'
-      adj.push({ head: 'tRPC / better-auth', body: 'need a database → Drizzle added' })
+      adj.push({ head: 'better-auth', body: 'needs a database → Drizzle added' })
     }
     if (a === 'better-auth' && mailer === 'none') { mailer = 'resend'; adj.push({ head: 'better-auth', body: 'sends its own emails → Resend added' }) }
     return { database: db, auth: a, trpc, mailer, adjustments: adj }
@@ -377,7 +377,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     else if (s.monorepo === 'nx') parts.push({ f: '--monorepo', v: 'nx' })
     if (e.database !== 'drizzle') parts.push({ f: '--database', v: e.database })
     if (e.auth !== 'better-auth') parts.push({ f: '--auth', v: e.auth })
-    if (!e.trpc && e.database !== 'convex') parts.push({ f: '--foundations', v: "''" })
+    if (!e.trpc && e.database !== 'convex') parts.push({ f: '--no-trpc' })
     if (e.mailer !== 'resend') parts.push({ f: '--mailer', v: e.mailer })
     if (s.alias !== '~') parts.push({ f: '--alias', v: s.alias })
     for (const c of CAPS) { const a = s.caps[c.key]; if (a) parts.push(a === c.def ? { f: '--' + c.flag } : { f: '--' + c.flag, v: a }) }
@@ -430,7 +430,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     { key: 'confirm-passphrase', label: 'Confirm · passphrase', hint: 'type an exact phrase', code: "const ok = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: 'my-repo' })" },
     { key: 'confirm-otp', label: 'Confirm · OTP', hint: 'verify a code', code: "const ok = await ConfirmOtp.call({ title: 'Enter code', verify: (c) => api.checkOtp(c) })" },
     { key: 'date-picker', label: 'Date picker', hint: 'single + range', code: '<DatePicker value={date} onChange={setDate} />' },
-    { key: 'datatable', label: 'Data table', hint: 'sortable + infinite', code: '<DataTable columns={columns} data={rows} />' },
+    { key: 'data-table', label: 'Data table', hint: 'sortable + infinite', code: '<DataTable columns={columns} data={rows} />' },
   ]
   const compSel = new Set()
   let usageKey = null
@@ -442,8 +442,8 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
       const opt = '<div class="opt' + (on ? ' sel' : '') + '" data-comp="' + c.key + '"><span class="radio"></span><span>' + esc(c.label) + '</span><span class="desc">' + esc(c.hint) + '</span><button class="usage-btn' + (usageKey === c.key ? ' on' : '') + '" data-usage="' + c.key + '" aria-label="Show usage">&lt;/&gt;</button></div>'
       return usageKey === c.key ? opt + '<pre class="comp-code">' + esc(c.code) + '</pre>' : opt
     }).join('')
-    const cmd = '<span class="sig">$</span> ' + esc(pmPrefix()) + ' <span class="flag">component</span> ' +
-      (sel.length ? sel.map((n) => '<span class="val">' + esc(n) + '</span>').join(' ') : '<span class="ph">&lt;name…&gt;</span>')
+    const cmd = '<span class="sig">$</span> ' + esc(pmPrefix()) + ' <span class="flag">add</span> ' +
+      (sel.length ? sel.map((n) => '<span class="flag">--with</span> <span class="val">component=' + esc(n) + '</span>').join(' ') : '<span class="ph">&lt;component…&gt;</span>')
     document.getElementById('components-stage').innerHTML =
       '<div class="comp"><div class="term-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">create-stack: components</span></div>' +
       '<div class="comp-body"><div class="comp-grid">' + grid + '</div></div>' +
@@ -513,7 +513,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     if (e.target.closest('[data-copy-comp]')) {
       if (!compSel.size) return
       const names = [...compSel]
-      copyText(pmPrefix() + ' component ' + names.join(' '), { source: 'components', pm: state.pm, components: names, count: names.length }, 'component_command_copied')
+      copyText(pmPrefix() + ' add ' + names.map((name) => '--with component=' + name).join(' '), { source: 'components', pm: state.pm, components: names, count: names.length }, 'component_command_copied')
       return
     }
     if (e.target.closest('[data-pm-toggle]')) { pmMenuOpen = !pmMenuOpen; renderInstall(); return }

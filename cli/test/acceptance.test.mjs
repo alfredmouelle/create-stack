@@ -670,6 +670,56 @@ test('removed foundations syntax reports its replacement before mutation', () =>
   expect(result.stdout).toContain('--foundations was removed; use --trpc or --no-trpc')
 })
 
+test('removed standalone component command reports its add replacement before mutation', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['component', 'date-picker', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain(
+    'The component command was removed; run create-stack add component <name>',
+  )
+})
+
+test('renamed datatable component reports its canonical name before mutation', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'datatable', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain(
+    "'datatable' was renamed to 'data-table'; run create-stack add component data-table",
+  )
+})
+
+test('renamed email kit reports its canonical addition before mutation', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'email-kit', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain(
+    "'email-kit' was renamed to 'email-ui'; run create-stack add email-ui",
+  )
+})
+
 test.each([
   {
     option: '--no-db',

@@ -59,31 +59,31 @@ describe('csv', () => {
 
 describe('normalize', () => {
   test('trpc remains independent when the database is excluded', () => {
-    const { kept, database } = normalize(['trpc'], 'none', 'none', 'resend')
-    expect([...kept]).toEqual(['trpc'])
+    const { trpc, database } = normalize(true, 'none', 'none', 'resend')
+    expect(trpc).toBe(true)
     expect(database).toBe('none')
   })
   test('better-auth needs a database + forces a real mailer', () => {
-    const { database, auth, mailerProvider } = normalize([], 'none', 'better-auth', 'none')
+    const { database, auth, mailerProvider } = normalize(false, 'none', 'better-auth', 'none')
     expect(auth).toBe('better-auth')
     expect(database).toBe('drizzle')
     expect(mailerProvider).toBe('resend')
   })
   test('clerk needs neither a database nor a mailer', () => {
-    const { database, auth, mailerProvider } = normalize([], 'none', 'clerk', 'none')
+    const { database, auth, mailerProvider } = normalize(false, 'none', 'clerk', 'none')
     expect(auth).toBe('clerk')
     expect(database).toBe('none')
     expect(mailerProvider).toBe('none')
   })
-  test('keeps the chosen ORM + mailer, drops unknown foundations', () => {
-    const { kept, database, mailerProvider } = normalize(['bogus'], 'prisma', 'none', 'ses')
-    expect([...kept]).toEqual([])
+  test('keeps the chosen ORM and mailer when tRPC is excluded', () => {
+    const { trpc, database, mailerProvider } = normalize(false, 'prisma', 'none', 'ses')
+    expect(trpc).toBe(false)
     expect(database).toBe('prisma')
     expect(mailerProvider).toBe('ses')
   })
   test('a vitrine keeps none database + none auth + none mailer', () => {
-    const { kept, database, auth, mailerProvider } = normalize([], 'none', 'none', 'none')
-    expect([...kept]).toEqual([])
+    const { trpc, database, auth, mailerProvider } = normalize(false, 'none', 'none', 'none')
+    expect(trpc).toBe(false)
     expect(database).toBe('none')
     expect(auth).toBe('none')
     expect(mailerProvider).toBe('none')

@@ -6,8 +6,8 @@ directory so editing them here updates what Claude uses, no copy step.
 
 - **create-stack**: scaffold a brand-new project by running the published
   `@alfredmouelle/create-stack` CLI: pick a framework (Next.js / TanStack Start),
-  an optional monorepo (Turborepo / Nx), foundations (drizzle, trpc, better-auth,
-  data-table) and a mailer; it forks a base app, strips it to the selection,
+  an optional monorepo (Turborepo / Nx), database, authentication, tRPC, mailer,
+  and capabilities; it forks a base app, strips it to the selection,
   installs, verifies and inits git. A thin wrapper over the CLI: the agent
   gathers the choices, then runs it with flags.
 - **add-capability**: add a capability (mailer, storage, jobs, cache, logger,

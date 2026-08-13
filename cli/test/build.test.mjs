@@ -1,17 +1,14 @@
-// Fast, install-free matrix: kept foundations present, dropped ones gone (files, deps,
-// env) with no dangling imports. The typecheck/biome proof lives in smoke.test.mjs.
+// Fast, install-free matrix: selected stack axes are present, excluded ones are gone,
+// and no dangling imports remain. The installed proof lives in smoke.test.mjs.
 
 import { afterAll, describe, expect, test } from 'vitest'
 import { build, cleanup, exists, filesImporting, read, readJSON } from './helpers.mjs'
 
 afterAll(cleanup)
 
-// Foundation → marker dir/file, npm dep, and the import specifiers that must vanish
-// once it's stripped. (ORM = database axis, auth = auth axis — asserted separately.)
-const FOUND_DIR = { trpc: 'src/trpc' }
-const FOUND_DEP = { trpc: '@trpc/server' }
-const DANGLING = { trpc: ['~/trpc', '~/server/api'] }
-const ALL = Object.keys(FOUND_DIR)
+const TRPC_DIR = 'src/trpc'
+const TRPC_DEP = '@trpc/server'
+const TRPC_IMPORTS = ['~/trpc', '~/server/api']
 
 // per-framework paths the auth axis touches
 const AUTH_PATHS = {
@@ -41,14 +38,10 @@ function assertComponentsStripped(dir, deps) {
 
 const allDeps = (pkg) => ({ ...pkg.dependencies, ...pkg.devDependencies })
 
-// each foundation: present iff kept (files + deps), and no dangling imports if dropped
-function assertFoundations(dir, kept, deps) {
-  for (const f of ALL) {
-    const on = kept.has(f)
-    expect(exists(`${dir}/${FOUND_DIR[f]}`), `${f} dir present=${on}`).toBe(on)
-    expect(FOUND_DEP[f] in deps, `${f} dep present=${on}`).toBe(on)
-    if (!on) expect(filesImporting(dir, DANGLING[f]), `dangling ${f} imports`).toEqual([])
-  }
+function assertTrpc(dir, trpc, deps) {
+  expect(exists(`${dir}/${TRPC_DIR}`), `trpc dir present=${trpc}`).toBe(trpc)
+  expect(TRPC_DEP in deps, `trpc dep present=${trpc}`).toBe(trpc)
+  if (!trpc) expect(filesImporting(dir, TRPC_IMPORTS), 'dangling trpc imports').toEqual([])
 }
 
 // the auth axis: the chosen provider is wired, better-auth files gone when swapped
@@ -175,7 +168,7 @@ function assertCapabilities(dir, env, capabilities = {}) {
   if (capabilities.cache === 'redis') expect(env).toContain('REDIS_URL')
 }
 
-// name, database (omit=drizzle), auth (omit=better-auth), foundations (omit=[trpc]), mailer, capabilities
+// name, database (omit=drizzle), auth (omit=better-auth), trpc (omit=true), mailer, capabilities
 const CONFIGS = [
   { name: 'full' },
   { name: 'full-caps', capabilities: { storage: 's3', cache: 'redis' } },
@@ -184,32 +177,32 @@ const CONFIGS = [
     name: 'prisma-no-auth',
     database: 'prisma',
     auth: 'none',
-    foundations: ['trpc'],
+    trpc: true,
     mailer: 'none',
   },
-  { name: 'drizzle-trpc', auth: 'none', foundations: ['trpc'], mailer: 'ses' },
-  { name: 'auth-no-trpc', foundations: [] },
+  { name: 'drizzle-trpc', auth: 'none', trpc: true, mailer: 'ses' },
+  { name: 'auth-no-trpc', trpc: false },
   { name: 'clerk-full', auth: 'clerk' },
   { name: 'clerk-prisma', database: 'prisma', auth: 'clerk' },
-  { name: 'clerk-vitrine', database: 'none', auth: 'clerk', foundations: [], mailer: 'none' },
+  { name: 'clerk-vitrine', database: 'none', auth: 'clerk', trpc: false, mailer: 'none' },
   {
     name: 'trpc-no-data-auth',
     database: 'none',
     auth: 'none',
-    foundations: ['trpc'],
+    trpc: true,
     mailer: 'none',
   },
   {
     name: 'trpc-auth-only',
     database: 'none',
     auth: 'clerk',
-    foundations: ['trpc'],
+    trpc: true,
     mailer: 'none',
   },
   { name: 'convex-none', database: 'convex', auth: 'none', mailer: 'none' },
   { name: 'convex-clerk', database: 'convex', auth: 'clerk', mailer: 'none' },
-  { name: 'drizzle-only', auth: 'none', foundations: [], mailer: 'none' },
-  { name: 'vitrine', database: 'none', auth: 'none', foundations: [], mailer: 'none' },
+  { name: 'drizzle-only', auth: 'none', trpc: false, mailer: 'none' },
+  { name: 'vitrine', database: 'none', auth: 'none', trpc: false, mailer: 'none' },
 ]
 
 for (const framework of ['tanstack', 'next']) {
@@ -217,7 +210,6 @@ for (const framework of ['tanstack', 'next']) {
     for (const cfg of CONFIGS) {
       test(cfg.name, () => {
         const { dir, result } = build({ ...cfg, framework })
-        const kept = new Set(result.kept)
         const pkg = readJSON(`${dir}/package.json`)
         const deps = allDeps(pkg)
         const env = exists(`${dir}/.env.example`) ? read(`${dir}/.env.example`) : ''
@@ -226,12 +218,12 @@ for (const framework of ['tanstack', 'next']) {
         expect(pkg.private).toBe(true)
         expect(exists(`${dir}/src/env.ts`)).toBe(true)
 
-        assertFoundations(dir, kept, deps)
+        assertTrpc(dir, result.trpc, deps)
         assertAuth(dir, result.auth, deps, framework)
         assertDatabase(dir, result.database, deps, result.auth === 'better-auth', framework)
         assertComponentsStripped(dir, deps)
         assertMailer(dir, result, deps)
-        if (kept.has('trpc')) assertTrpcContext(dir, result.database, result.auth)
+        if (result.trpc) assertTrpcContext(dir, result.database, result.auth)
 
         // env keys track the selection (Convex uses raw CONVEX_* keys, no DATABASE_URL)
         const sqlDb = result.database === 'drizzle' || result.database === 'prisma'

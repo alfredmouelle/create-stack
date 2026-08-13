@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **Release cadence.** Consumers always run the latest via `npx` / `pnpm dlx`, so releases
-are cut when there is user-facing value — a new framework/foundation/capability/adapter, a
+are cut when there is user-facing value — a new framework, stack option, capability, or adapter; a
 fix to the generated output, or a wizard/UX change. Internal refactors, tests, CI and
 docs-only changes accumulate under _Unreleased_ until the next meaningful release; related
 commits are batched into a single tagged version rather than one tag per commit.
@@ -15,6 +15,10 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Changed
 
+- **BREAKING:** creation now uses `--trpc` / `--no-trpc`, and every enrichment goes
+  through `create-stack add`. Removed spellings fail with a targeted replacement instead
+  of running compatibility behavior; the canonical additions are `data-table` and
+  `email-ui`.
 - tRPC is now an independent API choice in interactive creation too, including projects
   without a database or authentication. Generated Next.js and TanStack Start contexts are
   verified with data and auth, data only, auth only, or neither.

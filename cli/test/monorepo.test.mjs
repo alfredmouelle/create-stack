@@ -117,7 +117,7 @@ for (const framework of ['tanstack', 'next']) {
 test('the root pins a packageManager, which turbo requires to resolve the workspace', () => {
   const { dir } = build({
     framework: 'next',
-    foundations: [],
+    trpc: false,
     mailer: 'none',
     monorepo: 'turborepo',
   })
