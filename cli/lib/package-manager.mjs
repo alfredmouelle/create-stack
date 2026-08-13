@@ -5,7 +5,7 @@ import { exists } from './util.mjs'
 // npm_config_user_agent ("pnpm/9.1.0 npm/? node/v22 ..."); we read its first token.
 // Defaults to npm — the documented `npx create-stack` entry point.
 
-/** @typedef {{ name: string, exec: string, runArgs: (script: string) => string[], devCmd: string }} PackageManager */
+/** @typedef {{ name: string, exec: string, installArgs: string[], runArgs: (script: string) => string[], devCmd: string }} PackageManager */
 
 // `dev` is shown verbatim in the README + outro. npm has no script shorthand
 // (`npm dev` errors), so it needs `run`; pnpm/yarn/bun accept the bare form.
@@ -14,13 +14,32 @@ const PACKAGE_MANAGERS = {
   pnpm: {
     name: 'pnpm',
     exec: 'pnpm',
+    installArgs: ['install', '--no-frozen-lockfile'],
     // verify-deps-before-run=false: skip pnpm's lockfile check on the fresh fork.
     runArgs: (script) => ['--config.verify-deps-before-run=false', 'run', script],
     devCmd: 'pnpm dev',
   },
-  npm: { name: 'npm', exec: 'npm', runArgs: (script) => ['run', script], devCmd: 'npm run dev' },
-  yarn: { name: 'yarn', exec: 'yarn', runArgs: (script) => ['run', script], devCmd: 'yarn dev' },
-  bun: { name: 'bun', exec: 'bun', runArgs: (script) => ['run', script], devCmd: 'bun dev' },
+  npm: {
+    name: 'npm',
+    exec: 'npm',
+    installArgs: ['install'],
+    runArgs: (script) => ['run', script],
+    devCmd: 'npm run dev',
+  },
+  yarn: {
+    name: 'yarn',
+    exec: 'yarn',
+    installArgs: ['install'],
+    runArgs: (script) => ['run', script],
+    devCmd: 'yarn dev',
+  },
+  bun: {
+    name: 'bun',
+    exec: 'bun',
+    installArgs: ['install'],
+    runArgs: (script) => ['run', script],
+    devCmd: 'bun dev',
+  },
 }
 
 /** Supported package-manager names, in display order. */

@@ -660,7 +660,7 @@ const pmRun = (pm, script, projectDir, opts = {}) =>
 /** Install deps, normalize formatting, then report typecheck + biome status. */
 function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
   p.log.step(`${pm.name} install`)
-  const installed = run(pm.exec, ['install'], { cwd: projectDir })
+  const installed = run(pm.exec, pm.installArgs, { cwd: projectDir })
   if (!installed && requireSuccess) {
     throw new Error(`${pm.name} install failed; verification and the initial commit were skipped`)
   }
