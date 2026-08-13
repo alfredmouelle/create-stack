@@ -27,7 +27,7 @@ import {
   creationProviderChoices,
   resolveCreationProvider,
 } from './lib/capabilities.mjs'
-import { COMPONENT_NAMES, vendorComponent } from './lib/component.mjs'
+import { COMPONENT_NAMES, COMPONENTS, vendorComponent } from './lib/component.mjs'
 import { resolveDatabase } from './lib/database.mjs'
 import { packageName } from './lib/identity.mjs'
 import {
@@ -55,7 +55,8 @@ const HELP = `create-stack — fork a base app, strip it to your selection.
 
 Usage:
   create-stack [project] [flags]          Scaffold a new project
-  create-stack add <kind> [provider]       Add a capability or component
+  create-stack add <kind> [provider]      Add one capability or component
+  create-stack add --with <item> [...]    Add a validated batch
 
 Run a command with no args for an interactive picker; pass a selection flag
 (or --yes), or an addition name, for non-interactive mode.
@@ -89,6 +90,7 @@ const ADD_HELP = `create-stack add — enrich an existing application.
 Usage:
   create-stack add <capability> [provider] [flags]
   create-stack add component <name> [flags]
+  create-stack add --with <kind>[=<provider>] [--with ...] [flags]
 
 Run with no addition for an interactive picker. An explicit addition prints its
 resolved plan and runs without confirmation. Provider changes remove former
@@ -100,6 +102,7 @@ No provider at all: email-ui, http.
 Components: ${COMPONENT_NAMES.join(', ')}.
 
 Flags:
+  --with <kind>[=<provider>]        Add one item to a validated addition batch (repeatable)
   --keep-files                     Keep former provider files when changing provider
   --force                          Replace existing files for a selected component
   --app <relative-path>            Application target (required when ambiguous)
@@ -790,18 +793,14 @@ function summaryLines(a, pm) {
   return lines
 }
 
-function resolveExplicitAddition(args) {
-  const requestedKind = args._[1]
-  if (requestedKind === 'component') {
-    const name = args._[2]
-    if (!name) throw new Error('component requires a name')
-    if (args._[3]) throw new Error(`Unexpected positional argument: ${args._[3]}`)
-    if (!COMPONENT_NAMES.includes(name)) {
-      throw new Error(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
-    }
-    return { type: 'component', name }
+function resolveComponentAddition(name) {
+  if (!COMPONENT_NAMES.includes(name)) {
+    throw new Error(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
   }
+  return { type: 'component', name }
+}
 
+function resolveCapabilityAddition(requestedKind, requestedProvider) {
   const resolved = resolveAdditionKind(requestedKind)
   if (!resolved) {
     const formerEmailUiName = ['email', 'kit'].join('-')
@@ -814,27 +813,85 @@ function resolveExplicitAddition(args) {
       `Unknown addition: ${requestedKind} — pick one of ${ADDABLE.join(', ')}, component`,
     )
   }
-  if (args._[3]) throw new Error(`Unexpected positional argument: ${args._[3]}`)
   return {
     type: 'capability',
     ...resolved,
-    adapter: resolveTargetAdapter(resolved.cap, args._[2]),
+    adapter: resolveTargetAdapter(resolved.cap, requestedProvider),
   }
 }
 
-/** Which additions to apply: one positional selection, otherwise the capability picker. */
+function resolveExplicitAddition(args) {
+  const requestedKind = args._[1]
+  if (requestedKind === 'component') {
+    const name = args._[2]
+    if (!name) throw new Error('component requires a name')
+    if (args._[3]) throw new Error(`Unexpected positional argument: ${args._[3]}`)
+    return resolveComponentAddition(name)
+  }
+
+  if (args._[3]) throw new Error(`Unexpected positional argument: ${args._[3]}`)
+  return resolveCapabilityAddition(requestedKind, args._[2])
+}
+
+function resolveBatchAddition(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error('--with requires <kind>[=<provider>]')
+  }
+  const separator = value.indexOf('=')
+  const requestedKind = separator === -1 ? value : value.slice(0, separator)
+  const requestedProvider = separator === -1 ? undefined : value.slice(separator + 1)
+  if (!requestedKind || requestedProvider === '') {
+    throw new Error(`Invalid --with addition: ${value}`)
+  }
+  if (requestedKind === 'component') {
+    if (!requestedProvider) throw new Error('--with component requires a component name')
+    return resolveComponentAddition(requestedProvider)
+  }
+  return resolveCapabilityAddition(requestedKind, requestedProvider)
+}
+
+function resolveAdditionBatch(args) {
+  const values = args.options.filter(({ name }) => name === 'with').map(({ value }) => value)
+  if (values.length === 0) return null
+  if (args._[1]) throw new Error('Positional additions cannot be mixed with --with additions')
+  const selections = values.map(resolveBatchAddition)
+  const seen = new Set()
+  for (const selection of selections) {
+    const key = `${selection.type}:${selection.name}`
+    if (seen.has(key)) throw new Error(`Duplicate addition: ${selection.name}`)
+    seen.add(key)
+  }
+  return selections
+}
+
+/** Which additions to apply: a batch, one positional selection, or the grouped picker. */
 async function resolveAddSelections(args) {
+  const batch = resolveAdditionBatch(args)
+  if (batch) return batch
   if (args._[1]) return [resolveExplicitAddition(args)]
 
-  const caps = cancelled(
-    await p.multiselect({
-      message: 'Capabilities to add (space to toggle)',
+  const additions = cancelled(
+    await p.groupMultiselect({
+      message: 'Additions to add (space to toggle)',
       required: true,
-      options: addableChoices(),
+      selectableGroups: false,
+      options: {
+        Capabilities: addableChoices(),
+        Components: COMPONENT_NAMES.map((name) => ({
+          value: `component=${name}`,
+          label: COMPONENTS[name].label,
+          hint: COMPONENTS[name].hint,
+        })),
+      },
     }),
   )
   const selections = []
-  for (const cap of caps) {
+  for (const addition of additions) {
+    if (addition.startsWith('component=')) {
+      selections.push({ type: 'component', name: addition.slice('component='.length) })
+      continue
+    }
+    const cap = addition
     const choices = adapterChoicesFor(cap)
     const adapter = choices
       ? cancelled(
@@ -861,6 +918,7 @@ const addedLine = (a) => {
 
 function validateAdditionInvocation(args) {
   const known = new Set([
+    'with',
     'app',
     'pm',
     'package-manager',
@@ -878,6 +936,7 @@ function validateAdditionInvocation(args) {
     if (['app', 'pm', 'package-manager'].includes(name) && value === true) {
       throw new Error(`--${name} requires a value`)
     }
+    if (name === 'with' && value === true) throw new Error('--with requires a value')
   }
 }
 
@@ -891,7 +950,7 @@ async function runAdd(args) {
     process.exit(1)
   }
   const requestedApplication = args.flags.app
-  const explicitAddition = !!args._[1]
+  const explicitAddition = !!args._[1] || args.options.some(({ name }) => name === 'with')
   if (!requestedApplication && explicitAddition && applications.length > 1) {
     p.cancel(
       `Multiple compatible applications found: ${applications

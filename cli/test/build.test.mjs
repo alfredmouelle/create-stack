@@ -19,7 +19,7 @@ const AUTH_PATHS = {
   next: { shell: 'src/app/layout.tsx', signIn: 'src/app/sign-in/[[...sign-in]]/page.tsx' },
 }
 
-// opt-in components are stripped from every scaffold (re-added via `create-stack component`).
+// opt-in components are stripped from every scaffold (re-added via `create-stack add`).
 const STRIPPED_COMPONENT_FILES = [
   'src/components/data-table.tsx',
   'src/components/infinite-data-table.tsx',
