@@ -139,6 +139,32 @@ function assertMailer(dir, result, deps) {
   if (result.mailerProvider !== 'ses') expect(root).toContain('apiKey: env.')
 }
 
+function assertTrpcContext(dir, database, auth) {
+  const context = read(`${dir}/src/server/api/trpc.ts`)
+  const hasDatabaseContext = database === 'drizzle' || database === 'prisma'
+  const hasAuth = auth !== 'none'
+
+  expect(context.includes("import { db } from '~/server/db'"), 'database context import').toBe(
+    hasDatabaseContext,
+  )
+  expect(context.includes('db,'), 'database context value').toBe(hasDatabaseContext)
+  expect(context.includes('export const protectedProcedure'), 'protected procedure').toBe(hasAuth)
+
+  if (auth === 'better-auth') {
+    expect(context).toContain("import { auth } from '~/server/better-auth'")
+    expect(context).toContain('session,')
+    expect(context).not.toContain('auth: await auth()')
+  } else if (auth === 'clerk') {
+    expect(context).toContain("import { auth } from '@clerk/")
+    expect(context).toContain('auth: await auth()')
+    expect(context).not.toContain('session,')
+  } else {
+    expect(context).not.toContain('import { auth }')
+    expect(context).not.toContain('session,')
+    expect(context).not.toContain('auth: await auth()')
+  }
+}
+
 function assertCapabilities(dir, env, capabilities = {}) {
   for (const cap of Object.keys(capabilities)) {
     expect(exists(`${dir}/src/server/${cap}`), `${cap} vendored`).toBe(true)
@@ -173,6 +199,13 @@ const CONFIGS = [
     foundations: ['trpc'],
     mailer: 'none',
   },
+  {
+    name: 'trpc-auth-only',
+    database: 'none',
+    auth: 'clerk',
+    foundations: ['trpc'],
+    mailer: 'none',
+  },
   { name: 'convex-none', database: 'convex', auth: 'none', mailer: 'none' },
   { name: 'convex-clerk', database: 'convex', auth: 'clerk', mailer: 'none' },
   { name: 'drizzle-only', auth: 'none', foundations: [], mailer: 'none' },
@@ -198,6 +231,7 @@ for (const framework of ['tanstack', 'next']) {
         assertDatabase(dir, result.database, deps, result.auth === 'better-auth', framework)
         assertComponentsStripped(dir, deps)
         assertMailer(dir, result, deps)
+        if (kept.has('trpc')) assertTrpcContext(dir, result.database, result.auth)
 
         // env keys track the selection (Convex uses raw CONVEX_* keys, no DATABASE_URL)
         const sqlDb = result.database === 'drizzle' || result.database === 'prisma'

@@ -627,9 +627,11 @@ test('tRPC remains independent of data and authentication through the executable
   expect(result.stdout).toContain('Database: (none) — minimal exclusion')
   expect(result.stdout).toContain('Auth: (none) — minimal exclusion')
   expect(result.stdout).toContain('tRPC: yes — requested')
+  expect(result.stdout).toContain('Mailer: (none) — minimal exclusion')
   expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/db`)).toBe(false)
   expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/email`)).toBe(false)
 })
 
 test('removed foundations syntax reports its replacement before mutation', () => {
