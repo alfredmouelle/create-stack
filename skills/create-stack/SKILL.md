@@ -1,125 +1,71 @@
 ---
 name: create-stack
 description: >-
-  Scaffold a brand-new project by running the published create-stack CLI
-  (@alfredmouelle/create-stack): forks a base app (Next.js App Router or TanStack
-  Start), optionally inside a Turborepo/Nx monorepo, then strips it to the chosen
-  database, auth, tRPC, mailer and capabilities. Use when the user wants to start
-  a new project/app/codebase ("nouveau projet", "crée une app", "scaffold",
-  "create-stack"). To add a tool to an existing project, use add-capability instead.
+  Start a new app or codebase with the published create-stack CLI. Use for
+  requests such as "nouveau projet" or "scaffold". For an integration in an
+  existing project, use add-capability.
 ---
 
-# Create a project with create-stack
+# Scaffold with create-stack
 
-Scaffolding is delegated to the **create-stack CLI**: a deterministic, self-contained
-installer. Do not fork the base apps or reproduce the wiring by hand; just run it.
+Use the published CLI as the installer. Gather material choices, then run it
+non-interactively.
 
-## Which CLI to run: installed binary, else `pnpm dlx`
+## 1. Resolve the CLI
 
-Use the `create-stack` binary when it's on the PATH (globally installed, no network
-round-trip), else fall back to the published package. Never a local checkout: no
-machine-specific path to break when the repo moves.
+Prefer `create-stack` on PATH. Otherwise resolve the published npm version
+explicitly and run it with `pnpm dlx`; `@latest` can resolve from stale cache.
 
 ```bash
 cs() { if command -v create-stack >/dev/null 2>&1; then create-stack "$@";
        else pnpm dlx @alfredmouelle/create-stack@$(npm view @alfredmouelle/create-stack version) "$@"; fi; }
+cs --help
 ```
 
-Define the `cs` helper and call `cs …` **in the same command block** (a fresh shell
-per bash call doesn't keep the function). Everything below is written with `cs`.
+Define `cs` and invoke it in the same shell block each time.
 
-The fallback resolves the version explicitly rather than using `@latest`: a stale
-`pnpm dlx` cache silently serves an old version otherwise (observed serving 0.8.1
-while latest was 0.9.0), and `pnpm dlx` has no `--force` to bypass it.
+**Done when:** `cs --help` succeeds and supplies the current axes, accepted
+values, and defaults.
 
-## Gather the choices first
+## 2. Prepare the invocation
 
-The CLI is interactive (it uses a TTY wizard). When **you (the agent)** run it via
-bash there is no TTY, so collect the user's choices in conversation, then run it
-**non-interactively with flags**. Ask only for what's ambiguous; otherwise use the
-defaults below.
+Set the target directory and its intended parent directory. Read `cs --help`,
+ask only about choices that materially affect the request, and leave every
+other choice at the CLI default. Map each stated preference to a current flag.
 
-- **project dir**: required (positional).
-- **framework**: `tanstack` (default) or `next`.
-- **monorepo**: `none` (default, standalone) | `turbo` | `nx` (orchestrator for the app in `apps/web`).
-- **database**: `drizzle` (default) | `prisma` | `convex` | `none`. Convex is its
-  own API layer, so it conflicts with explicit tRPC and better-auth selections.
-- **auth**: `better-auth` (default) | `clerk` | `none`. When better-auth is explicit,
-  omitted database and mail axes are completed with Drizzle and Resend; explicit
-  exclusions conflict instead.
-- **tRPC**: included by recommendation; use `--trpc` or `--no-trpc` to make the API
-  axis explicit. It is independent of database and authentication.
-- **mailer**: `resend` (default) | `brevo` | `ses` | `none`. Explicit `none`
-  conflicts with better-auth.
-- **minimal project**: `--minimal` creates a frontend-only starting point; add
-  `--trpc` only when the user explicitly wants an API without data or auth.
-- **capabilities**: opt-in flags, see below. None is included by default.
-- also available: `--pm <pnpm|npm|yarn|bun>` (auto-detected) and
-  `--alias <prefix>` (default `~`).
+Only surface normalization when it affects a stated preference:
 
-## Run it (non-interactive, how the agent runs it)
+- Convex drops tRPC and cannot back better-auth.
+- better-auth requires a database and a real mailer.
+
+If the user explicitly wants the TTY wizard, give them
+`create-stack <project-dir>` and hand over that interactive step.
+
+**Done when:** the target directory is known, every stated preference maps to a
+current flag, and every applicable compatibility adjustment is understood; or
+the requested TTY command has been handed off.
+
+## 3. Scaffold
+
+Run from the intended parent directory. Repeat the `cs` definition from step 1
+in the same shell block as one invocation:
 
 ```bash
-cs <project-dir> \
-  --framework <next|tanstack> \
-  --database <drizzle|prisma|convex|none> \
-  --auth <better-auth|clerk|none> \
-  --mailer <resend|brevo|ses|none>
-# add --trpc or --no-trpc only when the user chose the API axis explicitly
-# add --monorepo turbo|nx to scaffold into a monorepo (app in apps/web)
-# add --no-install to skip install+verify, or --yes for all-defaults
+cs <project-dir> --yes
+cs <project-dir> <selection flags from cs --help>
 ```
 
-Capabilities can be scaffolded in the same run. Ports take an optional adapter
-(bare flag = default adapter), modules take none:
+Use `--yes` when CLI defaults satisfy the request. Otherwise pass only the
+selection flags needed to express it.
 
-```bash
-cs my-app --storage r2 --cache --logger pino --analytics posthog   # ports
-cs my-app --jobs --error-tracking                                   # modules, no value
-```
+**Done when:** the command exits 0 and its summary matches the requested stack.
 
-Passing any selection flag (or `--yes`) switches the CLI to non-interactive mode,
-so it never blocks on a prompt.
+## 4. Finish and hand off
 
-## Or let the user run the wizard
+Apply every printed manual file edit that is in scope. Report credentials and
+other user-only values with the generated `.env` path, plus the CLI's exact next
+commands so they match the selected package manager. Mention `add-capability`
+only when a later integration is relevant.
 
-If the user prefers the interactive wizard, have them run it themselves (a real
-TTY). In this session, the `!` prefix works:
-
-```
-!create-stack my-app                                      # if installed
-!pnpm dlx @alfredmouelle/create-stack@latest my-app       # else
-```
-
-## What it does
-
-Forks the chosen base app, strips what you didn't keep (files, deps, env, wiring),
-vendors the selected database/auth/mailer and capabilities, stamps identity,
-generates `.env` + `.env.example`, installs, verifies (typecheck + Biome), then
-`git init` + an initial commit. The result is a bootable, green project.
-
-Capability vendoring follows the two kinds: a **port** (storage, cache, logger,
-analytics, mailer) gets its `port.ts` + one adapter + a generated composition root
-in `src/server/<cap>/index.ts`; a **module** (jobs, error-tracking) gets its
-provider wiring directly, Inngest client/events/functions + the `api/inngest`
-route for jobs, the Sentry init/instrumentation files for error-tracking.
-
-## After scaffolding
-
-- Fill `.env` (copied from `.env.example`), then `pnpm dev`.
-- The run ends with any **manual steps** the CLI deliberately left to you (editing
-  files the project owns), today the Sentry ones: `withSentryConfig` in
-  `next.config.ts`, or `sentryTanstackStart()` last in `vite.config.ts` and the
-  matching `src/client.tsx` / `src/server.ts` / `src/start.ts` edits. Apply them.
-- Add more capabilities later (storage, cache, logger, analytics, mailer, jobs,
-  error-tracking, email-ui, http) with the **add-capability** skill.
-
-## Notes
-
-- Never use `@latest` with `pnpm dlx`, its cache serves stale versions and there's
-  no `--force`. Resolve the version first (`npm view … version`) as the `cs` helper
-  does, or pin a known-good one.
-- Requires Node ≥ 22, git and a package manager on PATH (rsync is the fast fork
-  path, with a Node fallback when it's absent).
-- This skill replaces the old "convention mode" (adapting an existing scaffold):
-  we always start from the base app via the CLI now.
+**Done when:** every printed step is completed or explicitly handed off, and
+the user has the exact env path, remaining values, and next commands.
