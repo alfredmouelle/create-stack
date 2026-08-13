@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // create-stack — fork a base app, strip to selection, stamp identity, verify.
 // Interactive by default; non-interactive when any selection flag (or --yes) is passed:
-//   create-stack my-app --framework next --foundations drizzle,trpc --mailer ses --no-install
+//   create-stack my-app --framework next --db drizzle --trpc --mail ses --no-install
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -15,15 +15,7 @@ import {
   resolveTargetAdapter,
   targetDir,
 } from './lib/add.mjs'
-import {
-  ALL_FOUNDATIONS,
-  csv,
-  isValidAlias,
-  normalize,
-  normalizeAlias,
-  parseArgs,
-  resolveMonorepo,
-} from './lib/args.mjs'
+import { isValidAlias, normalize, normalizeAlias, parseArgs, resolveMonorepo } from './lib/args.mjs'
 import { resolveAuth } from './lib/auth.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
@@ -36,7 +28,18 @@ import {
 import { COMPONENT_NAMES, componentChoices, vendorComponent } from './lib/component.mjs'
 import { resolveDatabase } from './lib/database.mjs'
 import { packageName } from './lib/identity.mjs'
-import { detectPackageManager, PM_NAMES, resolvePackageManager } from './lib/package-manager.mjs'
+import {
+  detectPackageManager,
+  detectProjectPackageManager,
+  PM_NAMES,
+  resolveExplicitPackageManager,
+  resolvePackageManager,
+} from './lib/package-manager.mjs'
+import {
+  findCompatibleApplications,
+  relativeApplicationPath,
+  resolveApplicationPath,
+} from './lib/project-target.mjs'
 import { exists, isDirEmpty, join, run } from './lib/util.mjs'
 
 // PM that launched us; the wizard pre-selects it and `add`/non-interactive fall back to it.
@@ -64,8 +67,10 @@ Scaffold flags:
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --db, --database [drizzle|prisma|convex|none] ORM the app ships (bare/default = drizzle)
   --auth <better-auth|clerk|none>  Auth provider (default better-auth)
-  --foundations <csv>              trpc (default all)
   --mail, --mailer [resend|brevo|ses|none] Mail provider (bare/default = resend)
+  --minimal                        Start with a frontend-only project
+  --trpc / --no-trpc               Include or explicitly exclude tRPC
+  --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
   --no-install                     Skip install + verification
   -y, --yes                        Non-interactive with all defaults
   -h, --help                       Show this help
@@ -92,6 +97,9 @@ No provider at all: email-ui, http.
 
 Flags:
   --keep                           Keep existing adapter(s) when swapping
+  --app <relative-path>            Application target (required when ambiguous)
+  --pm <pnpm|npm|yarn|bun>         Override package manager detected from lockfile
+  --package-manager <name>         Alias for --pm
   --no-install                     Skip install + verification
   -h, --help                       Show this help`
 
@@ -135,13 +143,25 @@ const CREATION_OPTIONS = [
   'y',
   'yes',
   'minimal',
-  // Kept temporarily for the later migration slice, which will replace it with
-  // a targeted removal diagnostic.
-  'foundations',
+  'trpc',
+  'no-trpc',
+  'no-db',
+  'no-auth',
+  'no-mail',
   ...Object.keys(CREATION_CAPABILITY_OPTIONS),
 ]
 
-const BOOLEAN_CREATION_OPTIONS = new Set(['y', 'yes', 'minimal', 'no-install'])
+const BOOLEAN_CREATION_OPTIONS = new Set([
+  'y',
+  'yes',
+  'minimal',
+  'trpc',
+  'no-trpc',
+  'no-db',
+  'no-auth',
+  'no-mail',
+  'no-install',
+])
 
 function editDistance(left, right) {
   const row = Array.from({ length: right.length + 1 }, (_, index) => index)
@@ -162,6 +182,9 @@ function editDistance(left, right) {
 }
 
 function validateCreationOptionNames(flags) {
+  if (has(flags, 'foundations')) {
+    throw new Error('--foundations was removed; use --trpc or --no-trpc')
+  }
   const known = new Set([...CREATION_OPTIONS, 'h', 'help', 'v', 'version'])
   for (const name of Object.keys(flags)) {
     if (known.has(name)) continue
@@ -175,13 +198,15 @@ function validateCreationOptionNames(flags) {
 
 const CREATION_AXES = {
   Framework: ['f', 'framework'],
-  Database: ['db', 'database'],
-  Auth: ['auth'],
-  Mail: ['mail', 'mailer'],
+  Database: ['db', 'database', 'no-db'],
+  Auth: ['auth', 'no-auth'],
+  Mail: ['mail', 'mailer', 'no-mail'],
+  tRPC: ['trpc', 'no-trpc'],
   Monorepo: ['mono', 'monorepo'],
   'Package manager': ['pm', 'package-manager'],
   'Import alias': ['alias'],
   'Recommended stack acceptance': ['y', 'yes'],
+  'Minimal project': ['minimal'],
   ...Object.fromEntries(
     CAPABILITIES.map((capability) => [
       canonicalCapabilityName(capability)
@@ -230,7 +255,11 @@ function validateCreationInvocation(args) {
     'mailer',
     'mono',
     'monorepo',
-    'foundations',
+    'trpc',
+    'no-trpc',
+    'no-db',
+    'no-auth',
+    'no-mail',
     ...Object.keys(CREATION_CAPABILITY_OPTIONS),
   ])
   const conflict = args.options.find(({ name }) => stackOptions.has(name))
@@ -297,14 +326,8 @@ function collectFromFlags(args) {
   const framework = resolveFrameworkFlag(args.flags)
   const alias = normalizeAlias(typeof args.flags.alias === 'string' ? args.flags.alias : undefined)
   const pm = resolvePackageManagerFlag(args.flags)
-  const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
-  // soft-map legacy `--foundations drizzle|prisma|better-auth` onto their axes
-  const { kept, database, auth, mailerProvider, adjustments } = normalize(
-    picked,
-    resolveDatabaseFlag(args.flags, picked),
-    resolveAuthFlag(args.flags, picked),
-    resolveMailer(args.flags.mail ?? args.flags.mailer),
-  )
+  const { kept, database, auth, mailerProvider, adjustments, selectionReasons } =
+    resolveCreationStack(args.flags)
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
   const monorepo = resolveMonorepo(args.flags.mono ?? args.flags.monorepo)
@@ -319,9 +342,118 @@ function collectFromFlags(args) {
     auth,
     mailerProvider,
     adjustments,
+    selectionReasons,
     capabilities,
     monorepo,
     doInstall,
+  }
+}
+
+const has = (flags, name) => Object.hasOwn(flags, name)
+
+function explicitDatabaseChoice(flags) {
+  if (has(flags, 'no-db')) return 'none'
+  if (has(flags, 'db') || has(flags, 'database')) return resolveDatabaseFlag(flags, [])
+}
+
+function explicitAuthChoice(flags) {
+  if (has(flags, 'no-auth')) return 'none'
+  if (has(flags, 'auth')) return resolveAuthFlag(flags, [])
+}
+
+function explicitMailerChoice(flags) {
+  if (has(flags, 'no-mail')) return 'none'
+  if (has(flags, 'mail') || has(flags, 'mailer')) return resolveMailer(flags.mail ?? flags.mailer)
+}
+
+function explicitTrpcChoice(flags) {
+  if (has(flags, 'trpc')) return true
+  if (has(flags, 'no-trpc')) return false
+}
+
+const explicitCreationChoices = (flags) => ({
+  database: explicitDatabaseChoice(flags),
+  auth: explicitAuthChoice(flags),
+  mailer: explicitMailerChoice(flags),
+  trpc: explicitTrpcChoice(flags),
+})
+
+function validateExplicitChoices(explicit) {
+  if (explicit.database === 'convex' && explicit.auth === 'better-auth') {
+    throw new Error('Better Auth cannot be used with Convex')
+  }
+  if (explicit.database === 'convex' && explicit.trpc === true) {
+    throw new Error('Convex cannot be combined with tRPC')
+  }
+  if (explicit.auth === 'better-auth' && explicit.database === 'none') {
+    throw new Error('Better Auth requires a database; remove --no-db or choose another auth')
+  }
+  if (explicit.auth === 'better-auth' && explicit.mailer === 'none') {
+    throw new Error('Better Auth requires mail; remove --no-mail or choose another auth')
+  }
+}
+
+function selectionReasons(explicit) {
+  const reasons = {}
+  for (const [axis, value] of Object.entries(explicit)) {
+    if (value !== undefined) {
+      reasons[axis] = value === 'none' || value === false ? 'requested exclusion' : 'requested'
+    }
+  }
+  return reasons
+}
+
+function applyStartingConfiguration(resolved, reasons, minimal, acceptsRecommendedStack) {
+  if (minimal) {
+    resolved.database ??= 'none'
+    resolved.auth ??= 'none'
+    resolved.trpc ??= false
+    resolved.mailer ??= 'none'
+    for (const axis of ['database', 'auth', 'trpc', 'mailer']) reasons[axis] ??= 'minimal exclusion'
+    return
+  }
+
+  resolved.database ??= 'drizzle'
+  resolved.auth ??=
+    resolved.database === 'convex' || resolved.database === 'none' || resolved.mailer === 'none'
+      ? 'clerk'
+      : 'better-auth'
+  resolved.trpc ??= resolved.database !== 'convex'
+  resolved.mailer ??= resolved.auth === 'better-auth' ? 'resend' : 'none'
+  const reason = acceptsRecommendedStack ? 'recommended stack' : 'applicable recommendation'
+  for (const axis of ['database', 'auth', 'trpc', 'mailer']) reasons[axis] ??= reason
+}
+
+function completeBetterAuthDependencies(resolved, explicit, reasons) {
+  if (resolved.auth !== 'better-auth') return
+  if (resolved.database === 'none') resolved.database = 'drizzle'
+  if (resolved.mailer === 'none') resolved.mailer = 'resend'
+  if (explicit.auth === 'better-auth') {
+    if (explicit.database === undefined) reasons.database = 'dependency completion for Better Auth'
+    if (explicit.mailer === undefined) reasons.mailer = 'dependency completion for Better Auth'
+  }
+}
+
+function resolveCreationStack(flags) {
+  const explicit = explicitCreationChoices(flags)
+  validateExplicitChoices(explicit)
+  const resolved = { ...explicit }
+  const reasons = selectionReasons(explicit)
+  applyStartingConfiguration(
+    resolved,
+    reasons,
+    has(flags, 'minimal'),
+    has(flags, 'y') || has(flags, 'yes'),
+  )
+  completeBetterAuthDependencies(resolved, explicit, reasons)
+
+  return {
+    kept: new Set(resolved.trpc ? ['trpc'] : []),
+    database: resolved.database,
+    auth: resolved.auth,
+    mailerProvider: resolved.mailer,
+    adjustments: [],
+    selectionReasons: reasons,
   }
 }
 
@@ -599,17 +731,18 @@ const formatCapability = ([capability, provider]) =>
 function creationPlanLines(a, pm) {
   const monoLabel = a.monorepo === 'nx' ? 'Nx' : a.monorepo === 'turborepo' ? 'Turborepo' : null
   const capabilities = Object.entries(a.capabilities ?? {}).map(formatCapability)
+  const reason = (axis) => (a.selectionReasons?.[axis] ? ` — ${a.selectionReasons[axis]}` : '')
   return [
     `Target: ${a.argDir ?? a.projectName}`,
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
     `Monorepo: ${monoLabel ?? '(none)'}`,
     `Package manager: ${pm.name}`,
     `Import alias: ${a.alias ?? '~'}/`,
-    `Database: ${orNone(a.database)}`,
-    `Auth: ${orNone(a.auth)}`,
-    `tRPC: ${a.kept.has('trpc') ? 'yes' : 'no'}`,
-    `Mailer: ${orNone(a.mailerProvider)}`,
-    `Capabilities: ${capabilities.join(', ') || '(none)'}`,
+    `Database: ${orNone(a.database)}${reason('database')}`,
+    `Auth: ${orNone(a.auth)}${reason('auth')}`,
+    `tRPC: ${a.kept.has('trpc') ? 'yes' : 'no'}${reason('trpc')}`,
+    `Mailer: ${orNone(a.mailerProvider)}${reason('mailer')}`,
+    `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ' — requested' : ''}`,
     `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
   ]
 }
@@ -693,20 +826,59 @@ const addedLine = (a) => {
 
 /** `create-stack add [capability] [adapter] [--keep]` — vendor/swap capabilities in the cwd project. */
 async function runAdd(args) {
-  const projectDir = resolve(process.cwd())
-  if (!exists(join(projectDir, 'package.json'))) {
-    p.cancel('No package.json here — run this from the root of a create-stack project.')
+  const projectRoot = resolve(process.cwd())
+  const applications = findCompatibleApplications(projectRoot)
+  if (applications.length === 0) {
+    p.cancel('No compatible application found in this project.')
     process.exit(1)
   }
+  const requestedApplication = args.flags.app
+  const explicitAddition = !!args._[1]
+  if (!requestedApplication && explicitAddition && applications.length > 1) {
+    p.cancel(
+      `Multiple compatible applications found: ${applications
+        .map((application) => relativeApplicationPath(projectRoot, application))
+        .join(', ')}. Pass --app <relative-path>.`,
+    )
+    process.exit(1)
+  }
+  const projectDir = requestedApplication
+    ? resolveApplicationPath(projectRoot, requestedApplication)
+    : applications.length === 1
+      ? applications[0]
+      : cancelled(
+          await p.select({
+            message: 'Application to enrich',
+            options: applications.map((application) => {
+              const path = relativeApplicationPath(projectRoot, application)
+              return { value: application, label: path }
+            }),
+          }),
+        )
+  const applicationPath = relativeApplicationPath(projectRoot, projectDir)
+  const packageManagerFlags = args.options
+    .filter(({ name }) => name === 'pm' || name === 'package-manager')
+    .map(({ value }) => value)
+  if (packageManagerFlags.length > 1) {
+    throw new Error(
+      'Ambiguous package manager overrides: pass only one of --pm or --package-manager',
+    )
+  }
+  const packageManagerFlag = packageManagerFlags[0]
+  const pm = packageManagerFlag
+    ? resolveExplicitPackageManager(packageManagerFlag)
+    : detectProjectPackageManager(projectRoot, detectedPm)
 
   p.intro('create-stack add')
+  p.log.info(`Application: ${applicationPath}`)
+  p.log.info(`Package manager: ${pm.name}`)
   const keep = !!args.flags.keep
   const selections = await resolveAddSelections(args)
   const added = selections.map((sel) => ({
     ...sel,
     ...addCapability({ projectDir, ...sel, keep }),
   }))
-  if (!args.flags['no-install']) installAndVerify(projectDir, detectedPm)
+  if (!args.flags['no-install']) installAndVerify(projectDir, pm)
 
   p.note(added.map(addedLine).join('\n'), keep ? 'Added (kept existing adapters)' : 'Added')
 
@@ -803,11 +975,16 @@ async function main() {
     [
       'framework',
       'f',
+      'minimal',
       'db',
       'database',
       'auth',
       'mail',
-      'foundations',
+      'trpc',
+      'no-trpc',
+      'no-db',
+      'no-auth',
+      'no-mail',
       'mailer',
       'mono',
       'monorepo',

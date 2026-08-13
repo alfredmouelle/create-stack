@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
 
@@ -17,13 +17,19 @@ function createProject(fixture, { framework, monorepo }) {
       'none',
       '--auth',
       'none',
-      '--foundations',
-      'none',
+      '--no-trpc',
       '--mailer',
       'none',
       '--no-install',
     ],
   })
+}
+
+function createAmbiguousMonorepoFixture() {
+  const fixture = createAcceptanceFixture('monorepo')
+  expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
+  cpSync(fixture.app, `${fixture.project}/apps/admin`, { recursive: true })
+  return fixture
 }
 
 test('the executable CLI reports prompts without mutating its target', () => {
@@ -322,11 +328,237 @@ test.each([
   [['project', '-y', '--mono'], '--yes cannot be combined with stack options'],
   [['project', '--yes', '--minimal'], '--yes cannot be combined with --minimal'],
   [['project', '--yes=false'], '--yes does not accept a value'],
+  [['project', '--minimal', '--minimal'], 'Minimal project was specified more than once'],
   [['project', '--no-install=false'], '--no-install does not accept a value'],
   [['project', '--mono=turborepo'], 'expected turbo or nx'],
   [['project', '--alias'], '--alias requires a value'],
   [['project', '--pm'], '--pm requires a value'],
 ])('rejects ambiguous creation form %j before mutation', (args, diagnostic) => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: [...args, '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain(diagnostic)
+})
+
+test('minimal creation produces a frontend-only project and explains its exclusions', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(true)
+  expect(result.stdout).toContain('Database: (none) — minimal exclusion')
+  expect(result.stdout).toContain('Auth: (none) — minimal exclusion')
+  expect(result.stdout).toContain('tRPC: no — minimal exclusion')
+  expect(result.stdout).toContain('Mailer: (none) — minimal exclusion')
+  expect(existsSync(`${fixture.project}/src/server/db`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/api`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/email`)).toBe(false)
+})
+
+test('--minimal alone starts non-interactive creation and requires a target', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({ cwd: fixture.root, target: fixture.project, args: ['--minimal'] })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain('Project name is required')
+})
+
+test('stack options enrich minimal creation and redundant exclusions remain valid', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: [
+      'project',
+      '--minimal',
+      '--db=prisma',
+      '--trpc',
+      '--no-auth',
+      '--no-mail',
+      '--no-install',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Database: prisma — requested')
+  expect(result.stdout).toContain('Auth: (none) — requested exclusion')
+  expect(result.stdout).toContain('tRPC: yes — requested')
+  expect(result.stdout).toContain('Mailer: (none) — requested exclusion')
+  expect(existsSync(`${fixture.project}/prisma/schema/schema.prisma`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/email`)).toBe(false)
+})
+
+test('tRPC remains independent of data and authentication through the executable CLI', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--trpc', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Database: (none) — minimal exclusion')
+  expect(result.stdout).toContain('Auth: (none) — minimal exclusion')
+  expect(result.stdout).toContain('tRPC: yes — requested')
+  expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/db`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
+})
+
+test('removed foundations syntax reports its replacement before mutation', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--foundations=trpc', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain('--foundations was removed; use --trpc or --no-trpc')
+})
+
+test.each([
+  {
+    option: '--no-db',
+    plan: ['Database: (none) — requested exclusion', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none)'],
+    present: ['src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
+    absent: ['src/server/db', 'src/server/email'],
+  },
+  {
+    option: '--no-auth',
+    plan: [
+      'Database: drizzle',
+      'Auth: (none) — requested exclusion',
+      'tRPC: yes',
+      'Mailer: (none)',
+    ],
+    present: ['src/server/db', 'src/server/api/trpc.ts'],
+    absent: ['src/server/better-auth', 'src/server/email'],
+  },
+  {
+    option: '--no-mail',
+    plan: ['Database: drizzle', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none) — requested exclusion'],
+    present: ['src/server/db', 'src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
+    absent: ['src/server/better-auth', 'src/server/email'],
+  },
+  {
+    option: '--auth=clerk',
+    plan: ['Database: drizzle', 'Auth: clerk — requested', 'tRPC: yes', 'Mailer: (none)'],
+    present: ['src/server/db', 'src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
+    absent: ['src/server/better-auth', 'src/server/email'],
+  },
+  {
+    option: '--no-trpc',
+    plan: [
+      'Database: drizzle',
+      'Auth: better-auth',
+      'tRPC: no — requested exclusion',
+      'Mailer: resend',
+    ],
+    present: ['src/server/db', 'src/server/better-auth', 'src/server/email'],
+    absent: ['src/server/api', 'src/trpc'],
+  },
+])('resolves applicable recommendations for $option', ({ option, plan, present, absent }) => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', option, '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('applicable recommendation')
+  for (const line of plan) expect(result.stdout).toContain(line)
+  for (const path of present) expect(existsSync(`${fixture.project}/${path}`), path).toBe(true)
+  for (const path of absent) expect(existsSync(`${fixture.project}/${path}`), path).toBe(false)
+})
+
+test('Better Auth completes omitted dependencies from a minimal project', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--auth=better-auth', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Auth: better-auth — requested')
+  expect(result.stdout).toContain('Database: drizzle — dependency completion for Better Auth')
+  expect(result.stdout).toContain('Mailer: resend — dependency completion for Better Auth')
+  expect(result.stdout).toContain('tRPC: no — minimal exclusion')
+  expect(existsSync(`${fixture.project}/src/server/db`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/email`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/api`)).toBe(false)
+})
+
+test.each([
+  {
+    args: ['--db=convex'],
+    mailer: 'Mailer: (none) — applicable recommendation',
+    hasMailer: false,
+  },
+  {
+    args: ['--db=convex', '--mail=ses'],
+    mailer: 'Mailer: ses — requested',
+    hasMailer: true,
+  },
+])(
+  'Convex uses applicable recommendations and preserves explicit mail: $args',
+  ({ args, mailer, hasMailer }) => {
+    const fixture = createAcceptanceFixture('standalone')
+
+    const result = runCli({
+      cwd: fixture.root,
+      target: fixture.project,
+      args: ['project', ...args, '--no-install'],
+    })
+
+    expect(result.exitStatus).toBe(0)
+    expect(result.stdout).toContain('Database: convex — requested')
+    expect(result.stdout).toContain('Auth: clerk — applicable recommendation')
+    expect(result.stdout).toContain('tRPC: no — applicable recommendation')
+    expect(result.stdout).toContain(mailer)
+    expect(existsSync(`${fixture.project}/convex/schema.ts`)).toBe(true)
+    expect(existsSync(`${fixture.project}/src/routes/sign-in.$.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.project}/src/server/api`)).toBe(false)
+    expect(existsSync(`${fixture.project}/src/server/email`)).toBe(hasMailer)
+  },
+)
+
+test.each([
+  [['project', '--auth=better-auth', '--no-db'], 'Better Auth requires a database'],
+  [['project', '--auth=better-auth', '--no-mail'], 'Better Auth requires mail'],
+  [['project', '--minimal', '--auth=better-auth', '--no-db'], 'Better Auth requires a database'],
+  [['project', '--db=convex', '--auth=better-auth'], 'Better Auth cannot be used with Convex'],
+  [['project', '--db=convex', '--trpc'], 'Convex cannot be combined with tRPC'],
+])('rejects dependency conflict %j before mutation', (args, diagnostic) => {
   const fixture = createAcceptanceFixture('standalone')
 
   const result = runCli({
@@ -353,19 +585,171 @@ test('adds a capability to a monorepo application through the executable CLI', (
   expect(existsSync(`${fixture.app}/package.json`)).toBe(true)
 
   const added = runCli({
-    cwd: fixture.app,
-    target: fixture.app,
+    cwd: fixture.project,
+    target: fixture.project,
     args: ['add', 'storage', 'r2', '--no-install'],
   })
 
   expect(added.exitStatus).toBe(0)
   expect(added.stdout).toContain('Added storage')
+  expect(added.stdout).toContain('Application: apps/web')
   expect(added.stderr).toBe('')
   expect(added.requestedInput).toBe(false)
   expect(added.targetMutated).toBe(true)
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
   expect(existsSync(`${fixture.project}/node_modules`)).toBe(false)
   expect(existsSync(`${fixture.app}/node_modules`)).toBe(false)
+})
+
+test('an explicit addition rejects an ambiguous monorepo before mutation', () => {
+  const fixture = createAmbiguousMonorepoFixture()
+
+  const added = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'storage', 'r2', '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(1)
+  expect(added.stdout).toContain('Multiple compatible applications')
+  expect(added.stdout).toContain('--app')
+  expect(added.requestedInput).toBe(false)
+  expect(added.targetMutated).toBe(false)
+})
+
+test('--app selects one relative application and confines the addition to it', () => {
+  const fixture = createAmbiguousMonorepoFixture()
+  const admin = `${fixture.project}/apps/admin`
+
+  const added = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'storage', 'r2', '--app', 'apps/web', '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(0)
+  expect(added.stdout).toContain('Application: apps/web')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${admin}/src/server/storage`)).toBe(false)
+})
+
+test('add detects the project package manager from its lockfile', () => {
+  const fixture = createAcceptanceFixture('monorepo')
+  expect(createProject(fixture, { framework: 'tanstack', monorepo: 'turbo' }).exitStatus).toBe(0)
+  writeFileSync(`${fixture.project}/yarn.lock`, '')
+
+  const added = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'http', '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(0)
+  expect(added.stdout).toContain('Package manager: yarn')
+})
+
+test.each(['--pm', '--package-manager'])(
+  '%s overrides lockfile package-manager detection',
+  (flag) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+    writeFileSync(`${fixture.project}/yarn.lock`, '')
+    writeFileSync(`${fixture.project}/bun.lock`, '')
+
+    const added = runCli({
+      cwd: fixture.project,
+      target: fixture.project,
+      args: ['add', 'http', flag, 'npm', '--no-install'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain('Package manager: npm')
+  },
+)
+
+test.each([
+  ['conflicting aliases', ['--pm', 'npm', '--package-manager', 'yarn']],
+  ['a repeated override', ['--pm', 'npm', '--pm', 'npm']],
+])('%s fail before project mutation', (_case, overrides) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const added = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'http', ...overrides, '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(1)
+  expect(added.stdout).toContain('Ambiguous package manager overrides')
+  expect(added.targetMutated).toBe(false)
+})
+
+test.each([
+  {
+    name: 'an invalid override',
+    files: [],
+    args: ['--pm', 'deno'],
+    error: 'Invalid package manager',
+  },
+  {
+    name: 'ambiguous lockfiles',
+    files: ['yarn.lock', 'package-lock.json'],
+    args: [],
+    error: 'Ambiguous project package manager',
+  },
+])('$name fails before project mutation', ({ files, args, error }) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  for (const file of files) writeFileSync(`${fixture.project}/${file}`, '')
+
+  const added = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'storage', 'r2', ...args, '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(1)
+  expect(added.stdout).toContain(error)
+  expect(added.targetMutated).toBe(false)
+})
+
+test('interactive add asks which compatible application to target', () => {
+  const fixture = createAmbiguousMonorepoFixture()
+
+  const added = runCli({
+    cwd: fixture.project,
+    input: '\u0003',
+    target: fixture.project,
+    args: ['add', '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(0)
+  expect(added.stdout).toContain('Application to enrich')
+  expect(added.stdout).toContain('apps/admin')
+  expect(added.stdout).toContain('apps/web')
+  expect(added.requestedInput).toBe(true)
+  expect(added.targetMutated).toBe(false)
+})
+
+test.each([
+  ['an absolute path', '/tmp'],
+  ['a path outside the project', '../outside'],
+  ['a missing path', 'apps/missing'],
+  ['a non-application path', 'apps'],
+])('invalid --app target: %s', (_case, app) => {
+  const fixture = createAcceptanceFixture('monorepo')
+  expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
+
+  const added = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'http', '--app', app, '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(1)
+  expect(added.stdout).toMatch(/--app|application target|compatible application/)
+  expect(added.targetMutated).toBe(false)
 })
 
 test('adds Email UI to a standalone application through the executable CLI', () => {
