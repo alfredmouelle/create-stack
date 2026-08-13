@@ -659,7 +659,10 @@ function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
     throw new Error(`${pm.name} install failed; verification and the initial commit were skipped`)
   }
   // re-format under the fork's own Biome so the initial commit is lint-clean for any selection
-  pmRun(pm, 'check:write', projectDir, { stdio: 'ignore' })
+  const formatted = pmRun(pm, 'check:write', projectDir, { stdio: 'ignore' })
+  if (!formatted && requireSuccess) {
+    throw new Error('Verification failed; the initial commit was skipped')
+  }
   p.log.step('Verifying (typecheck + biome)')
   const tc = pmRun(pm, 'typecheck', projectDir)
   const lint = pmRun(pm, 'check', projectDir)

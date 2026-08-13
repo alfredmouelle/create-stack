@@ -154,6 +154,22 @@ test('creates into the current directory only when it is empty', () => {
   expect(readFileSync(`${protectedFixture.root}/keep.txt`, 'utf8')).toBe('keep')
 })
 
+test('protects an explicitly named non-empty target', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  mkdirSync(fixture.project)
+  writeFileSync(`${fixture.project}/keep.txt`, 'keep')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Target directory is not empty')
+  expect(readFileSync(`${fixture.project}/keep.txt`, 'utf8')).toBe('keep')
+})
+
 test('no-install explains skipped verification and never creates an automatic commit', () => {
   const fixture = createAcceptanceFixture('standalone')
 
@@ -190,14 +206,19 @@ test('git is not initialized inside an existing repository or with --no-git', ()
   expectNoCommit(repositoryFixture.root)
 
   const noGitFixture = createAcceptanceFixture('standalone')
+  const noGitPackageManager = fakePackageManager(noGitFixture)
   const noGit = runCli({
     cwd: noGitFixture.root,
     target: noGitFixture.project,
-    args: ['project', '--minimal', '--no-install', '--no-git'],
+    args: ['project', '--minimal', '--pm', 'npm', '--no-git'],
+    env: noGitPackageManager.env,
   })
 
   expect(noGit.exitStatus).toBe(0)
   expect(existsSync(`${noGitFixture.project}/.git`)).toBe(false)
+  expect(readFileSync(noGitPackageManager.log, 'utf8')).toBe(
+    ['install', 'run check:write', 'run typecheck', 'run check', ''].join('\n'),
+  )
 })
 
 test('a verified installation creates the generated baseline commit', () => {
@@ -223,6 +244,7 @@ test('a verified installation creates the generated baseline commit', () => {
 
 test.each([
   ['installation', 'install'],
+  ['verification', 'run check:write'],
   ['verification', 'run typecheck'],
   ['verification', 'run check'],
 ])('a failed %s leaves the generated project without a baseline commit', (_step, command) => {
