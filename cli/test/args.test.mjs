@@ -12,10 +12,9 @@ describe('parseArgs', () => {
     expect(parseArgs(['--no-install']).flags['no-install']).toBe(true)
   })
 
-  test('short flags: -y and grouped -hv', () => {
+  test('accepts a single short flag and rejects grouped short flags', () => {
     expect(parseArgs(['-y']).flags.y).toBe(true)
-    const { flags } = parseArgs(['-hv'])
-    expect(flags).toMatchObject({ h: true, v: true })
+    expect(() => parseArgs(['-hv'])).toThrow('Grouped short options are not supported')
   })
 
   test('a value starting with - is not swallowed', () => {
@@ -27,6 +26,13 @@ describe('parseArgs', () => {
 
   test('subcommand-style positionals', () => {
     expect(parseArgs(['add', 'storage', 's3'])._).toEqual(['add', 'storage', 's3'])
+  })
+
+  test('boolean options do not consume a following positional', () => {
+    expect(parseArgs(['--no-install', 'my-app'])).toMatchObject({
+      _: ['my-app'],
+      flags: { 'no-install': true },
+    })
   })
 })
 
