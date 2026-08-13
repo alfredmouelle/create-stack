@@ -184,7 +184,13 @@ const CONFIGS = [
   { name: 'auth-no-trpc', trpc: false },
   { name: 'clerk-full', auth: 'clerk' },
   { name: 'clerk-prisma', database: 'prisma', auth: 'clerk' },
-  { name: 'clerk-minimal', database: 'none', auth: 'clerk', trpc: false, mailer: 'none' },
+  {
+    name: 'clerk-no-database-no-trpc',
+    database: 'none',
+    auth: 'clerk',
+    trpc: false,
+    mailer: 'none',
+  },
   {
     name: 'trpc-no-data-auth',
     database: 'none',
