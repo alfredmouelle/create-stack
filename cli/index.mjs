@@ -589,11 +589,10 @@ async function collectFromPrompts(argDir) {
     }),
   )
 
-  // trpc needs a database and is subsumed by Convex, so only offer it for SQL ORMs.
-  const wantsTrpc =
-    database === 'none' || convex
-      ? false
-      : cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: true }))
+  // tRPC is independent of data and auth; only Convex occupies the same API axis.
+  const wantsTrpc = convex
+    ? false
+    : cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: true }))
   const picked = wantsTrpc ? ['trpc'] : []
 
   const mailerForced = auth === 'better-auth'

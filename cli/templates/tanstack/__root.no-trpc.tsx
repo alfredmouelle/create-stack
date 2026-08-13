@@ -1,12 +1,10 @@
-import { createRootRoute, HeadContent, Scripts, Link } from '@tanstack/react-router'
+import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router'
 import { lazy, Suspense } from 'react'
 
 import appCss from '../styles.css?url'
 
 // Dev-only: devtools are code-split out of the production bundle.
-const Devtools = import.meta.env.DEV
-  ? lazy(() => import('~/components/devtools'))
-  : () => null
+const Devtools = import.meta.env.DEV ? lazy(() => import('~/components/devtools')) : () => null
 
 // Runs before hydration to set the theme class and avoid a flash of wrong theme.
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m));}catch(e){}})();`
@@ -52,9 +50,12 @@ export const Route = createRootRoute({
   }),
   notFoundComponent: () => (
     <div className="flex min-h-svh flex-col items-center justify-center p-6 text-center">
-      <h1 className="text-4xl font-bold tracking-tight">404 - Not Found</h1>
+      <h1 className="font-bold text-4xl tracking-tight">404 - Not Found</h1>
       <p className="mt-2 text-muted-foreground">The page you are looking for does not exist.</p>
-      <Link to="/" className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+      <Link
+        className="mt-6 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
+        to="/"
+      >
         Go back home
       </Link>
     </div>

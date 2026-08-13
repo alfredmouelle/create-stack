@@ -18,7 +18,43 @@ const FRAMEWORKS = process.env.SMOKE_FRAMEWORK
 // 'full' also pins a custom import alias — proof the '~/' rewrite leaves a tree that
 // still typechecks (bundler path resolution + every generated import).
 const CONFIGS = [
-  { name: 'full', capabilities: { storage: 's3', cache: 'redis' }, alias: '@' },
+  {
+    name: 'full',
+    capabilities: { storage: 's3', cache: 'redis' },
+    alias: '@',
+    checkGeneratedFormatting: true,
+  },
+  {
+    name: 'minimal',
+    database: 'none',
+    auth: 'none',
+    foundations: [],
+    mailer: 'none',
+    checkGeneratedFormatting: true,
+  },
+  {
+    name: 'trpc-data-only',
+    auth: 'none',
+    foundations: ['trpc'],
+    mailer: 'none',
+    checkGeneratedFormatting: true,
+  },
+  {
+    name: 'trpc-auth-only',
+    database: 'none',
+    auth: 'clerk',
+    foundations: ['trpc'],
+    mailer: 'none',
+    checkGeneratedFormatting: true,
+  },
+  {
+    name: 'trpc-only',
+    database: 'none',
+    auth: 'none',
+    foundations: ['trpc'],
+    mailer: 'none',
+    checkGeneratedFormatting: true,
+  },
   { name: 'drizzle-only', foundations: [], mailer: 'none' },
   // Prisma exercises both seams (trpc context + better-auth adapter) on both frameworks;
   // the alias rewrite must also survive the generated-client import.
@@ -47,10 +83,10 @@ const pnpm = (args, cwd, opts = {}) =>
     ...opts,
   }).status
 
-/** Install, re-format, then assert typecheck + biome are both green (mirrors the CLI). */
-function verify(dir) {
+/** Install, then assert the project typechecks and passes Biome. */
+function verify(dir, { checkGeneratedFormatting = false } = {}) {
   expect(spawnSync('pnpm', ['install'], { cwd: dir, stdio: 'inherit' }).status).toBe(0)
-  pnpm(['run', 'check:write'], dir, { stdio: 'ignore' })
+  if (!checkGeneratedFormatting) pnpm(['run', 'check:write'], dir, { stdio: 'ignore' })
   expect(pnpm(['run', 'typecheck'], dir), 'typecheck').toBe(0)
   expect(pnpm(['run', 'check'], dir), 'biome check').toBe(0)
 }
@@ -60,7 +96,7 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
     for (const cfg of CONFIGS) {
       test(
         `scaffold ${framework}/${cfg.name}`,
-        () => verify(build({ ...cfg, framework }).dir),
+        () => verify(build({ ...cfg, framework }).dir, cfg),
         TIMEOUT,
       )
     }

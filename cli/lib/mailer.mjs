@@ -41,8 +41,8 @@ const FACTORY = {
 const INDEX_TS = (cfg) => `import type { ReactElement } from 'react'
 import { env } from '~/env'
 ${cfg.import}
-import type { MailAddress, Mailer } from './port'
 import { createMailer } from './factory'
+import type { MailAddress, Mailer } from './port'
 
 export type EmailRecipient = MailAddress
 

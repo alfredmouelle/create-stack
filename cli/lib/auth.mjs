@@ -89,20 +89,24 @@ const CLERK_TANSTACK_IMPORT = "import { ClerkProvider } from '@clerk/tanstack-re
 
 function injectClerkProviderTanstack(projectDir) {
   editFile(src(projectDir, 'routes/__root.tsx'), (c) =>
-    `${CLERK_TANSTACK_IMPORT}${c}`
-      .replace('<html lang="en" suppressHydrationWarning>', '<ClerkProvider>\n<html lang="en" suppressHydrationWarning>')
-      .replace('</html>', '</html>\n</ClerkProvider>'),
+    wrapHtmlWithClerk(`${CLERK_TANSTACK_IMPORT}${c}`),
   )
 }
 
 const CLERK_NEXT_IMPORT = "import { ClerkProvider } from '@clerk/nextjs'\n"
 
 function injectClerkProviderNext(projectDir) {
-  editFile(src(projectDir, 'app/layout.tsx'), (c) =>
-    `${CLERK_NEXT_IMPORT}${c}`
-      .replace('<html lang="en"', '<ClerkProvider>\n<html lang="en"')
-      .replace('</html>', '</html>\n</ClerkProvider>'),
-  )
+  editFile(src(projectDir, 'app/layout.tsx'), (c) => wrapHtmlWithClerk(`${CLERK_NEXT_IMPORT}${c}`))
+}
+
+function wrapHtmlWithClerk(content) {
+  return content.replace(/( {4}<html[\s\S]*? {4}<\/html>)/, (html) => {
+    const nestedHtml = html
+      .split('\n')
+      .map((line) => `  ${line}`)
+      .join('\n')
+    return `    <ClerkProvider>\n${nestedHtml}\n    </ClerkProvider>`
+  })
 }
 
 const CLERK_SERVER = {
@@ -120,11 +124,8 @@ const CLERK_PROTECTED = `export const protectedProcedure = t.procedure.use(timin
 
 /** Swap the better-auth session for Clerk's auth() in the tRPC context + protectedProcedure. */
 function clerkifyTrpc(c, framework) {
-  return c
-    .replace(
-      "import { auth } from '~/server/better-auth'",
-      `import { auth } from '${CLERK_SERVER[framework]}'`,
-    )
+  const clerkImport = `import { auth } from '${CLERK_SERVER[framework]}'\n`
+  return `${clerkImport}${c.replace("import { auth } from '~/server/better-auth'\n", '')}`
     .replace(
       '  const session = await auth.api.getSession({ headers: opts.headers })\n  return { db, session, ...opts }',
       '  return { db, auth: await auth(), ...opts }',

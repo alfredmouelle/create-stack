@@ -15,6 +15,9 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Changed
 
+- tRPC is now an independent API choice in interactive creation too, including projects
+  without a database or authentication. Generated Next.js and TanStack Start contexts are
+  verified with data and auth, data only, auth only, or neither.
 - Creation capability selectors now follow one provider rule: bare `--storage` chooses
   R2, bare `--cache` chooses Upstash, and jobs/errors accept either their bare selector
   or the explicit `inngest`/`sentry` provider. `--errors` is canonical while

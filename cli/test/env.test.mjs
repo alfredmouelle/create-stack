@@ -32,6 +32,12 @@ const envExample = (dir) => readFileSync(join(dir, '.env.example'), 'utf8')
 const count = (s, re) => (s.match(re) || []).length
 
 describe('writeEnv', () => {
+  test('an empty environment emits a format-clean server object', () => {
+    const dir = fixture()
+    writeEnv(dir, [])
+    expect(envTs(dir)).toContain('  server: {},')
+  })
+
   test('required keys skip v.optional; optional keys wrap it', () => {
     const dir = fixture()
     writeEnv(dir, ['DATABASE_URL', 'RESEND_API_KEY'], ['DATABASE_URL'])
@@ -45,6 +51,13 @@ describe('writeEnv', () => {
 })
 
 describe('appendEnv', () => {
+  test('adds the first key to an empty formatted server object', () => {
+    const dir = fixture()
+    writeEnv(dir, [])
+    appendEnv(dir, ['REDIS_URL'])
+    expect(envTs(dir)).toContain('REDIS_URL: v.optional(v.pipe(v.string(), v.url())),')
+  })
+
   test('adds keys without disturbing existing ones', () => {
     const dir = fixture()
     writeEnv(dir, ['DATABASE_URL'], ['DATABASE_URL'])

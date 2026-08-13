@@ -100,7 +100,8 @@ export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}) 
   ].join('\n')
 
   editFile(join(projectDir, 'src/env.ts'), (src) => {
-    let out = src.replace(/ {2}server: \{[\s\S]*?\n {2}\},/, `  server: {\n${serverBody}\n  },`)
+    const serverBlock = serverBody ? `  server: {\n${serverBody}\n  },` : '  server: {},'
+    let out = src.replace(/ {2}server: \{[\s\S]*?\n {2}\},/, serverBlock)
     out = out.replace(
       / {2}runtimeEnv: \{[\s\S]*?\n {2}\},/,
       `  runtimeEnv: {\n${runtimeBody}\n  },`,
@@ -147,6 +148,7 @@ export function appendEnv(projectDir, keys, requiredKeys = []) {
       .join('\n')
     const runtimeLines = add.map((k) => indent(`${k}: process.env.${k},`)).join('\n')
     return src
+      .replace('  server: {},', '  server: {\n  },')
       .replace(/( {2}server: \{[\s\S]*?)(\n {2}\},)/, `$1\n${serverLines}$2`)
       .replace(/( {2}runtimeEnv: \{[\s\S]*?)(\n {2}\},)/, `$1\n${runtimeLines}$2`)
   })
