@@ -57,14 +57,14 @@ Run a command with no args for an interactive picker; pass a selection flag
 See \`add --help\` and \`component --help\` for their options.
 
 Scaffold flags:
-  --framework <tanstack|next>      Base app to fork (default tanstack)
-  --monorepo [turbo|nx]            Scaffold into a monorepo, app in apps/web (bare = turbo)
+  -f, --framework [tanstack|next]   Base app to fork (bare/default = tanstack)
+  --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
-  --database <drizzle|prisma|convex|none> ORM the app ships (default drizzle); convex replaces tRPC
+  --db, --database [drizzle|prisma|convex|none] ORM the app ships (bare/default = drizzle)
   --auth <better-auth|clerk|none>  Auth provider (default better-auth)
   --foundations <csv>              trpc (default all)
-  --mailer <resend|brevo|ses|none> Mailer provider (default resend)
+  --mail, --mailer [resend|brevo|ses|none] Mail provider (bare/default = resend)
   --no-install                     Skip install + verification
   -y, --yes                        Non-interactive with all defaults
   -h, --help                       Show this help
@@ -111,6 +111,125 @@ Flags:
   --no-install                     Skip install + verification
   -h, --help                       Show this help`
 
+const CREATION_OPTIONS = [
+  'f',
+  'framework',
+  'db',
+  'database',
+  'auth',
+  'mail',
+  'mailer',
+  'mono',
+  'monorepo',
+  'pm',
+  'package-manager',
+  'alias',
+  'no-install',
+  'y',
+  'yes',
+  'minimal',
+  // Kept temporarily for the later migration slice, which will replace it with
+  // a targeted removal diagnostic.
+  'foundations',
+  ...CAPABILITIES,
+]
+
+const BOOLEAN_CREATION_OPTIONS = new Set(['y', 'yes', 'minimal', 'no-install'])
+
+function editDistance(left, right) {
+  const row = Array.from({ length: right.length + 1 }, (_, index) => index)
+  for (let i = 1; i <= left.length; i++) {
+    let diagonal = row[0]
+    row[0] = i
+    for (let j = 1; j <= right.length; j++) {
+      const above = row[j]
+      row[j] = Math.min(
+        row[j] + 1,
+        row[j - 1] + 1,
+        diagonal + (left[i - 1] === right[j - 1] ? 0 : 1),
+      )
+      diagonal = above
+    }
+  }
+  return row[right.length]
+}
+
+function validateCreationOptionNames(flags) {
+  const known = new Set([...CREATION_OPTIONS, 'h', 'help', 'v', 'version'])
+  for (const name of Object.keys(flags)) {
+    if (known.has(name)) continue
+    const suggestion = CREATION_OPTIONS.reduce((best, candidate) =>
+      editDistance(name, candidate) < editDistance(name, best) ? candidate : best,
+    )
+    const hint = editDistance(name, suggestion) <= 3 ? ` Did you mean --${suggestion}?` : ''
+    throw new Error(`Unknown option: --${name}.${hint}`)
+  }
+}
+
+const CREATION_AXES = {
+  Framework: ['f', 'framework'],
+  Database: ['db', 'database'],
+  Auth: ['auth'],
+  Mail: ['mail', 'mailer'],
+  Monorepo: ['mono', 'monorepo'],
+  'Package manager': ['pm', 'package-manager'],
+  'Import alias': ['alias'],
+  'Recommended stack acceptance': ['y', 'yes'],
+  ...Object.fromEntries(
+    CAPABILITIES.map((capability) => [
+      capability
+        .split('-')
+        .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+        .join(' '),
+      [capability],
+    ]),
+  ),
+}
+
+function validateBooleanCreationOptions(options) {
+  const invalid = options.find(
+    ({ name, value }) => BOOLEAN_CREATION_OPTIONS.has(name) && value !== true,
+  )
+  if (invalid) throw new Error(`--${invalid.name} does not accept a value`)
+}
+
+function validateCreationInvocation(args) {
+  if (args._.length > 1) throw new Error(`Unexpected positional argument: ${args._[1]}`)
+  validateBooleanCreationOptions(args.options)
+
+  for (const name of ['alias', 'pm', 'package-manager']) {
+    if (args.flags[name] === true || args.flags[name] === '') {
+      throw new Error(`--${name} requires a value`)
+    }
+  }
+
+  for (const [axis, names] of Object.entries(CREATION_AXES)) {
+    const count = args.options.filter(({ name }) => names.includes(name)).length
+    if (count > 1) throw new Error(`${axis} was specified more than once`)
+  }
+
+  const yes = args.flags.y || args.flags.yes
+  if (!yes) return
+  if ('minimal' in args.flags) throw new Error('--yes cannot be combined with --minimal')
+  const stackOptions = new Set([
+    'f',
+    'framework',
+    'db',
+    'database',
+    'auth',
+    'mail',
+    'mailer',
+    'mono',
+    'monorepo',
+    'foundations',
+    ...CAPABILITIES,
+  ])
+  const conflict = args.options.find(({ name }) => stackOptions.has(name))
+  if (conflict) {
+    throw new Error(`--yes cannot be combined with stack options (received --${conflict.name})`)
+  }
+}
+
 const cancelled = (v) => {
   if (p.isCancel(v)) {
     p.cancel('Aborted.')
@@ -128,33 +247,55 @@ function collectCapabilityFlags(flags) {
   return out
 }
 
-function collectFromFlags(args) {
-  const argDir = args._[0]
-  if (!argDir) throw new Error('Project name is required (positional) in non-interactive mode')
-  const framework = args.flags.framework === 'next' ? 'next' : 'tanstack'
-  // bare `--alias` (boolean) → keep the default rather than the literal string 'true'
-  const alias = normalizeAlias(typeof args.flags.alias === 'string' ? args.flags.alias : undefined)
-  const pmFlag = args.flags.pm ?? args.flags['package-manager']
-  const pm = typeof pmFlag === 'string' ? resolvePackageManager(pmFlag) : detectedPm
-  const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
-  // soft-map legacy `--foundations drizzle|prisma|better-auth` onto their axes
-  const legacyDb = ['drizzle', 'prisma'].find((d) => picked.includes(d))
-  const dbFlag = typeof args.flags.database === 'string' ? args.flags.database : legacyDb
-  const authFlag =
-    typeof args.flags.auth === 'string'
-      ? args.flags.auth
+function resolveFrameworkFlag(flags) {
+  const value = flags.f ?? flags.framework
+  if (value === true || value == null) return 'tanstack'
+  if (['tanstack', 'next'].includes(value)) return value
+  throw new Error(`Invalid framework: ${JSON.stringify(value)} (expected tanstack or next)`)
+}
+
+function resolvePackageManagerFlag(flags) {
+  const value = flags.pm ?? flags['package-manager']
+  if (value == null) return detectedPm
+  if (typeof value === 'string' && PM_NAMES.includes(value)) return resolvePackageManager(value)
+  throw new Error(
+    `Invalid package manager: ${JSON.stringify(value)} (expected ${PM_NAMES.join(', ')})`,
+  )
+}
+
+function resolveDatabaseFlag(flags, picked) {
+  const legacyValue = ['drizzle', 'prisma'].find((database) => picked.includes(database))
+  const value = flags.db ?? flags.database
+  return resolveDatabase(value === true ? undefined : (value ?? legacyValue))
+}
+
+function resolveAuthFlag(flags, picked) {
+  const value =
+    typeof flags.auth === 'string'
+      ? flags.auth
       : picked.includes('better-auth')
         ? 'better-auth'
         : undefined
+  return resolveAuth(value)
+}
+
+function collectFromFlags(args) {
+  const argDir = args._[0]
+  if (!argDir) throw new Error('Project name is required (positional) in non-interactive mode')
+  const framework = resolveFrameworkFlag(args.flags)
+  const alias = normalizeAlias(typeof args.flags.alias === 'string' ? args.flags.alias : undefined)
+  const pm = resolvePackageManagerFlag(args.flags)
+  const picked = args.flags.foundations ? csv(args.flags.foundations) : [...ALL_FOUNDATIONS]
+  // soft-map legacy `--foundations drizzle|prisma|better-auth` onto their axes
   const { kept, database, auth, mailerProvider, adjustments } = normalize(
     picked,
-    resolveDatabase(dbFlag),
-    resolveAuth(authFlag),
-    args.flags.mailer,
+    resolveDatabaseFlag(args.flags, picked),
+    resolveAuthFlag(args.flags, picked),
+    resolveMailer(args.flags.mail ?? args.flags.mailer),
   )
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
-  const monorepo = resolveMonorepo(args.flags.monorepo)
+  const monorepo = resolveMonorepo(args.flags.mono ?? args.flags.monorepo)
   return {
     argDir,
     projectName: argDir,
@@ -170,6 +311,14 @@ function collectFromFlags(args) {
     monorepo,
     doInstall,
   }
+}
+
+function resolveMailer(value) {
+  if (value === true || value == null || value === '') return 'resend'
+  if (value === 'none' || ['resend', 'brevo', 'ses'].includes(value)) return value
+  throw new Error(
+    `Invalid mail provider: ${JSON.stringify(value)} (expected resend, brevo, ses, or none)`,
+  )
 }
 
 /** Ask which adapter to use for each picked capability; a module has nothing to pick. */
@@ -410,6 +559,8 @@ function execute(a) {
   }
   const pm = a.pm ?? detectedPm
 
+  p.note(creationPlanLines(a, pm).join('\n'), 'Creation plan')
+
   for (const adjustment of a.adjustments ?? []) p.log.warn(adjustment)
 
   const s = p.spinner()
@@ -427,6 +578,26 @@ function execute(a) {
 }
 
 const orNone = (v) => (v && v !== 'none' ? v : '(none)')
+
+function creationPlanLines(a, pm) {
+  const monoLabel = a.monorepo === 'nx' ? 'Nx' : a.monorepo === 'turborepo' ? 'Turborepo' : null
+  const capabilities = Object.entries(a.capabilities ?? {}).map(([capability, provider]) =>
+    provider ? `${capability} (${provider})` : capability,
+  )
+  return [
+    `Target: ${a.argDir ?? a.projectName}`,
+    `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
+    `Monorepo: ${monoLabel ?? '(none)'}`,
+    `Package manager: ${pm.name}`,
+    `Import alias: ${a.alias ?? '~'}/`,
+    `Database: ${orNone(a.database)}`,
+    `Auth: ${orNone(a.auth)}`,
+    `tRPC: ${a.kept.has('trpc') ? 'yes' : 'no'}`,
+    `Mailer: ${orNone(a.mailerProvider)}`,
+    `Capabilities: ${capabilities.join(', ') || '(none)'}`,
+    `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
+  ]
+}
 
 /** The "Done" note: selection recap + next steps. */
 function summaryLines(a, pm) {
@@ -604,16 +775,26 @@ async function main() {
     return
   }
 
+  validateCreationOptionNames(args.flags)
+  validateCreationInvocation(args)
+
   const nonInteractive =
     args.flags.yes ||
     args.flags.y ||
     [
       'framework',
+      'f',
+      'db',
       'database',
       'auth',
+      'mail',
       'foundations',
       'mailer',
+      'mono',
       'monorepo',
+      'pm',
+      'package-manager',
+      'alias',
       'no-install',
       ...CAPABILITIES,
     ].some((k) => k in args.flags)
@@ -624,6 +805,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  p.log.error(String(err?.stack || err))
+  p.log.error(String(err?.message || err))
   process.exit(1)
 })
