@@ -1,4 +1,5 @@
-import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
 
@@ -30,6 +31,32 @@ function createAmbiguousMonorepoFixture() {
   expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
   cpSync(fixture.app, `${fixture.project}/apps/admin`, { recursive: true })
   return fixture
+}
+
+function fakePackageManager(fixture) {
+  const bin = `${fixture.root}/bin`
+  const log = `${fixture.root}/package-manager.log`
+  mkdirSync(bin)
+  writeFileSync(
+    `${bin}/npm`,
+    `#!/bin/sh
+printf '%s\\n' "$*" >> "$CREATE_STACK_COMMAND_LOG"
+if [ "$*" = "$CREATE_STACK_FAIL_COMMAND" ]; then exit 1; fi
+exit 0
+`,
+  )
+  chmodSync(`${bin}/npm`, 0o755)
+  return {
+    env: {
+      CREATE_STACK_COMMAND_LOG: log,
+      PATH: `${bin}:${process.env.PATH}`,
+    },
+    log,
+  }
+}
+
+function expectNoCommit(projectDir) {
+  expect(spawnSync('git', ['-C', projectDir, 'rev-parse', '--verify', 'HEAD']).status).not.toBe(0)
 }
 
 test('the executable CLI reports prompts without mutating its target', () => {
@@ -72,6 +99,183 @@ test('an operational option before the project starts non-interactive creation',
   expect(result.exitStatus).toBe(0)
   expect(result.requestedInput).toBe(false)
   expect(result.targetMutated).toBe(true)
+})
+
+test('non-interactive creation requires an explicit project target', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Project name is required')
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('minimal creation without a project target fails without prompting', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({ cwd: fixture.root, target: fixture.project, args: ['--minimal'] })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Project name is required')
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('creates into the current directory only when it is empty', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const created = runCli({
+    cwd: fixture.root,
+    target: fixture.root,
+    args: ['.', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(created.exitStatus).toBe(0)
+  expect(JSON.parse(readFileSync(`${fixture.root}/package.json`, 'utf8')).name).toBe(
+    fixture.root.split('/').at(-1).toLowerCase(),
+  )
+
+  const protectedFixture = createAcceptanceFixture('standalone')
+  writeFileSync(`${protectedFixture.root}/keep.txt`, 'keep')
+  const protectedResult = runCli({
+    cwd: protectedFixture.root,
+    target: protectedFixture.root,
+    args: ['.', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(protectedResult.exitStatus).toBe(1)
+  expect(protectedResult.stdout).toContain('Target directory is not empty')
+  expect(readFileSync(`${protectedFixture.root}/keep.txt`, 'utf8')).toBe('keep')
+})
+
+test('no-install explains skipped verification and never creates an automatic commit', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Installation and verification skipped')
+  expect(existsSync(`${fixture.project}/.git`)).toBe(true)
+  expectNoCommit(fixture.project)
+})
+
+test('git is not initialized inside an existing repository or with --no-git', () => {
+  const repositoryFixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(repositoryFixture)
+  expect(spawnSync('git', ['init', '-q'], { cwd: repositoryFixture.root }).status).toBe(0)
+  mkdirSync(repositoryFixture.project)
+
+  const insideRepository = runCli({
+    cwd: repositoryFixture.root,
+    target: repositoryFixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: fake.env,
+  })
+
+  expect(insideRepository.exitStatus).toBe(0)
+  expect(existsSync(`${repositoryFixture.project}/.git`)).toBe(false)
+  expect(
+    spawnSync('git', ['diff', '--cached', '--quiet'], { cwd: repositoryFixture.root }).status,
+  ).toBe(0)
+  expectNoCommit(repositoryFixture.root)
+
+  const noGitFixture = createAcceptanceFixture('standalone')
+  const noGit = runCli({
+    cwd: noGitFixture.root,
+    target: noGitFixture.project,
+    args: ['project', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(noGit.exitStatus).toBe(0)
+  expect(existsSync(`${noGitFixture.project}/.git`)).toBe(false)
+})
+
+test('a verified installation creates the generated baseline commit', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(fixture)
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: fake.env,
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(readFileSync(fake.log, 'utf8')).toBe(
+    ['install', 'run check:write', 'run typecheck', 'run check', ''].join('\n'),
+  )
+  expect(
+    spawnSync('git', ['-C', fixture.project, 'log', '-1', '--pretty=%s'], { encoding: 'utf8' })
+      .stdout,
+  ).toBe('chore: initial commit from create-stack\n')
+})
+
+test.each([
+  ['installation', 'install'],
+  ['verification', 'run typecheck'],
+  ['verification', 'run check'],
+])('a failed %s leaves the generated project without a baseline commit', (_step, command) => {
+  const fixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(fixture)
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: { ...fake.env, CREATE_STACK_FAIL_COMMAND: command },
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(command === 'install' ? 'install failed' : 'Verification failed')
+  expect(existsSync(`${fixture.project}/.git`)).toBe(true)
+  expectNoCommit(fixture.project)
+})
+
+test('missing Git identity leaves a verified project without a baseline commit', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(fixture)
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: {
+      ...fake.env,
+      GIT_AUTHOR_EMAIL: '',
+      GIT_AUTHOR_NAME: '',
+      GIT_COMMITTER_EMAIL: '',
+      GIT_COMMITTER_NAME: '',
+    },
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('set git user.name/email')
+  expectNoCommit(fixture.project)
+})
+
+test('bare --mono before the target selects Turborepo', () => {
+  const fixture = createAcceptanceFixture('monorepo')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['--mono', 'project', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Monorepo: Turborepo')
+  expect(existsSync(`${fixture.app}/package.json`)).toBe(true)
 })
 
 test('creates a standalone project through the executable CLI', () => {
@@ -330,6 +534,7 @@ test.each([
   [['project', '--yes=false'], '--yes does not accept a value'],
   [['project', '--minimal', '--minimal'], 'Minimal project was specified more than once'],
   [['project', '--no-install=false'], '--no-install does not accept a value'],
+  [['project', '--no-git=false'], '--no-git does not accept a value'],
   [['project', '--mono=turborepo'], 'expected turbo or nx'],
   [['project', '--alias'], '--alias requires a value'],
   [['project', '--pm'], '--pm requires a value'],
@@ -791,7 +996,123 @@ test('guides users from the former Email UI name without mutating the project', 
   expect(result.targetMutated).toBe(false)
 })
 
-test('adds a component to a standalone application through the executable CLI', () => {
+test.each([
+  ['storage', undefined, 'storage (r2)', 'src/server/storage/adapters/r2.ts'],
+  ['cache', undefined, 'cache (upstash)', 'src/server/cache/adapters/upstash.ts'],
+  ['mail', 'brevo', 'mail (brevo)', 'src/server/email/adapters/brevo.ts'],
+  ['errors', 'sentry', 'errors (sentry)', 'src/server/error-tracking/index.ts'],
+  ['jobs', 'inngest', 'jobs (inngest)', 'src/server/jobs/index.ts'],
+])(
+  'adds %s through its simple positional form and prints the canonical plan',
+  (kind, provider, planned, expectedFile) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', kind, ...(provider ? [provider] : []), '--no-install'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain('Addition plan')
+    expect(added.stdout).toContain(`Addition: ${planned}`)
+    expect(added.stdout.indexOf('Addition plan')).toBeLessThan(added.stdout.indexOf('Added'))
+    expect(added.requestedInput).toBe(false)
+    expect(existsSync(`${fixture.app}/${expectedFile}`)).toBe(true)
+  },
+)
+
+test.each([
+  ['mailer', 'resend', 'mail (resend)'],
+  ['error-tracking', 'sentry', 'errors (sentry)'],
+])('normalizes the %s alias in the addition plan', (alias, provider, planned) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const added = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', alias, provider, '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(0)
+  expect(added.stdout).toContain(`Addition: ${planned}`)
+})
+
+test('provider changes remove old files by default and --keep-files retains them', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  expect(
+    runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'storage', 'gcs', '--no-install'],
+    }).exitStatus,
+  ).toBe(0)
+
+  const swapped = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'storage', 'r2', '--no-install'],
+  })
+
+  expect(swapped.exitStatus).toBe(0)
+  expect(swapped.stdout).toContain('Provider change: storage (gcs → r2)')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(false)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  let pkg = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(pkg.dependencies['@google-cloud/storage']).toBeUndefined()
+
+  const kept = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'storage', 'gcs', '--keep-files', '--no-install'],
+  })
+
+  expect(kept.exitStatus).toBe(0)
+  expect(kept.stdout).toContain('Provider change: storage (r2 → gcs, keeping files)')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
+  pkg = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(pkg.dependencies['@aws-sdk/client-s3']).toBeDefined()
+  expect(pkg.dependencies['@google-cloud/storage']).toBeDefined()
+
+  const cleaned = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'storage', 'local', '--no-install'],
+  })
+
+  expect(cleaned.exitStatus).toBe(0)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(false)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(false)
+  pkg = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(pkg.dependencies['@aws-sdk/client-s3']).toBeUndefined()
+  expect(pkg.dependencies['@google-cloud/storage']).toBeUndefined()
+})
+
+test.each([
+  [['add', 'http', '--force', '--no-install'], '--force only applies to components'],
+  [
+    ['add', 'component', 'date-picker', '--keep-files', '--no-install'],
+    '--keep-files only applies to provider changes',
+  ],
+  [['add', 'email-ui', 'resend', '--no-install'], 'email-ui has no provider to choose'],
+  [['add', 'component', 'date-picker', '--force=false', '--no-install'], '--force does not accept'],
+  [['add', 'http', '--wat', '--no-install'], 'Unknown option for add: --wat'],
+])('rejects an inapplicable addition option before mutation', (args, diagnostic) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+
+  const result = runCli({ cwd: fixture.app, target: fixture.app, args })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(diagnostic)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('adds a component through add and protects local files unless forced', () => {
   const fixture = createAcceptanceFixture('standalone')
   const created = createProject(fixture, { framework: 'tanstack' })
 
@@ -800,14 +1121,34 @@ test('adds a component to a standalone application through the executable CLI', 
   const installed = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['component', 'date-picker', '--no-install'],
+    args: ['add', 'component', 'data-table', '--no-install'],
   })
 
   expect(installed.exitStatus).toBe(0)
-  expect(installed.stdout).toContain('Installed date-picker')
+  expect(installed.stdout).toContain('Addition plan')
+  expect(installed.stdout).toContain('Addition: component data-table')
+  expect(installed.stdout).toContain('Added component data-table')
   expect(installed.stderr).toBe('')
   expect(installed.requestedInput).toBe(false)
   expect(installed.targetMutated).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+  const componentFile = `${fixture.app}/src/components/data-table.tsx`
+  expect(existsSync(componentFile)).toBe(true)
   expect(existsSync(`${fixture.app}/node_modules`)).toBe(false)
+
+  writeFileSync(componentFile, '// local edit\n')
+  const preserved = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'data-table', '--no-install'],
+  })
+  expect(preserved.exitStatus).toBe(0)
+  expect(readFileSync(componentFile, 'utf8')).toBe('// local edit\n')
+
+  const forced = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'data-table', '--force', '--no-install'],
+  })
+  expect(forced.exitStatus).toBe(0)
+  expect(readFileSync(componentFile, 'utf8')).not.toBe('// local edit\n')
 })

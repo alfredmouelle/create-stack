@@ -60,7 +60,7 @@ export function cleanupAcceptanceFixtures() {
   for (const root of fixtureRoots.splice(0)) rmSync(root, { recursive: true, force: true })
 }
 
-export function runCli({ args = [], cwd, input, target, timeout = 10_000 }) {
+export function runCli({ args = [], cwd, env = {}, input, target, timeout = 10_000 }) {
   const before = snapshot(target)
   const result = spawnSync(process.execPath, [cliEntry, ...args], {
     cwd,
@@ -76,6 +76,7 @@ export function runCli({ args = [], cwd, input, target, timeout = 10_000 }) {
       GIT_COMMITTER_NAME: 'Create Stack acceptance',
       NO_COLOR: '1',
       npm_config_user_agent: 'pnpm/11.1.3',
+      ...env,
     },
   })
   const stdout = result.stdout ?? ''

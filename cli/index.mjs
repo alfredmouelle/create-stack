@@ -12,6 +12,8 @@ import {
   adapterChoicesFor,
   addableChoices,
   addCapability,
+  currentTargetAdapter,
+  resolveAdditionKind,
   resolveTargetAdapter,
   targetDir,
 } from './lib/add.mjs'
@@ -25,7 +27,7 @@ import {
   creationProviderChoices,
   resolveCreationProvider,
 } from './lib/capabilities.mjs'
-import { COMPONENT_NAMES, componentChoices, vendorComponent } from './lib/component.mjs'
+import { COMPONENT_NAMES, vendorComponent } from './lib/component.mjs'
 import { resolveDatabase } from './lib/database.mjs'
 import { packageName } from './lib/identity.mjs'
 import {
@@ -40,7 +42,7 @@ import {
   relativeApplicationPath,
   resolveApplicationPath,
 } from './lib/project-target.mjs'
-import { exists, isDirEmpty, join, run } from './lib/util.mjs'
+import { exists, isDirEmpty, join, run, runCapture } from './lib/util.mjs'
 
 // PM that launched us; the wizard pre-selects it and `add`/non-interactive fall back to it.
 const detectedPm = detectPackageManager()
@@ -53,12 +55,11 @@ const HELP = `create-stack — fork a base app, strip it to your selection.
 
 Usage:
   create-stack [project] [flags]          Scaffold a new project
-  create-stack add [capability] [adapter] Add capabilities to the current project
-  create-stack component [name]           Install a standalone UI component
+  create-stack add <kind> [provider]       Add a capability or component
 
 Run a command with no args for an interactive picker; pass a selection flag
-(or --yes), or a capability/component name, for non-interactive mode.
-See \`add --help\` and \`component --help\` for their options.
+(or --yes), or an addition name, for non-interactive mode.
+See \`add --help\` for its options.
 
 Scaffold flags:
   -f, --framework [tanstack|next]   Base app to fork (bare/default = tanstack)
@@ -72,6 +73,7 @@ Scaffold flags:
   --trpc / --no-trpc               Include or explicitly exclude tRPC
   --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
   --no-install                     Skip install + verification
+  --no-git                         Do not initialize a Git repository
   -y, --yes                        Non-interactive with all defaults
   -h, --help                       Show this help
   -v, --version                    Print version
@@ -82,42 +84,27 @@ Capability flags (omit to skip; pass with no value for the default adapter):
   --error-tracking [sentry]                     readable alias for --errors
   Adapters are listed in the interactive picker, or run \`add --help\`.`
 
-const ADD_HELP = `create-stack add — vendor/swap capabilities into the current project.
+const ADD_HELP = `create-stack add — enrich an existing application.
 
 Usage:
-  create-stack add [capability] [adapter] [flags]
+  create-stack add <capability> [provider] [flags]
+  create-stack add component <name> [flags]
 
-Run with no capability for a multi-select picker; pass a capability name (and
-optional adapter) for non-interactive mode. Re-adding a multi-adapter capability
-swaps its adapter; --keep retains the previous one(s).
+Run with no addition for an interactive picker. An explicit addition prints its
+resolved plan and runs without confirmation. Provider changes remove former
+provider files by default; --keep-files retains them.
 
-Swappable behind a port: storage, cache, logger, analytics, mailer.
-Single provider (no adapter): jobs (inngest), error-tracking (sentry).
+Swappable behind a port: storage, cache, logger, analytics, mail.
+Single provider: jobs (inngest), errors (sentry).
 No provider at all: email-ui, http.
-
-Flags:
-  --keep                           Keep existing adapter(s) when swapping
-  --app <relative-path>            Application target (required when ambiguous)
-  --pm <pnpm|npm|yarn|bun>         Override package manager detected from lockfile
-  --package-manager <name>         Alias for --pm
-  --no-install                     Skip install + verification
-  -h, --help                       Show this help`
-
-const COMPONENT_HELP = `create-stack component — vendor a standalone UI component into the current project.
-
-Usage:
-  create-stack component [name...] [flags]
-
-Opt-in UI kept out of the base bundle. Run with no name for a multi-select
-picker; pass one or more names for non-interactive mode. Vendored files are
-never overwritten, so local edits survive a re-run — pass --force to overwrite
-them. Callable components (confirm, alert, prompt…) also mount their Root in
-your root layout automatically.
-
 Components: ${COMPONENT_NAMES.join(', ')}.
 
 Flags:
-  --force                          Overwrite vendored files (default: keep edits)
+  --keep-files                     Keep former provider files when changing provider
+  --force                          Replace existing files for a selected component
+  --app <relative-path>            Application target (required when ambiguous)
+  --pm <pnpm|npm|yarn|bun>         Override package manager detected from lockfile
+  --package-manager <name>         Alias for --pm
   --no-install                     Skip install + verification
   -h, --help                       Show this help`
 
@@ -140,6 +127,7 @@ const CREATION_OPTIONS = [
   'package-manager',
   'alias',
   'no-install',
+  'no-git',
   'y',
   'yes',
   'minimal',
@@ -161,6 +149,7 @@ const BOOLEAN_CREATION_OPTIONS = new Set([
   'no-auth',
   'no-mail',
   'no-install',
+  'no-git',
 ])
 
 function editDistance(left, right) {
@@ -330,6 +319,7 @@ function collectFromFlags(args) {
     resolveCreationStack(args.flags)
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
+  const doGit = !args.flags['no-git']
   const monorepo = resolveMonorepo(args.flags.mono ?? args.flags.monorepo)
   return {
     argDir,
@@ -346,6 +336,7 @@ function collectFromFlags(args) {
     capabilities,
     monorepo,
     doInstall,
+    doGit,
   }
 }
 
@@ -653,6 +644,7 @@ async function collectFromPrompts(argDir) {
     capabilities,
     monorepo,
     doInstall,
+    doGit: true,
   }
 }
 
@@ -660,29 +652,44 @@ const pmRun = (pm, script, projectDir, opts = {}) =>
   run(pm.exec, pm.runArgs(script), { cwd: projectDir, ...opts })
 
 /** Install deps, normalize formatting, then report typecheck + biome status. */
-function installAndVerify(projectDir, pm) {
+function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
   p.log.step(`${pm.name} install`)
-  run(pm.exec, ['install'], { cwd: projectDir })
+  const installed = run(pm.exec, ['install'], { cwd: projectDir })
+  if (!installed && requireSuccess) {
+    throw new Error(`${pm.name} install failed; verification and the initial commit were skipped`)
+  }
   // re-format under the fork's own Biome so the initial commit is lint-clean for any selection
   pmRun(pm, 'check:write', projectDir, { stdio: 'ignore' })
   p.log.step('Verifying (typecheck + biome)')
   const tc = pmRun(pm, 'typecheck', projectDir)
   const lint = pmRun(pm, 'check', projectDir)
+  if ((!tc || !lint) && requireSuccess) {
+    throw new Error('Verification failed; the initial commit was skipped')
+  }
   p.log[tc && lint ? 'success' : 'warn'](
     tc && lint ? 'typecheck + biome clean' : 'verify reported issues (see output above)',
   )
 }
 
 /**
- * Fresh repo + best-effort initial commit (also satisfies Biome vcs.useIgnoreFile).
- * Wires git hooks first so they're live from the first install; --no-verify keeps our
- * own commit from tripping them. Commit is skipped (tree left staged) if git identity unset.
+ * Initialize only when the target is outside an existing repository. Hooks are
+ * wired before install so generated-project lifecycle scripts see the right root.
  */
 function initGitRepo(projectDir) {
-  if (!run('git', ['-C', projectDir, 'init', '-q'])) return
+  if (runCapture('git', ['-C', projectDir, 'rev-parse', '--show-toplevel'])) {
+    p.log.step('existing git repository detected (initialization skipped)')
+    return false
+  }
+  if (!run('git', ['-C', projectDir, 'init', '-q'])) return false
   if (exists(join(projectDir, '.githooks'))) {
     run('git', ['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
   }
+  p.log.step('git repository initialized')
+  return true
+}
+
+/** Record the verified generated baseline in a freshly initialized repository. */
+function commitInitialBaseline(projectDir) {
   run('git', ['-C', projectDir, 'add', '-A'])
   const msg = 'chore: initial commit from create-stack'
   const committed = run('git', ['-C', projectDir, 'commit', '--no-verify', '-q', '-m', msg], {
@@ -690,8 +697,8 @@ function initGitRepo(projectDir) {
   })
   p.log.step(
     committed
-      ? 'git repository initialized (initial commit created)'
-      : 'git repository initialized — set git user.name/email, then commit',
+      ? 'initial commit created'
+      : 'set git user.name/email, then commit the generated baseline',
   )
 }
 
@@ -712,9 +719,14 @@ function execute(a) {
   const built = buildProject({ ...a, projectDir, projectName: packageName(projectDir), pm })
   s.stop('Project scaffolded')
 
-  if (a.doInstall) installAndVerify(projectDir, pm)
+  const initializedGit = a.doGit === false ? false : initGitRepo(projectDir)
 
-  initGitRepo(projectDir)
+  if (a.doInstall) {
+    installAndVerify(projectDir, pm, { requireSuccess: true })
+    if (initializedGit) commitInitialBaseline(projectDir)
+  } else {
+    p.log.warn('Installation and verification skipped; no automatic commit was created')
+  }
 
   p.note(summaryLines(a, pm).join('\n'), 'Done')
   if (built.manualSteps?.length) p.note(built.manualSteps.join('\n'), 'Finish by hand')
@@ -744,6 +756,7 @@ function creationPlanLines(a, pm) {
     `Mailer: ${orNone(a.mailerProvider)}${reason('mailer')}`,
     `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ' — requested' : ''}`,
     `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
+    `Initialize Git: ${a.doGit === false ? 'no' : 'yes (outside an existing repository)'}`,
   ]
 }
 
@@ -777,21 +790,42 @@ function summaryLines(a, pm) {
   return lines
 }
 
-/** Which {cap, adapter} pairs to add: positional args (non-interactive), else a picker. */
-async function resolveAddSelections(args) {
-  if (args._[1]) {
-    const cap = args._[1]
-    if (!ADDABLE.includes(cap)) {
-      const formerEmailUiName = ['email', 'kit'].join('-')
-      if (cap === formerEmailUiName) {
-        p.cancel(`'${formerEmailUiName}' was renamed to 'email-ui'; run create-stack add email-ui`)
-        process.exit(1)
-      }
-      p.cancel(`Unknown capability: ${cap} — pick one of ${ADDABLE.join(', ')}`)
-      process.exit(1)
+function resolveExplicitAddition(args) {
+  const requestedKind = args._[1]
+  if (requestedKind === 'component') {
+    const name = args._[2]
+    if (!name) throw new Error('component requires a name')
+    if (args._[3]) throw new Error(`Unexpected positional argument: ${args._[3]}`)
+    if (!COMPONENT_NAMES.includes(name)) {
+      throw new Error(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
     }
-    return [{ cap, adapter: resolveTargetAdapter(cap, args._[2]) }] // throws on a bad adapter
+    return { type: 'component', name }
   }
+
+  const resolved = resolveAdditionKind(requestedKind)
+  if (!resolved) {
+    const formerEmailUiName = ['email', 'kit'].join('-')
+    if (requestedKind === formerEmailUiName) {
+      throw new Error(
+        `'${formerEmailUiName}' was renamed to 'email-ui'; run create-stack add email-ui`,
+      )
+    }
+    throw new Error(
+      `Unknown addition: ${requestedKind} — pick one of ${ADDABLE.join(', ')}, component`,
+    )
+  }
+  if (args._[3]) throw new Error(`Unexpected positional argument: ${args._[3]}`)
+  return {
+    type: 'capability',
+    ...resolved,
+    adapter: resolveTargetAdapter(resolved.cap, args._[2]),
+  }
+}
+
+/** Which additions to apply: one positional selection, otherwise the capability picker. */
+async function resolveAddSelections(args) {
+  if (args._[1]) return [resolveExplicitAddition(args)]
+
   const caps = cancelled(
     await p.multiselect({
       message: 'Capabilities to add (space to toggle)',
@@ -811,7 +845,8 @@ async function resolveAddSelections(args) {
           }),
         )
       : null
-    selections.push({ cap, adapter })
+    const resolved = resolveAdditionKind(cap)
+    selections.push({ type: 'capability', ...resolved, adapter })
   }
   return selections
 }
@@ -824,8 +859,31 @@ const addedLine = (a) => {
   return parts.join('  ')
 }
 
-/** `create-stack add [capability] [adapter] [--keep]` — vendor/swap capabilities in the cwd project. */
+function validateAdditionInvocation(args) {
+  const known = new Set([
+    'app',
+    'pm',
+    'package-manager',
+    'keep-files',
+    'force',
+    'no-install',
+    'help',
+    'h',
+  ])
+  for (const { name, value } of args.options) {
+    if (!known.has(name)) throw new Error(`Unknown option for add: --${name}`)
+    if (['keep-files', 'force', 'no-install'].includes(name) && value !== true) {
+      throw new Error(`--${name} does not accept a value`)
+    }
+    if (['app', 'pm', 'package-manager'].includes(name) && value === true) {
+      throw new Error(`--${name} requires a value`)
+    }
+  }
+}
+
+/** `create-stack add <kind> [provider]` — enrich the resolved application target. */
 async function runAdd(args) {
+  validateAdditionInvocation(args)
   const projectRoot = resolve(process.cwd())
   const applications = findCompatibleApplications(projectRoot)
   if (applications.length === 0) {
@@ -869,44 +927,68 @@ async function runAdd(args) {
     ? resolveExplicitPackageManager(packageManagerFlag)
     : detectProjectPackageManager(projectRoot, detectedPm)
 
-  p.intro('create-stack add')
-  p.log.info(`Application: ${applicationPath}`)
-  p.log.info(`Package manager: ${pm.name}`)
-  const keep = !!args.flags.keep
   const selections = await resolveAddSelections(args)
-  const added = selections.map((sel) => ({
-    ...sel,
-    ...addCapability({ projectDir, ...sel, keep }),
-  }))
+  const keepFiles = !!args.flags['keep-files']
+  const force = !!args.flags.force
+  const components = selections.filter((selection) => selection.type === 'component')
+  const capabilities = selections.filter((selection) => selection.type === 'capability')
+  const providerChanges = capabilities
+    .map((selection) => ({
+      ...selection,
+      from: currentTargetAdapter(projectDir, selection.cap),
+    }))
+    .filter(({ from, adapter }) => from && from !== adapter)
+  if (force && components.length === 0) throw new Error('--force only applies to components')
+  if (keepFiles && providerChanges.length === 0) {
+    throw new Error('--keep-files only applies to provider changes')
+  }
+
+  p.intro('create-stack add')
+  const plan = [
+    `Application: ${applicationPath}`,
+    `Package manager: ${pm.name}`,
+    ...selections.map((selection) =>
+      selection.type === 'component'
+        ? `Addition: component ${selection.name}`
+        : `Addition: ${selection.name}${selection.adapter ? ` (${selection.adapter})` : ''}`,
+    ),
+    ...providerChanges.map(
+      ({ name, from, adapter }) =>
+        `Provider change: ${name} (${from} → ${adapter}${keepFiles ? ', keeping files' : ''})`,
+    ),
+  ]
+  p.note(plan.join('\n'), 'Addition plan')
+
+  const added = selections.map((selection) =>
+    selection.type === 'component'
+      ? { ...selection, ...vendorComponent({ projectDir, name: selection.name, force }) }
+      : {
+          ...selection,
+          ...addCapability({
+            projectDir,
+            cap: selection.cap,
+            adapter: selection.adapter,
+            keep: keepFiles,
+          }),
+        },
+  )
   if (!args.flags['no-install']) installAndVerify(projectDir, pm)
 
-  p.note(added.map(addedLine).join('\n'), keep ? 'Added (kept existing adapters)' : 'Added')
+  p.note(
+    added
+      .map((addition) =>
+        addition.type === 'component' ? componentLine(addition) : addedLine(addition),
+      )
+      .join('\n'),
+    'Added',
+  )
 
   // Wiring that means editing files the project owns, so the user applies it.
-  const steps = added.flatMap((a) => (a.manualSteps ?? []).map((s) => `${a.cap}: ${s}`))
+  const steps = added.flatMap((a) => (a.manualSteps ?? []).map((s) => `${a.name}: ${s}`))
   if (steps.length) p.note(steps.join('\n'), 'Finish by hand')
 
-  p.outro(`Added ${added.map((a) => a.cap).join(', ')}`)
-}
-
-/** Which components to install: positional names (non-interactive), else a picker. */
-async function resolveComponentSelections(args) {
-  const names = args._.slice(1)
-  if (names.length) {
-    for (const name of names) {
-      if (!COMPONENT_NAMES.includes(name)) {
-        p.cancel(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
-        process.exit(1)
-      }
-    }
-    return names
-  }
-  return cancelled(
-    await p.multiselect({
-      message: 'Components to install (space to toggle)',
-      required: true,
-      options: componentChoices(),
-    }),
+  p.outro(
+    `Added ${added.map((a) => (a.type === 'component' ? `component ${a.name}` : a.name)).join(', ')}`,
   )
 }
 
@@ -919,24 +1001,6 @@ const componentLine = (c) => {
   if (c.mounted) parts.push(`mounted <${c.rootName} />`)
   else if (c.rootName) parts.push(`add <${c.rootName} /> to your root layout`)
   return parts.join('  ')
-}
-
-/** `create-stack component [name]` — vendor a standalone UI component into the cwd project. */
-async function runComponent(args) {
-  const projectDir = resolve(process.cwd())
-  if (!exists(join(projectDir, 'package.json'))) {
-    p.cancel('No package.json here — run this from the root of a create-stack project.')
-    process.exit(1)
-  }
-
-  p.intro('create-stack component')
-  const force = !!args.flags.force
-  const names = await resolveComponentSelections(args)
-  const installed = names.map((name) => ({ name, ...vendorComponent({ projectDir, name, force }) }))
-  if (!args.flags['no-install']) installAndVerify(projectDir, detectedPm)
-
-  p.note(installed.map(componentLine).join('\n'), 'Installed')
-  p.outro(`Installed ${installed.map((c) => c.name).join(', ')}`)
 }
 
 async function main() {
@@ -952,12 +1016,6 @@ async function main() {
   if (args._[0] === 'add') {
     if (help) return void process.stdout.write(`${ADD_HELP}\n`)
     await runAdd(args)
-    return
-  }
-
-  if (args._[0] === 'component') {
-    if (help) return void process.stdout.write(`${COMPONENT_HELP}\n`)
-    await runComponent(args)
     return
   }
 
@@ -992,6 +1050,7 @@ async function main() {
       'package-manager',
       'alias',
       'no-install',
+      'no-git',
       ...Object.keys(CREATION_CAPABILITY_OPTIONS),
     ].some((k) => k in args.flags)
 
