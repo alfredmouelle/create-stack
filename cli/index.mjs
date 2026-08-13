@@ -35,7 +35,18 @@ import {
 import { COMPONENT_NAMES, componentChoices, vendorComponent } from './lib/component.mjs'
 import { resolveDatabase } from './lib/database.mjs'
 import { packageName } from './lib/identity.mjs'
-import { detectPackageManager, PM_NAMES, resolvePackageManager } from './lib/package-manager.mjs'
+import {
+  detectPackageManager,
+  detectProjectPackageManager,
+  PM_NAMES,
+  resolveExplicitPackageManager,
+  resolvePackageManager,
+} from './lib/package-manager.mjs'
+import {
+  findCompatibleApplications,
+  relativeApplicationPath,
+  resolveApplicationPath,
+} from './lib/project-target.mjs'
 import { exists, isDirEmpty, join, run } from './lib/util.mjs'
 
 // PM that launched us; the wizard pre-selects it and `add`/non-interactive fall back to it.
@@ -90,6 +101,9 @@ No provider at all: email-ui, http.
 
 Flags:
   --keep                           Keep existing adapter(s) when swapping
+  --app <relative-path>            Application target (required when ambiguous)
+  --pm <pnpm|npm|yarn|bun>         Override package manager detected from lockfile
+  --package-manager <name>         Alias for --pm
   --no-install                     Skip install + verification
   -h, --help                       Show this help`
 
@@ -679,20 +693,59 @@ const addedLine = (a) => {
 
 /** `create-stack add [capability] [adapter] [--keep]` — vendor/swap capabilities in the cwd project. */
 async function runAdd(args) {
-  const projectDir = resolve(process.cwd())
-  if (!exists(join(projectDir, 'package.json'))) {
-    p.cancel('No package.json here — run this from the root of a create-stack project.')
+  const projectRoot = resolve(process.cwd())
+  const applications = findCompatibleApplications(projectRoot)
+  if (applications.length === 0) {
+    p.cancel('No compatible application found in this project.')
     process.exit(1)
   }
+  const requestedApplication = args.flags.app
+  const explicitAddition = !!args._[1]
+  if (!requestedApplication && explicitAddition && applications.length > 1) {
+    p.cancel(
+      `Multiple compatible applications found: ${applications
+        .map((application) => relativeApplicationPath(projectRoot, application))
+        .join(', ')}. Pass --app <relative-path>.`,
+    )
+    process.exit(1)
+  }
+  const projectDir = requestedApplication
+    ? resolveApplicationPath(projectRoot, requestedApplication)
+    : applications.length === 1
+      ? applications[0]
+      : cancelled(
+          await p.select({
+            message: 'Application to enrich',
+            options: applications.map((application) => {
+              const path = relativeApplicationPath(projectRoot, application)
+              return { value: application, label: path }
+            }),
+          }),
+        )
+  const applicationPath = relativeApplicationPath(projectRoot, projectDir)
+  const packageManagerFlags = args.options
+    .filter(({ name }) => name === 'pm' || name === 'package-manager')
+    .map(({ value }) => value)
+  if (packageManagerFlags.length > 1) {
+    throw new Error(
+      'Ambiguous package manager overrides: pass only one of --pm or --package-manager',
+    )
+  }
+  const packageManagerFlag = packageManagerFlags[0]
+  const pm = packageManagerFlag
+    ? resolveExplicitPackageManager(packageManagerFlag)
+    : detectProjectPackageManager(projectRoot, detectedPm)
 
   p.intro('create-stack add')
+  p.log.info(`Application: ${applicationPath}`)
+  p.log.info(`Package manager: ${pm.name}`)
   const keep = !!args.flags.keep
   const selections = await resolveAddSelections(args)
   const added = selections.map((sel) => ({
     ...sel,
     ...addCapability({ projectDir, ...sel, keep }),
   }))
-  if (!args.flags['no-install']) installAndVerify(projectDir, detectedPm)
+  if (!args.flags['no-install']) installAndVerify(projectDir, pm)
 
   p.note(added.map(addedLine).join('\n'), keep ? 'Added (kept existing adapters)' : 'Added')
 
