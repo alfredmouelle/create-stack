@@ -18,8 +18,7 @@ function createProject(fixture, { framework, monorepo }) {
       'none',
       '--auth',
       'none',
-      '--foundations',
-      'none',
+      '--no-trpc',
       '--mailer',
       'none',
       '--no-install',
@@ -429,12 +428,238 @@ test.each([
   [['project', '-y', '--mono'], '--yes cannot be combined with stack options'],
   [['project', '--yes', '--minimal'], '--yes cannot be combined with --minimal'],
   [['project', '--yes=false'], '--yes does not accept a value'],
+  [['project', '--minimal', '--minimal'], 'Minimal project was specified more than once'],
   [['project', '--no-install=false'], '--no-install does not accept a value'],
   [['project', '--no-git=false'], '--no-git does not accept a value'],
   [['project', '--mono=turborepo'], 'expected turbo or nx'],
   [['project', '--alias'], '--alias requires a value'],
   [['project', '--pm'], '--pm requires a value'],
 ])('rejects ambiguous creation form %j before mutation', (args, diagnostic) => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: [...args, '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain(diagnostic)
+})
+
+test('minimal creation produces a frontend-only project and explains its exclusions', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(true)
+  expect(result.stdout).toContain('Database: (none) — minimal exclusion')
+  expect(result.stdout).toContain('Auth: (none) — minimal exclusion')
+  expect(result.stdout).toContain('tRPC: no — minimal exclusion')
+  expect(result.stdout).toContain('Mailer: (none) — minimal exclusion')
+  expect(existsSync(`${fixture.project}/src/server/db`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/api`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/email`)).toBe(false)
+})
+
+test('--minimal alone starts non-interactive creation and requires a target', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({ cwd: fixture.root, target: fixture.project, args: ['--minimal'] })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain('Project name is required')
+})
+
+test('stack options enrich minimal creation and redundant exclusions remain valid', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: [
+      'project',
+      '--minimal',
+      '--db=prisma',
+      '--trpc',
+      '--no-auth',
+      '--no-mail',
+      '--no-install',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Database: prisma — requested')
+  expect(result.stdout).toContain('Auth: (none) — requested exclusion')
+  expect(result.stdout).toContain('tRPC: yes — requested')
+  expect(result.stdout).toContain('Mailer: (none) — requested exclusion')
+  expect(existsSync(`${fixture.project}/prisma/schema/schema.prisma`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/email`)).toBe(false)
+})
+
+test('tRPC remains independent of data and authentication through the executable CLI', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--trpc', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Database: (none) — minimal exclusion')
+  expect(result.stdout).toContain('Auth: (none) — minimal exclusion')
+  expect(result.stdout).toContain('tRPC: yes — requested')
+  expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/db`)).toBe(false)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
+})
+
+test('removed foundations syntax reports its replacement before mutation', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--foundations=trpc', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain('--foundations was removed; use --trpc or --no-trpc')
+})
+
+test.each([
+  {
+    option: '--no-db',
+    plan: ['Database: (none) — requested exclusion', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none)'],
+    present: ['src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
+    absent: ['src/server/db', 'src/server/email'],
+  },
+  {
+    option: '--no-auth',
+    plan: [
+      'Database: drizzle',
+      'Auth: (none) — requested exclusion',
+      'tRPC: yes',
+      'Mailer: (none)',
+    ],
+    present: ['src/server/db', 'src/server/api/trpc.ts'],
+    absent: ['src/server/better-auth', 'src/server/email'],
+  },
+  {
+    option: '--no-mail',
+    plan: ['Database: drizzle', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none) — requested exclusion'],
+    present: ['src/server/db', 'src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
+    absent: ['src/server/better-auth', 'src/server/email'],
+  },
+  {
+    option: '--auth=clerk',
+    plan: ['Database: drizzle', 'Auth: clerk — requested', 'tRPC: yes', 'Mailer: (none)'],
+    present: ['src/server/db', 'src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
+    absent: ['src/server/better-auth', 'src/server/email'],
+  },
+  {
+    option: '--no-trpc',
+    plan: [
+      'Database: drizzle',
+      'Auth: better-auth',
+      'tRPC: no — requested exclusion',
+      'Mailer: resend',
+    ],
+    present: ['src/server/db', 'src/server/better-auth', 'src/server/email'],
+    absent: ['src/server/api', 'src/trpc'],
+  },
+])('resolves applicable recommendations for $option', ({ option, plan, present, absent }) => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', option, '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('applicable recommendation')
+  for (const line of plan) expect(result.stdout).toContain(line)
+  for (const path of present) expect(existsSync(`${fixture.project}/${path}`), path).toBe(true)
+  for (const path of absent) expect(existsSync(`${fixture.project}/${path}`), path).toBe(false)
+})
+
+test('Better Auth completes omitted dependencies from a minimal project', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--auth=better-auth', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Auth: better-auth — requested')
+  expect(result.stdout).toContain('Database: drizzle — dependency completion for Better Auth')
+  expect(result.stdout).toContain('Mailer: resend — dependency completion for Better Auth')
+  expect(result.stdout).toContain('tRPC: no — minimal exclusion')
+  expect(existsSync(`${fixture.project}/src/server/db`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/email`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/api`)).toBe(false)
+})
+
+test.each([
+  {
+    args: ['--db=convex'],
+    mailer: 'Mailer: (none) — applicable recommendation',
+    hasMailer: false,
+  },
+  {
+    args: ['--db=convex', '--mail=ses'],
+    mailer: 'Mailer: ses — requested',
+    hasMailer: true,
+  },
+])(
+  'Convex uses applicable recommendations and preserves explicit mail: $args',
+  ({ args, mailer, hasMailer }) => {
+    const fixture = createAcceptanceFixture('standalone')
+
+    const result = runCli({
+      cwd: fixture.root,
+      target: fixture.project,
+      args: ['project', ...args, '--no-install'],
+    })
+
+    expect(result.exitStatus).toBe(0)
+    expect(result.stdout).toContain('Database: convex — requested')
+    expect(result.stdout).toContain('Auth: clerk — applicable recommendation')
+    expect(result.stdout).toContain('tRPC: no — applicable recommendation')
+    expect(result.stdout).toContain(mailer)
+    expect(existsSync(`${fixture.project}/convex/schema.ts`)).toBe(true)
+    expect(existsSync(`${fixture.project}/src/routes/sign-in.$.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.project}/src/server/api`)).toBe(false)
+    expect(existsSync(`${fixture.project}/src/server/email`)).toBe(hasMailer)
+  },
+)
+
+test.each([
+  [['project', '--auth=better-auth', '--no-db'], 'Better Auth requires a database'],
+  [['project', '--auth=better-auth', '--no-mail'], 'Better Auth requires mail'],
+  [['project', '--minimal', '--auth=better-auth', '--no-db'], 'Better Auth requires a database'],
+  [['project', '--db=convex', '--auth=better-auth'], 'Better Auth cannot be used with Convex'],
+  [['project', '--db=convex', '--trpc'], 'Convex cannot be combined with tRPC'],
+])('rejects dependency conflict %j before mutation', (args, diagnostic) => {
   const fixture = createAcceptanceFixture('standalone')
 
   const result = runCli({
