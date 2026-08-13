@@ -184,7 +184,7 @@ const CONFIGS = [
   { name: 'auth-no-trpc', trpc: false },
   { name: 'clerk-full', auth: 'clerk' },
   { name: 'clerk-prisma', database: 'prisma', auth: 'clerk' },
-  { name: 'clerk-vitrine', database: 'none', auth: 'clerk', trpc: false, mailer: 'none' },
+  { name: 'clerk-minimal', database: 'none', auth: 'clerk', trpc: false, mailer: 'none' },
   {
     name: 'trpc-no-data-auth',
     database: 'none',
@@ -202,7 +202,7 @@ const CONFIGS = [
   { name: 'convex-none', database: 'convex', auth: 'none', mailer: 'none' },
   { name: 'convex-clerk', database: 'convex', auth: 'clerk', mailer: 'none' },
   { name: 'drizzle-only', auth: 'none', trpc: false, mailer: 'none' },
-  { name: 'vitrine', database: 'none', auth: 'none', trpc: false, mailer: 'none' },
+  { name: 'minimal', database: 'none', auth: 'none', trpc: false, mailer: 'none' },
 ]
 
 for (const framework of ['tanstack', 'next']) {

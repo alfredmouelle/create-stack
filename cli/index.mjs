@@ -17,7 +17,13 @@ import {
   resolveTargetAdapter,
   targetDir,
 } from './lib/add.mjs'
-import { isValidAlias, normalize, normalizeAlias, parseArgs, resolveMonorepo } from './lib/args.mjs'
+import {
+  isValidAlias,
+  normalizeAlias,
+  parseArgs,
+  resolveInteractiveStack,
+  resolveMonorepo,
+} from './lib/args.mjs'
 import { resolveAuth } from './lib/auth.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
@@ -562,7 +568,7 @@ async function collectFromPrompts(argDir) {
         { value: 'drizzle', label: 'Drizzle ORM', hint: 'Postgres + seed (default)' },
         { value: 'prisma', label: 'Prisma ORM', hint: 'Prisma 7 + Postgres' },
         { value: 'convex', label: 'Convex', hint: 'realtime db + API (replaces tRPC)' },
-        { value: 'none', label: 'None', hint: 'no database (vitrine)' },
+        { value: 'none', label: 'None', hint: 'no database' },
       ],
     }),
   )
@@ -629,7 +635,7 @@ async function collectFromPrompts(argDir) {
     auth: authProvider,
     mailerProvider,
     adjustments,
-  } = normalize(wantsTrpc, database, auth, mailer)
+  } = resolveInteractiveStack(wantsTrpc, database, auth, mailer)
   return {
     argDir,
     projectName,

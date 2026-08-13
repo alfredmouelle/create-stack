@@ -122,7 +122,7 @@ export function normalizeAlias(v) {
 }
 
 /** Resolve prompt/test selections: better-auth needs a db and a mailer. */
-export function normalize(trpc, database, auth, mailer) {
+export function resolveInteractiveStack(trpc, database, auth, mailer) {
   const adjustments = []
   let includeTrpc = trpc
   let a = auth ?? 'better-auth'

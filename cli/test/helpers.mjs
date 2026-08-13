@@ -5,7 +5,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { normalize } from '../lib/args.mjs'
+import { resolveInteractiveStack } from '../lib/args.mjs'
 import { resolvePackageManager } from '../lib/package-manager.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -32,7 +32,7 @@ export function build(cfg) {
   const dir = mkdtempSync(join(tmpdir(), 'create-stack-test-'))
   tmpRoots.push(dir)
   const projectDir = join(dir, cfg.name ?? 'app')
-  const { trpc, database, auth, mailerProvider } = normalize(
+  const { trpc, database, auth, mailerProvider } = resolveInteractiveStack(
     cfg.trpc ?? true,
     cfg.database,
     cfg.auth,
