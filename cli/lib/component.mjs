@@ -1,4 +1,4 @@
-// `create-stack component` — opt-in UI components vendored on demand from the matching
+// `create-stack add component <name>` — opt-in UI components vendored from the matching
 // base app. Their source of truth lives in apps/<framework>-base; every scaffold strips
 // them (see build.mjs) so they never weigh on the default bundle, and this re-vendors them
 // when the user opts in. Idempotent: files that already exist are left untouched so local
@@ -29,7 +29,7 @@ export const COMPONENTS = {
     ],
     deps: ['react-day-picker', 'date-fns'],
   },
-  datatable: {
+  'data-table': {
     label: 'Data table',
     hint: 'sortable + infinite TanStack tables + useDataTable',
     files: [
@@ -97,14 +97,6 @@ export const allComponentFiles = () => COMPONENT_NAMES.flatMap((n) => COMPONENTS
 export const allComponentDeps = () => [
   ...new Set(COMPONENT_NAMES.flatMap((n) => COMPONENTS[n].deps)),
 ]
-
-/** Options for the interactive `component` multi-select. */
-export const componentChoices = () =>
-  COMPONENT_NAMES.map((value) => ({
-    value,
-    label: COMPONENTS[value].label,
-    hint: COMPONENTS[value].hint,
-  }))
 
 const baseDir = (framework) =>
   join(STACK_ROOT, 'apps', framework === 'next' ? 'next-base' : 'tanstack-base')

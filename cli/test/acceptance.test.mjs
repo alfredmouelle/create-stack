@@ -462,7 +462,123 @@ test('guides users from the former Email UI name without mutating the project', 
   expect(result.targetMutated).toBe(false)
 })
 
-test('adds a component to a standalone application through the executable CLI', () => {
+test.each([
+  ['storage', undefined, 'storage (r2)', 'src/server/storage/adapters/r2.ts'],
+  ['cache', undefined, 'cache (upstash)', 'src/server/cache/adapters/upstash.ts'],
+  ['mail', 'brevo', 'mail (brevo)', 'src/server/email/adapters/brevo.ts'],
+  ['errors', 'sentry', 'errors (sentry)', 'src/server/error-tracking/index.ts'],
+  ['jobs', 'inngest', 'jobs (inngest)', 'src/server/jobs/index.ts'],
+])(
+  'adds %s through its simple positional form and prints the canonical plan',
+  (kind, provider, planned, expectedFile) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', kind, ...(provider ? [provider] : []), '--no-install'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain('Addition plan')
+    expect(added.stdout).toContain(`Addition: ${planned}`)
+    expect(added.stdout.indexOf('Addition plan')).toBeLessThan(added.stdout.indexOf('Added'))
+    expect(added.requestedInput).toBe(false)
+    expect(existsSync(`${fixture.app}/${expectedFile}`)).toBe(true)
+  },
+)
+
+test.each([
+  ['mailer', 'resend', 'mail (resend)'],
+  ['error-tracking', 'sentry', 'errors (sentry)'],
+])('normalizes the %s alias in the addition plan', (alias, provider, planned) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const added = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', alias, provider, '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(0)
+  expect(added.stdout).toContain(`Addition: ${planned}`)
+})
+
+test('provider changes remove old files by default and --keep-files retains them', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  expect(
+    runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'storage', 'gcs', '--no-install'],
+    }).exitStatus,
+  ).toBe(0)
+
+  const swapped = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'storage', 'r2', '--no-install'],
+  })
+
+  expect(swapped.exitStatus).toBe(0)
+  expect(swapped.stdout).toContain('Provider change: storage (gcs → r2)')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(false)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  let pkg = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(pkg.dependencies['@google-cloud/storage']).toBeUndefined()
+
+  const kept = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'storage', 'gcs', '--keep-files', '--no-install'],
+  })
+
+  expect(kept.exitStatus).toBe(0)
+  expect(kept.stdout).toContain('Provider change: storage (r2 → gcs, keeping files)')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
+  pkg = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(pkg.dependencies['@aws-sdk/client-s3']).toBeDefined()
+  expect(pkg.dependencies['@google-cloud/storage']).toBeDefined()
+
+  const cleaned = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'storage', 'local', '--no-install'],
+  })
+
+  expect(cleaned.exitStatus).toBe(0)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(false)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(false)
+  pkg = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(pkg.dependencies['@aws-sdk/client-s3']).toBeUndefined()
+  expect(pkg.dependencies['@google-cloud/storage']).toBeUndefined()
+})
+
+test.each([
+  [['add', 'http', '--force', '--no-install'], '--force only applies to components'],
+  [
+    ['add', 'component', 'date-picker', '--keep-files', '--no-install'],
+    '--keep-files only applies to provider changes',
+  ],
+  [['add', 'email-ui', 'resend', '--no-install'], 'email-ui has no provider to choose'],
+  [['add', 'component', 'date-picker', '--force=false', '--no-install'], '--force does not accept'],
+  [['add', 'http', '--wat', '--no-install'], 'Unknown option for add: --wat'],
+])('rejects an inapplicable addition option before mutation', (args, diagnostic) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+
+  const result = runCli({ cwd: fixture.app, target: fixture.app, args })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(diagnostic)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('adds a component through add and protects local files unless forced', () => {
   const fixture = createAcceptanceFixture('standalone')
   const created = createProject(fixture, { framework: 'tanstack' })
 
@@ -471,14 +587,34 @@ test('adds a component to a standalone application through the executable CLI', 
   const installed = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['component', 'date-picker', '--no-install'],
+    args: ['add', 'component', 'data-table', '--no-install'],
   })
 
   expect(installed.exitStatus).toBe(0)
-  expect(installed.stdout).toContain('Installed date-picker')
+  expect(installed.stdout).toContain('Addition plan')
+  expect(installed.stdout).toContain('Addition: component data-table')
+  expect(installed.stdout).toContain('Added component data-table')
   expect(installed.stderr).toBe('')
   expect(installed.requestedInput).toBe(false)
   expect(installed.targetMutated).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+  const componentFile = `${fixture.app}/src/components/data-table.tsx`
+  expect(existsSync(componentFile)).toBe(true)
   expect(existsSync(`${fixture.app}/node_modules`)).toBe(false)
+
+  writeFileSync(componentFile, '// local edit\n')
+  const preserved = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'data-table', '--no-install'],
+  })
+  expect(preserved.exitStatus).toBe(0)
+  expect(readFileSync(componentFile, 'utf8')).toBe('// local edit\n')
+
+  const forced = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'data-table', '--force', '--no-install'],
+  })
+  expect(forced.exitStatus).toBe(0)
+  expect(readFileSync(componentFile, 'utf8')).not.toBe('// local edit\n')
 })

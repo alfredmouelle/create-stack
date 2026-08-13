@@ -15,6 +15,7 @@ const BOOLEAN_LONG_OPTIONS = new Set([
   'no-install',
   'no-git',
   'keep',
+  'keep-files',
   'force',
 ])
 
