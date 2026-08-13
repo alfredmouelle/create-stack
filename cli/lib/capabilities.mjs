@@ -6,7 +6,7 @@
 //
 // A MODULE has a single provider used directly, because abstracting it would cost more
 // than it buys (jobs, error-tracking) or because there is no provider at all (http,
-// email-kit). Modules are vendored as-is plus whatever wiring the framework needs.
+// email-ui). Modules are vendored as-is plus whatever wiring the framework needs.
 
 import { readdirSync, statSync } from 'node:fs'
 import { STACK_ROOT } from './paths.mjs'
@@ -552,7 +552,7 @@ export function adapterRemovableDeps(cap, from, to) {
   )
 }
 
-/** Vendor a whole module's files (no adapter, no env/deps) — for email-kit & http. */
+/** Vendor a whole module's files (no adapter, no env/deps) — for email-ui & http. */
 export function vendorPackageSrc(pkgName, destDir) {
   remove(destDir)
   const manifest = readJSON(join(PKG(pkgName), 'capability.json'))

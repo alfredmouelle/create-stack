@@ -1,6 +1,6 @@
 {
   "$schema": "../../capability.schema.json",
-  "name": "email-kit",
+  "name": "email-ui",
   "kind": "module",
   "description": "React Email building blocks and theme shared by transactional templates. No provider behind it: sending is the mailer's job.",
   "env": [],

@@ -176,9 +176,14 @@ describe('mailer / lib targets', () => {
     expect(res.envKeys).toEqual([])
   })
 
-  test('email-kit vendors the React Email primitives', () => {
+  test('providerless additions reject a provider', () => {
+    expect(() => resolveTargetAdapter('email-ui', 'resend')).toThrow(/no adapter/)
+    expect(() => resolveTargetAdapter('http', 'fetch')).toThrow(/no adapter/)
+  })
+
+  test('email-ui vendors the React Email primitives', () => {
     const { dir } = build({ framework: 'next', foundations: [], mailer: 'resend' })
-    addCapability({ projectDir: dir, cap: 'email-kit', adapter: null })
+    addCapability({ projectDir: dir, cap: 'email-ui', adapter: null })
     expect(exists(`${dir}/src/emails/components/index.ts`)).toBe(true)
   })
 })

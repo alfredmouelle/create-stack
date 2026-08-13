@@ -51,8 +51,8 @@ No call site changes: they all depend on `Mailer`, never on a provider.
 ## Templates & theming
 
 Bodies are React Email components. Build them with
-[`@alfredmouelle/email-kit`](../email-kit) for a swappable theme (colors / brand) and a
-local preview studio (`pnpm --filter @alfredmouelle/email-kit email:dev`).
+[`@alfredmouelle/email-ui`](../email-ui) for a swappable theme (colors / brand) and a
+local preview studio (`pnpm --filter @alfredmouelle/email-ui email:dev`).
 
 ## Adding a provider
 
