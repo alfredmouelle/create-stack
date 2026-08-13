@@ -119,8 +119,8 @@ describe('swap', () => {
     expect(read(`${dir}/src/server/jobs/index.ts`)).toContain('new Inngest(')
   })
 
-  test('jobs rejects an adapter, since it has none to pick', () => {
-    expect(() => resolveTargetAdapter('jobs', 'trigger')).toThrow(/no adapter/)
+  test('jobs rejects any provider except its unique provider', () => {
+    expect(() => resolveTargetAdapter('jobs', 'trigger')).toThrow(/only supports inngest/)
   })
 
   test('error-tracking vendors the Sentry wiring and reports what it will not do', () => {
@@ -177,8 +177,8 @@ describe('mailer / lib targets', () => {
   })
 
   test('providerless additions reject a provider', () => {
-    expect(() => resolveTargetAdapter('email-ui', 'resend')).toThrow(/no adapter/)
-    expect(() => resolveTargetAdapter('http', 'fetch')).toThrow(/no adapter/)
+    expect(() => resolveTargetAdapter('email-ui', 'resend')).toThrow(/no provider/)
+    expect(() => resolveTargetAdapter('http', 'fetch')).toThrow(/no provider/)
   })
 
   test('email-ui vendors the React Email primitives', () => {

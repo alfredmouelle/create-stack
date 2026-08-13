@@ -543,13 +543,29 @@ export function currentAdapter(projectDir, cap) {
   return read(indexPath).match(/\.\/adapters\/([\w-]+)['"]/)?.[1] ?? null
 }
 
-/** Deps unique to `from` (not shared, not used by `to`) — safe to drop on a non-keep swap. */
-export function adapterRemovableDeps(cap, from, to) {
+/** Adapters whose source files are currently retained for a port capability. */
+export function installedAdapters(projectDir, cap) {
+  if (!hasAdapters(cap)) return []
+  const adaptersDir = join(projectDir, PORTS[cap].dir, 'adapters')
+  if (!exists(adaptersDir)) return []
+  return readdirSync(adaptersDir)
+    .filter((name) => name.endsWith('.ts'))
+    .map((name) => name.slice(0, -3))
+}
+
+/** Deps unique to installed former adapters — safe to drop on a non-keep provider change. */
+export function adapterRemovableDeps(cap, installed, to) {
   const manifest = readJSON(join(PKG(cap), 'capability.json'))
   const stay = new Set([...(manifest.adapters[to]?.deps ?? []), ...(manifest.sharedDeps ?? [])])
-  return (manifest.adapters[from]?.deps ?? []).filter(
-    (d) => !stay.has(d) && !d.startsWith('@alfredmouelle/'),
-  )
+  return [
+    ...new Set(
+      installed.flatMap((adapter) =>
+        (manifest.adapters[adapter]?.deps ?? []).filter(
+          (dependency) => !stay.has(dependency) && !dependency.startsWith('@alfredmouelle/'),
+        ),
+      ),
+    ),
+  ]
 }
 
 /** Vendor a whole module's files (no adapter, no env/deps) — for email-ui & http. */

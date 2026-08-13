@@ -24,9 +24,9 @@ describe('component', () => {
     expect('date-fns' in deps(dir)).toBe(true)
   })
 
-  test('datatable vendors its files + hook + react-table (next)', () => {
+  test('data-table vendors its files + hook + react-table (next)', () => {
     const { dir } = build({ framework: 'next', foundations: [], mailer: 'none' })
-    const res = vendorComponent({ projectDir: dir, name: 'datatable' })
+    const res = vendorComponent({ projectDir: dir, name: 'data-table' })
     expect(res.framework).toBe('next')
     for (const f of ['data-table', 'infinite-data-table', 'sortable-header'])
       expect(exists(`${dir}/src/components/${f}.tsx`), `${f} vendored`).toBe(true)
@@ -36,21 +36,21 @@ describe('component', () => {
 
   test('re-vendor never clobbers existing files (idempotent)', () => {
     const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
-    const first = vendorComponent({ projectDir: dir, name: 'datatable' })
+    const first = vendorComponent({ projectDir: dir, name: 'data-table' })
     expect(first.copied.length).toBeGreaterThan(0)
 
-    const second = vendorComponent({ projectDir: dir, name: 'datatable' })
+    const second = vendorComponent({ projectDir: dir, name: 'data-table' })
     expect(second.copied).toEqual([])
     expect(second.skipped.length).toBe(first.copied.length)
   })
 
   test('--force overwrites a locally edited file', () => {
     const { dir } = build({ framework: 'tanstack', foundations: [], mailer: 'none' })
-    vendorComponent({ projectDir: dir, name: 'datatable' })
+    vendorComponent({ projectDir: dir, name: 'data-table' })
     const file = `${dir}/src/components/data-table.tsx`
     writeFileSync(file, '// local edit\n')
 
-    const res = vendorComponent({ projectDir: dir, name: 'datatable', force: true })
+    const res = vendorComponent({ projectDir: dir, name: 'data-table', force: true })
     expect(res.skipped).toEqual([])
     expect(res.copied.length).toBeGreaterThan(0)
     expect(read(file)).not.toBe('// local edit\n') // restored from the base app

@@ -105,7 +105,7 @@ describe.skipIf(!process.env.RUN_SMOKE)('smoke', () => {
           alias: '@', // vendored files must realign '~/' → '@/'
         })
         vendorComponent({ projectDir: dir, name: 'date-picker' })
-        vendorComponent({ projectDir: dir, name: 'datatable' })
+        vendorComponent({ projectDir: dir, name: 'data-table' })
         verify(dir)
       },
       TIMEOUT,
