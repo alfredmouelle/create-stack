@@ -43,13 +43,16 @@ defaults below.
 - **framework**: `tanstack` (default) or `next`.
 - **monorepo**: `none` (default, standalone) | `turbo` | `nx` (orchestrator for the app in `apps/web`).
 - **database**: `drizzle` (default) | `prisma` | `convex` | `none`. Convex is its
-  own API layer, so it removes tRPC and can't back better-auth.
-- **auth**: `better-auth` (default) | `clerk` | `none`. better-auth needs a
-  database and a real mailer, both are re-added if you exclude them.
-- **foundations**: `trpc` is the only strippable one left (default: kept). The ORM
-  and auth are their own axes above.
-- **mailer**: `resend` (default) | `brevo` | `ses` | `none` (`none` is upgraded to
-  `resend` when `better-auth` is kept).
+  own API layer, so it conflicts with explicit tRPC and better-auth selections.
+- **auth**: `better-auth` (default) | `clerk` | `none`. When better-auth is explicit,
+  omitted database and mail axes are completed with Drizzle and Resend; explicit
+  exclusions conflict instead.
+- **tRPC**: included by recommendation; use `--trpc` or `--no-trpc` to make the API
+  axis explicit. It is independent of database and authentication.
+- **mailer**: `resend` (default) | `brevo` | `ses` | `none`. Explicit `none`
+  conflicts with better-auth.
+- **minimal project**: `--minimal` creates a frontend-only starting point; add
+  `--trpc` only when the user explicitly wants an API without data or auth.
 - **capabilities**: opt-in flags, see below. None is included by default.
 - also available: `--pm <pnpm|npm|yarn|bun>` (auto-detected) and
   `--alias <prefix>` (default `~`).
@@ -61,8 +64,8 @@ cs <project-dir> \
   --framework <next|tanstack> \
   --database <drizzle|prisma|convex|none> \
   --auth <better-auth|clerk|none> \
-  --foundations <csv> \
   --mailer <resend|brevo|ses|none>
+# add --trpc or --no-trpc only when the user chose the API axis explicitly
 # add --monorepo turbo|nx to scaffold into a monorepo (app in apps/web)
 # add --no-install to skip install+verify, or --yes for all-defaults
 ```

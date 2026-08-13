@@ -304,7 +304,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     <div class="grid">
       <div class="card"><div class="role">Framework</div><h4>Your framework, fully wired</h4><p>A real starter app you fork: SSR, routing, Tailwind v4 + shadcn, theme toggle. Next.js and TanStack Start today, more frameworks on the roadmap.</p><div class="tags"><span>Next.js</span><span>TanStack Start</span><span>more soon</span></div></div>
       <div class="card"><div class="role">Structure</div><h4>Standalone or monorepo</h4><p>Ship a single app, or drop it into a Turborepo or Nx monorepo (app in apps/web) with workspace, task caching and hoisted git hooks wired for you.</p><div class="tags"><span>standalone</span><span>turborepo</span><span>nx</span></div></div>
-      <div class="card"><div class="role">Data layer</div><h4>Drizzle, Prisma or Convex</h4><p>Postgres with driver adapter, schema, seed and keyset pagination, or Convex realtime, or none for a vitrine.</p><div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div></div>
+      <div class="card"><div class="role">Data layer</div><h4>Drizzle, Prisma or Convex</h4><p>Postgres with driver adapter, schema, seed and keyset pagination, Convex realtime, or no data layer.</p><div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div></div>
       <div class="card"><div class="role">Auth &amp; API</div><h4>better-auth or Clerk, tRPC v11</h4><p>Email + password with verification and Google OAuth, or hosted Clerk. Typed tRPC with SSR/RSC.</p><div class="tags"><span>better-auth</span><span>clerk</span><span>trpc</span></div></div>
       <div class="card"><div class="role">Mailer</div><h4>Resend, Brevo or SES</h4><p>One port, React Email templates. Swap the provider with a single env change.</p><div class="tags"><span>resend</span><span>brevo</span><span>ses</span></div></div>
       <div class="card"><div class="role">Capabilities</div><h4>Storage, cache, jobs, more</h4><p>Opt-in integrations. Storage, cache, logger and analytics sit behind a swappable port; jobs and error tracking use Inngest and Sentry directly, where a port would only get in the way.</p><div class="tags"><span>s3/r2</span><span>redis</span><span>inngest</span><span>sentry</span></div></div>
@@ -354,22 +354,22 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   const CHECK_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
   const CHEVRON = '<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
 
-  // normalize(): faithful port of cli/lib/args.mjs
-  function normalize(s) {
-    const adj = []
-    let trpc = s.trpc, a = s.auth, db = s.database, mailer = s.mailer
-    if (db === 'convex') {
-      if (trpc) { trpc = false; adj.push({ head: 'Convex', body: 'is its own API layer → tRPC removed' }) }
-      if (a === 'better-auth') { a = 'none'; adj.push({ head: 'Convex + better-auth', body: 'better-auth needs Postgres → auth set to none (pair Convex with Clerk)' }) }
-    } else if ((trpc || a === 'better-auth') && db === 'none') {
-      db = 'drizzle'
-      adj.push({ head: 'tRPC / better-auth', body: 'need a database → Drizzle added' })
+  // Mirrors interactive stack resolution in cli/lib/args.mjs.
+  function resolveInteractiveStack(s) {
+    const adjustments = []
+    let trpc = s.trpc, auth = s.auth, database = s.database, mailer = s.mailer
+    if (database === 'convex') {
+      if (trpc) { trpc = false; adjustments.push({ head: 'Convex', body: 'is its own API layer → tRPC removed' }) }
+      if (auth === 'better-auth') { auth = 'none'; adjustments.push({ head: 'Convex + better-auth', body: 'better-auth needs Postgres → auth set to none (pair Convex with Clerk)' }) }
+    } else if (auth === 'better-auth' && database === 'none') {
+      database = 'drizzle'
+      adjustments.push({ head: 'better-auth', body: 'needs a database → Drizzle added' })
     }
-    if (a === 'better-auth' && mailer === 'none') { mailer = 'resend'; adj.push({ head: 'better-auth', body: 'sends its own emails → Resend added' }) }
-    return { database: db, auth: a, trpc, mailer, adjustments: adj }
+    if (auth === 'better-auth' && mailer === 'none') { mailer = 'resend'; adjustments.push({ head: 'better-auth', body: 'sends its own emails → Resend added' }) }
+    return { database, auth, trpc, mailer, adjustments }
   }
   function buildCommand(s) {
-    const e = normalize(s)
+    const e = resolveInteractiveStack(s)
     const parts = [{ t: pmPrefix() + ' ' + (s.name || 'my-app') }]
     if (s.framework !== 'tanstack') parts.push({ f: '--framework', v: s.framework })
     // --monorepo is bare for turborepo (its default), valued for nx
@@ -377,7 +377,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     else if (s.monorepo === 'nx') parts.push({ f: '--monorepo', v: 'nx' })
     if (e.database !== 'drizzle') parts.push({ f: '--database', v: e.database })
     if (e.auth !== 'better-auth') parts.push({ f: '--auth', v: e.auth })
-    if (!e.trpc && e.database !== 'convex') parts.push({ f: '--foundations', v: "''" })
+    if (!e.trpc && e.database !== 'convex') parts.push({ f: '--no-trpc' })
     if (e.mailer !== 'resend') parts.push({ f: '--mailer', v: e.mailer })
     if (s.alias !== '~') parts.push({ f: '--alias', v: s.alias })
     for (const c of CAPS) { const a = s.caps[c.key]; if (a) parts.push(a === c.def ? { f: '--' + c.flag } : { f: '--' + c.flag, v: a }) }
@@ -430,7 +430,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     { key: 'confirm-passphrase', label: 'Confirm · passphrase', hint: 'type an exact phrase', code: "const ok = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: 'my-repo' })" },
     { key: 'confirm-otp', label: 'Confirm · OTP', hint: 'verify a code', code: "const ok = await ConfirmOtp.call({ title: 'Enter code', verify: (c) => api.checkOtp(c) })" },
     { key: 'date-picker', label: 'Date picker', hint: 'single + range', code: '<DatePicker value={date} onChange={setDate} />' },
-    { key: 'datatable', label: 'Data table', hint: 'sortable + infinite', code: '<DataTable columns={columns} data={rows} />' },
+    { key: 'data-table', label: 'Data table', hint: 'sortable + infinite', code: '<DataTable columns={columns} data={rows} />' },
   ]
   const compSel = new Set()
   let usageKey = null
@@ -442,8 +442,8 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
       const opt = '<div class="opt' + (on ? ' sel' : '') + '" data-comp="' + c.key + '"><span class="radio"></span><span>' + esc(c.label) + '</span><span class="desc">' + esc(c.hint) + '</span><button class="usage-btn' + (usageKey === c.key ? ' on' : '') + '" data-usage="' + c.key + '" aria-label="Show usage">&lt;/&gt;</button></div>'
       return usageKey === c.key ? opt + '<pre class="comp-code">' + esc(c.code) + '</pre>' : opt
     }).join('')
-    const cmd = '<span class="sig">$</span> ' + esc(pmPrefix()) + ' <span class="flag">component</span> ' +
-      (sel.length ? sel.map((n) => '<span class="val">' + esc(n) + '</span>').join(' ') : '<span class="ph">&lt;name…&gt;</span>')
+    const cmd = '<span class="sig">$</span> ' + esc(pmPrefix()) + ' <span class="flag">add</span> ' +
+      (sel.length ? sel.map((n) => '<span class="flag">--with</span> <span class="val">component=' + esc(n) + '</span>').join(' ') : '<span class="ph">&lt;component…&gt;</span>')
     document.getElementById('components-stage').innerHTML =
       '<div class="comp"><div class="term-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">create-stack: components</span></div>' +
       '<div class="comp-body"><div class="comp-grid">' + grid + '</div></div>' +
@@ -457,7 +457,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   const AXES = [
     { key: 'framework', label: 'Framework', hint: 'base app to fork · more frameworks coming', opts: [{ v: 'tanstack', d: 'default' }, { v: 'next', d: 'App Router' }] },
     { key: 'monorepo', label: 'Monorepo', hint: 'project structure · app lands in apps/web', opts: [{ v: 'none', d: 'standalone (default)' }, { v: 'turborepo', d: 'Turborepo' }, { v: 'nx', d: 'Nx' }] },
-    { key: 'database', label: 'Database', hint: 'data layer', opts: [{ v: 'drizzle', d: 'default' }, { v: 'prisma', d: 'Prisma 7' }, { v: 'convex', d: 'realtime + API' }, { v: 'none', d: 'vitrine' }] },
+    { key: 'database', label: 'Database', hint: 'data layer', opts: [{ v: 'drizzle', d: 'default' }, { v: 'prisma', d: 'Prisma 7' }, { v: 'convex', d: 'realtime + API' }, { v: 'none', d: 'no database' }] },
     { key: 'auth', label: 'Auth', hint: 'auth provider', opts: [{ v: 'better-auth', d: 'self-hosted' }, { v: 'clerk', d: 'hosted' }, { v: 'none', d: 'no auth' }] },
     { key: 'trpc', label: 'tRPC', hint: 'typed API foundation', opts: [{ v: true, label: 'trpc on', d: 'included' }, { v: false, label: 'trpc off', d: 'stripped' }] },
     { key: 'mailer', label: 'Mailer', hint: 'transactional email', opts: [{ v: 'resend', d: 'default' }, { v: 'brevo', d: '' }, { v: 'ses', d: 'AWS' }, { v: 'none', d: 'skip' }] },
@@ -513,7 +513,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     if (e.target.closest('[data-copy-comp]')) {
       if (!compSel.size) return
       const names = [...compSel]
-      copyText(pmPrefix() + ' component ' + names.join(' '), { source: 'components', pm: state.pm, components: names, count: names.length }, 'component_command_copied')
+      copyText(pmPrefix() + ' add ' + names.map((name) => '--with component=' + name).join(' '), { source: 'components', pm: state.pm, components: names, count: names.length }, 'component_command_copied')
       return
     }
     if (e.target.closest('[data-pm-toggle]')) { pmMenuOpen = !pmMenuOpen; renderInstall(); return }

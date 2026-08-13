@@ -14,7 +14,7 @@ import { swapMailer } from './mailer.mjs'
 import { wrapMonorepo } from './monorepo.mjs'
 import { detectPackageManager } from './package-manager.mjs'
 import { forkBase, makeStandalone } from './scaffold.mjs'
-import { stripFoundations } from './strip.mjs'
+import { stripUnselectedFeatures } from './strip.mjs'
 import {
   join,
   pkgAddDeps,
@@ -30,7 +30,7 @@ import {
  * @param {string} o.projectDir  absolute target dir (must be empty)
  * @param {string} o.projectName
  * @param {'next'|'tanstack'} o.framework
- * @param {Set<string>} o.kept   foundations to keep (deps pre-resolved)
+ * @param {boolean} o.trpc  whether the app includes tRPC
  * @param {'drizzle'|'prisma'|'none'} o.database  ORM the app ships (default 'drizzle')
  * @param {'better-auth'|'clerk'|'none'} o.auth  auth provider (default 'better-auth')
  * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
@@ -38,13 +38,13 @@ import {
  * @param {string} [o.alias]  import-alias prefix to rewrite '~/' to (default '~', i.e. no-op)
  * @param {false|'turborepo'|'nx'} [o.monorepo]  wrap the app in a monorepo (app forked into apps/web)
  * @param {import('./package-manager.mjs').PackageManager} [o.pm]  target package manager (defaults to detected)
- * @returns {{ kept: string[], keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[], alias: string, monorepo: boolean }}
+ * @returns {{ trpc: boolean, keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[], alias: string, monorepo: boolean }}
  */
 export function buildProject({
   projectDir,
   projectName,
   framework,
-  kept,
+  trpc,
   database = 'drizzle',
   auth = 'better-auth',
   mailerProvider,
@@ -61,14 +61,14 @@ export function buildProject({
   forkBase(framework, appDir)
   makeStandalone(appDir, monorepo ? 'web' : projectName, framework, pm, { monorepo: !!monorepo })
 
-  // strip → auth → database: stripFoundations may swap the app shell (no-trpc variants)
+  // strip → auth → database: stripping tRPC may swap the app shell to no-tRPC variants
   // that applyAuth then injects the provider into; applyDatabase keys its auth models on auth.
-  const strip = stripFoundations({ projectDir: appDir, framework, kept, keptMailer })
-  const authRes = applyAuth({ projectDir: appDir, framework, auth, trpcKept: kept.has('trpc') })
+  const strip = stripUnselectedFeatures({ projectDir: appDir, framework, trpc, keptMailer })
+  const authRes = applyAuth({ projectDir: appDir, framework, auth, trpcKept: trpc })
   const db = applyDatabase({ projectDir: appDir, database, framework, auth, authKept: authUsesDb })
 
   // opt-in components never ship in the default bundle — strip them; re-add via
-  // `create-stack component <name>`.
+  // `create-stack add component <name>`.
   for (const rel of allComponentFiles()) remove(join(appDir, rel))
   const mailer = keptMailer
     ? swapMailer(appDir, mailerProvider)
@@ -152,7 +152,7 @@ export function buildProject({
     manualSteps: Object.keys(capabilities).flatMap((cap) =>
       (MANUAL_STEPS[cap]?.[framework] ?? []).map((step) => `${cap}: ${step}`),
     ),
-    kept: [...kept],
+    trpc,
     database,
     auth,
     keptMailer,

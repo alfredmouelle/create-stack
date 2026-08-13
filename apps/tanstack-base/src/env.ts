@@ -5,7 +5,7 @@ import * as v from 'valibot'
 export const requiredInProduction = <T extends v.GenericSchema>(schema: T) =>
   process.env.NODE_ENV === 'production' ? schema : v.optional(schema)
 
-/** Typed env; foundations/capabilities extend `server` + `runtimeEnv` as needed. */
+/** Typed env; stack options and capabilities extend `server` + `runtimeEnv` as needed. */
 export const env = createEnv({
   shared: {
     NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'development'),

@@ -1,8 +1,7 @@
-// Strip unselected foundations: whole-dir deletes + code-seam variants (trpc). The
-// auth axis (better-auth/clerk/none) lives in lib/auth.mjs.
+// Strip unselected tRPC and mailer files from a forked base application.
 
-import { FOUNDATIONS, foundationDeps, foundationScripts } from './foundations.mjs'
 import { TEMPLATES } from './paths.mjs'
+import { trpcDeps } from './trpc.mjs'
 import { copy, join, remove } from './util.mjs'
 
 const tpl = (rel) => join(TEMPLATES, rel)
@@ -41,23 +40,20 @@ const stripMailer = (src, removeDeps, removeScripts) => {
 }
 
 /** @returns {{ removeDeps: string[], removeScripts: string[] }} */
-export function stripFoundations({ projectDir, framework, kept, keptMailer }) {
+export function stripUnselectedFeatures({ projectDir, framework, trpc, keptMailer }) {
   const next = framework === 'next'
   const src = (p) => join(projectDir, 'src', p)
-  const dropped = FOUNDATIONS.filter((f) => !kept.has(f))
-
-  // remove a dropped foundation's deps/scripts unless a kept one still needs them
-  const keptDeps = new Set([...kept].flatMap((f) => foundationDeps(f, framework)))
+  const keptDeps = new Set(trpc ? trpcDeps(framework) : [])
   const removeDeps = new Set()
   const removeScripts = new Set()
-  for (const f of dropped) {
-    for (const d of foundationDeps(f, framework)) {
-      if (!keptDeps.has(d) && !ALWAYS_KEEP.has(d)) removeDeps.add(d)
+
+  if (!trpc) {
+    for (const dependency of trpcDeps(framework)) {
+      if (!ALWAYS_KEEP.has(dependency)) removeDeps.add(dependency)
     }
-    for (const s of foundationScripts(f)) removeScripts.add(s)
+    stripTrpc(src, next, keptDeps, removeDeps)
   }
 
-  if (dropped.includes('trpc')) stripTrpc(src, next, keptDeps, removeDeps)
   if (!keptMailer) stripMailer(src, removeDeps, removeScripts)
 
   return { removeDeps: [...removeDeps], removeScripts: [...removeScripts] }

@@ -56,7 +56,10 @@ test('the former package name appears only in migration history', () => {
   })
   expect(listed.status).toBe(0)
 
-  const historical = (path) => path === 'cli/CHANGELOG.md' || path.startsWith('docs/adr/')
+  const historical = (path) =>
+    path === 'cli/CHANGELOG.md' ||
+    path === 'cli/test/acceptance.test.mjs' ||
+    path.startsWith('docs/adr/')
   const retiredName = new RegExp(['email', 'kit'].join('[- _]'), 'i')
   const activeHits = listed.stdout
     .trim()

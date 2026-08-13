@@ -17,7 +17,13 @@ import {
   resolveTargetAdapter,
   targetDir,
 } from './lib/add.mjs'
-import { isValidAlias, normalize, normalizeAlias, parseArgs, resolveMonorepo } from './lib/args.mjs'
+import {
+  isValidAlias,
+  normalizeAlias,
+  parseArgs,
+  resolveInteractiveStack,
+  resolveMonorepo,
+} from './lib/args.mjs'
 import { resolveAuth } from './lib/auth.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
@@ -318,7 +324,7 @@ function collectFromFlags(args) {
   const framework = resolveFrameworkFlag(args.flags)
   const alias = normalizeAlias(typeof args.flags.alias === 'string' ? args.flags.alias : undefined)
   const pm = resolvePackageManagerFlag(args.flags)
-  const { kept, database, auth, mailerProvider, adjustments, selectionReasons } =
+  const { trpc, database, auth, mailerProvider, adjustments, selectionReasons } =
     resolveCreationStack(args.flags)
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
@@ -330,7 +336,7 @@ function collectFromFlags(args) {
     framework,
     alias,
     pm,
-    kept,
+    trpc,
     database,
     auth,
     mailerProvider,
@@ -442,7 +448,7 @@ function resolveCreationStack(flags) {
   completeBetterAuthDependencies(resolved, explicit, reasons)
 
   return {
-    kept: new Set(resolved.trpc ? ['trpc'] : []),
+    trpc: resolved.trpc,
     database: resolved.database,
     auth: resolved.auth,
     mailerProvider: resolved.mailer,
@@ -562,7 +568,7 @@ async function collectFromPrompts(argDir) {
         { value: 'drizzle', label: 'Drizzle ORM', hint: 'Postgres + seed (default)' },
         { value: 'prisma', label: 'Prisma ORM', hint: 'Prisma 7 + Postgres' },
         { value: 'convex', label: 'Convex', hint: 'realtime db + API (replaces tRPC)' },
-        { value: 'none', label: 'None', hint: 'no database (vitrine)' },
+        { value: 'none', label: 'None', hint: 'no database' },
       ],
     }),
   )
@@ -593,8 +599,6 @@ async function collectFromPrompts(argDir) {
   const wantsTrpc = convex
     ? false
     : cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: true }))
-  const picked = wantsTrpc ? ['trpc'] : []
-
   const mailerForced = auth === 'better-auth'
   const mailerOpts = [
     { value: 'resend', label: 'Resend' },
@@ -626,12 +630,12 @@ async function collectFromPrompts(argDir) {
   )
 
   const {
-    kept,
+    trpc,
     database: db,
     auth: authProvider,
     mailerProvider,
     adjustments,
-  } = normalize(picked, database, auth, mailer)
+  } = resolveInteractiveStack(wantsTrpc, database, auth, mailer)
   return {
     argDir,
     projectName,
@@ -640,7 +644,7 @@ async function collectFromPrompts(argDir) {
     pm,
     database: db,
     auth: authProvider,
-    kept,
+    trpc,
     mailerProvider,
     adjustments,
     capabilities,
@@ -656,7 +660,7 @@ const pmRun = (pm, script, projectDir, opts = {}) =>
 /** Install deps, normalize formatting, then report typecheck + biome status. */
 function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
   p.log.step(`${pm.name} install`)
-  const installed = run(pm.exec, ['install'], { cwd: projectDir })
+  const installed = run(pm.exec, pm.installArgs, { cwd: projectDir })
   if (!installed && requireSuccess) {
     throw new Error(`${pm.name} install failed; verification and the initial commit were skipped`)
   }
@@ -757,7 +761,7 @@ function creationPlanLines(a, pm) {
     `Import alias: ${a.alias ?? '~'}/`,
     `Database: ${orNone(a.database)}${reason('database')}`,
     `Auth: ${orNone(a.auth)}${reason('auth')}`,
-    `tRPC: ${a.kept.has('trpc') ? 'yes' : 'no'}${reason('trpc')}`,
+    `tRPC: ${a.trpc ? 'yes' : 'no'}${reason('trpc')}`,
     `Mailer: ${orNone(a.mailerProvider)}${reason('mailer')}`,
     `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ' — requested' : ''}`,
     `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
@@ -777,7 +781,7 @@ function summaryLines(a, pm) {
     `Import alias: ${a.alias ?? '~'}/`,
     `Database: ${orNone(a.database)}`,
     `Auth: ${orNone(a.auth)}`,
-    `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
+    `tRPC: ${a.trpc ? 'yes' : 'no'}`,
     `Mailer: ${orNone(a.mailerProvider)}`,
     `Capabilities: ${capEntries.map(formatCapability).join(', ') || '(none)'}`,
     '',
@@ -796,6 +800,11 @@ function summaryLines(a, pm) {
 }
 
 function resolveComponentAddition(name) {
+  if (name === 'datatable') {
+    throw new Error(
+      "'datatable' was renamed to 'data-table'; run create-stack add component data-table",
+    )
+  }
   if (!COMPONENT_NAMES.includes(name)) {
     throw new Error(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
   }
@@ -1078,6 +1087,10 @@ async function main() {
     if (help) return void process.stdout.write(`${ADD_HELP}\n`)
     await runAdd(args)
     return
+  }
+
+  if (args._[0] === 'component') {
+    throw new Error('The component command was removed; run create-stack add component <name>')
   }
 
   if (help) {

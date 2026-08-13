@@ -47,4 +47,11 @@ describe('resolvePackageManager', () => {
     expect(resolvePackageManager('deno').name).toBe('npm')
     expect(resolvePackageManager(undefined).name).toBe('npm')
   })
+
+  test('pnpm installs can update a generated project lockfile in CI', () => {
+    expect(resolvePackageManager('pnpm').installArgs).toEqual(['install', '--no-frozen-lockfile'])
+    for (const name of ['npm', 'yarn', 'bun']) {
+      expect(resolvePackageManager(name).installArgs).toEqual(['install'])
+    }
+  })
 })

@@ -1,6 +1,6 @@
 'use client'
 
-// Await it from anywhere; the <ConfirmPassphrase /> Root is auto-mounted by `create-stack component`.
+// Await it from anywhere; the <ConfirmPassphrase /> Root is auto-mounted by `create-stack add component`.
 // const ok = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: 'my-repo' })
 
 import { useId, useState } from 'react'
