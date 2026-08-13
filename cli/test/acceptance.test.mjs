@@ -26,6 +26,13 @@ function createProject(fixture, { framework, monorepo }) {
   })
 }
 
+function createAmbiguousMonorepoFixture() {
+  const fixture = createAcceptanceFixture('monorepo')
+  expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
+  cpSync(fixture.app, `${fixture.project}/apps/admin`, { recursive: true })
+  return fixture
+}
+
 test('the executable CLI reports prompts without mutating its target', () => {
   const fixture = createAcceptanceFixture('standalone')
 
@@ -81,9 +88,7 @@ test('adds a capability to a monorepo application through the executable CLI', (
 })
 
 test('an explicit addition rejects an ambiguous monorepo before mutation', () => {
-  const fixture = createAcceptanceFixture('monorepo')
-  expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
-  cpSync(fixture.app, `${fixture.project}/apps/admin`, { recursive: true })
+  const fixture = createAmbiguousMonorepoFixture()
 
   const added = runCli({
     cwd: fixture.project,
@@ -99,10 +104,8 @@ test('an explicit addition rejects an ambiguous monorepo before mutation', () =>
 })
 
 test('--app selects one relative application and confines the addition to it', () => {
-  const fixture = createAcceptanceFixture('monorepo')
-  expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
+  const fixture = createAmbiguousMonorepoFixture()
   const admin = `${fixture.project}/apps/admin`
-  cpSync(fixture.app, admin, { recursive: true })
 
   const added = runCli({
     cwd: fixture.project,
@@ -151,6 +154,24 @@ test.each(['--pm', '--package-manager'])(
 )
 
 test.each([
+  ['conflicting aliases', ['--pm', 'npm', '--package-manager', 'yarn']],
+  ['a repeated override', ['--pm', 'npm', '--pm', 'npm']],
+])('%s fail before project mutation', (_case, overrides) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const added = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'http', ...overrides, '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(1)
+  expect(added.stdout).toContain('Ambiguous package manager overrides')
+  expect(added.targetMutated).toBe(false)
+})
+
+test.each([
   {
     name: 'an invalid override',
     files: [],
@@ -180,9 +201,7 @@ test.each([
 })
 
 test('interactive add asks which compatible application to target', () => {
-  const fixture = createAcceptanceFixture('monorepo')
-  expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
-  cpSync(fixture.app, `${fixture.project}/apps/admin`, { recursive: true })
+  const fixture = createAmbiguousMonorepoFixture()
 
   const added = runCli({
     cwd: fixture.project,

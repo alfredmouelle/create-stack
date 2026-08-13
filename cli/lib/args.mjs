@@ -4,7 +4,12 @@ export const ALL_FOUNDATIONS = ['trpc']
 
 /** Minimal flag parser: positional args + --key value / --flag / short -abc booleans. */
 export function parseArgs(argv) {
-  const out = { _: [], flags: {} }
+  const out = { _: [], flags: {}, flagValues: {} }
+  const recordFlag = (key, value) => {
+    out.flags[key] = value
+    if (!out.flagValues[key]) out.flagValues[key] = []
+    out.flagValues[key].push(value)
+  }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a.startsWith('--')) {
@@ -12,13 +17,13 @@ export function parseArgs(argv) {
       const next = argv[i + 1]
       // a value can't start with '-', so `--no-install -y` keeps -y as its own flag.
       if (next && !next.startsWith('-')) {
-        out.flags[key] = next
+        recordFlag(key, next)
         i++
       } else {
-        out.flags[key] = true
+        recordFlag(key, true)
       }
     } else if (a.length > 1 && a[0] === '-') {
-      for (const ch of a.slice(1)) out.flags[ch] = true
+      for (const ch of a.slice(1)) recordFlag(ch, true)
     } else {
       out._.push(a)
     }

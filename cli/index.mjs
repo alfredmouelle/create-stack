@@ -547,7 +547,16 @@ async function runAdd(args) {
           }),
         )
   const applicationPath = relativeApplicationPath(projectRoot, projectDir)
-  const packageManagerFlag = args.flags.pm ?? args.flags['package-manager']
+  const packageManagerFlags = [
+    ...(args.flagValues.pm ?? []),
+    ...(args.flagValues['package-manager'] ?? []),
+  ]
+  if (packageManagerFlags.length > 1) {
+    throw new Error(
+      'Ambiguous package manager overrides: pass only one of --pm or --package-manager',
+    )
+  }
+  const packageManagerFlag = packageManagerFlags[0]
   const pm = packageManagerFlag
     ? resolveExplicitPackageManager(packageManagerFlag)
     : detectProjectPackageManager(projectRoot, detectedPm)
@@ -561,7 +570,7 @@ async function runAdd(args) {
     ...sel,
     ...addCapability({ projectDir, ...sel, keep }),
   }))
-  if (!args.flags['no-install']) installAndVerify(projectRoot, pm)
+  if (!args.flags['no-install']) installAndVerify(projectDir, pm)
 
   p.note(added.map(addedLine).join('\n'), keep ? 'Added (kept existing adapters)' : 'Added')
 
