@@ -28,9 +28,16 @@ function parseLongOption(argv, index, option) {
   }
   const key = argument.slice(2)
   const next = argv[index + 1]
+  const isMonorepoOption = ['mono', 'monorepo'].includes(key)
+  const hasExplicitMonorepoValue = isMonorepoOption && ['turbo', 'nx'].includes(next)
   // Boolean options never consume a following positional; other options may use
   // either a separated value or their documented bare recommendation.
-  if (!BOOLEAN_LONG_OPTIONS.has(key) && next && !next.startsWith('-')) {
+  if (
+    !BOOLEAN_LONG_OPTIONS.has(key) &&
+    next &&
+    !next.startsWith('-') &&
+    (!isMonorepoOption || hasExplicitMonorepoValue)
+  ) {
     option(key, next)
     return 1
   }

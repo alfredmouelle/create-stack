@@ -41,7 +41,7 @@ import {
   relativeApplicationPath,
   resolveApplicationPath,
 } from './lib/project-target.mjs'
-import { exists, isDirEmpty, join, run } from './lib/util.mjs'
+import { exists, isDirEmpty, join, run, runCapture } from './lib/util.mjs'
 
 // PM that launched us; the wizard pre-selects it and `add`/non-interactive fall back to it.
 const detectedPm = detectPackageManager()
@@ -72,6 +72,7 @@ Scaffold flags:
   --trpc / --no-trpc               Include or explicitly exclude tRPC
   --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
   --no-install                     Skip install + verification
+  --no-git                         Do not initialize a Git repository
   -y, --yes                        Non-interactive with all defaults
   -h, --help                       Show this help
   -v, --version                    Print version
@@ -119,6 +120,7 @@ const CREATION_OPTIONS = [
   'package-manager',
   'alias',
   'no-install',
+  'no-git',
   'y',
   'yes',
   'minimal',
@@ -140,6 +142,7 @@ const BOOLEAN_CREATION_OPTIONS = new Set([
   'no-auth',
   'no-mail',
   'no-install',
+  'no-git',
 ])
 
 function editDistance(left, right) {
@@ -304,6 +307,7 @@ function collectFromFlags(args) {
     resolveCreationStack(args.flags)
   const capabilities = collectCapabilityFlags(args.flags)
   const doInstall = !args.flags['no-install']
+  const doGit = !args.flags['no-git']
   const monorepo = resolveMonorepo(args.flags.mono ?? args.flags.monorepo)
   return {
     argDir,
@@ -320,6 +324,7 @@ function collectFromFlags(args) {
     capabilities,
     monorepo,
     doInstall,
+    doGit,
   }
 }
 
@@ -627,6 +632,7 @@ async function collectFromPrompts(argDir) {
     capabilities,
     monorepo,
     doInstall,
+    doGit: true,
   }
 }
 
@@ -634,29 +640,44 @@ const pmRun = (pm, script, projectDir, opts = {}) =>
   run(pm.exec, pm.runArgs(script), { cwd: projectDir, ...opts })
 
 /** Install deps, normalize formatting, then report typecheck + biome status. */
-function installAndVerify(projectDir, pm) {
+function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
   p.log.step(`${pm.name} install`)
-  run(pm.exec, ['install'], { cwd: projectDir })
+  const installed = run(pm.exec, ['install'], { cwd: projectDir })
+  if (!installed && requireSuccess) {
+    throw new Error(`${pm.name} install failed; verification and the initial commit were skipped`)
+  }
   // re-format under the fork's own Biome so the initial commit is lint-clean for any selection
   pmRun(pm, 'check:write', projectDir, { stdio: 'ignore' })
   p.log.step('Verifying (typecheck + biome)')
   const tc = pmRun(pm, 'typecheck', projectDir)
   const lint = pmRun(pm, 'check', projectDir)
+  if ((!tc || !lint) && requireSuccess) {
+    throw new Error('Verification failed; the initial commit was skipped')
+  }
   p.log[tc && lint ? 'success' : 'warn'](
     tc && lint ? 'typecheck + biome clean' : 'verify reported issues (see output above)',
   )
 }
 
 /**
- * Fresh repo + best-effort initial commit (also satisfies Biome vcs.useIgnoreFile).
- * Wires git hooks first so they're live from the first install; --no-verify keeps our
- * own commit from tripping them. Commit is skipped (tree left staged) if git identity unset.
+ * Initialize only when the target is outside an existing repository. Hooks are
+ * wired before install so generated-project lifecycle scripts see the right root.
  */
 function initGitRepo(projectDir) {
-  if (!run('git', ['-C', projectDir, 'init', '-q'])) return
+  if (runCapture('git', ['-C', projectDir, 'rev-parse', '--show-toplevel'])) {
+    p.log.step('existing git repository detected (initialization skipped)')
+    return false
+  }
+  if (!run('git', ['-C', projectDir, 'init', '-q'])) return false
   if (exists(join(projectDir, '.githooks'))) {
     run('git', ['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
   }
+  p.log.step('git repository initialized')
+  return true
+}
+
+/** Record the verified generated baseline in a freshly initialized repository. */
+function commitInitialBaseline(projectDir) {
   run('git', ['-C', projectDir, 'add', '-A'])
   const msg = 'chore: initial commit from create-stack'
   const committed = run('git', ['-C', projectDir, 'commit', '--no-verify', '-q', '-m', msg], {
@@ -664,8 +685,8 @@ function initGitRepo(projectDir) {
   })
   p.log.step(
     committed
-      ? 'git repository initialized (initial commit created)'
-      : 'git repository initialized — set git user.name/email, then commit',
+      ? 'initial commit created'
+      : 'set git user.name/email, then commit the generated baseline',
   )
 }
 
@@ -686,9 +707,14 @@ function execute(a) {
   const built = buildProject({ ...a, projectDir, projectName: packageName(projectDir), pm })
   s.stop('Project scaffolded')
 
-  if (a.doInstall) installAndVerify(projectDir, pm)
+  const initializedGit = a.doGit === false ? false : initGitRepo(projectDir)
 
-  initGitRepo(projectDir)
+  if (a.doInstall) {
+    installAndVerify(projectDir, pm, { requireSuccess: true })
+    if (initializedGit) commitInitialBaseline(projectDir)
+  } else {
+    p.log.warn('Installation and verification skipped; no automatic commit was created')
+  }
 
   p.note(summaryLines(a, pm).join('\n'), 'Done')
   if (built.manualSteps?.length) p.note(built.manualSteps.join('\n'), 'Finish by hand')
@@ -715,6 +741,7 @@ function creationPlanLines(a, pm) {
     `Mailer: ${orNone(a.mailerProvider)}${reason('mailer')}`,
     `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ' — requested' : ''}`,
     `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
+    `Initialize Git: ${a.doGit === false ? 'no' : 'yes (outside an existing repository)'}`,
   ]
 }
 
@@ -1008,7 +1035,9 @@ async function main() {
       'pm',
       'package-manager',
       'alias',
+      'minimal',
       'no-install',
+      'no-git',
       ...CAPABILITIES,
     ].some((k) => k in args.flags)
 

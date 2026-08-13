@@ -55,10 +55,14 @@ describe('isDirEmpty', () => {
   test('absent dir is empty', () => {
     expect(isDirEmpty(join(mkTmp(), 'nope'))).toBe(true)
   })
-  test('ignores noise files', () => {
+  test('protects targets containing OS or repository metadata', () => {
     const d = mkTmp()
     writeFileSync(join(d, '.DS_Store'), '')
-    expect(isDirEmpty(d)).toBe(true)
+    expect(isDirEmpty(d)).toBe(false)
+
+    const repository = mkTmp()
+    mkdirSync(join(repository, '.git'))
+    expect(isDirEmpty(repository)).toBe(false)
   })
   test('real file makes it non-empty', () => {
     const d = mkTmp()
