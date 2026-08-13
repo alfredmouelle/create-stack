@@ -134,6 +134,8 @@ const CREATION_OPTIONS = [
   ...CAPABILITIES,
 ]
 
+const BOOLEAN_CREATION_OPTIONS = new Set(['y', 'yes', 'minimal', 'no-install'])
+
 function editDistance(left, right) {
   const row = Array.from({ length: right.length + 1 }, (_, index) => index)
   for (let i = 1; i <= left.length; i++) {
@@ -184,8 +186,16 @@ const CREATION_AXES = {
   ),
 }
 
+function validateBooleanCreationOptions(options) {
+  const invalid = options.find(
+    ({ name, value }) => BOOLEAN_CREATION_OPTIONS.has(name) && value !== true,
+  )
+  if (invalid) throw new Error(`--${invalid.name} does not accept a value`)
+}
+
 function validateCreationInvocation(args) {
   if (args._.length > 1) throw new Error(`Unexpected positional argument: ${args._[1]}`)
+  validateBooleanCreationOptions(args.options)
 
   for (const name of ['alias', 'pm', 'package-manager']) {
     if (args.flags[name] === true || args.flags[name] === '') {
@@ -209,6 +219,8 @@ function validateCreationInvocation(args) {
     'auth',
     'mail',
     'mailer',
+    'mono',
+    'monorepo',
     'foundations',
     ...CAPABILITIES,
   ])
