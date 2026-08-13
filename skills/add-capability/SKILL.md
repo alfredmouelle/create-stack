@@ -2,7 +2,7 @@
 name: add-capability
 description: >-
   Add a capability (mailer, storage, cache, logger, analytics, jobs,
-  error-tracking, email-kit, http) into the current project: ports get a
+  error-tracking, email-ui, http) into the current project: ports get a
   swappable adapter, modules use their single provider directly. Use when the
   user wants to add a tool/integration ("ajoute Resend", "intègre le storage R2",
   "mets en place les jobs Inngest").
@@ -25,7 +25,7 @@ fallback. No local checkout, no machine-specific path to break.
   `mailer` (resend / brevo / ses, which keeps its own vendoring engine).
 - **Module** (`"kind": "module"`): a single provider used directly, no adapter to
   pick and none to pass. `jobs` (Inngest SDK), `error-tracking` (Sentry), plus
-  `http` and `email-kit` which have no provider at all.
+  `http` and `email-ui` which have no provider at all.
 
 Passing an adapter to a module is an error the CLI raises explicitly, so never
 write `cs add jobs inngest`.
@@ -57,7 +57,7 @@ cs add error-tracking           # idem
 ```
 
 It covers every capability (`storage`, `cache`, `logger`, `analytics`, `mailer`,
-`jobs`, `error-tracking`, `email-kit`, `http`), detecting the framework, vendoring
+`jobs`, `error-tracking`, `email-ui`, `http`), detecting the framework, vendoring
 the port + adapter or the module wiring, merging deps/env, installing + verifying,
 and printing the manual steps it deliberately left to you. For a
 create-stack-generated project (and most others), **this is the whole skill**:
@@ -85,7 +85,7 @@ ls "$STACK/packages"   # capabilities available
 ```
 
 Each capability lives in `$STACK/packages/<capability>/` with a `capability.json`
-manifest that drives the rest. Available: `mailer`, `email-kit`, `storage`, `jobs`,
+manifest that drives the rest. Available: `mailer`, `email-ui`, `storage`, `jobs`,
 `cache`, `logger`, `analytics`, `error-tracking`, `http`. (You can also read a
 single manifest without cloning via
 `https://raw.githubusercontent.com/alfredmouelle/create-stack/main/packages/<capability>/capability.json`.)
@@ -161,7 +161,7 @@ owns and can tweak it, that's the whole agnostic point.
 |---|---|---|
 | storage, cache, logger, analytics, jobs, error-tracking | `<srcRoot>/server/<capability>/` | **server-only**: uses secrets + node SDKs, must never reach the client bundle |
 | mailer | `<srcRoot>/server/email/` | server-only, and the base app already owns that folder |
-| email-kit | `<srcRoot>/emails/components/` | React Email templates/primitives |
+| email-ui | `<srcRoot>/emails/components/` | React Email templates/primitives |
 | http (`apiFetch`, response helpers) | `<srcRoot>/lib/http/` | **pure**, runs client or server |
 
 If the project already has a folder for this concern, vendor into / merge with it
@@ -186,7 +186,7 @@ Package sources use NodeNext `.js` specifiers on relative imports (for tsdown).
 Strip the extension on the vendored copies, app bundlers expect extensionless.
 
 **Cross-package imports**: some capabilities import another (`@alfredmouelle/http`,
-`@alfredmouelle/email-kit`). Grep the copied files for `@alfredmouelle/`:
+`@alfredmouelle/email-ui`). Grep the copied files for `@alfredmouelle/`:
 ```bash
 grep -rn "@alfredmouelle/" "$DEST"
 ```

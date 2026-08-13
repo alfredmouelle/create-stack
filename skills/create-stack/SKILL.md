@@ -109,7 +109,7 @@ route for jobs, the Sentry init/instrumentation files for error-tracking.
   `next.config.ts`, or `sentryTanstackStart()` last in `vite.config.ts` and the
   matching `src/client.tsx` / `src/server.ts` / `src/start.ts` edits. Apply them.
 - Add more capabilities later (storage, cache, logger, analytics, mailer, jobs,
-  error-tracking, email-kit, http) with the **add-capability** skill.
+  error-tracking, email-ui, http) with the **add-capability** skill.
 
 ## Notes
 

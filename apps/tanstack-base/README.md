@@ -8,7 +8,7 @@ the full personal foundation:
 - **data**: Drizzle (Postgres) + drizzle-kit, faker seed harness
 - **auth**: better-auth (email/password + verification, optional Google) + a full
   auth UI (sign-in/up, forgot/reset, verify) with `@tanstack/react-form`
-- **email**: mailer (Resend) + email-kit templates (`email:dev` studio)
+- **email**: mailer (Resend) + Email UI templates (`email:dev` studio)
 - **API**: tRPC (`useTRPC`) + TanStack React Query with SSR hydration
 - **UI utilities**: theme toggle (light/dark/system), DataTable, DatePicker
 - **deploy**: multi-stage `Dockerfile` (Nitro output) for a VPS

@@ -25,13 +25,13 @@ const MAILER_ADAPTERS = ['resend', 'brevo', 'ses']
 // Targets beyond the 6 port capabilities, with their vendored destination.
 const EXTRA_DIR = {
   mailer: 'src/server/email',
-  'email-kit': 'src/emails/components',
+  'email-ui': 'src/emails/components',
   http: 'src/lib/http',
 }
-const NO_ADAPTER = new Set(['email-kit', 'http']) // single implementation, nothing to pick
+const NO_ADAPTER = new Set(['email-ui', 'http']) // single implementation, nothing to pick
 
 /** Everything `add` accepts. */
-export const ADDABLE = [...CAPABILITIES, 'mailer', 'email-kit', 'http']
+export const ADDABLE = [...CAPABILITIES, 'mailer', 'email-ui', 'http']
 
 /** Vendored destination dir (relative to the project) for a target. */
 export const targetDir = (cap) => EXTRA_DIR[cap] ?? capabilityDir(cap) ?? `src/server/${cap}`
@@ -40,7 +40,7 @@ export const targetDir = (cap) => EXTRA_DIR[cap] ?? capabilityDir(cap) ?? `src/s
 export const addableChoices = () => [
   ...capabilityChoices(),
   { value: 'mailer', label: 'Mailer', hint: MAILER_ADAPTERS.join(' / ') },
-  { value: 'email-kit', label: 'Email kit', hint: 'React Email primitives' },
+  { value: 'email-ui', label: 'Email UI', hint: 'React Email primitives' },
   { value: 'http', label: 'HTTP', hint: 'fetch + response helpers' },
 ]
 
@@ -65,6 +65,9 @@ export function resolveTargetAdapter(cap, value) {
       throw new Error(`Unknown mailer adapter: ${value} (have ${MAILER_ADAPTERS.join(', ')})`)
     }
     return value
+  }
+  if (NO_ADAPTER.has(cap) && value !== true && value != null && value !== '') {
+    throw new Error(`${cap} has no adapter to choose`)
   }
   return null
 }
@@ -119,7 +122,7 @@ export function addCapability({ projectDir, cap, adapter, keep }) {
   // vendored sources ship with '~/'; align them to whatever alias this project already uses.
   const alias = detectAlias(projectDir)
 
-  // email-kit / http: just vendor the source, no deps or env.
+  // email-ui / http: just vendor the source, no deps or env.
   if (NO_ADAPTER.has(cap)) {
     vendorPackageSrc(cap, join(projectDir, targetDir(cap)))
     rewriteAlias(projectDir, alias)

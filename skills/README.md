@@ -11,7 +11,7 @@ directory so editing them here updates what Claude uses, no copy step.
   installs, verifies and inits git. A thin wrapper over the CLI: the agent
   gathers the choices, then runs it with flags.
 - **add-capability**: add a capability (mailer, storage, jobs, cache, logger,
-  analytics, error-tracking, email-kit, http) into a project behind a port, with
+  analytics, error-tracking, email-ui, http) into a project behind a port, with
   a chosen provider. Vendors server-only capabilities into `src/server/<cap>/`,
   pure utils (http) into `src/lib/`, templates into `src/emails/`.
 

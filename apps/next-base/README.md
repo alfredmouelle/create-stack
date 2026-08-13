@@ -9,7 +9,7 @@ with the full personal foundation:
 - **auth**: better-auth (email/password + verification, optional Google) + a full
   auth UI (sign-in/up, forgot/reset, verify) with shadcn `Form` (react-hook-form +
   valibot)
-- **email**: mailer (Resend) + email-kit templates (`email:dev` studio)
+- **email**: mailer (Resend) + Email UI templates (`email:dev` studio)
 - **API**: tRPC with the `api.x.useQuery` hooks + RSC hydration
 - **UI utilities**: theme toggle (light/dark/system), DataTable, DatePicker
 - **deploy**: multi-stage `Dockerfile` (standalone output) for a VPS

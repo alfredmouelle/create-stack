@@ -66,7 +66,7 @@ _Avoid_: Capability, widget
 
 **Email UI**:
 Reusable React Email primitives and theming added to an existing application, independently of the capability used to send email.
-_Avoid_: Email kit, mailer
+_Avoid_: Mailer
 
 **HTTP capability**:
 Typed HTTP client and server-response utilities added to an existing application.

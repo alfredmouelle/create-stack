@@ -1,14 +1,15 @@
-import { render } from 'react-email'
-import { describe, expect, it } from 'vitest'
 import {
+  createEmailTheme,
+  defaultTheme,
   EmailBodyText,
   EmailButton,
   EmailFallback,
   EmailHeading,
   EmailLayout,
-} from '../src/components.js'
-import type { EmailThemeOverride } from '../src/theme.js'
-import { createEmailTheme, defaultTheme } from '../src/theme.js'
+  type EmailThemeOverride,
+} from '@alfredmouelle/email-ui'
+import { render } from 'react-email'
+import { describe, expect, it } from 'vitest'
 
 function SampleEmail({ theme }: { theme?: EmailThemeOverride }) {
   return (
@@ -21,7 +22,7 @@ function SampleEmail({ theme }: { theme?: EmailThemeOverride }) {
   )
 }
 
-describe('email-kit components', () => {
+describe('email-ui components', () => {
   it('renders the brand, preview and footer year', async () => {
     const html = await render(<SampleEmail />)
     expect(html).toContain(defaultTheme.brand.name)
