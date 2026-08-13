@@ -205,11 +205,115 @@ test('bare selectors choose their recommended creation values', () => {
   expect(result.stdout).toContain('Monorepo: Turborepo')
 })
 
+test('bare capability selectors generate recommended providers and a canonical plan', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: [
+      'project',
+      '--no-install',
+      '--storage',
+      '--cache',
+      '--jobs',
+      '--logger',
+      '--analytics',
+      '--errors',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.requestedInput).toBe(false)
+  expect(result.stdout).toContain('storage (r2)')
+  expect(result.stdout).toContain('cache (upstash)')
+  expect(result.stdout).toContain('jobs (inngest)')
+  expect(result.stdout).toContain('logger (pino)')
+  expect(result.stdout).toMatch(/analytics\s+│?\n?│?\s*\(posthog\)/)
+  expect(result.stdout).toContain('errors (sentry)')
+  expect(result.stdout).not.toContain('error-tracking (sentry)')
+
+  const dependencies = JSON.parse(
+    readFileSync(`${fixture.project}/package.json`, 'utf8'),
+  ).dependencies
+  expect(dependencies).toMatchObject({
+    '@aws-sdk/client-s3': expect.any(String),
+    '@sentry/tanstackstart-react': expect.any(String),
+    '@upstash/redis': expect.any(String),
+    inngest: expect.any(String),
+    pino: expect.any(String),
+    'posthog-node': expect.any(String),
+  })
+  expect(existsSync(`${fixture.project}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/cache/adapters/upstash.ts`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/jobs/index.ts`)).toBe(true)
+  expect(existsSync(`${fixture.project}/src/server/error-tracking/index.ts`)).toBe(true)
+})
+
+test.each([
+  ['storage', 's3', 'src/server/storage/adapters/s3.ts', '@aws-sdk/client-s3'],
+  ['storage', 'r2', 'src/server/storage/adapters/r2.ts', '@aws-sdk/client-s3'],
+  ['storage', 'gcs', 'src/server/storage/adapters/gcs.ts', '@google-cloud/storage'],
+  ['storage', 'local', 'src/server/storage/adapters/local.ts', null],
+  ['cache', 'redis', 'src/server/cache/adapters/redis.ts', 'ioredis'],
+  ['cache', 'upstash', 'src/server/cache/adapters/upstash.ts', '@upstash/redis'],
+  ['cache', 'memory', 'src/server/cache/adapters/memory.ts', null],
+  ['logger', 'pino', 'src/server/logger/adapters/pino.ts', 'pino'],
+  ['logger', 'console', 'src/server/logger/adapters/console.ts', null],
+  ['analytics', 'posthog', 'src/server/analytics/adapters/posthog.ts', 'posthog-node'],
+  ['analytics', 'plausible', 'src/server/analytics/adapters/plausible.ts', null],
+  ['analytics', 'noop', 'src/server/analytics/adapters/noop.ts', null],
+  ['jobs', 'inngest', 'src/server/jobs/index.ts', 'inngest'],
+  ['errors', 'sentry', 'src/server/error-tracking/index.ts', '@sentry/tanstackstart-react'],
+])(
+  'creates %s with the explicit %s provider',
+  (capability, provider, generatedFile, dependency) => {
+    const fixture = createAcceptanceFixture('standalone')
+
+    const result = runCli({
+      cwd: fixture.root,
+      target: fixture.project,
+      args: ['project', '--no-install', `--${capability}=${provider}`],
+    })
+
+    expect(result.exitStatus).toBe(0)
+    expect(result.requestedInput).toBe(false)
+    expect(result.stdout).toContain(`${capability} (${provider})`)
+    expect(existsSync(`${fixture.project}/${generatedFile}`)).toBe(true)
+    const dependencies = JSON.parse(
+      readFileSync(`${fixture.project}/package.json`, 'utf8'),
+    ).dependencies
+    if (dependency) expect(dependencies[dependency]).toEqual(expect.any(String))
+  },
+)
+
+test('accepts the readable error-tracking creation alias and summarizes it canonically', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--no-install', '--error-tracking=sentry'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('errors (sentry)')
+  expect(result.stdout).not.toContain('error-tracking (sentry)')
+  expect(existsSync(`${fixture.project}/src/server/error-tracking/index.ts`)).toBe(true)
+})
+
 test.each([
   [['project', '--db=postgres'], 'Unknown database'],
   [['project', '--db=drizzle', '--database=drizzle'], 'Database was specified more than once'],
   [['project', '--auth=none', '--auth=clerk'], 'Auth was specified more than once'],
   [['project', '--storage=r2', '--storage=s3'], 'Storage was specified more than once'],
+  [
+    ['project', '--errors=sentry', '--error-tracking=sentry'],
+    'Errors was specified more than once',
+  ],
+  [['project', '--storage=azure'], 'Unknown storage adapter'],
+  [['project', '--jobs=trigger'], 'Unknown jobs provider'],
+  [['project', '--errors=bugsnag'], 'Unknown errors provider'],
   [['project', '--alias=@', '--alias=#'], 'Import alias was specified more than once'],
   [['project', '-y', '--yes'], 'Recommended stack acceptance was specified more than once'],
   [['project', '-yv'], 'Grouped short options are not supported'],

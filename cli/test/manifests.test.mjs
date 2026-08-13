@@ -131,6 +131,9 @@ describe.each(names)('%s', (name) => {
       expect(m.files?.length).toBeGreaterThan(0)
     } else {
       expect(Object.keys(m.adapters)).toContain(m.defaultAdapter)
+      if (m.creationRecommendedProvider) {
+        expect(Object.keys(m.adapters)).toContain(m.creationRecommendedProvider)
+      }
     }
   })
 })

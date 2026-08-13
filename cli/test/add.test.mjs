@@ -70,6 +70,11 @@ describe('add', () => {
 const deps = (dir) => readJSON(`${dir}/package.json`).dependencies
 
 describe('swap', () => {
+  test('bare additions keep their existing provider defaults', () => {
+    expect(resolveTargetAdapter('storage', true)).toBe('s3')
+    expect(resolveTargetAdapter('cache', true)).toBe('redis')
+  })
+
   test('re-adding a capability swaps its adapter and drops the old deps', () => {
     const { dir } = build({
       framework: 'next',
@@ -120,7 +125,7 @@ describe('swap', () => {
   })
 
   test('jobs rejects an adapter, since it has none to pick', () => {
-    expect(() => resolveTargetAdapter('jobs', 'trigger')).toThrow(/no adapter/)
+    expect(() => resolveTargetAdapter('jobs', 'inngest')).toThrow(/no adapter/)
   })
 
   test('error-tracking vendors the Sentry wiring and reports what it will not do', () => {

@@ -332,13 +332,13 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 
 <script>
   const CAPS = [
-    { key: 'storage', flag: 'storage', label: 'Storage', adapters: ['s3', 'r2', 'gcs', 'local'], def: 's3' },
-    { key: 'cache', flag: 'cache', label: 'Cache', adapters: ['redis', 'upstash', 'memory'], def: 'redis' },
+    { key: 'storage', flag: 'storage', label: 'Storage', adapters: ['r2', 's3', 'gcs', 'local'], def: 'r2' },
+    { key: 'cache', flag: 'cache', label: 'Cache', adapters: ['upstash', 'redis', 'memory'], def: 'upstash' },
     // jobs and error tracking have a single provider: one chip, so the flag stays bare
     { key: 'jobs', flag: 'jobs', label: 'Background jobs', adapters: ['inngest'], def: 'inngest' },
     { key: 'logger', flag: 'logger', label: 'Logger', adapters: ['pino', 'console'], def: 'pino' },
     { key: 'analytics', flag: 'analytics', label: 'Analytics', adapters: ['posthog', 'plausible', 'noop'], def: 'posthog' },
-    { key: 'errorTracking', flag: 'error-tracking', label: 'Error tracking', adapters: ['sentry'], def: 'sentry' },
+    { key: 'errorTracking', flag: 'errors', label: 'Error tracking', adapters: ['sentry'], def: 'sentry' },
   ]
   const state = {
     name: 'my-app', pm: 'npm', framework: 'tanstack', monorepo: 'none', database: 'drizzle', auth: 'better-auth',

@@ -4,6 +4,7 @@
   "description": "Key/value cache behind a swappable port. Values are serialized as JSON for remote stores.",
   "port": "src/port.ts",
   "defaultAdapter": "redis",
+  "creationRecommendedProvider": "upstash",
   "adapters": {
     "redis": {
       "deps": ["ioredis"],
