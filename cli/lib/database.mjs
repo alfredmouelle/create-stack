@@ -95,6 +95,14 @@ function applyDrizzle(projectDir, authKept) {
 function stripDatabase(projectDir) {
   remove(src(projectDir, 'server/db'))
   remove(join(projectDir, 'drizzle.config.ts'))
+  const trpcPath = src(projectDir, 'server/api/trpc.ts')
+  if (exists(trpcPath)) {
+    editFile(trpcPath, (content) =>
+      content
+        .replace("import { db } from '~/server/db'\n", '')
+        .replace('return { db, ', 'return { '),
+    )
+  }
   return { ...empty(), removeDeps: [...DRIZZLE_ALL_DEPS], removeScripts: [...DB_SCRIPTS] }
 }
 
