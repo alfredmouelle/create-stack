@@ -65,7 +65,10 @@ test('the former package name appears only in migration history', () => {
     .trim()
     .split('\n')
     .filter((path) => path && !historical(path))
-    .filter((path) => existsSync(join(REPO_ROOT, path)))
+    .filter((path) => {
+      const full = join(REPO_ROOT, path)
+      return existsSync(full) && statSync(full).isFile()
+    })
     .filter(
       (path) =>
         retiredName.test(path) || retiredName.test(readFileSync(join(REPO_ROOT, path), 'utf8')),
