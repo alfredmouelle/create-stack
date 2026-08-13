@@ -47,6 +47,10 @@
           "port": { "type": "string", "description": "Path to the port interface file." },
           "factory": { "type": "string", "description": "Path to the composition-root factory." },
           "defaultAdapter": { "type": "string" },
+          "creationRecommendedProvider": {
+            "type": "string",
+            "description": "Optional provider recommended specifically during project creation."
+          },
           "adapters": {
             "type": "object",
             "additionalProperties": {

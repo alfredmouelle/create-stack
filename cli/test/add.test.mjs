@@ -70,6 +70,11 @@ describe('add', () => {
 const deps = (dir) => readJSON(`${dir}/package.json`).dependencies
 
 describe('swap', () => {
+  test('bare additions use the recommended providers', () => {
+    expect(resolveTargetAdapter('storage', true)).toBe('r2')
+    expect(resolveTargetAdapter('cache', true)).toBe('upstash')
+  })
+
   test('re-adding a capability swaps its adapter and drops the old deps', () => {
     const { dir } = build({
       framework: 'next',

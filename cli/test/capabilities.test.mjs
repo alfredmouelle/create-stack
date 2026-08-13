@@ -3,8 +3,10 @@ import {
   adapterChoices,
   CAPABILITIES,
   capabilityChoices,
+  creationProviderChoices,
   hasAdapters,
   resolveAdapter,
+  resolveCreationProvider,
 } from '../lib/capabilities.mjs'
 
 describe('resolveAdapter', () => {
@@ -35,16 +37,25 @@ describe('ports vs modules', () => {
     }
   })
 
-  test('a bare module flag resolves to no adapter', () => {
-    // what the site's command builder emits: `--jobs`, `--error-tracking`
-    expect(resolveAdapter('jobs', true)).toBeNull()
-    expect(resolveAdapter('error-tracking', true)).toBeNull()
-    expect(resolveAdapter('jobs', undefined)).toBeNull()
+  test('creation resolves a bare or explicit module selector to its single provider', () => {
+    expect(resolveCreationProvider('jobs', true)).toBe('inngest')
+    expect(resolveCreationProvider('error-tracking', true)).toBe('sentry')
+    expect(resolveCreationProvider('jobs', 'inngest')).toBe('inngest')
+    expect(resolveCreationProvider('error-tracking', 'sentry')).toBe('sentry')
   })
 
-  test('naming an adapter for a module is rejected, not ignored', () => {
-    expect(() => resolveAdapter('jobs', 'trigger')).toThrow(/no adapter to choose/)
-    expect(() => resolveAdapter('error-tracking', 'console')).toThrow(/no adapter to choose/)
+  test('creation uses its provider recommendation without changing addition defaults', () => {
+    expect(resolveCreationProvider('storage', true)).toBe('r2')
+    expect(resolveCreationProvider('cache', true)).toBe('upstash')
+    expect(resolveAdapter('storage', true)).toBe('s3')
+    expect(resolveAdapter('cache', true)).toBe('redis')
+  })
+
+  test('creation rejects unsupported module providers', () => {
+    expect(() => resolveCreationProvider('jobs', 'trigger')).toThrow(/Unknown jobs provider/)
+    expect(() => resolveCreationProvider('error-tracking', 'console')).toThrow(
+      /Unknown errors provider/,
+    )
   })
 })
 
@@ -66,5 +77,6 @@ describe('choices', () => {
     const { defaultAdapter, options } = adapterChoices('cache')
     expect(defaultAdapter).toBe('redis')
     expect(options.map((o) => o.value).sort()).toEqual(['memory', 'redis', 'upstash'])
+    expect(creationProviderChoices('cache').defaultAdapter).toBe('upstash')
   })
 })

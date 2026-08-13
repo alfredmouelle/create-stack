@@ -5,6 +5,7 @@
   "port": "src/port.ts",
   "factory": "src/index.ts",
   "defaultAdapter": "s3",
+  "creationRecommendedProvider": "r2",
   "adapters": {
     "s3": {
       "deps": ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],

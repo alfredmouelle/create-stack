@@ -13,6 +13,13 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+### Changed
+
+- Creation capability selectors now follow one provider rule: bare `--storage` chooses
+  R2, bare `--cache` chooses Upstash, and jobs/errors accept either their bare selector
+  or the explicit `inngest`/`sentry` provider. `--errors` is canonical while
+  `--error-tracking` remains its readable alias.
+
 ## [0.11.0] - 2026-07-23
 
 ### Added

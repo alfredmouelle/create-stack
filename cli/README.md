@@ -76,12 +76,12 @@ create-stack component [name...]          # vendor standalone UI component(s)
 | `--no-auth` | - | - | Explicitly exclude authentication. |
 | `--no-mail` | - | - | Explicitly exclude transactional email. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
-| `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage (omit to skip). |
-| `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache (omit to skip). |
-| `--jobs` | - | - | Background jobs on Inngest (omit to skip). Single provider: takes no value. |
+| `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `r2` | Object storage (omit to skip). |
+| `--cache` | `redis` \| `upstash` \| `memory` | `upstash` | Key/value cache (omit to skip). |
+| `--jobs` | `inngest` | `inngest` | Background jobs (omit to skip; bare selects Inngest). |
 | `--logger` | `pino` \| `console` | `pino` | Structured logging (omit to skip). |
 | `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics (omit to skip). |
-| `--error-tracking` | - | - | Error reporting on Sentry (omit to skip). Single provider: takes no value. |
+| `--errors`, `--error-tracking` | `sentry` | `sentry` | Error reporting (omit to skip; bare selects Sentry). |
 | `--no-install` | - | install on | Skip install + verification. |
 | `--no-git` | - | Git on | Do not initialize a Git repository. |
 | `--yes`, `-y` | - | - | Non-interactive with all defaults. |
@@ -116,8 +116,8 @@ pnpm dlx @alfredmouelle/create-stack my-app --monorepo nx
 # frontend-only starting project
 pnpm dlx @alfredmouelle/create-stack site --minimal
 
-# with capabilities: R2 storage, Redis cache, Inngest jobs, Sentry errors
-pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-tracking
+# with capabilities: R2 storage, Upstash cache, Inngest jobs, Sentry errors
+pnpm dlx @alfredmouelle/create-stack my-app --storage --cache --jobs --errors
 ```
 
 ## What you get

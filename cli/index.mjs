@@ -21,10 +21,11 @@ import { isValidAlias, normalize, normalizeAlias, parseArgs, resolveMonorepo } f
 import { resolveAuth } from './lib/auth.mjs'
 import { buildProject } from './lib/build.mjs'
 import {
-  adapterChoices,
   CAPABILITIES,
+  canonicalCapabilityName,
   capabilityChoices,
-  resolveAdapter,
+  creationProviderChoices,
+  resolveCreationProvider,
 } from './lib/capabilities.mjs'
 import { COMPONENT_NAMES, vendorComponent } from './lib/component.mjs'
 import { resolveDatabase } from './lib/database.mjs'
@@ -79,7 +80,8 @@ Scaffold flags:
 
 Capability flags (omit to skip; pass with no value for the default adapter):
   --storage  --cache  --logger  --analytics    swappable behind a port
-  --jobs  --error-tracking                     single provider, no adapter to pick
+  --jobs [inngest]  --errors [sentry]           single provider
+  --error-tracking [sentry]                     readable alias for --errors
   Adapters are listed in the interactive picker, or run \`add --help\`.`
 
 const ADD_HELP = `create-stack add — enrich an existing application.
@@ -106,6 +108,11 @@ Flags:
   --no-install                     Skip install + verification
   -h, --help                       Show this help`
 
+const CREATION_CAPABILITY_OPTIONS = Object.fromEntries([
+  ...CAPABILITIES.map((capability) => [canonicalCapabilityName(capability), capability]),
+  ['error-tracking', 'error-tracking'],
+])
+
 const CREATION_OPTIONS = [
   'f',
   'framework',
@@ -129,7 +136,7 @@ const CREATION_OPTIONS = [
   'no-db',
   'no-auth',
   'no-mail',
-  ...CAPABILITIES,
+  ...Object.keys(CREATION_CAPABILITY_OPTIONS),
 ]
 
 const BOOLEAN_CREATION_OPTIONS = new Set([
@@ -191,11 +198,13 @@ const CREATION_AXES = {
   'Minimal project': ['minimal'],
   ...Object.fromEntries(
     CAPABILITIES.map((capability) => [
-      capability
+      canonicalCapabilityName(capability)
         .split('-')
         .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
         .join(' '),
-      [capability],
+      Object.entries(CREATION_CAPABILITY_OPTIONS)
+        .filter(([, internalName]) => internalName === capability)
+        .map(([option]) => option),
     ]),
   ),
 }
@@ -240,7 +249,7 @@ function validateCreationInvocation(args) {
     'no-db',
     'no-auth',
     'no-mail',
-    ...CAPABILITIES,
+    ...Object.keys(CREATION_CAPABILITY_OPTIONS),
   ])
   const conflict = args.options.find(({ name }) => stackOptions.has(name))
   if (conflict) {
@@ -260,7 +269,10 @@ const cancelled = (v) => {
 function collectCapabilityFlags(flags) {
   const out = {}
   for (const cap of CAPABILITIES) {
-    if (cap in flags) out[cap] = resolveAdapter(cap, flags[cap])
+    const selected = Object.entries(CREATION_CAPABILITY_OPTIONS).find(
+      ([option, internalName]) => internalName === cap && option in flags,
+    )
+    if (selected) out[cap] = resolveCreationProvider(cap, flags[selected[0]])
   }
   return out
 }
@@ -448,7 +460,7 @@ function resolveMailer(value) {
 async function pickAdapters(caps) {
   const out = {}
   for (const cap of caps) {
-    const choices = adapterChoices(cap)
+    const choices = creationProviderChoices(cap)
     out[cap] = choices
       ? cancelled(
           await p.select({
@@ -457,7 +469,7 @@ async function pickAdapters(caps) {
             initialValue: choices.defaultAdapter,
           }),
         )
-      : null
+      : resolveCreationProvider(cap, true)
   }
   return out
 }
@@ -723,11 +735,14 @@ function execute(a) {
 
 const orNone = (v) => (v && v !== 'none' ? v : '(none)')
 
+const formatCapability = ([capability, provider]) =>
+  provider
+    ? `${canonicalCapabilityName(capability)} (${provider})`
+    : canonicalCapabilityName(capability)
+
 function creationPlanLines(a, pm) {
   const monoLabel = a.monorepo === 'nx' ? 'Nx' : a.monorepo === 'turborepo' ? 'Turborepo' : null
-  const capabilities = Object.entries(a.capabilities ?? {}).map(([capability, provider]) =>
-    provider ? `${capability} (${provider})` : capability,
-  )
+  const capabilities = Object.entries(a.capabilities ?? {}).map(formatCapability)
   const reason = (axis) => (a.selectionReasons?.[axis] ? ` — ${a.selectionReasons[axis]}` : '')
   return [
     `Target: ${a.argDir ?? a.projectName}`,
@@ -759,8 +774,7 @@ function summaryLines(a, pm) {
     `Auth: ${orNone(a.auth)}`,
     `Foundations: ${[...a.kept].sort().join(', ') || '(none)'}`,
     `Mailer: ${orNone(a.mailerProvider)}`,
-    // a module has no adapter, so it shows bare rather than as `cap (null)`
-    `Capabilities: ${capEntries.map(([c, ad]) => (ad ? `${c} (${ad})` : c)).join(', ') || '(none)'}`,
+    `Capabilities: ${capEntries.map(formatCapability).join(', ') || '(none)'}`,
     '',
     'Add more tools later: create-stack add <capability>.',
     '',
@@ -1035,10 +1049,9 @@ async function main() {
       'pm',
       'package-manager',
       'alias',
-      'minimal',
       'no-install',
       'no-git',
-      ...CAPABILITIES,
+      ...Object.keys(CREATION_CAPABILITY_OPTIONS),
     ].some((k) => k in args.flags)
 
   const answers = nonInteractive ? collectFromFlags(args) : await collectFromPrompts(args._[0])

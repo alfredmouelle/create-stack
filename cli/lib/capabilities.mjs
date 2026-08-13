@@ -26,7 +26,6 @@ const PORTS = {
     dir: 'src/server/storage',
     entry: 'storage',
     portType: 'StoragePort',
-    defaultAdapter: 's3',
     adapters: {
       s3: {
         fn: 's3Adapter',
@@ -63,7 +62,6 @@ const PORTS = {
     dir: 'src/server/cache',
     entry: 'cache',
     portType: 'CachePort',
-    defaultAdapter: 'redis',
     adapters: {
       redis: { fn: 'redisAdapter', args: [['url', 'REDIS_URL', false]] },
       upstash: {
@@ -82,7 +80,6 @@ const PORTS = {
     dir: 'src/server/logger',
     entry: 'logger',
     portType: 'Logger',
-    defaultAdapter: 'pino',
     adapters: {
       pino: { fn: 'pinoAdapter', args: [] },
       console: { fn: 'consoleAdapter', args: [] },
@@ -94,7 +91,6 @@ const PORTS = {
     dir: 'src/server/analytics',
     entry: 'analytics',
     portType: 'AnalyticsPort',
-    defaultAdapter: 'posthog',
     adapters: {
       posthog: {
         fn: 'posthogAdapter',
@@ -117,13 +113,28 @@ const PORTS = {
 
 /** Single-provider capabilities. No adapter to pick, so no swap prompt. */
 const MODULES = {
-  jobs: { label: 'Background jobs', dir: 'src/server/jobs', hint: 'inngest' },
-  'error-tracking': { label: 'Error tracking', dir: 'src/server/error-tracking', hint: 'sentry' },
+  jobs: { label: 'Background jobs', dir: 'src/server/jobs', provider: 'inngest' },
+  'error-tracking': {
+    label: 'Error tracking',
+    dir: 'src/server/error-tracking',
+    provider: 'sentry',
+  },
 }
 
 const SPEC = { ...PORTS, ...MODULES }
 
 export const CAPABILITIES = Object.keys(SPEC)
+
+/** Canonical user-facing capability name (package names may retain historical identity). */
+export const canonicalCapabilityName = (cap) => (cap === 'error-tracking' ? 'errors' : cap)
+
+const capabilityManifest = (cap) => readJSON(join(PKG(cap), 'capability.json'))
+
+const creationProvider = (cap) => {
+  if (cap in MODULES) return MODULES[cap].provider
+  const manifest = capabilityManifest(cap)
+  return manifest.creationRecommendedProvider ?? manifest.defaultAdapter
+}
 
 /** True when the capability offers a provider choice. */
 export const hasAdapters = (cap) => cap in PORTS
@@ -136,7 +147,7 @@ export const capabilityChoices = () =>
   CAPABILITIES.map((name) => ({
     value: name,
     label: SPEC[name].label,
-    hint: SPEC[name].adapters ? Object.keys(SPEC[name].adapters).join(' / ') : SPEC[name].hint,
+    hint: SPEC[name].adapters ? Object.keys(SPEC[name].adapters).join(' / ') : SPEC[name].provider,
   }))
 
 /** Adapter options + default for one capability, or null when it has no choice. */
@@ -144,29 +155,46 @@ export const adapterChoices = (cap) => {
   const spec = PORTS[cap]
   if (!spec) return null
   return {
-    defaultAdapter: spec.defaultAdapter,
+    defaultAdapter: capabilityManifest(cap).defaultAdapter,
     options: Object.keys(spec.adapters).map((value) => ({ value, label: value })),
   }
 }
 
-/** Resolve a possibly-empty flag value to a valid adapter, or null for a module. */
+/** Provider choices for project creation, with its context-specific recommendation. */
+export const creationProviderChoices = (cap) => {
+  const choices = adapterChoices(cap)
+  return choices ? { ...choices, defaultAdapter: creationProvider(cap) } : null
+}
+
+/** Resolve a possibly-empty adapter selection, or null for a single-provider module. */
 export function resolveAdapter(cap, value) {
   if (!SPEC[cap]) throw new Error(`Unknown capability: ${cap}`)
   const spec = PORTS[cap]
   if (!spec) {
-    // A module has one implementation; naming another is a mistake worth surfacing.
     if (value && value !== true) {
-      throw new Error(`${cap} has no adapter to choose: it always uses ${MODULES[cap].hint}`)
+      throw new Error(`${cap} has no adapter to choose: it always uses ${MODULES[cap].provider}`)
     }
     return null
   }
-  if (value === true || value == null || value === '') return spec.defaultAdapter
+  if (value === true || value == null || value === '') return capabilityManifest(cap).defaultAdapter
   if (!spec.adapters[value]) {
     throw new Error(
       `Unknown ${cap} adapter: ${value} (have ${Object.keys(spec.adapters).join(', ')})`,
     )
   }
   return value
+}
+
+/** Resolve the provider named by a creation selector, including single-provider modules. */
+export function resolveCreationProvider(cap, value) {
+  if (cap in PORTS) {
+    if (value === true || value == null || value === '') return creationProvider(cap)
+    return resolveAdapter(cap, value)
+  }
+  if (!MODULES[cap]) throw new Error(`Unknown capability: ${cap}`)
+  const provider = creationProvider(cap)
+  if (value === true || value == null || value === '' || value === provider) return provider
+  throw new Error(`Unknown ${canonicalCapabilityName(cap)} provider: ${value} (have ${provider})`)
 }
 
 // env.ts is the single source of truth: required adapter keys are emitted without
