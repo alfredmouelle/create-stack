@@ -47,10 +47,10 @@ describe('csv', () => {
 })
 
 describe('normalize', () => {
-  test('trpc needs a database → falls back to drizzle', () => {
+  test('trpc remains independent when the database is excluded', () => {
     const { kept, database } = normalize(['trpc'], 'none', 'none', 'resend')
     expect([...kept]).toEqual(['trpc'])
-    expect(database).toBe('drizzle')
+    expect(database).toBe('none')
   })
   test('better-auth needs a database + forces a real mailer', () => {
     const { database, auth, mailerProvider } = normalize([], 'none', 'better-auth', 'none')

@@ -69,7 +69,11 @@ create-stack component [name...]          # vendor standalone UI component(s)
 | `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias; rewrites `<alias>/*` → `src/*` everywhere. |
 | `--database` | `drizzle` \| `prisma` \| `convex` \| `none` | `drizzle` | Data layer. `prisma` = Prisma 7; `convex` = realtime db + API (replaces tRPC, Clerk/none auth only); `none` = database-less vitrine. |
 | `--auth` | `better-auth` \| `clerk` \| `none` | `better-auth` | Auth provider. `clerk` is hosted (needs no db/mailer); `none` = no auth. |
-| `--foundations` | csv of `trpc` | all | Foundations to keep; the rest are stripped. |
+| `--minimal` | - | - | Start from a frontend-only project with no data, auth, tRPC, mail, or capabilities. |
+| `--trpc` / `--no-trpc` | - | recommended | Explicitly include or exclude the tRPC API axis. |
+| `--no-db` | - | - | Explicitly exclude the data axis. |
+| `--no-auth` | - | - | Explicitly exclude authentication. |
+| `--no-mail` | - | - | Explicitly exclude transactional email. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `s3` | Object storage (omit to skip). |
 | `--cache` | `redis` \| `upstash` \| `memory` | `redis` | Key/value cache (omit to skip). |
@@ -81,11 +85,12 @@ create-stack component [name...]          # vendor standalone UI component(s)
 | `--yes`, `-y` | - | - | Non-interactive with all defaults. |
 
 Capability flags are optional; pass one (bare = default adapter, or the only provider) to
-vendor it, omit to skip. Any selection flag switches to non-interactive mode; `--pm`/`--alias` are modifiers,
-not triggers. Selections are normalized: `trpc` and `better-auth` need a database (fall
-back to `drizzle`) and `better-auth` forces a real mailer, while `clerk` is hosted and
-frees both, so `--auth clerk --database none` is a valid authenticated vitrine. `convex`
-is its own API layer, so it drops tRPC and pairs with Clerk or no auth (better-auth off).
+vendor it, omit to skip. Any option switches creation to non-interactive mode. Omitted stack
+axes use applicable recommendations: for example, `--no-db` recommends Clerk, keeps tRPC,
+and omits mail. Better Auth completes an omitted database with Drizzle and omitted mail with
+Resend, but an explicit `--no-db` or `--no-mail` is a conflict. tRPC is independent of data
+and authentication. Convex conflicts with tRPC and Better Auth; when its related axes are
+omitted, it recommends Clerk, no tRPC, and no mail.
 
 ```bash
 # everything, defaults, no questions
@@ -100,14 +105,14 @@ pnpm dlx @alfredmouelle/create-stack my-app --auth clerk
 # Convex (realtime db + API) with Clerk auth
 pnpm dlx @alfredmouelle/create-stack my-app --database convex --auth clerk
 
-# Next.js, just tRPC, no auth, don't install
-pnpm dlx @alfredmouelle/create-stack api --framework next --auth none --mailer none --no-install
+# Next.js, just tRPC, no data or auth, don't install
+pnpm dlx @alfredmouelle/create-stack api --framework next --minimal --trpc --no-install
 
 # inside an Nx monorepo (app lands in apps/web)
 pnpm dlx @alfredmouelle/create-stack my-app --monorepo nx
 
-# vitrine: no database, no auth, no mailer
-pnpm dlx @alfredmouelle/create-stack site --database none --auth none --foundations '' --mailer none
+# frontend-only starting project
+pnpm dlx @alfredmouelle/create-stack site --minimal
 
 # with capabilities: R2 storage, Redis cache, Inngest jobs, Sentry errors
 pnpm dlx @alfredmouelle/create-stack my-app --storage r2 --cache --jobs --error-tracking
