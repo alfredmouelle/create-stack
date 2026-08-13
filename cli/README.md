@@ -28,8 +28,9 @@
 
 Framework-agnostic by design: pick your framework, get a real app. create-stack forks a
 fully-wired base app and strips it to exactly what you pick (database, tRPC, better-auth, a
-mailer, optional capabilities), then stamps identity, writes `.env`, inits git and verifies
-(typecheck + Biome). No template guesswork: the output is a real, buildable app from day one.
+mailer, optional capabilities), then stamps identity, writes `.env`, installs, verifies
+(typecheck + Biome), and records the verified baseline in Git. No template guesswork: the
+output is a real, buildable app from day one.
 **Next.js App Router** and **TanStack Start** are supported today, with more frameworks on the way.
 
 > **Open source (MIT).** Source and issues live at
@@ -78,6 +79,7 @@ create-stack component [name...]          # vendor standalone UI component(s)
 | `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics (omit to skip). |
 | `--error-tracking` | - | - | Error reporting on Sentry (omit to skip). Single provider: takes no value. |
 | `--no-install` | - | install on | Skip install + verification. |
+| `--no-git` | - | Git on | Do not initialize a Git repository. |
 | `--yes`, `-y` | - | - | Non-interactive with all defaults. |
 
 Capability flags are optional; pass one (bare = default adapter, or the only provider) to
@@ -219,9 +221,11 @@ pnpm install     # only if you passed --no-install
 pnpm dev
 ```
 
-The generated project is a fresh git repo with an initial commit (skipped, files left
-staged, if git `user.name`/`user.email` aren't set). The published package is
-self-contained: `pnpm dlx` needs nothing else.
+Outside an existing repository, the generated project gets a fresh Git repository. Its
+initial commit is created only after installation and verification pass (and is skipped if
+Git `user.name`/`user.email` aren't set). `--no-install` leaves the project uncommitted because
+its baseline has not been verified; `--no-git` disables initialization entirely. The
+published package is self-contained: `pnpm dlx` needs nothing else.
 
 ## Credits
 

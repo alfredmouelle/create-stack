@@ -34,6 +34,17 @@ describe('parseArgs', () => {
       flags: { 'no-install': true },
     })
   })
+
+  test('bare monorepo options do not consume a following project target', () => {
+    expect(parseArgs(['--mono', 'my-app'])).toMatchObject({
+      _: ['my-app'],
+      flags: { mono: true },
+    })
+    expect(parseArgs(['--monorepo', 'nx', 'my-app'])).toMatchObject({
+      _: ['my-app'],
+      flags: { monorepo: 'nx' },
+    })
+  })
 })
 
 describe('csv', () => {

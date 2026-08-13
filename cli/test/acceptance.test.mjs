@@ -1,4 +1,5 @@
-import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
 
@@ -31,6 +32,32 @@ function createAmbiguousMonorepoFixture() {
   expect(createProject(fixture, { framework: 'next', monorepo: 'turbo' }).exitStatus).toBe(0)
   cpSync(fixture.app, `${fixture.project}/apps/admin`, { recursive: true })
   return fixture
+}
+
+function fakePackageManager(fixture) {
+  const bin = `${fixture.root}/bin`
+  const log = `${fixture.root}/package-manager.log`
+  mkdirSync(bin)
+  writeFileSync(
+    `${bin}/npm`,
+    `#!/bin/sh
+printf '%s\\n' "$*" >> "$CREATE_STACK_COMMAND_LOG"
+if [ "$*" = "$CREATE_STACK_FAIL_COMMAND" ]; then exit 1; fi
+exit 0
+`,
+  )
+  chmodSync(`${bin}/npm`, 0o755)
+  return {
+    env: {
+      CREATE_STACK_COMMAND_LOG: log,
+      PATH: `${bin}:${process.env.PATH}`,
+    },
+    log,
+  }
+}
+
+function expectNoCommit(projectDir) {
+  expect(spawnSync('git', ['-C', projectDir, 'rev-parse', '--verify', 'HEAD']).status).not.toBe(0)
 }
 
 test('the executable CLI reports prompts without mutating its target', () => {
@@ -73,6 +100,183 @@ test('an operational option before the project starts non-interactive creation',
   expect(result.exitStatus).toBe(0)
   expect(result.requestedInput).toBe(false)
   expect(result.targetMutated).toBe(true)
+})
+
+test('non-interactive creation requires an explicit project target', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Project name is required')
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('minimal creation without a project target fails without prompting', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({ cwd: fixture.root, target: fixture.project, args: ['--minimal'] })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Project name is required')
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('creates into the current directory only when it is empty', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const created = runCli({
+    cwd: fixture.root,
+    target: fixture.root,
+    args: ['.', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(created.exitStatus).toBe(0)
+  expect(JSON.parse(readFileSync(`${fixture.root}/package.json`, 'utf8')).name).toBe(
+    fixture.root.split('/').at(-1).toLowerCase(),
+  )
+
+  const protectedFixture = createAcceptanceFixture('standalone')
+  writeFileSync(`${protectedFixture.root}/keep.txt`, 'keep')
+  const protectedResult = runCli({
+    cwd: protectedFixture.root,
+    target: protectedFixture.root,
+    args: ['.', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(protectedResult.exitStatus).toBe(1)
+  expect(protectedResult.stdout).toContain('Target directory is not empty')
+  expect(readFileSync(`${protectedFixture.root}/keep.txt`, 'utf8')).toBe('keep')
+})
+
+test('no-install explains skipped verification and never creates an automatic commit', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Installation and verification skipped')
+  expect(existsSync(`${fixture.project}/.git`)).toBe(true)
+  expectNoCommit(fixture.project)
+})
+
+test('git is not initialized inside an existing repository or with --no-git', () => {
+  const repositoryFixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(repositoryFixture)
+  expect(spawnSync('git', ['init', '-q'], { cwd: repositoryFixture.root }).status).toBe(0)
+  mkdirSync(repositoryFixture.project)
+
+  const insideRepository = runCli({
+    cwd: repositoryFixture.root,
+    target: repositoryFixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: fake.env,
+  })
+
+  expect(insideRepository.exitStatus).toBe(0)
+  expect(existsSync(`${repositoryFixture.project}/.git`)).toBe(false)
+  expect(
+    spawnSync('git', ['diff', '--cached', '--quiet'], { cwd: repositoryFixture.root }).status,
+  ).toBe(0)
+  expectNoCommit(repositoryFixture.root)
+
+  const noGitFixture = createAcceptanceFixture('standalone')
+  const noGit = runCli({
+    cwd: noGitFixture.root,
+    target: noGitFixture.project,
+    args: ['project', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(noGit.exitStatus).toBe(0)
+  expect(existsSync(`${noGitFixture.project}/.git`)).toBe(false)
+})
+
+test('a verified installation creates the generated baseline commit', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(fixture)
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: fake.env,
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(readFileSync(fake.log, 'utf8')).toBe(
+    ['install', 'run check:write', 'run typecheck', 'run check', ''].join('\n'),
+  )
+  expect(
+    spawnSync('git', ['-C', fixture.project, 'log', '-1', '--pretty=%s'], { encoding: 'utf8' })
+      .stdout,
+  ).toBe('chore: initial commit from create-stack\n')
+})
+
+test.each([
+  ['installation', 'install'],
+  ['verification', 'run typecheck'],
+  ['verification', 'run check'],
+])('a failed %s leaves the generated project without a baseline commit', (_step, command) => {
+  const fixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(fixture)
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: { ...fake.env, CREATE_STACK_FAIL_COMMAND: command },
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(command === 'install' ? 'install failed' : 'Verification failed')
+  expect(existsSync(`${fixture.project}/.git`)).toBe(true)
+  expectNoCommit(fixture.project)
+})
+
+test('missing Git identity leaves a verified project without a baseline commit', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  const fake = fakePackageManager(fixture)
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', '--minimal', '--pm', 'npm'],
+    env: {
+      ...fake.env,
+      GIT_AUTHOR_EMAIL: '',
+      GIT_AUTHOR_NAME: '',
+      GIT_COMMITTER_EMAIL: '',
+      GIT_COMMITTER_NAME: '',
+    },
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('set git user.name/email')
+  expectNoCommit(fixture.project)
+})
+
+test('bare --mono before the target selects Turborepo', () => {
+  const fixture = createAcceptanceFixture('monorepo')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['--mono', 'project', '--minimal', '--no-install', '--no-git'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Monorepo: Turborepo')
+  expect(existsSync(`${fixture.app}/package.json`)).toBe(true)
 })
 
 test('creates a standalone project through the executable CLI', () => {
@@ -226,6 +430,7 @@ test.each([
   [['project', '--yes', '--minimal'], '--yes cannot be combined with --minimal'],
   [['project', '--yes=false'], '--yes does not accept a value'],
   [['project', '--no-install=false'], '--no-install does not accept a value'],
+  [['project', '--no-git=false'], '--no-git does not accept a value'],
   [['project', '--mono=turborepo'], 'expected turbo or nx'],
   [['project', '--alias'], '--alias requires a value'],
   [['project', '--pm'], '--pm requires a value'],

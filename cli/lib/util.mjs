@@ -50,11 +50,10 @@ export const editFile = (p, fn) => {
   return true
 }
 
-/** Dir empty (or absent)? Ignores noise files. */
+/** Is the target absent or strictly empty? Existing entries are never overwritten. */
 export const isDirEmpty = (p) => {
   if (!existsSync(p)) return true
-  const noise = new Set(['.git', '.DS_Store'])
-  return readdirSync(p).every((f) => noise.has(f))
+  return readdirSync(p).length === 0
 }
 
 /** Run a command (inherits stdio). True on exit 0. */

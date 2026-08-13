@@ -22,8 +22,8 @@ directly, wiring included.
 
 ## Quickstart
 
-Scaffold a new project (framework + foundations + mailer, deps installed, git
-initialized):
+Scaffold a new project (stack options + capabilities, dependencies installed and
+verified, baseline committed to Git):
 
 ```bash
 pnpm create @alfredmouelle/stack@latest my-app
