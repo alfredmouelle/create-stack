@@ -52,9 +52,9 @@ used by the generated project), and **git** on `PATH`.
 ## Commands
 
 ```
-create-stack [project] [flags]            # scaffold a new project
-create-stack add [capability] [adapter]   # add a capability to the current project
-create-stack component [name...]          # vendor standalone UI component(s)
+create-stack [project] [flags]                    # scaffold a new project
+create-stack add [kind] [provider]                # add one capability or component
+create-stack add --with kind[=provider] [...]     # add a validated batch
 ```
 
 `project` is the target dir (and default package name), must be empty or not exist.
@@ -160,14 +160,17 @@ lazily (so the app boots before you fill the keys).
 | `http` | n/a | typed fetch helpers |
 
 Add more later with `create-stack add` (same engine, merged incrementally). Re-adding a
-port with a different adapter **swaps** it (`--keep` keeps both); re-adding a module
-re-vendors it.
+port with a different adapter **swaps** it (`--keep-files` keeps both); re-adding a module
+re-vendors it. Repeat `--with` to validate and apply capabilities and components together.
+Every entry is checked before project files change.
 
 ```bash
-create-stack add                 # interactive picker
-create-stack add storage r2      # one capability + adapter
-create-stack add cache upstash   # swap redis → upstash
-create-stack add jobs            # module: no adapter argument
+create-stack add                                      # grouped interactive picker
+create-stack add storage r2                           # one capability + provider
+create-stack add cache upstash                        # swap redis → upstash
+create-stack add jobs                                 # provider omitted
+create-stack add --with storage=r2 --with jobs        # capability batch
+create-stack add --with jobs --with component=confirm # mixed batch
 ```
 
 ## Components
@@ -181,7 +184,7 @@ are **never overwritten** (`--force` to override). The callable dialogs are buil
 | Component | Vendors | Deps |
 | --- | --- | --- |
 | `date-picker` | `ui/date-picker`, `ui/date-range-picker` (+ calendar, popover, lib/date) | react-day-picker, date-fns |
-| `datatable` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | @tanstack/react-table |
+| `data-table` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | @tanstack/react-table |
 | `confirm` | `ui/confirm` (+ alert-dialog) — `await` a yes/no | react-call |
 | `alert` | `ui/alert` (+ alert-dialog) — `await` an acknowledgement | react-call |
 | `prompt` | `ui/prompt` (+ dialog) — `await` a text input | react-call |
@@ -190,9 +193,10 @@ are **never overwritten** (`--force` to override). The callable dialogs are buil
 | `confirm-otp` | `ui/confirm-otp` (+ dialog, input-otp) — verify an OTP code to confirm | react-call, input-otp |
 
 ```bash
-create-stack component                 # interactive picker
-create-stack component date-picker     # one component
-create-stack component confirm prompt  # several at once
+create-stack add                              # grouped capabilities + components picker
+create-stack add component date-picker        # one component
+create-stack add --with component=confirm \
+  --with component=prompt                     # several components
 ```
 
 The callable dialogs are `await`-ed from anywhere; their `<Root />` is already mounted, so

@@ -1174,3 +1174,186 @@ test('adds a component through add and protects local files unless forced', () =
   expect(forced.exitStatus).toBe(0)
   expect(readFileSync(componentFile, 'utf8')).not.toBe('// local edit\n')
 })
+
+test('adds capabilities and components in one repeated --with batch', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const added = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: [
+      'add',
+      '--with',
+      'storage=r2',
+      '--with=jobs',
+      '--with',
+      'component=date-picker',
+      '--no-install',
+    ],
+  })
+
+  expect(added.exitStatus).toBe(0)
+  expect(added.requestedInput).toBe(false)
+  expect(added.stdout).toContain('Addition: storage (r2)')
+  expect(added.stdout).toContain('Addition: jobs (inngest)')
+  expect(added.stdout).toContain('Addition: component date-picker')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/server/jobs/index.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+})
+
+test('normalizes addition aliases before rejecting batch duplicates', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', '--with', 'mail=resend', '--with', 'mailer=brevo', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Duplicate addition: mail')
+  expect(result.targetMutated).toBe(false)
+})
+
+test('add without an item presents one grouped capability and component selector', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    input: '\u0003',
+    target: fixture.app,
+    args: ['add', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Additions to add')
+  expect(result.stdout).toContain('Capabilities')
+  expect(result.stdout).toContain('Components')
+  expect(result.requestedInput).toBe(true)
+  expect(result.targetMutated).toBe(false)
+})
+
+test.each([
+  ['capability providers', ['storage=r2', 'storage=gcs'], 'storage'],
+  ['capability aliases', ['errors=sentry', 'error-tracking=sentry'], 'errors'],
+  ['components', ['component=date-picker', 'component=date-picker'], 'date-picker'],
+])('rejects duplicate %s across an entire batch', (_case, entries, canonicalName) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', ...entries.flatMap((entry) => ['--with', entry]), '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(`Duplicate addition: ${canonicalName}`)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('rejects mixing a positional addition with an addition batch', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'http', '--with', 'jobs', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Positional additions cannot be mixed with --with additions')
+  expect(result.targetMutated).toBe(false)
+})
+
+test('validates every batch entry before applying the first addition', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', '--with', 'storage=r2', '--with', 'jobs=trigger', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('jobs only supports inngest')
+  expect(result.targetMutated).toBe(false)
+  expect(existsSync(`${fixture.app}/src/server/storage`)).toBe(false)
+})
+
+test('rejects an ambiguous batch target without prompting or mutation', () => {
+  const fixture = createAmbiguousMonorepoFixture()
+
+  const result = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', '--with', 'jobs', '--with', 'component=alert', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Multiple compatible applications')
+  expect(result.stdout).toContain('--app')
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('applies --keep-files and --force to their additions in a mixed batch', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  expect(
+    runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'storage', 'gcs', '--no-install'],
+    }).exitStatus,
+  ).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: [
+      'add',
+      '--with',
+      'storage=r2',
+      '--with',
+      'component=date-picker',
+      '--keep-files',
+      '--force',
+      '--no-install',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Provider change: storage (gcs → r2, keeping files)')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+})
+
+test.each([
+  [['storage=r2', 'jobs'], '--force', '--force only applies to components'],
+  [
+    ['component=date-picker', 'http'],
+    '--keep-files',
+    '--keep-files only applies to provider changes',
+  ],
+])('rejects %s when it affects no addition in the batch', (entries, option, diagnostic) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', ...entries.flatMap((entry) => ['--with', entry]), option, '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(diagnostic)
+  expect(result.targetMutated).toBe(false)
+})
