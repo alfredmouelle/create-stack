@@ -97,7 +97,7 @@ swaps its adapter; --keep retains the previous one(s).
 
 Swappable behind a port: storage, cache, logger, analytics, mailer.
 Single provider (no adapter): jobs (inngest), error-tracking (sentry).
-No provider at all: email-kit, http.
+No provider at all: email-ui, http.
 
 Flags:
   --keep                           Keep existing adapter(s) when swapping
@@ -649,6 +649,11 @@ async function resolveAddSelections(args) {
   if (args._[1]) {
     const cap = args._[1]
     if (!ADDABLE.includes(cap)) {
+      const formerEmailUiName = ['email', 'kit'].join('-')
+      if (cap === formerEmailUiName) {
+        p.cancel(`'${formerEmailUiName}' was renamed to 'email-ui'; run create-stack add email-ui`)
+        process.exit(1)
+      }
       p.cancel(`Unknown capability: ${cap} — pick one of ${ADDABLE.join(', ')}`)
       process.exit(1)
     }

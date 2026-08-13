@@ -54,8 +54,8 @@ for (const cap of ['storage', 'cache', 'logger', 'analytics', 'error-tracking', 
   cpSync(join(ROOT, 'packages', cap, 'src'), join(OUT, 'packages', cap, 'src'), { recursive: true })
 }
 
-// http + email-kit: vendored as-is by `add http` / `add email-kit` (and as cross-deps)
-for (const pkg of ['http', 'email-kit']) {
+// http + email-ui: vendored as-is by `add http` / `add email-ui` (and as cross-deps)
+for (const pkg of ['http', 'email-ui']) {
   cpSync(
     join(ROOT, 'packages', pkg, 'capability.json'),
     join(OUT, 'packages', pkg, 'capability.json'),

@@ -423,6 +423,45 @@ test.each([
   expect(added.targetMutated).toBe(false)
 })
 
+test('adds Email UI to a standalone application through the executable CLI', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  const created = createProject(fixture, { framework: 'next' })
+
+  expect(created.exitStatus).toBe(0)
+
+  const added = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'email-ui', '--no-install'],
+  })
+
+  expect(added.exitStatus).toBe(0)
+  expect(added.stdout).toContain('Added email-ui')
+  expect(added.stderr).toBe('')
+  expect(added.requestedInput).toBe(false)
+  expect(added.targetMutated).toBe(true)
+  expect(existsSync(`${fixture.app}/src/emails/components/index.ts`)).toBe(true)
+})
+
+test('guides users from the former Email UI name without mutating the project', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  const formerName = ['email', 'kit'].join('-')
+  const created = createProject(fixture, { framework: 'next' })
+
+  expect(created.exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', formerName, '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(`'${formerName}' was renamed to 'email-ui'`)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+})
+
 test('adds a component to a standalone application through the executable CLI', () => {
   const fixture = createAcceptanceFixture('standalone')
   const created = createProject(fixture, { framework: 'tanstack' })

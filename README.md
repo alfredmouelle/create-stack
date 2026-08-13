@@ -69,7 +69,7 @@ provider.
 |---|---|---|
 | **jobs** | the Inngest client plus the serve wiring: durable steps, cron, concurrency, fan-out and typed events stay reachable | Inngest |
 | **error-tracking** | shared `Sentry.init` options plus the per-framework files (`onRequestError`, instrumentation, `global-error`); the steps that edit files you own are printed, not applied | Sentry |
-| **email-kit** | composable React Email primitives + **swappable theme** + local preview (`email dev`) | n/a |
+| **email-ui** | composable React Email primitives + **swappable theme** + local preview (`email dev`) | n/a |
 | **http** | `apiFetch` (typed fetch) + Web-standard `WebhookHandler` | n/a _(for APIs without an SDK)_ |
 
 Design rules:
@@ -92,7 +92,7 @@ Design rules:
 
 ```
 packages/
-  mailer/  email-kit/  storage/  jobs/
+  mailer/  email-ui/  storage/  jobs/
   cache/  logger/  analytics/  error-tracking/  http/
 apps/
   next-base/        # real Next.js (App Router) starter, fork for a new project
@@ -127,7 +127,7 @@ pnpm check
 Preview emails locally:
 
 ```bash
-pnpm --filter @alfredmouelle/email-kit email:dev   # react-email studio on :3001
+pnpm --filter @alfredmouelle/email-ui email:dev   # react-email studio on :3001
 ```
 
 ## Skills

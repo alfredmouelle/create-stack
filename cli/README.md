@@ -149,7 +149,7 @@ lazily (so the app boots before you fill the keys).
 | --- | --- | --- |
 | `jobs` | Inngest | the client, an example typed event + function, and the serve route for your framework |
 | `error-tracking` | Sentry | shared `init` options plus the framework wiring (`onRequestError` / global-error for Next, the Vite plugin, instrumentation files and middlewares for TanStack Start) |
-| `email-kit` | n/a | React Email primitives and theme |
+| `email-ui` | n/a | React Email primitives and theme |
 | `http` | n/a | typed fetch helpers |
 
 Add more later with `create-stack add` (same engine, merged incrementally). Re-adding a
