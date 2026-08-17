@@ -38,7 +38,7 @@
     "create-stack": "./index.mjs"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24.19.0"
   },
   "files": [
     "index.mjs",
@@ -63,7 +63,7 @@
     "@clack/prompts": "^1.7.0"
   },
   "devDependencies": {
-    "@types/node": "^22.20.1",
+    "@types/node": "^24.13.3",
     "vitest": "^4.1.10"
   }
 }

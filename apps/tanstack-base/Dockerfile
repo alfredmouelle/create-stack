@@ -3,7 +3,7 @@
 # `vite build` emits a self-contained Nitro server under .output/ (deps bundled),
 # so the runner image carries only that — no node_modules, no dev deps.
 
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 RUN corepack enable
 WORKDIR /app
 

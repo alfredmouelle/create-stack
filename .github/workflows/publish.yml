@@ -20,7 +20,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @alfredmouelle/create-stack test
@@ -34,7 +34,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: "https://registry.npmjs.org"
 
       # OIDC publishing needs npm >= 11.5.1; pin 11.x, a bad @latest broke it (npm/cli#9722).

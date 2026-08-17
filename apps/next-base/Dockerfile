@@ -3,7 +3,7 @@
 # Build context = this app (fork it out of the monorepo, or build with this dir
 # as context). Final image runs the standalone server with no dev deps.
 
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 RUN corepack enable
 WORKDIR /app
 
