@@ -1,11 +1,19 @@
-import { spawnSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawn, spawnSync } from 'node:child_process'
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { expect, test } from 'vitest'
 import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
 
 test.afterAll(cleanupAcceptanceFixtures)
 
-function createProject(fixture, { framework, monorepo }) {
+function createProject(fixture, { framework, monorepo, pm }) {
   return runCli({
     cwd: fixture.root,
     target: fixture.project,
@@ -13,6 +21,7 @@ function createProject(fixture, { framework, monorepo }) {
       'project',
       '--framework',
       framework,
+      ...(pm ? ['--pm', pm] : []),
       ...(monorepo ? ['--monorepo', monorepo] : []),
       '--database',
       'none',
@@ -33,19 +42,19 @@ function createAmbiguousMonorepoFixture() {
   return fixture
 }
 
-function fakePackageManager(fixture) {
+function fakePackageManager(fixture, name = 'npm') {
   const bin = `${fixture.root}/bin`
   const log = `${fixture.root}/package-manager.log`
   mkdirSync(bin)
   writeFileSync(
-    `${bin}/npm`,
+    `${bin}/${name}`,
     `#!/bin/sh
 printf '%s\\n' "$*" >> "$CREATE_STACK_COMMAND_LOG"
 if [ "$*" = "$CREATE_STACK_FAIL_COMMAND" ]; then exit 1; fi
 exit 0
 `,
   )
-  chmodSync(`${bin}/npm`, 0o755)
+  chmodSync(`${bin}/${name}`, 0o755)
   return {
     env: {
       CREATE_STACK_COMMAND_LOG: log,
@@ -53,6 +62,63 @@ exit 0
     },
     log,
   }
+}
+
+function startRegistry({ status = 200 } = {}) {
+  const items = new Map(
+    ['calendar', 'popover', 'button'].map((name) => [
+      name,
+      {
+        name,
+        type: 'registry:ui',
+        title: name,
+        description: name,
+        dependencies: [],
+        registryDependencies: [],
+        files: [
+          {
+            path: `ui/${name}.tsx`,
+            type: 'registry:ui',
+            content: `export function ${name[0].toUpperCase()}${name.slice(1)}() { return null }\n`,
+          },
+        ],
+      },
+    ]),
+  )
+  const child = spawn(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `
+import { createServer } from 'node:http'
+const items = new Map(${JSON.stringify([...items])})
+const colors = {
+  inlineColors: { light: {}, dark: {} },
+  cssVars: { light: {}, dark: {} },
+  inlineColorsTemplate: '',
+  cssVarsTemplate: '',
+}
+const status = ${status}
+const server = createServer((request, response) => {
+  const name = request.url?.split('/').at(-1)?.replace(/\\.json$/, '')
+  const item = items.get(name)
+  const payload = request.url?.includes('/colors/') ? colors : item
+  response.statusCode = status === 200 && payload ? 200 : status
+  response.setHeader('content-type', 'application/json')
+  response.end(JSON.stringify(payload ?? { error: 'not found' }))
+})
+server.listen(0, '127.0.0.1', () => console.log(server.address().port))
+`,
+    ],
+    { stdio: ['ignore', 'pipe', 'inherit'] },
+  )
+  return new Promise((resolve) => {
+    child.stdout.setEncoding('utf8')
+    child.stdout.once('data', (output) => {
+      resolve({ child, url: `http://127.0.0.1:${Number(output.trim())}/r` })
+    })
+  })
 }
 
 function expectNoCommit(projectDir) {
@@ -1229,18 +1295,22 @@ test('adds a component through add and protects local files unless forced', () =
 
 test('adds capabilities and components in one repeated --with batch', () => {
   const fixture = createAcceptanceFixture('standalone')
-  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
 
   const added = runCli({
     cwd: fixture.app,
     target: fixture.app,
+    env: fake.env,
     args: [
       'add',
       '--with',
       'storage=r2',
       '--with=jobs',
       '--with',
-      'component=date-picker',
+      'component=data-table',
+      '--pm',
+      'npm',
       '--no-install',
     ],
   })
@@ -1249,10 +1319,124 @@ test('adds capabilities and components in one repeated --with batch', () => {
   expect(added.requestedInput).toBe(false)
   expect(added.stdout).toContain('Addition: storage (r2)')
   expect(added.stdout).toContain('Addition: jobs (inngest)')
-  expect(added.stdout).toContain('Addition: component date-picker')
+  expect(added.stdout).toContain('Addition: component data-table')
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
   expect(existsSync(`${fixture.app}/src/server/jobs/index.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(true)
+})
+
+test('adds date-picker through the packaged shadcn runtime and local item', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+
+  try {
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'date-picker', '--pm', 'npm'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain('Addition: component date-picker')
+    expect(added.stdout).toContain('shadcn: calendar, popover, button')
+    expect(added.stdout).toContain('Added component date-picker')
+    expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/components/ui/date-range-picker.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/lib/date.ts`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/components/ui/calendar.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/components/ui/popover.tsx`)).toBe(true)
+    expect(readFileSync(`${fixture.app}/src/components/ui/date-picker.tsx`, 'utf8')).toContain(
+      "'use client'",
+    )
+    expect(readFileSync(fake.log, 'utf8')).toContain('install')
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('does not copy a fallback when the shadcn registry fails', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry({ status: 500 })
+
+  try {
+    const result = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'date-picker', '--pm', 'npm'],
+    })
+
+    expect(result.exitStatus).toBe(1)
+    expect(result.stdout).toContain('no fallback files were copied')
+    expect(result.targetMutated).toBe(false)
+    expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(false)
+    expect(existsSync(`${fixture.app}/src/components/ui/calendar.tsx`)).toBe(false)
+    expect(existsSync(`${fixture.app}/src/components/ui/popover.tsx`)).toBe(false)
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test.each([
+  ['missing', (path) => rmSync(path), 'npx shadcn@4.17.0 init'],
+  ['invalid', (path) => writeFileSync(path, '{}\n'), 'npx shadcn@4.17.0 init'],
+])('rejects a %s components.json before mutation', (_case, change, command) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const config = `${fixture.app}/components.json`
+  change(config)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'date-picker', '--pm', 'npm', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(command)
+  expect(result.targetMutated).toBe(false)
+  expect(existsSync(config)).toBe(_case === 'invalid')
+})
+
+test.each([
+  [['--no-install'], 'shadcn-backed additions install dependencies immediately'],
+  [['--force'], '--force is not supported for registry-backed component date-picker'],
+])('rejects unsupported date-picker flags before mutation', (flags, diagnostic) => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'date-picker', '--pm', 'npm', ...flags],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain(diagnostic)
+  expect(result.targetMutated).toBe(false)
+})
+
+test('rejects a package-manager override that disagrees with shadcn metadata', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    env: fake.env,
+    args: ['add', 'component', 'date-picker', '--pm', 'npm'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('Package manager mismatch')
+  expect(result.stdout).toContain('pnpm-workspace.yaml')
+  expect(result.targetMutated).toBe(false)
 })
 
 test('normalizes addition aliases before rejecting batch duplicates', () => {
@@ -1374,7 +1558,7 @@ test('applies --keep-files and --force to their additions in a mixed batch', () 
       '--with',
       'storage=r2',
       '--with',
-      'component=date-picker',
+      'component=data-table',
       '--keep-files',
       '--force',
       '--no-install',
@@ -1385,7 +1569,7 @@ test('applies --keep-files and --force to their additions in a mixed batch', () 
   expect(result.stdout).toContain('Provider change: storage (gcs → r2, keeping files)')
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(true)
 })
 
 test.each([

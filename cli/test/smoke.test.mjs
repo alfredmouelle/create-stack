@@ -99,5 +99,15 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
       },
       TIMEOUT,
     )
+
+    test(
+      `${framework}/date-picker`,
+      () => {
+        const { projectDir } = scaffold(framework, 'date-picker', ['--minimal'])
+        runCli(['add', 'component', 'date-picker'], projectDir)
+        verify(projectDir)
+      },
+      TIMEOUT,
+    )
   }
 })

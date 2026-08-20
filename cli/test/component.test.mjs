@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import { afterAll, describe, expect, test } from 'vitest'
+import { COMPONENT_CATALOG } from '../lib/registry.mjs'
 import { build, cleanup, exists, read, readJSON, vendorComponent } from './helpers.mjs'
 
 afterAll(cleanup)
@@ -7,17 +8,14 @@ afterAll(cleanup)
 const deps = (dir) => readJSON(`${dir}/package.json`).dependencies
 
 describe('component', () => {
-  test('date-picker vendors its files + primitives + deps', () => {
-    const { dir } = build({ framework: 'tanstack', trpc: false, mailer: 'none' })
-    expect(exists(`${dir}/src/components/ui/date-picker.tsx`), 'stripped by default').toBe(false)
-
-    const res = vendorComponent({ projectDir: dir, name: 'date-picker' })
-    expect(res.framework).toBe('tanstack')
-    for (const f of ['date-picker', 'date-range-picker', 'calendar', 'popover'])
-      expect(exists(`${dir}/src/components/ui/${f}.tsx`), `${f} vendored`).toBe(true)
-    expect(exists(`${dir}/src/lib/date.ts`)).toBe(true)
-    expect('react-day-picker' in deps(dir)).toBe(true)
-    expect('date-fns' in deps(dir)).toBe(true)
+  test('date-picker declares its shadcn item and primitive dependencies', () => {
+    const entry = COMPONENT_CATALOG['date-picker']
+    expect(entry.registryDependencies).toEqual(['calendar', 'popover', 'button'])
+    expect(entry.files.map((file) => file.path)).toEqual([
+      'ui/date-picker.tsx',
+      'ui/date-range-picker.tsx',
+      'lib/date.ts',
+    ])
   })
 
   test('data-table vendors its files + hook + react-table (next)', () => {
@@ -59,9 +57,9 @@ describe('component', () => {
       mailer: 'none',
       alias: '@',
     })
-    vendorComponent({ projectDir: dir, name: 'date-picker' })
-    const src = read(`${dir}/src/components/ui/date-picker.tsx`)
-    expect(src).toContain("'@/components/ui/button'")
+    vendorComponent({ projectDir: dir, name: 'data-table' })
+    const src = read(`${dir}/src/components/data-table.tsx`)
+    expect(src).toContain("'@/components/ui/table'")
     expect(src).not.toContain("'~/")
   })
 
