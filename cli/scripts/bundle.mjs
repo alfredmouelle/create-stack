@@ -4,10 +4,11 @@
 import { cpSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { generateRegistry } from '../lib/registry.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(here, '..', '..') // monorepo root
-const OUT = resolve(here, '..', '_stack') // cli/_stack
+const ROOT = resolve(process.env.CREATE_STACK_BUNDLE_ROOT || resolve(here, '..', '..'))
+const OUT = resolve(process.env.CREATE_STACK_BUNDLE_OUT || resolve(here, '..', '_stack'))
 
 const APP_EXCLUDES = new Set([
   'node_modules',
@@ -63,6 +64,8 @@ for (const pkg of ['http', 'email-ui']) {
   cpSync(join(ROOT, 'packages', pkg, 'package.json'), join(OUT, 'packages', pkg, 'package.json'))
   cpSync(join(ROOT, 'packages', pkg, 'src'), join(OUT, 'packages', pkg, 'src'), { recursive: true })
 }
+
+generateRegistry({ rootDir: ROOT, outputDir: join(OUT, 'registry') })
 
 // biome-ignore lint/suspicious/noConsole: build script output
 console.log(`bundled stack assets → ${OUT}`)

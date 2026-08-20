@@ -60,7 +60,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@clack/prompts": "^1.7.0"
+    "@clack/prompts": "^1.7.0",
+    "shadcn": "4.17.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
