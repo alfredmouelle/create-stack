@@ -8,6 +8,7 @@
 import { detectFramework } from './add.mjs'
 import { detectAlias, rewriteAlias } from './alias.mjs'
 import { STACK_ROOT } from './paths.mjs'
+import { COMPONENT_CATALOG } from './registry.mjs'
 import { copy, exists, join, pkgAddDeps, read, readJSON, write, writeJSON } from './util.mjs'
 
 // name → vendored files (relative to project root) + the npm deps it pulls. Primitives a
@@ -21,13 +22,10 @@ export const COMPONENTS = {
     label: 'Date picker',
     hint: 'single + range, calendar, popover',
     files: [
-      'src/components/ui/date-picker.tsx',
-      'src/components/ui/date-range-picker.tsx',
-      'src/components/ui/calendar.tsx',
-      'src/components/ui/popover.tsx',
-      'src/lib/date.ts',
+      ...COMPONENT_CATALOG['date-picker'].files.map(({ destination }) => destination),
+      ...COMPONENT_CATALOG['date-picker'].legacyFiles,
     ],
-    deps: ['react-day-picker', 'date-fns'],
+    deps: COMPONENT_CATALOG['date-picker'].legacyDependencies,
   },
   'data-table': {
     label: 'Data table',
