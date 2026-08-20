@@ -16,8 +16,8 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? null : event,
 })
 </script>
-<title>create-stack: compose your stack, ship a real app</title>
-<meta name="description" content="Framework-agnostic installer that bootstraps a real, fully-wired app for your favorite framework. Pick database, auth, tRPC, a mailer and capabilities; get an app that builds on day one. Next.js and TanStack Start today, more frameworks on the way.">
+<title>create-stack: pick your stack, start with a working app</title>
+<meta name="description" content="Choose a framework, database, auth provider, mailer, and optional integrations. create-stack starts from a complete app, wires your choices together, and removes the rest. Supports Next.js and TanStack Start.">
 <meta name="keywords" content="create-stack, scaffold, boilerplate, starter, framework-agnostic, Next.js, TanStack Start, drizzle, prisma, convex, trpc, better-auth, clerk">
 <meta name="robots" content="index, follow">
 <meta name="author" content="Alfred MOUELLE">
@@ -26,8 +26,8 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="canonical" href="https://create-stack.alfredmouelle.com/">
 <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<meta property="og:title" content="create-stack: an agnostic bootstrapper for your favorite framework">
-<meta property="og:description" content="Bootstrap a real, fully-wired app for your framework. Compose your stack, ship a real app.">
+<meta property="og:title" content="create-stack: pick your stack, start with a working app">
+<meta property="og:description" content="Choose the pieces you need, then get a working app with the rest removed. Supports Next.js and TanStack Start.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://create-stack.alfredmouelle.com/">
 <meta property="og:site_name" content="create-stack">
@@ -37,8 +37,8 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 <meta property="og:image:alt" content="create-stack: compose your stack, ship a real app">
 <meta property="article:author" content="Alfred MOUELLE">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="create-stack: an agnostic bootstrapper for your favorite framework">
-<meta name="twitter:description" content="Bootstrap a real, fully-wired app for your framework. Compose your stack, ship a real app.">
+<meta name="twitter:title" content="create-stack: pick your stack, start with a working app">
+<meta name="twitter:description" content="Choose the pieces you need, then get a working app with the rest removed. Supports Next.js and TanStack Start.">
 <meta name="twitter:image" content="https://create-stack.alfredmouelle.com/og-image.png">
 <meta name="twitter:creator" content="@alfredmouelle">
 <script type="application/ld+json">
@@ -48,7 +48,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   "name": "create-stack",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Node.js >= 22",
-  "description": "Framework-agnostic installer that bootstraps a real, fully-wired app for your favorite framework, then strips it to exactly what you pick. Next.js and TanStack Start today, more frameworks on the way.",
+  "description": "CLI that starts from a complete app, wires together the pieces you choose, and removes the rest. Supports Next.js and TanStack Start.",
   "url": "https://create-stack.alfredmouelle.com/",
   "downloadUrl": "https://www.npmjs.com/package/@alfredmouelle/create-stack",
   "license": "https://opensource.org/licenses/MIT",
@@ -227,7 +227,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     .term-actions .runnote { flex-basis: 100%; text-align: center; }
   }
 
-  /* what you get */
+  /* project details */
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
   .card { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 18px 18px 16px; }
@@ -260,7 +260,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     <span class="brand"><span class="sq">&gt;_</span>create-stack</span>
     <nav class="bar-links">
       <a href="#builder">Builder</a>
-      <a href="#stack">What you get</a>
+      <a href="#stack">Project</a>
       <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack" target="_blank" rel="noopener">npm</a>
       <a href="https://github.com/alfredmouelle/create-stack" target="_blank" rel="noopener">GitHub</a>
     </nav>
@@ -271,7 +271,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   <section class="hero">
     <h1>Compose your stack. <em>Ship a real app.</em></h1>
     <p class="lede">
-      An agnostic bootstrapper for your favorite framework. create-stack forks a fully-wired base app and strips it to exactly what you pick: database, auth, tRPC, a mailer, capabilities. <b>Next.js</b> and <b>TanStack Start</b> today, more frameworks on the way. The output builds and boots on day one. No template guesswork.
+      Choose a framework, database, auth provider, mailer, and the integrations you need. create-stack starts from a complete base app, wires your choices together, and removes the rest. The generated project passes typecheck and Biome before it leaves the CLI. <b>Next.js</b> and <b>TanStack Start</b> are supported today.
     </p>
     <div class="install" id="install"></div>
     <div class="meta">Node ≥ 22 · pnpm / npm / yarn / bun · MIT · <a href="https://github.com/alfredmouelle/create-stack" style="color: var(--accent)">open source</a></div>
@@ -279,9 +279,9 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 
   <section class="sec" id="builder">
     <div class="sec-head">
-      <div class="kicker">Try it</div>
-      <h2>Build your command, live</h2>
-      <p>Pick each piece. The wizard applies the CLI's real rules and writes the exact command to copy, for your package manager.</p>
+      <div class="kicker">Build a command</div>
+      <h2>Pick the pieces you need</h2>
+      <p>Choose a package manager and the parts you want. The builder follows the CLI's compatibility rules and gives you a command to paste.</p>
     </div>
     <div id="stage"></div>
   </section>
@@ -289,26 +289,26 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   <section class="sec" id="components">
     <div class="sec-head">
       <div class="kicker">Add UI</div>
-      <h2>Drop in UI components</h2>
-      <p>Opt-in components you install into an existing project, straight into components/ui. Pick a few, copy the command, and run it inside your app.</p>
+      <h2>Add the UI you need</h2>
+      <p>Install these components into an existing project. Choose them here, copy the command, and run it from your app directory.</p>
     </div>
     <div id="components-stage"></div>
   </section>
 
   <section class="sec" id="stack">
     <div class="sec-head">
-      <div class="kicker">What you get</div>
-      <h2>A real app, wired end to end</h2>
-      <p>Every piece is copied in and wired: deps, env keys, composition roots. Unselected pieces are removed cleanly, so the project stays bootable and green.</p>
+      <div class="kicker">What's in the project</div>
+      <h2>Start with code you can run</h2>
+      <p>The generated app gets its dependencies, env keys, and composition roots from your selections. Modules you leave out are removed, and the CLI runs typecheck and Biome before it finishes.</p>
     </div>
     <div class="grid">
-      <div class="card"><div class="role">Framework</div><h4>Your framework, fully wired</h4><p>A real starter app you fork: SSR, routing, Tailwind v4 + shadcn, theme toggle. Next.js and TanStack Start today, more frameworks on the roadmap.</p><div class="tags"><span>Next.js</span><span>TanStack Start</span><span>more soon</span></div></div>
-      <div class="card"><div class="role">Structure</div><h4>Standalone or monorepo</h4><p>Ship a single app, or drop it into a Turborepo or Nx monorepo (app in apps/web) with workspace, task caching and hoisted git hooks wired for you.</p><div class="tags"><span>standalone</span><span>turborepo</span><span>nx</span></div></div>
-      <div class="card"><div class="role">Data layer</div><h4>Drizzle, Prisma or Convex</h4><p>Postgres with driver adapter, schema, seed and keyset pagination, Convex realtime, or no data layer.</p><div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div></div>
-      <div class="card"><div class="role">Auth &amp; API</div><h4>better-auth or Clerk, tRPC v11</h4><p>Email + password with verification and Google OAuth, or hosted Clerk. Typed tRPC with SSR/RSC.</p><div class="tags"><span>better-auth</span><span>clerk</span><span>trpc</span></div></div>
-      <div class="card"><div class="role">Mailer</div><h4>Resend, Brevo or SES</h4><p>One port, React Email templates. Swap the provider with a single env change.</p><div class="tags"><span>resend</span><span>brevo</span><span>ses</span></div></div>
-      <div class="card"><div class="role">Capabilities</div><h4>Storage, cache, jobs, more</h4><p>Opt-in integrations. Storage, cache, logger and analytics sit behind a swappable port; jobs and error tracking use Inngest and Sentry directly, where a port would only get in the way.</p><div class="tags"><span>s3/r2</span><span>redis</span><span>inngest</span><span>sentry</span></div></div>
-      <div class="card"><div class="role">Baseline</div><h4>Green from commit one</h4><p>Strict Biome (one tool, replaces ESLint + Prettier), typed env.ts, Dockerfile, git hooks, a GitHub Actions CI workflow, generated .env, verified with typecheck + Biome.</p><div class="tags"><span>biome</span><span>CI</span><span>docker</span></div></div>
+      <div class="card"><div class="role">Framework</div><h4>Start with Next.js or TanStack Start</h4><p>Fork a complete starter with SSR, routing, Tailwind v4, shadcn, and a theme toggle. Both frameworks are available now.</p><div class="tags"><span>Next.js</span><span>TanStack Start</span></div></div>
+      <div class="card"><div class="role">Structure</div><h4>Use a standalone app or monorepo</h4><p>Keep one app, or put it in apps/web inside a Turborepo or Nx monorepo. Workspace tasks, caching, and git hooks are already connected.</p><div class="tags"><span>standalone</span><span>turborepo</span><span>nx</span></div></div>
+      <div class="card"><div class="role">Data layer</div><h4>Choose Drizzle, Prisma, or Convex</h4><p>Use Drizzle with Postgres, a driver adapter, schema, seed, and keyset pagination. Or choose Prisma, Convex for realtime data, or no database.</p><div class="tags"><span>drizzle</span><span>prisma 7</span><span>convex</span></div></div>
+      <div class="card"><div class="role">Auth &amp; API</div><h4>Pick better-auth or Clerk</h4><p>better-auth adds email and password, verification, and Google OAuth. Clerk handles hosted auth. Add typed tRPC v11 with SSR/RSC support.</p><div class="tags"><span>better-auth</span><span>clerk</span><span>trpc</span></div></div>
+      <div class="card"><div class="role">Mailer</div><h4>Send email through Resend, Brevo, or SES</h4><p>The app uses one mailer interface with React Email templates. Change the provider in an env setting.</p><div class="tags"><span>resend</span><span>brevo</span><span>ses</span></div></div>
+      <div class="card"><div class="role">Capabilities</div><h4>Add only the extras you need</h4><p>Choose storage, cache, logging, analytics, background jobs, or error tracking. The first four can swap providers. Jobs use Inngest, and error tracking uses Sentry.</p><div class="tags"><span>s3/r2</span><span>redis</span><span>inngest</span><span>sentry</span></div></div>
+      <div class="card"><div class="role">Checks</div><h4>Keep the project easy to check</h4><p>The CLI adds Biome, typed env.ts, a Dockerfile, git hooks, GitHub Actions CI, and a generated .env. It runs typecheck and Biome on the generated project.</p><div class="tags"><span>biome</span><span>CI</span><span>docker</span></div></div>
     </div>
   </section>
 </main>
@@ -316,7 +316,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 <footer>
   <div class="shell foot-in">
     <div>
-      <p class="who">Built by <b>Alfred MOUELLE</b>, FullStack Developer</p>
+      <p class="who">Built by <b>Alfred MOUELLE</b>, full-stack developer</p>
       <p class="foot-note">Open source (MIT) on <a href="https://github.com/alfredmouelle/create-stack" target="_blank" rel="noopener">GitHub</a>. Inspired by <a href="https://create.t3.gg" target="_blank" rel="noopener">create-t3-app</a> by Theo Browne.</p>
     </div>
     <div class="foot-links">
@@ -359,13 +359,13 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     const adjustments = []
     let trpc = s.trpc, auth = s.auth, database = s.database, mailer = s.mailer
     if (database === 'convex') {
-      if (trpc) { trpc = false; adjustments.push({ head: 'Convex', body: 'is its own API layer → tRPC removed' }) }
-      if (auth === 'better-auth') { auth = 'none'; adjustments.push({ head: 'Convex + better-auth', body: 'better-auth needs Postgres → auth set to none (pair Convex with Clerk)' }) }
+      if (trpc) { trpc = false; adjustments.push({ head: 'Convex', body: 'uses its own API, so tRPC is removed' }) }
+      if (auth === 'better-auth') { auth = 'none'; adjustments.push({ head: 'Convex + better-auth', body: 'needs Postgres, so auth is set to none. Use Clerk with Convex instead' }) }
     } else if (auth === 'better-auth' && database === 'none') {
       database = 'drizzle'
-      adjustments.push({ head: 'better-auth', body: 'needs a database → Drizzle added' })
+      adjustments.push({ head: 'better-auth', body: 'needs a database, so Drizzle is added' })
     }
-    if (auth === 'better-auth' && mailer === 'none') { mailer = 'resend'; adjustments.push({ head: 'better-auth', body: 'sends its own emails → Resend added' }) }
+    if (auth === 'better-auth' && mailer === 'none') { mailer = 'resend'; adjustments.push({ head: 'better-auth', body: 'sends its own emails, so Resend is added' }) }
     return { database, auth, trpc, mailer, adjustments }
   }
   function buildCommand(s) {
@@ -387,7 +387,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   function esc(s) { return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]) }
 
   function whyDisabled(axis, val) {
-    if (axis === 'auth' && val === 'better-auth' && state.database === 'convex') return 'Incompatible with Convex (Postgres required)'
+    if (axis === 'auth' && val === 'better-auth' && state.database === 'convex') return 'Convex does not use Postgres'
     if (axis === 'trpc' && state.database === 'convex') return 'Convex replaces tRPC'
     return null
   }
@@ -423,10 +423,10 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   }
 
   const UI_COMPONENTS = [
-    { key: 'confirm', label: 'Confirm', hint: 'await a yes/no', code: "const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })" },
-    { key: 'alert', label: 'Alert', hint: 'await an acknowledgement', code: "await Alert.call({ title: 'Saved', description: 'Your changes are live.' })" },
-    { key: 'prompt', label: 'Prompt', hint: 'await a text input', code: "const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' })" },
-    { key: 'choice', label: 'Choice', hint: 'await a pick from a list', code: "const dest = await Choice.call({ title: 'Move to', options: [{ label: 'Inbox', value: 'inbox' }] })" },
+    { key: 'confirm', label: 'Confirm', hint: 'wait for a yes/no', code: "const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })" },
+    { key: 'alert', label: 'Alert', hint: 'wait for confirmation', code: "await Alert.call({ title: 'Saved', description: 'Your changes are live.' })" },
+    { key: 'prompt', label: 'Prompt', hint: 'wait for text', code: "const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' })" },
+    { key: 'choice', label: 'Choice', hint: 'wait for a choice', code: "const dest = await Choice.call({ title: 'Move to', options: [{ label: 'Inbox', value: 'inbox' }] })" },
     { key: 'confirm-passphrase', label: 'Confirm · passphrase', hint: 'type an exact phrase', code: "const ok = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: 'my-repo' })" },
     { key: 'confirm-otp', label: 'Confirm · OTP', hint: 'verify a code', code: "const ok = await ConfirmOtp.call({ title: 'Enter code', verify: (c) => api.checkOtp(c) })" },
     { key: 'date-picker', label: 'Date picker', hint: 'single + range', code: '<DatePicker value={date} onChange={setDate} />' },
@@ -455,11 +455,11 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
   }
 
   const AXES = [
-    { key: 'framework', label: 'Framework', hint: 'base app to fork · more frameworks coming', opts: [{ v: 'tanstack', d: 'default' }, { v: 'next', d: 'App Router' }] },
+    { key: 'framework', label: 'Framework', hint: 'base app to start from', opts: [{ v: 'tanstack', d: 'default' }, { v: 'next', d: 'App Router' }] },
     { key: 'monorepo', label: 'Monorepo', hint: 'project structure · app lands in apps/web', opts: [{ v: 'none', d: 'standalone (default)' }, { v: 'turborepo', d: 'Turborepo' }, { v: 'nx', d: 'Nx' }] },
     { key: 'database', label: 'Database', hint: 'data layer', opts: [{ v: 'drizzle', d: 'default' }, { v: 'prisma', d: 'Prisma 7' }, { v: 'convex', d: 'realtime + API' }, { v: 'none', d: 'no database' }] },
     { key: 'auth', label: 'Auth', hint: 'auth provider', opts: [{ v: 'better-auth', d: 'self-hosted' }, { v: 'clerk', d: 'hosted' }, { v: 'none', d: 'no auth' }] },
-    { key: 'trpc', label: 'tRPC', hint: 'typed API foundation', opts: [{ v: true, label: 'trpc on', d: 'included' }, { v: false, label: 'trpc off', d: 'stripped' }] },
+    { key: 'trpc', label: 'tRPC', hint: 'typed API', opts: [{ v: true, label: 'trpc on', d: 'included' }, { v: false, label: 'trpc off', d: 'removed' }] },
     { key: 'mailer', label: 'Mailer', hint: 'transactional email', opts: [{ v: 'resend', d: 'default' }, { v: 'brevo', d: '' }, { v: 'ses', d: 'AWS' }, { v: 'none', d: 'skip' }] },
     { key: 'alias', label: 'Import alias', hint: "path prefix for ~/… imports", opts: [{ v: '~', d: 'default' }, { v: '@', d: 'common' }, { v: '#', d: 'node subpath' }] },
   ]
@@ -478,7 +478,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 
     let panel
     if (activeStep === 'caps') {
-      panel = '<h3>Capabilities</h3><div class="hint">optional integrations: pick an adapter where there is one to swap</div><div class="opts">' +
+      panel = '<h3>Capabilities</h3><div class="hint">optional integrations. Choose a provider when more than one is available</div><div class="opts">' +
         CAPS.map((c) => {
           const cur = state.caps[c.key]
           return '<div class="opt' + (cur ? ' sel' : '') + '" style="cursor:default"><span class="radio"></span><span>' + c.label + '</span><span class="desc" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' +
@@ -495,7 +495,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 
     const log = eff.adjustments.length
       ? eff.adjustments.map((a) => '<div class="term-line"><span class="arr">&rarr;</span><span>' + esc(a.head) + ' ' + esc(a.body) + '</span></div>').join('')
-      : '<div class="term-line" style="color:#5a5d65"><span class="arr">&rarr;</span>coherent selection, no adjustments</div>'
+      : '<div class="term-line" style="color:#5a5d65"><span class="arr">&rarr;</span>selection works as is</div>'
 
     document.getElementById('stage').innerHTML =
       '<div class="term"><div class="term-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">create-stack: interactive</span></div>' +
@@ -503,7 +503,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
       '<div class="term-foot"><div class="term-prompt"><span class="sig">$</span> ' + cmdHTML(cmd.parts) + '<span class="cursor"></span></div><div class="term-log">' + log + '</div>' +
       '<div class="term-actions"><div class="pm-pills" role="group" aria-label="Package manager">' +
       PMS.map((pm) => '<button class="pm-pill' + (state.pm === pm ? ' on' : '') + '" data-pm="' + pm + '">' + pm + '</button>').join('') +
-      '</div><button class="copy-btn" data-copy-cmd>Copy<span class="copy-suffix"> command</span></button><span class="runnote">paste it, and you have a real app</span></div></div></div>'
+      '</div><button class="copy-btn" data-copy-cmd>Copy<span class="copy-suffix"> command</span></button><span class="runnote">paste it to create the app</span></div></div></div>'
   }
 
   document.addEventListener('click', (e) => {
