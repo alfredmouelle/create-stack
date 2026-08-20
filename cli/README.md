@@ -1,10 +1,10 @@
 <h1 align="center">create-stack</h1>
 
 <p align="center">
-  Interactive, <strong>deterministic</strong>, framework-agnostic installer that
-  bootstraps a real, fully-wired app for your favorite framework.
+  Choose a framework and the pieces your app needs. create-stack starts from a
+  complete base app, keeps your selections, and removes the rest.
   <br>
-  <sub><strong>Next.js</strong> and <strong>TanStack Start</strong> today, more frameworks on the way.</sub>
+  <sub><strong>Next.js App Router</strong> and <strong>TanStack Start</strong> are supported today.</sub>
 </p>
 
 <p align="center">
@@ -21,19 +21,18 @@
 
 <p align="center">
   <!-- served from the npm tarball via jsDelivr so it renders identically on npm and GitHub; record with: vhs docs/demo.tape -->
-  <img src="https://cdn.jsdelivr.net/npm/@alfredmouelle/create-stack/docs/demo.gif" alt="create-stack scaffolding a project and swapping an adapter" width="640">
+  <img src="https://cdn.jsdelivr.net/npm/@alfredmouelle/create-stack/docs/demo.gif" alt="create-stack generating a project and changing an adapter" width="640">
 </p>
 
 ---
 
-Framework-agnostic by design: pick your framework, get a real app. create-stack forks a
-fully-wired base app and strips it to exactly what you pick (database, tRPC, better-auth, a
-mailer, optional capabilities), then stamps identity, writes `.env`, installs, verifies
-(typecheck + Biome), and records the verified baseline in Git. No template guesswork: the
-output is a real, buildable app from day one.
-**Next.js App Router** and **TanStack Start** are supported today, with more frameworks on the way.
+Choose a framework, then select a database, tRPC, auth, mailer, and optional capabilities.
+create-stack starts from a complete base app, keeps the pieces you select, writes the project
+identity and `.env`, installs dependencies, and runs typecheck and Biome. With Git enabled, it
+creates the initial commit after those checks pass.
+**Next.js App Router** and **TanStack Start** are supported today.
 
-> **Open source (MIT).** Source and issues live at
+> **Open source (MIT).** The source and issue tracker are on
 > [github.com/alfredmouelle/create-stack](https://github.com/alfredmouelle/create-stack).
 
 ## Quick start
@@ -44,10 +43,12 @@ pnpm dlx @alfredmouelle/create-stack@latest my-app
 pnpm create @alfredmouelle/stack@latest my-app
 ```
 
-No flags → an **interactive wizard**. Any selection flag → **non-interactive** (CI / scriptable).
+With no flags, the CLI opens an **interactive wizard**. Any selection flag switches to
+**non-interactive** mode for CI and scripts.
 
-Requires **Node ≥ 22**, a package manager (**pnpm** / npm / yarn / bun, auto-detected and
-used by the generated project), and **git** on `PATH`.
+Requires **Node ≥ 24.19.0**, a package manager (**pnpm** / npm / yarn / bun), and **git** on
+`PATH`. The CLI detects the package manager used to run it and uses the same one in the
+generated project.
 
 ## Commands
 
@@ -57,20 +58,21 @@ create-stack add [kind] [provider]                # add one capability or compon
 create-stack add --with kind[=provider] [...]     # add a validated batch
 ```
 
-`project` is the target dir (and default package name), must be empty or not exist.
-`<command> --help` prints its flags; `--version` prints the version.
+`project` names the target directory and becomes the default package name. It must not exist,
+or it must be empty. `<command> --help` prints the command's flags, and `--version` prints
+the installed version.
 
 ## Scaffold flags
 
 | Flag | Values | Default | Notes |
 | --- | --- | --- | --- |
-| `--framework` | `tanstack` \| `next` | `tanstack` | Base app to fork. |
-| `--monorepo` | `turbo` \| `nx` | standalone | Scaffold into a monorepo (app in `apps/web`) orchestrated by Turborepo or Nx. Bare `--monorepo` = turbo; omit for a standalone app. |
+| `--framework` | `tanstack` \| `next` | `tanstack` | Base app to use. |
+| `--monorepo` | `turbo` \| `nx` | standalone | Put the app in `apps/web` inside a Turborepo or Nx monorepo. Bare `--monorepo` selects turbo; omit it for a standalone app. |
 | `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project. |
-| `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias; rewrites `<alias>/*` → `src/*` everywhere. |
-| `--database` | `drizzle` \| `prisma` \| `convex` \| `none` | `drizzle` | Data layer. `prisma` = Prisma 7; `convex` = realtime db + API (replaces tRPC, Clerk/none auth only); `none` = database-less vitrine. |
+| `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias. Rewrites imports matching `<alias>/*` to `src/*`. |
+| `--database` | `drizzle` \| `prisma` \| `convex` \| `none` | `drizzle` | Data layer. `prisma` selects Prisma 7. `convex` provides a realtime database and API, so use Clerk or no auth. `none` omits the database. |
 | `--auth` | `better-auth` \| `clerk` \| `none` | `better-auth` | Auth provider. `clerk` is hosted (needs no db/mailer); `none` = no auth. |
-| `--minimal` | - | - | Start from a frontend-only project with no data, auth, tRPC, mail, or capabilities. |
+| `--minimal` | - | - | Start with a frontend-only project and omit data, auth, tRPC, mail, and capabilities. |
 | `--trpc` / `--no-trpc` | - | recommended | Explicitly include or exclude the tRPC API axis. |
 | `--no-db` | - | - | Explicitly exclude the data axis. |
 | `--no-auth` | - | - | Explicitly exclude authentication. |
@@ -82,23 +84,27 @@ create-stack add --with kind[=provider] [...]     # add a validated batch
 | `--logger` | `pino` \| `console` | `pino` | Structured logging (omit to skip). |
 | `--analytics` | `posthog` \| `plausible` \| `noop` | `posthog` | Product analytics (omit to skip). |
 | `--errors`, `--error-tracking` | `sentry` | `sentry` | Error reporting (omit to skip; bare selects Sentry). |
-| `--no-install` | - | install on | Skip install + verification. |
-| `--no-git` | - | Git on | Do not initialize a Git repository. |
-| `--yes`, `-y` | - | - | Non-interactive with all defaults. |
+| `--no-install` | - | install on | Skip dependency installation and verification. |
+| `--no-git` | - | Git on | Do not initialize Git. |
+| `--yes`, `-y` | - | - | Run non-interactively with the defaults. |
 
-Capability flags are optional; pass one (bare = default adapter, or the only provider) to
-vendor it, omit to skip. Any option switches creation to non-interactive mode. Omitted stack
-axes use applicable recommendations: for example, `--no-db` recommends Clerk, keeps tRPC,
-and omits mail. Better Auth completes an omitted database with Drizzle and omitted mail with
-Resend, but an explicit `--no-db` or `--no-mail` is a conflict. tRPC is independent of data
-and authentication. Convex conflicts with tRPC and Better Auth; when its related axes are
-omitted, it recommends Clerk, no tRPC, and no mail.
+Capability flags are optional. Pass a bare flag to select its default or only provider. Leave
+the flag out to skip it. Any stack or capability flag switches creation to non-interactive mode.
+
+The CLI fills in omitted stack choices using these rules:
+
+- `--no-db` selects Clerk, keeps tRPC, and omits mail.
+- If Better Auth stays selected, the CLI adds Drizzle when the database is omitted and Resend
+  when the mailer is omitted.
+- Explicit `--no-db` and `--no-mail` conflict with Better Auth.
+- tRPC does not depend on the database or auth. Convex cannot be used with tRPC or Better Auth.
+- If Convex's related choices are omitted, the CLI uses Clerk, no tRPC, and no mail.
 
 ```bash
-# everything, defaults, no questions
+# accept all defaults without prompts
 pnpm dlx @alfredmouelle/create-stack my-app --yes
 
-# Prisma instead of Drizzle, full stack
+# Prisma instead of Drizzle
 pnpm dlx @alfredmouelle/create-stack my-app --database prisma
 
 # Clerk instead of better-auth
@@ -110,37 +116,37 @@ pnpm dlx @alfredmouelle/create-stack my-app --database convex --auth clerk
 # Next.js, just tRPC, no data or auth, don't install
 pnpm dlx @alfredmouelle/create-stack api --framework next --minimal --trpc --no-install
 
-# inside an Nx monorepo (app lands in apps/web)
+# put the app in apps/web inside an Nx monorepo
 pnpm dlx @alfredmouelle/create-stack my-app --monorepo nx
 
-# frontend-only starting project
+# frontend-only project
 pnpm dlx @alfredmouelle/create-stack site --minimal
 
 # with capabilities: R2 storage, Upstash cache, Inngest jobs, Sentry errors
 pnpm dlx @alfredmouelle/create-stack my-app --storage --cache --jobs --errors
 ```
 
-## What you get
+## Generated project
 
-- **Framework**: Next.js App Router *or* TanStack Start, fully wired (SSR, routing).
-- **Structure**: standalone app *or* a Turborepo/Nx monorepo (app in `apps/web`) with workspace, task caching, delegated scripts and hoisted git hooks.
-- **Database**: Drizzle *or* Prisma 7 (Postgres, driver adapter, schema, seed, keyset pagination), *or* Convex (realtime db + API, subsumes tRPC), or none.
-- **tRPC v11**: typed API, SSR/RSC integration, health router.
-- **Auth**: better-auth (email+password + verification, Google OAuth, auth pages) *or* Clerk (hosted: provider, middleware, sign-in/up + `UserButton`), or none.
-- **Mailer**: Resend / Brevo / SES behind one port; React Email templates.
-- **Baseline**: Tailwind v4 + shadcn, Geist, theme toggle, strict Biome, typed `env.ts`, Dockerfile, git hooks, a GitHub Actions CI workflow (install + typecheck + Biome), generated `.gitignore` + `.env`.
+- **Framework.** Next.js App Router or TanStack Start with SSR and routing.
+- **Structure.** A standalone app, or an app in `apps/web` inside a Turborepo or Nx monorepo with workspace task caching and git hooks.
+- **Database.** Drizzle or Prisma 7 with Postgres, a driver adapter, schema, seed, and keyset pagination. Convex provides a realtime database and API. You can also omit the database.
+- **tRPC v11.** A typed API with SSR/RSC integration and a health router.
+- **Auth.** better-auth with email and password, verification, Google OAuth, and auth pages. Clerk provides hosted auth, middleware, sign-in and sign-up pages, and `UserButton`. You can also omit auth.
+- **Mailer.** Resend, Brevo, or SES behind one mailer interface with React Email templates.
+- **Checks.** Tailwind v4, shadcn, Geist, a theme toggle, strict Biome, typed `env.ts`, a Dockerfile, git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
 
-Unselected pieces are removed cleanly (files, deps, env, wiring); the project is left
-**bootable and green**.
+The CLI removes files, dependencies, env keys, and wiring for choices you leave out. It then
+checks the generated project with typecheck and Biome.
 
 ## Capabilities
 
-Integrations copied into `src/server/<capability>/`, with deps and env keys wired into
-`package.json` and `env.ts` automatically. They come in two kinds.
+The CLI copies integrations into `src/server/<capability>/` and adds their dependencies and env
+keys to `package.json` and `env.ts`. There are two forms.
 
-**Ports**, swappable: `port.ts` holds the interface, `adapters/<name>.ts` the chosen
-provider, and a generated composition root reads typed env and constructs the adapter
-lazily (so the app boots before you fill the keys).
+**Port-based capabilities.** `port.ts` holds the interface and `adapters/<name>.ts` holds the
+chosen provider. A generated composition root reads typed env and constructs the adapter when
+the app needs it, so you can install the code before setting provider keys.
 
 | Capability | Adapters |
 | --- | --- |
@@ -150,7 +156,7 @@ lazily (so the app boots before you fill the keys).
 | `analytics` | posthog, plausible, noop |
 | `mailer` | resend, brevo, ses |
 
-**Modules**, one provider used directly, no adapter to pick:
+**Single-provider modules.** These use the listed provider directly:
 
 | Capability | Provider | What lands |
 | --- | --- | --- |
@@ -159,10 +165,10 @@ lazily (so the app boots before you fill the keys).
 | `email-ui` | n/a | React Email primitives and theme |
 | `http` | n/a | typed fetch helpers |
 
-Add more later with `create-stack add` (same engine, merged incrementally). Re-adding a
-port with a different adapter **swaps** it (`--keep-files` keeps both); re-adding a module
-re-vendors it. Repeat `--with` to validate and apply capabilities and components together.
-Every entry is checked before project files change.
+Run `create-stack add` later to add more capabilities or components. Re-adding a port with a
+different adapter **swaps** it. Use `--keep-files` to keep both adapters. Re-adding a module
+copies it again. Repeat `--with` to validate and apply capabilities and components together.
+The CLI checks every entry before changing project files.
 
 ```bash
 create-stack add                                      # grouped interactive picker
@@ -175,22 +181,22 @@ create-stack add --with jobs --with component=confirm # mixed batch
 
 ## Components
 
-Opt-in UI kept out of the base bundle (its heavier deps too). Vendor one or several into a
-generated project: files copied, deps merged, imports realigned to your alias. Existing files
-are **never overwritten** (`--force` to override). The callable dialogs are built on
-[react-call](https://react-call.desko.dev) and also mount their `<Root />` in your app shell
-(tanstack `__root`, next root layout) automatically, so `.call()` works right after install.
+These UI components are not part of the base app. `create-stack add` copies their files, merges
+their dependencies, and realigns imports to your alias. Existing files are **never overwritten**
+unless you pass `--force`. The callable dialogs use
+[react-call](https://react-call.desko.dev), and the CLI mounts their `<Root />` in the app shell
+(TanStack `__root` or the Next.js root layout), so `.call()` works after install.
 
 | Component | Vendors | Deps |
 | --- | --- | --- |
 | `date-picker` | `ui/date-picker`, `ui/date-range-picker` (+ calendar, popover, lib/date) | react-day-picker, date-fns |
 | `data-table` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | @tanstack/react-table |
-| `confirm` | `ui/confirm` (+ alert-dialog) — `await` a yes/no | react-call |
-| `alert` | `ui/alert` (+ alert-dialog) — `await` an acknowledgement | react-call |
-| `prompt` | `ui/prompt` (+ dialog) — `await` a text input | react-call |
-| `choice` | `ui/choice` (+ dialog) — `await` a pick from a list | react-call |
-| `confirm-passphrase` | `ui/confirm-passphrase` (+ dialog) — type an exact phrase to confirm | react-call |
-| `confirm-otp` | `ui/confirm-otp` (+ dialog, input-otp) — verify an OTP code to confirm | react-call, input-otp |
+| `confirm` | `ui/confirm` (+ alert-dialog), waits for a yes/no result | react-call |
+| `alert` | `ui/alert` (+ alert-dialog), waits for confirmation | react-call |
+| `prompt` | `ui/prompt` (+ dialog), waits for text input | react-call |
+| `choice` | `ui/choice` (+ dialog), waits for a selection | react-call |
+| `confirm-passphrase` | `ui/confirm-passphrase` (+ dialog), checks an exact phrase | react-call |
+| `confirm-otp` | `ui/confirm-otp` (+ dialog, input-otp), checks an OTP code | react-call, input-otp |
 
 ```bash
 create-stack add                              # grouped capabilities + components picker
@@ -199,8 +205,7 @@ create-stack add --with component=confirm \
   --with component=prompt                     # several components
 ```
 
-The callable dialogs are `await`-ed from anywhere; their `<Root />` is already mounted, so
-there is nothing to wire:
+You can `await` the callable dialogs from anywhere. Their `<Root />` is already mounted:
 
 ```tsx
 const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })
@@ -217,7 +222,7 @@ const dest = await Choice.call({
 
 const confirmed = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: repo.name })
 
-// verify runs on submit; returning false keeps the dialog open with an error
+// Returning false keeps the dialog open with an error.
 const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => api.checkOtp(code) })
 ```
 
@@ -226,15 +231,15 @@ const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => 
 ```bash
 cd my-app
 pnpm install     # only if you passed --no-install
-# edit .env      # already generated with placeholders
+# edit .env      # placeholders are already there
 pnpm dev
 ```
 
-Outside an existing repository, the generated project gets a fresh Git repository. Its
-initial commit is created only after installation and verification pass (and is skipped if
-Git `user.name`/`user.email` aren't set). `--no-install` leaves the project uncommitted because
-its baseline has not been verified; `--no-git` disables initialization entirely. The
-published package is self-contained: `pnpm dlx` needs nothing else.
+Outside an existing repository, the CLI initializes a new Git repository. It creates the first
+commit only after installation and verification pass. If Git `user.name` or `user.email` is not
+set, it skips that commit. `--no-install` leaves the project uncommitted because its checks did
+not run. `--no-git` disables Git initialization. The published package includes everything it
+needs, so `pnpm dlx` is enough.
 
 ## Credits
 
@@ -242,7 +247,7 @@ Inspired by [create-t3-app](https://create.t3.gg) and the work of [Theo Browne](
 
 ## Author
 
-**Alfred MOUELLE**, FullStack Developer
+**Alfred MOUELLE**, full-stack developer
 
 [![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)
 [![ComeUp](https://img.shields.io/static/v1?style=for-the-badge&label=&message=ComeUp&color=yellow)](https://comeup.com/@alfredmouelle)
