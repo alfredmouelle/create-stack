@@ -1,4 +1,5 @@
-import { exists } from './util.mjs'
+import { dirname, join, resolve } from 'node:path'
+import { exists, readJSON } from './util.mjs'
 
 const PACKAGE_MANAGERS = {
   pnpm: {
@@ -54,6 +55,61 @@ const LOCKFILES = {
   bun: ['bun.lock', 'bun.lockb'],
 }
 
+const SHADCN_LOCKFILES = [
+  ['bun.lock', 'bun'],
+  ['bun.lockb', 'bun'],
+  ['pnpm-lock.yaml', 'pnpm'],
+  ['pnpm-workspace.yaml', 'pnpm'],
+  ['yarn.lock', 'yarn'],
+  ['package-lock.json', 'npm'],
+  ['npm-shrinkwrap.json', 'npm'],
+]
+
+function packageManagerField(pkg) {
+  if (typeof pkg.packageManager === 'string') return pkg.packageManager
+  if (typeof pkg.devEngines?.packageManager?.name === 'string') {
+    const version = pkg.devEngines.packageManager.version
+    return version
+      ? `${pkg.devEngines.packageManager.name}@${version}`
+      : pkg.devEngines.packageManager.name
+  }
+  return null
+}
+
+function packageManagerName(value) {
+  if (typeof value !== 'string') return null
+  const name = value.replace(/^\^/, '').split('@')[0]
+  return PM_NAMES.includes(name) ? name : null
+}
+
+function detectEffectivePackageManagerAt(current) {
+  for (const [filename, name] of SHADCN_LOCKFILES) {
+    const path = join(current, filename)
+    if (exists(path)) return { name, pm: resolvePackageManager(name), source: path }
+  }
+
+  const packagePath = join(current, 'package.json')
+  if (!exists(packagePath)) return null
+
+  let pkg
+  try {
+    pkg = readJSON(packagePath)
+  } catch {
+    return null
+  }
+  const raw = packageManagerField(pkg)
+  const name = packageManagerName(raw)
+  return name ? { name, pm: resolvePackageManager(name), source: packagePath, raw } : null
+}
+
+export function detectEffectivePackageManager(projectDir) {
+  for (let current = resolve(projectDir); ; current = dirname(current)) {
+    const detected = detectEffectivePackageManagerAt(current)
+    if (detected) return detected
+    if (dirname(current) === current) return null
+  }
+}
+
 export function detectProjectPackageManager(projectRoot, fallback = detectPackageManager()) {
   const matches = Object.entries(LOCKFILES)
     .filter(([, lockfiles]) => lockfiles.some((lockfile) => exists(`${projectRoot}/${lockfile}`)))
@@ -61,5 +117,7 @@ export function detectProjectPackageManager(projectRoot, fallback = detectPackag
   if (matches.length > 1) {
     throw new Error(`Ambiguous project package manager: found lockfiles for ${matches.join(', ')}`)
   }
-  return matches.length === 1 ? resolvePackageManager(matches[0]) : fallback
+  return matches.length === 1
+    ? resolvePackageManager(matches[0])
+    : (detectEffectivePackageManager(projectRoot)?.pm ?? fallback)
 }

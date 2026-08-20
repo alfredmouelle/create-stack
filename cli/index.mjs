@@ -45,6 +45,7 @@ import {
   relativeApplicationPath,
   resolveApplicationPath,
 } from './lib/project-target.mjs'
+import { installRegistryComponents, preflightRegistryComponents } from './lib/shadcn.mjs'
 import { exists, isDirEmpty, join, run, runCapture } from './lib/util.mjs'
 
 const detectedPm = detectPackageManager()
@@ -933,6 +934,34 @@ function validateAdditionInvocation(args) {
   }
 }
 
+function addSelection({ selection, projectDir, force, keepFiles, registryResults }) {
+  if (selection.type === 'component') {
+    return {
+      ...selection,
+      ...(registryResults.get(selection.name) ??
+        vendorComponent({ projectDir, name: selection.name, force })),
+    }
+  }
+
+  return {
+    ...selection,
+    ...addCapability({
+      projectDir,
+      cap: selection.cap,
+      adapter: selection.adapter,
+      keep: keepFiles,
+    }),
+  }
+}
+
+function registryPlanLines(preflight) {
+  return preflight ? [`shadcn: ${preflight.registryDependencies.join(', ')}`] : []
+}
+
+function installRegistryResults(preflight) {
+  return preflight ? installRegistryComponents(preflight) : new Map()
+}
+
 async function runAdd(args) {
   validateAdditionInvocation(args)
   const projectRoot = resolve(process.cwd())
@@ -994,6 +1023,14 @@ async function runAdd(args) {
     throw new Error('--keep-files only applies to provider changes')
   }
 
+  const registryPreflight = preflightRegistryComponents({
+    projectDir,
+    pm,
+    components,
+    noInstall: !!args.flags['no-install'],
+    force,
+  })
+
   p.intro('create-stack add')
   const plan = [
     `Application: ${applicationPath}`,
@@ -1007,21 +1044,13 @@ async function runAdd(args) {
       ({ name, from, adapter }) =>
         `Provider change: ${name} (${from} → ${adapter}${keepFiles ? ', keeping files' : ''})`,
     ),
+    ...registryPlanLines(registryPreflight),
   ]
   p.note(plan.join('\n'), 'Addition plan')
 
+  const registryResults = installRegistryResults(registryPreflight)
   const added = selections.map((selection) =>
-    selection.type === 'component'
-      ? { ...selection, ...vendorComponent({ projectDir, name: selection.name, force }) }
-      : {
-          ...selection,
-          ...addCapability({
-            projectDir,
-            cap: selection.cap,
-            adapter: selection.adapter,
-            keep: keepFiles,
-          }),
-        },
+    addSelection({ selection, projectDir, force, keepFiles, registryResults }),
   )
   if (!args.flags['no-install']) installAndVerify(projectDir, pm)
 
