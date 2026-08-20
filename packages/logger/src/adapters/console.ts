@@ -1,9 +1,7 @@
 import type { LogFields, Logger, LogLevel } from '../port.js'
 
 export interface ConsoleAdapterOptions {
-  /** Min level to emit; lower-severity dropped. Defaults to `'info'`. */
   level?: LogLevel
-  /** Fields pinned onto every line. */
   bindings?: LogFields
 }
 

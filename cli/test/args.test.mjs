@@ -24,7 +24,6 @@ describe('parseArgs', () => {
   })
 
   test('a value starting with - is not swallowed', () => {
-    // regression: `--no-install -y` must keep -y as its own flag, not its value
     const { flags } = parseArgs(['--mailer', '-y'])
     expect(flags.mailer).toBe(true)
     expect(flags.y).toBe(true)

@@ -1,6 +1,3 @@
-// Pure build phase (no prompts/install): fork → strip → mailer → env → identity.
-// Shared by index.mjs (post-wizard) and the test harness.
-
 import { randomBytes } from 'node:crypto'
 import { rewriteAlias } from './alias.mjs'
 import { applyAuth } from './auth.mjs'
@@ -25,21 +22,6 @@ import {
   writeJSON,
 } from './util.mjs'
 
-/**
- * @param {object} o
- * @param {string} o.projectDir  absolute target dir (must be empty)
- * @param {string} o.projectName
- * @param {'next'|'tanstack'} o.framework
- * @param {boolean} o.trpc  whether the app includes tRPC
- * @param {'drizzle'|'prisma'|'none'} o.database  ORM the app ships (default 'drizzle')
- * @param {'better-auth'|'clerk'|'none'} o.auth  auth provider (default 'better-auth')
- * @param {'resend'|'brevo'|'ses'|'none'} o.mailerProvider
- * @param {Record<string,string>} [o.capabilities]  capability → adapter (e.g. { storage: 's3' })
- * @param {string} [o.alias]  import-alias prefix to rewrite '~/' to (default '~', i.e. no-op)
- * @param {false|'turborepo'|'nx'} [o.monorepo]  wrap the app in a monorepo (app forked into apps/web)
- * @param {import('./package-manager.mjs').PackageManager} [o.pm]  target package manager (defaults to detected)
- * @returns {{ trpc: boolean, keptMailer: boolean, mailerProvider: string, capabilities: Record<string,string>, envKeys: string[], alias: string, monorepo: boolean }}
- */
 export function buildProject({
   projectDir,
   projectName,
@@ -55,26 +37,20 @@ export function buildProject({
 }) {
   const authUsesDb = auth === 'better-auth'
   const keptMailer = mailerProvider !== 'none'
-  // in a monorepo the app is forked into apps/web; app-level steps target appDir, root wiring uses projectDir.
   const appDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
 
   forkBase(framework, appDir)
   makeStandalone(appDir, monorepo ? 'web' : projectName, framework, pm, { monorepo: !!monorepo })
 
-  // strip → auth → database: stripping tRPC may swap the app shell to no-tRPC variants
-  // that applyAuth then injects the provider into; applyDatabase keys its auth models on auth.
   const strip = stripUnselectedFeatures({ projectDir: appDir, framework, trpc, keptMailer })
   const authRes = applyAuth({ projectDir: appDir, framework, auth, trpcKept: trpc })
   const db = applyDatabase({ projectDir: appDir, database, framework, auth, authKept: authUsesDb })
 
-  // opt-in components never ship in the default bundle — strip them; re-add via
-  // `create-stack add component <name>`.
   for (const rel of allComponentFiles()) remove(join(appDir, rel))
   const mailer = keptMailer
     ? swapMailer(appDir, mailerProvider)
     : { addDeps: {}, removeDeps: [], envKeys: [], requiredEnvKeys: [] }
 
-  // vendor each selected capability (core + adapter + composition root) into the fork.
   const capAddDeps = {}
   const capEnvKeys = []
   const capRequiredEnvKeys = []
@@ -103,7 +79,6 @@ export function buildProject({
 
   const envKeys = []
   const requiredEnvKeys = []
-  // Convex has no DATABASE_URL — it uses its own raw CONVEX_* keys (see db.envLines).
   if (database !== 'none' && database !== 'convex') {
     envKeys.push('DATABASE_URL')
     requiredEnvKeys.push('DATABASE_URL')
@@ -112,30 +87,24 @@ export function buildProject({
     envKeys.push(
       'BETTER_AUTH_URL',
       'BETTER_AUTH_SECRET',
-      'BETTER_AUTH_GOOGLE_CLIENT_ID', // Google OAuth is opt-in → optional
+      'BETTER_AUTH_GOOGLE_CLIENT_ID',
       'BETTER_AUTH_GOOGLE_CLIENT_SECRET',
     )
     requiredEnvKeys.push('BETTER_AUTH_URL', 'BETTER_AUTH_SECRET')
   }
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
-  // better-auth needs a real secret to boot: generate one into .env (gitignored, never
-  // committed); .env.example keeps the placeholder. base64url needs no quoting in .env.
   const localEnv =
     auth === 'better-auth' ? { BETTER_AUTH_SECRET: randomBytes(32).toString('base64url') } : {}
   writeEnv(appDir, envKeys, requiredEnvKeys, localEnv)
-  // Clerk + Convex read their keys straight from the environment (not the typed env.ts).
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
   stampIdentity(appDir, projectName, framework, pm)
-  // CI lives at the repo root (projectDir); the monorepo root scripts delegate it to the orchestrator.
   writeCiWorkflow(projectDir, pm)
 
-  // swap '~/' for the chosen alias across everything generated above (no-op when '~').
   rewriteAlias(appDir, alias)
 
-  // wrap the app in a monorepo root (root package.json + tool config + workspace, hooks, biome/gitignore).
   if (monorepo)
     wrapMonorepo({
       rootDir: projectDir,
@@ -148,7 +117,6 @@ export function buildProject({
     })
 
   return {
-    // wiring that means editing files the project owns; surfaced, never applied
     manualSteps: Object.keys(capabilities).flatMap((cap) =>
       (MANUAL_STEPS[cap]?.[framework] ?? []).map((step) => `${cap}: ${step}`),
     ),

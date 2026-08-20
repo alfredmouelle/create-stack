@@ -1,7 +1,3 @@
-// component engine: vendor an opt-in UI component (stripped from every scaffold) back into
-// an existing project from the matching base app, merging its deps. Idempotent re-runs and
-// alias alignment are covered here; the typecheck proof lives in smoke.test.mjs.
-
 import { writeFileSync } from 'node:fs'
 import { afterAll, describe, expect, test } from 'vitest'
 import { build, cleanup, exists, read, readJSON, vendorComponent } from './helpers.mjs'
@@ -53,7 +49,7 @@ describe('component', () => {
     const res = vendorComponent({ projectDir: dir, name: 'data-table', force: true })
     expect(res.skipped).toEqual([])
     expect(res.copied.length).toBeGreaterThan(0)
-    expect(read(file)).not.toBe('// local edit\n') // restored from the base app
+    expect(read(file)).not.toBe('// local edit\n')
   })
 
   test('aligns vendored imports to a non-default alias', () => {

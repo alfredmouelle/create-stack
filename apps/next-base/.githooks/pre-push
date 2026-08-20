@@ -1,5 +1,4 @@
 #!/bin/sh
-# Full validation before sharing — typecheck + tests.
 
 echo "▶ pre-push: typecheck…"
 if ! npm run typecheck; then

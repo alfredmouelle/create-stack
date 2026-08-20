@@ -1,6 +1,3 @@
-// prepack: snapshot base apps + mailer adapters (which live outside cli/) into
-// cli/_stack for a self-contained package. CLI-owned templates ship directly from cli/templates.
-
 import { cpSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -33,19 +30,16 @@ const copyApp = (from, to) =>
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })
 
-// base apps (forkable source)
 for (const base of ['next-base', 'tanstack-base']) {
   copyApp(join(ROOT, 'apps', base), join(OUT, 'apps', base))
 }
 
-// mailer: adapters + manifest (provider swap reads its dep ranges)
 cpSync(join(ROOT, 'packages/mailer/capability.json'), join(OUT, 'packages/mailer/capability.json'))
 cpSync(join(ROOT, 'packages/mailer/package.json'), join(OUT, 'packages/mailer/package.json'))
 cpSync(join(ROOT, 'packages/mailer/src/adapters'), join(OUT, 'packages/mailer/src/adapters'), {
   recursive: true,
 })
 
-// capabilities: manifest + package.json (dep ranges) + src (port/module + adapters, vendored on demand)
 for (const cap of ['storage', 'cache', 'logger', 'analytics', 'error-tracking', 'jobs']) {
   cpSync(
     join(ROOT, 'packages', cap, 'capability.json'),
@@ -55,7 +49,6 @@ for (const cap of ['storage', 'cache', 'logger', 'analytics', 'error-tracking', 
   cpSync(join(ROOT, 'packages', cap, 'src'), join(OUT, 'packages', cap, 'src'), { recursive: true })
 }
 
-// http + email-ui: vendored as-is by `add http` / `add email-ui` (and as cross-deps)
 for (const pkg of ['http', 'email-ui']) {
   cpSync(
     join(ROOT, 'packages', pkg, 'capability.json'),

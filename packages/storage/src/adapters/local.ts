@@ -3,12 +3,7 @@ import { dirname, join } from 'node:path'
 import { type PutOptions, type SignedUrlOptions, StorageError, type StoragePort } from '../port.js'
 
 export interface LocalAdapterOptions {
-  /** Root directory for stored objects. */
   baseDir: string
-  /**
-   * Base URL prefixed to keys by {@link StoragePort.getSignedUrl}. NOT signed —
-   * returns `${publicBaseUrl}/${key}`. Dev/tests only.
-   */
   publicBaseUrl?: string
 }
 
@@ -18,7 +13,6 @@ function isNotFound(error: unknown): boolean {
 }
 
 export function localAdapter(options: LocalAdapterOptions): StoragePort {
-  // Fail at construction, not on the first call.
   if (!options.baseDir) throw new StorageError('baseDir is required', { adapter: 'local' })
 
   const resolve = (key: string): string => join(options.baseDir, key)
@@ -61,7 +55,6 @@ export function localAdapter(options: LocalAdapterOptions): StoragePort {
       }
     },
     async getSignedUrl(key: string, _options: SignedUrlOptions) {
-      // No real signing; dev/test only.
       const base = options.publicBaseUrl ?? ''
       return `${base}/${key}`
     },

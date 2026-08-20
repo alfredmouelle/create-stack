@@ -26,7 +26,6 @@ interface BrevoSendResponse {
   messageIds?: string[]
 }
 
-/** Structural view of the Brevo client (eases testing). */
 export interface BrevoClientLike {
   transactionalEmails: {
     sendTransacEmail(request: BrevoSendRequest): Promise<BrevoSendResponse>
@@ -35,7 +34,6 @@ export interface BrevoClientLike {
 
 export interface BrevoAdapterOptions {
   apiKey: string
-  /** Inject custom/mock client. Defaults to real `BrevoClient`. */
   client?: BrevoClientLike
 }
 
@@ -48,7 +46,6 @@ function toBase64(content: Uint8Array | string): string {
 }
 
 export function brevoAdapter(options: BrevoAdapterOptions): MailerAdapter {
-  // Fail at construction, not on the first send().
   if (!options.apiKey) throw new MailerError('apiKey is required', { adapter: 'brevo' })
   const client: BrevoClientLike =
     options.client ?? (new BrevoClient({ apiKey: options.apiKey }) as unknown as BrevoClientLike)

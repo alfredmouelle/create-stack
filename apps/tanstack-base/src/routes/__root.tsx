@@ -6,10 +6,8 @@ import type { AppRouter } from '~/server/api/root'
 
 import appCss from '../styles.css?url'
 
-// Dev-only: devtools are code-split out of the production bundle.
 const Devtools = import.meta.env.DEV ? lazy(() => import('~/components/devtools')) : () => null
 
-// Pre-hydration: set theme class to avoid flash of wrong theme.
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m));}catch(e){}})();`
 
 interface RouterContext {

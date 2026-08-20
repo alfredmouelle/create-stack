@@ -2,7 +2,6 @@ import type { MailAddress, MailRecipient } from './port.js'
 
 const ADDRESS_RE = /^\s*(.*?)\s*<([^>]+)>\s*$/
 
-/** Coerce a recipient to {@link MailAddress}. */
 export function normalizeAddress(input: MailRecipient): MailAddress {
   if (typeof input !== 'string') return input
   const match = input.match(ADDRESS_RE)
@@ -10,12 +9,10 @@ export function normalizeAddress(input: MailRecipient): MailAddress {
   return { email: input.trim() }
 }
 
-/** Coerce a recipient or list to a normalized array. */
 export function normalizeRecipients(input: MailRecipient | MailRecipient[]): MailAddress[] {
   return (Array.isArray(input) ? input : [input]).map(normalizeAddress)
 }
 
-/** Render an address as RFC-style string (`Name <email>`). */
 export function formatAddress(address: MailAddress): string {
   return address.name ? `${address.name} <${address.email}>` : address.email
 }

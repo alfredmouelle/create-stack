@@ -8,21 +8,12 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { type PutOptions, type SignedUrlOptions, StorageError, type StoragePort } from '../port.js'
 
-/**
- * R2 is S3-compatible, but it is not S3: the endpoint is derived from the account id, the
- * region is always `auto`, and the SDK's default flexible checksums have to be turned off.
- * Standalone on purpose, so a project that picked R2 never carries an S3 adapter it did not ask for.
- */
-
-/** Cloudflare jurisdictions. A jurisdiction-restricted bucket has its own endpoint host. */
 export type R2Jurisdiction = 'eu' | 'fedramp'
 
-/** Structural view of the S3 client (eases testing). */
 export interface R2ClientLike {
   send(command: unknown): Promise<unknown>
 }
 
-/** Presigner shape, injectable so tests never sign for real. */
 export type R2Presigner = (
   client: R2ClientLike,
   command: unknown,
@@ -31,21 +22,16 @@ export type R2Presigner = (
 
 export interface R2AdapterOptions {
   bucket: string
-  /** Cloudflare account id (forms the R2 endpoint). */
   accountId: string
-  /** Jurisdiction of the bucket, inserted into the endpoint host. Omit for the default one. */
   jurisdiction?: R2Jurisdiction
   accessKeyId?: string
   secretAccessKey?: string
-  /** Inject custom/mock client. Defaults to real `S3Client`. */
   client?: R2ClientLike
-  /** Inject custom/mock presigner. Defaults to `@aws-sdk/s3-request-presigner`. */
   presign?: R2Presigner
 }
 
 const DEFAULT_EXPIRES_IN = 900
 
-/** `https://<accountId>[.<jurisdiction>].r2.cloudflarestorage.com` */
 export const r2Endpoint = (accountId: string, jurisdiction?: R2Jurisdiction): string =>
   `https://${accountId}${jurisdiction ? `.${jurisdiction}` : ''}.r2.cloudflarestorage.com`
 
@@ -65,7 +51,6 @@ function isNotFound(error: unknown): boolean {
 }
 
 export function r2Adapter(options: R2AdapterOptions): StoragePort {
-  // Fail at construction, not on the first call.
   if (!options.bucket) throw new StorageError('bucket is required', { adapter: 'r2' })
   if (!options.accountId) throw new StorageError('accountId is required', { adapter: 'r2' })
 
@@ -74,9 +59,6 @@ export function r2Adapter(options: R2AdapterOptions): StoragePort {
     (new S3Client({
       region: 'auto',
       endpoint: r2Endpoint(options.accountId, options.jurisdiction),
-      // R2 rejects the SDK v3 default flexible checksums, and on a presigned PUT the CRC32 is
-      // computed at signing time (without the body), so it could never match. Only send one
-      // when the operation actually requires it.
       requestChecksumCalculation: 'WHEN_REQUIRED',
       credentials:
         options.accessKeyId && options.secretAccessKey

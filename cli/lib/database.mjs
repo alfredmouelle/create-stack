@@ -1,14 +1,9 @@
-// The `database` axis: the base ships Drizzle; `prisma` strips it and vendors the
-// Prisma fragment, `none` strips it outright. Idiomatic, not port-abstracted — the
-// `~/server/db` `db` export is a naming convention so trpc's context survives a swap.
-
 import { TEMPLATES } from './paths.mjs'
 import { copy, editFile, exists, join, read, readJSON, remove, write, writeJSON } from './util.mjs'
 
 export const DATABASES = ['drizzle', 'prisma', 'convex']
 export const DEFAULT_DATABASE = 'drizzle'
 
-/** Resolve a flag/prompt value to a database choice, or throw. */
 export function resolveDatabase(value) {
   if (value === 'none') return 'none'
   if (value === true || value == null || value === '') return DEFAULT_DATABASE
@@ -20,10 +15,7 @@ export function resolveDatabase(value) {
 
 const PRISMA_VERSION = '^7.4.0'
 
-// Deps the Drizzle base ships that Prisma doesn't need (pg/dotenv/tsx/@types/pg/
-// faker are reused by the adapter + seed, so they stay).
 const DRIZZLE_ONLY_DEPS = ['drizzle-orm', 'drizzle-kit']
-// Every dep the Drizzle base contributes — dropped wholesale for `none`.
 const DRIZZLE_ALL_DEPS = [
   'drizzle-orm',
   'pg',
@@ -49,7 +41,6 @@ const PRISMA_SCRIPTS = {
   postinstall: 'prisma generate',
 }
 
-// Files copied from the Prisma fragment (auth.prisma is conditional on auth).
 const PRISMA_FILES = [
   'src/server/db/index.ts',
   'src/server/db/seed.ts',
@@ -70,11 +61,6 @@ const empty = () => ({
   nativeBuilds: [],
 })
 
-/**
- * Bring the db layer to the chosen ORM. Runs after auth so `authKept`/`auth` are
- * final (better-auth models tracked, the Clerk provider already in the shell).
- * @returns {{ removeDeps: string[], addDeps: object, addDevDeps: object, removeScripts: string[], setScripts: object, envLines: string[], nativeBuilds: string[] }}
- */
 export function applyDatabase({ projectDir, database, framework, auth, authKept }) {
   if (database === 'drizzle') return applyDrizzle(projectDir, authKept)
   if (database === 'none') return stripDatabase(projectDir)
@@ -85,13 +71,11 @@ export function applyDatabase({ projectDir, database, framework, auth, authKept 
 
 const src = (projectDir, p) => join(projectDir, 'src', p)
 
-/** Drizzle stays wired; only drop the auth models when auth isn't kept. */
 function applyDrizzle(projectDir, authKept) {
   if (!authKept) dropDrizzleAuthSchema(projectDir)
   return empty()
 }
 
-/** No ORM: remove the whole db layer + its deps/scripts. */
 function stripDatabase(projectDir) {
   remove(src(projectDir, 'server/db'))
   remove(join(projectDir, 'drizzle.config.ts'))
@@ -106,7 +90,6 @@ function stripDatabase(projectDir) {
   return { ...empty(), removeDeps: [...DRIZZLE_ALL_DEPS], removeScripts: [...DB_SCRIPTS] }
 }
 
-/** Swap the Drizzle db layer for the Prisma fragment. */
 function vendorPrisma(projectDir, authKept) {
   remove(src(projectDir, 'server/db'))
   remove(join(projectDir, 'drizzle.config.ts'))
@@ -131,7 +114,6 @@ function vendorPrisma(projectDir, authKept) {
   }
 }
 
-/** Drop the Drizzle auth schema + its barrel line, keeping the barrel a module. */
 function dropDrizzleAuthSchema(projectDir) {
   remove(src(projectDir, 'server/db/schemas/auth.schema.ts'))
   editFile(src(projectDir, 'server/db/schemas/index.ts'), (c) => {
@@ -143,7 +125,6 @@ function dropDrizzleAuthSchema(projectDir) {
   })
 }
 
-/** drizzleAdapter → prismaAdapter in the better-auth config (both frameworks). */
 function rewriteBetterAuthAdapter(projectDir) {
   editFile(join(projectDir, 'src/server/better-auth/config.ts'), (c) =>
     c
@@ -153,7 +134,6 @@ function rewriteBetterAuthAdapter(projectDir) {
   )
 }
 
-/** The generated Prisma client is a build artifact — never commit it. */
 function gitignoreGenerated(projectDir) {
   const path = join(projectDir, '.gitignore')
   if (!exists(path)) return
@@ -162,8 +142,6 @@ function gitignoreGenerated(projectDir) {
   write(path, `${cur.replace(/\n*$/, '')}\n\n# prisma generated client\n/src/generated\n`)
 }
 
-// pnpm/bun block dependency build scripts by default; Prisma's engine setup (needed
-// for migrate/studio) must be allowlisted or `install` errors out for the user.
 const PRISMA_BUILD_DEPS = ['prisma', '@prisma/engines', '@prisma/client']
 
 function allowPrismaBuilds(projectDir) {
@@ -187,12 +165,8 @@ function allowPrismaBuilds(projectDir) {
   }
 }
 
-// Convex is not an ORM — it collapses db + API + realtime client. It ships a
-// committed `convex/` backend (schema + example + _generated) and a client provider
-// wired into the shell; trpc + react-query are already stripped (normalize forces them off).
 const CONVEX_URL_ENV = { tanstack: 'VITE_CONVEX_URL', next: 'NEXT_PUBLIC_CONVEX_URL' }
 
-/** Swap the SQL data layer for Convex: strip Drizzle, vendor the backend + provider. */
 function vendorConvex(projectDir, framework, auth) {
   remove(src(projectDir, 'server/db'))
   remove(join(projectDir, 'drizzle.config.ts'))
@@ -241,7 +215,6 @@ import { ConvexProviderWithClerk } from 'convex/react-clerk'
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 `
 
-/** Wrap the shell's children in a Convex provider (ConvexProviderWithClerk when Clerk is on). */
 function injectConvexProviderTanstack(projectDir, auth) {
   const clerk = auth === 'clerk'
   const header = clerk ? CONVEX_TANSTACK_CLERK : CONVEX_TANSTACK_PLAIN

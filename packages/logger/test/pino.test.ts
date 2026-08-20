@@ -40,7 +40,6 @@ describe('pinoAdapter', () => {
     child.info('hi', { a: 1 })
 
     expect(client.child).toHaveBeenCalledWith({ requestId: 'abc' })
-    // top-level client must not receive the child's line
     expect(client.info).not.toHaveBeenCalled()
     const childClient = vi.mocked(client.child).mock.results[0]?.value as PinoLike
     expect(childClient.info).toHaveBeenCalledWith({ a: 1 }, 'hi')

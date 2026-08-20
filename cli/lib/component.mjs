@@ -1,22 +1,9 @@
-// `create-stack add component <name>` — opt-in UI components vendored from the matching
-// base app. Their source of truth lives in apps/<framework>-base; every scaffold strips
-// them (see build.mjs) so they never weigh on the default bundle, and this re-vendors them
-// when the user opts in. Idempotent: files that already exist are left untouched so local
-// edits survive a re-run. Dep ranges are resolved from the base app's package.json to stay
-// in lockstep with it.
-
 import { detectFramework } from './add.mjs'
 import { detectAlias, rewriteAlias } from './alias.mjs'
 import { STACK_ROOT } from './paths.mjs'
 import { COMPONENT_CATALOG } from './registry.mjs'
 import { copy, exists, join, pkgAddDeps, read, readJSON, write, writeJSON } from './util.mjs'
 
-// name → vendored files (relative to project root) + the npm deps it pulls. Primitives a
-// component needs (calendar/popover for the date pickers, dialog/alert-dialog/input-otp for
-// the callables) are listed inline per component. Shared primitives (e.g. dialog across the
-// callables) may appear under several components: the strip pass removes each once and the
-// vendor pass skips files already present, so overlap is harmless. A `root` marks a callable
-// whose Root must be mounted once in the app's root document (see mountRoot).
 export const COMPONENTS = {
   'date-picker': {
     label: 'Date picker',
@@ -88,10 +75,8 @@ export const COMPONENTS = {
 
 export const COMPONENT_NAMES = Object.keys(COMPONENTS)
 
-/** Every file the opt-in components own — stripped from every scaffold. */
 export const allComponentFiles = () => COMPONENT_NAMES.flatMap((n) => COMPONENTS[n].files)
 
-/** Every npm dep the opt-in components pull — removed from every scaffold's package.json. */
 export const allComponentDeps = () => [
   ...new Set(COMPONENT_NAMES.flatMap((n) => COMPONENTS[n].deps)),
 ]
@@ -104,13 +89,6 @@ const ROOT_FILE = {
   tanstack: 'src/routes/__root.tsx',
 }
 
-/**
- * Mount a callable's Root once in the app's root document so `.call()` works out of the box.
- * Injects `import { Name } from '~/<module>'` after the last import and `<Name />` before
- * </body>. The '~/' is normalized to the project's alias by the later rewriteAlias pass.
- * Idempotent: a Root already present is untouched. Returns false when the root file or its
- * anchors can't be found (the caller then prints a manual mount hint).
- */
 function mountRoot(projectDir, framework, root) {
   const path = join(projectDir, ROOT_FILE[framework] ?? '')
   if (!exists(path)) return false
@@ -129,7 +107,6 @@ function mountRoot(projectDir, framework, root) {
   return true
 }
 
-// Resolve each dep's range from the base app's package.json so versions stay in lockstep.
 function resolveDeps(framework, names) {
   const pkg = readJSON(join(baseDir(framework), 'package.json'))
   const all = { ...pkg.dependencies, ...pkg.devDependencies }
@@ -138,11 +115,6 @@ function resolveDeps(framework, names) {
   return out
 }
 
-/**
- * Vendor `name` into the project: copy its files from the base app, merge its deps.
- * Existing files are left untouched unless `force` is set (then they're overwritten).
- * @returns {{ framework, copied: string[], skipped: string[], addDeps: Record<string,string> }}
- */
 export function vendorComponent({ projectDir, name, force = false }) {
   const comp = COMPONENTS[name]
   if (!comp) throw new Error(`Unknown component: ${name} (have ${COMPONENT_NAMES.join(', ')})`)
@@ -158,7 +130,7 @@ export function vendorComponent({ projectDir, name, force = false }) {
   for (const rel of comp.files) {
     const dest = join(projectDir, rel)
     if (exists(dest) && !force) {
-      skipped.push(rel) // already there — never clobber a local edit (override with --force)
+      skipped.push(rel)
       continue
     }
     copy(join(base, rel), dest)
@@ -169,10 +141,8 @@ export function vendorComponent({ projectDir, name, force = false }) {
   pkgAddDeps(pkg, addDeps)
   writeJSON(pkgPath, pkg)
 
-  // callables must have their Root mounted once in the app shell to work out of the box.
   const mounted = comp.root ? mountRoot(projectDir, framework, comp.root) : null
 
-  // vendored files (+ any injected import) ship with '~/'; align to this project's alias.
   rewriteAlias(projectDir, alias)
   return { framework, copied, skipped, addDeps, mounted, rootName: comp.root?.name ?? null }
 }

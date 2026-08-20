@@ -3,7 +3,6 @@ import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2'
 import { formatAddress } from '../address.js'
 import { type MailerAdapter, MailerError, type RenderedMessage } from '../port.js'
 
-/** Structural view of the SESv2 client (eases testing). */
 export interface SesClientLike {
   send(command: { input: SesSendEmailInput }): Promise<{ MessageId?: string }>
 }
@@ -24,17 +23,14 @@ interface SesSendEmailInput {
 }
 
 export interface SesAdapterOptions {
-  /** AWS region. Falls back to SDK resolution (e.g. `AWS_REGION`). */
   region?: string
   accessKeyId?: string
   secretAccessKey?: string
   configurationSetName?: string
-  /** Inject custom/mock client. Defaults to real `SESv2Client`. */
   client?: SesClientLike
 }
 
 export function sesAdapter(options: SesAdapterOptions = {}): MailerAdapter {
-  // Every option is optional: the SDK resolves region + credentials from env/profile/IAM.
   const client: SesClientLike =
     options.client ??
     (new SESv2Client({
@@ -48,7 +44,6 @@ export function sesAdapter(options: SesAdapterOptions = {}): MailerAdapter {
   return {
     name: 'ses',
     async send(message: RenderedMessage) {
-      // SES Simple content can't carry attachments (needs raw MIME, not built here). Fail loudly.
       if (message.attachments?.length) {
         throw new MailerError('SES adapter does not support attachments (requires raw MIME)', {
           adapter: 'ses',

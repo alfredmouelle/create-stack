@@ -1,11 +1,9 @@
 import { createEnv } from '@t3-oss/env-core'
 import * as v from 'valibot'
 
-/** Required in production, optional in dev/test. */
 export const requiredInProduction = <T extends v.GenericSchema>(schema: T) =>
   process.env.NODE_ENV === 'production' ? schema : v.optional(schema)
 
-/** Typed env; stack options and capabilities extend `server` + `runtimeEnv` as needed. */
 export const env = createEnv({
   shared: {
     NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'development'),

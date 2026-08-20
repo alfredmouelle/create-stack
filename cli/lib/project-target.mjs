@@ -16,7 +16,6 @@ const isCompatibleApplication = (directory) => {
   }
 }
 
-/** Find framework applications below a project root, including the root itself. */
 export function findCompatibleApplications(projectRoot) {
   const applications = []
 
@@ -44,7 +43,6 @@ const isOutside = (root, target) => {
   )
 }
 
-/** Resolve and validate a user-visible application path relative to the project root. */
 export function resolveApplicationPath(projectRoot, requestedPath) {
   if (typeof requestedPath !== 'string' || !requestedPath.trim()) {
     throw new Error('--app requires a relative application path')

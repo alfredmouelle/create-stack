@@ -1,9 +1,6 @@
-/** Swappable email design tokens. Override via {@link createEmailTheme} or `<EmailThemeProvider>`. */
 export interface EmailTheme {
   brand: {
-    /** Header band + footer. */
     name: string
-    /** Footer line (year prefixed automatically). */
     footer: string
   }
   fontFamily: string
@@ -17,7 +14,6 @@ export interface EmailTheme {
     border: string
     borderSubtle: string
     destructive: string
-    /** Text color over accent/destructive buttons. */
     onAccent: string
   }
 }
@@ -48,7 +44,6 @@ export type EmailThemeOverride = {
   colors?: Partial<EmailTheme['colors']>
 }
 
-/** Deep-merge override onto base (defaults to {@link defaultTheme}). */
 export function createEmailTheme(
   override: EmailThemeOverride = {},
   base: EmailTheme = defaultTheme,

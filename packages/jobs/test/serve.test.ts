@@ -6,13 +6,11 @@ const userSignedUp = eventType('user/signed-up', {
   schema: staticSchema<{ userId: string }>(),
 })
 
-/** Built exactly the way an app is told to build one, against the real SDK. */
 function buildApp() {
   const client = new Inngest({ id: 'jobs-test', isDev: true })
   const welcome = client.createFunction(
     { id: 'send-welcome', triggers: [{ event: userSignedUp }] },
     async ({ event }) => {
-      // `event.data` is typed from the eventType, not `any`.
       const userId: string = event.data.userId
       return { userId }
     },
@@ -20,14 +18,11 @@ function buildApp() {
   return { client, functions: [welcome] }
 }
 
-/** Inngest resolves the request URL against the `host` header, which undici omits. */
 const request = (path = '/api/inngest') =>
   new Request(`http://localhost${path}`, { headers: { host: 'localhost' } })
 
 describe('jobsHandler', () => {
   it('accepts functions built with the real Inngest v4 API', () => {
-    // Regression: the previous adapter called createFunction(config, trigger, handler),
-    // the v3 3-arg form, which throws at registration against v4.
     expect(() => buildApp()).not.toThrow()
   })
 

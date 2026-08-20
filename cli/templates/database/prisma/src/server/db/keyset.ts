@@ -1,5 +1,3 @@
-// Keyset (cursor) pagination helpers — ORM-agnostic core. Build the Prisma `where`
-// from a decoded cursor (OR of `{ sort: { gt } }` and `{ sort, id: { gt } }`) at the call site.
 
 export type SortDirection = 'asc' | 'desc'
 

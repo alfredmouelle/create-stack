@@ -43,10 +43,6 @@ export const auth = betterAuth({
   },
   socialProviders,
   user: {
-    // Add extra columns here (mirror in auth.schema.ts):
-    // additionalFields: {
-    //   role: { type: 'string', defaultValue: 'user', input: false },
-    // },
     additionalFields: {},
   },
   trustedOrigins: [env.BETTER_AUTH_URL],

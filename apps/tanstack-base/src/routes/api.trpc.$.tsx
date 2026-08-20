@@ -1,5 +1,3 @@
-// Loads TanStack Start augmentation adding `server` to route options (typechecks without other react-start imports).
-
 import { createFileRoute } from '@tanstack/react-router'
 import type {} from '@tanstack/react-start'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'

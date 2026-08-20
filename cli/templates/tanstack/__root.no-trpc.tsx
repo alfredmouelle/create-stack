@@ -3,10 +3,8 @@ import { lazy, Suspense } from 'react'
 
 import appCss from '../styles.css?url'
 
-// Dev-only: devtools are code-split out of the production bundle.
 const Devtools = import.meta.env.DEV ? lazy(() => import('~/components/devtools')) : () => null
 
-// Runs before hydration to set the theme class and avoid a flash of wrong theme.
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m));}catch(e){}})();`
 
 export const Route = createRootRoute({

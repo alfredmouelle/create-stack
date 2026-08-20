@@ -1,7 +1,6 @@
 import { Storage } from '@google-cloud/storage'
 import { type PutOptions, type SignedUrlOptions, StorageError, type StoragePort } from '../port.js'
 
-/** Structural view of a GCS file handle (eases testing). */
 export interface GcsFileLike {
   save(data: Buffer | string, options?: { contentType?: string }): Promise<void>
   download(): Promise<[Buffer]>
@@ -15,12 +14,10 @@ export interface GcsFileLike {
   }): Promise<[string]>
 }
 
-/** Structural view of a GCS bucket handle. */
 export interface GcsBucketLike {
   file(key: string): GcsFileLike
 }
 
-/** Structural view of the GCS Storage client. */
 export interface GcsStorageLike {
   bucket(name: string): GcsBucketLike
 }
@@ -28,7 +25,6 @@ export interface GcsStorageLike {
 export interface GcsAdapterOptions {
   bucket: string
   projectId?: string
-  /** Inject custom/mock client. Defaults to real `Storage`. */
   client?: GcsStorageLike
 }
 
@@ -40,7 +36,6 @@ function isNotFound(error: unknown): boolean {
 }
 
 export function gcsAdapter(options: GcsAdapterOptions): StoragePort {
-  // Fail at construction, not on the first call.
   if (!options.bucket) throw new StorageError('bucket is required', { adapter: 'gcs' })
 
   const client: GcsStorageLike =

@@ -11,7 +11,6 @@ function required(value: string | undefined, name: string): string {
   return value
 }
 
-// Lazy: app boots without RESEND_API_KEY; adapter built on first send.
 let mailer: Mailer | null = null
 function getMailer(): Mailer {
   if (!mailer) {

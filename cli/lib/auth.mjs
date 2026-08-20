@@ -1,14 +1,9 @@
-// The `auth` axis: the base ships better-auth; `clerk` strips it and vendors Clerk,
-// `none` strips it outright. Idiomatic per framework, not port-abstracted. Unlike
-// better-auth, Clerk is hosted — it needs no database and no mailer.
-
 import { TEMPLATES } from './paths.mjs'
 import { copy, editFile, join, remove } from './util.mjs'
 
 export const AUTHS = ['better-auth', 'clerk']
 export const DEFAULT_AUTH = 'better-auth'
 
-/** Resolve a flag/prompt value to an auth choice, or throw. */
 export function resolveAuth(value) {
   if (value === 'none') return 'none'
   if (value === true || value == null || value === '') return DEFAULT_AUTH
@@ -35,11 +30,6 @@ const src = (projectDir, p) => join(projectDir, 'src', p)
 
 const empty = () => ({ removeDeps: [], addDeps: {}, envLines: [] })
 
-/**
- * Bring auth to the chosen provider. Runs before the database axis so `authUsesDb`
- * (only better-auth touches the db) is known. `trpcKept` gates the tRPC context rewrite.
- * @returns {{ removeDeps: string[], addDeps: object, envLines: string[] }}
- */
 export function applyAuth({ projectDir, framework, auth, trpcKept }) {
   if (auth === 'better-auth') return empty()
 
@@ -60,7 +50,6 @@ export function applyAuth({ projectDir, framework, auth, trpcKept }) {
   }
 }
 
-/** Delete every better-auth file (server, features, routes). No tRPC edit here. */
 function stripBetterAuth(projectDir, framework) {
   const s = (p) => src(projectDir, p)
   remove(s('server/better-auth'))
@@ -78,7 +67,6 @@ function stripBetterAuth(projectDir, framework) {
   for (const d of dirs) remove(s(d))
 }
 
-/** Copy the Clerk fragment + inject the provider into the app shell. */
 function vendorClerk(projectDir, framework) {
   copy(join(TEMPLATES, `auth/clerk/${framework}`), projectDir)
   if (framework === 'next') injectClerkProviderNext(projectDir)
@@ -122,7 +110,6 @@ const CLERK_PROTECTED = `export const protectedProcedure = t.procedure.use(timin
   return next({ ctx: { userId: ctx.auth.userId } })
 })`
 
-/** Swap the better-auth session for Clerk's auth() in the tRPC context + protectedProcedure. */
 function clerkifyTrpc(c, framework) {
   const clerkImport = `import { auth } from '${CLERK_SERVER[framework]}'\n`
   return `${clerkImport}${c.replace("import { auth } from '~/server/better-auth'\n", '')}`
@@ -133,7 +120,6 @@ function clerkifyTrpc(c, framework) {
     .replace(/export const protectedProcedure = t\.procedure[\s\S]*$/, `${CLERK_PROTECTED}\n`)
 }
 
-/** Remove better-auth coupling from a tRPC context file (the `none` case). */
 function stripAuthFromTrpc(c) {
   return c
     .replace(

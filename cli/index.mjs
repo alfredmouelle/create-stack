@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// create-stack — fork a base app, strip to selection, stamp identity, verify.
-// Interactive by default; non-interactive when any selection flag (or --yes) is passed:
-//   create-stack my-app --framework next --db drizzle --trpc --mail ses --no-install
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -50,7 +47,6 @@ import {
 } from './lib/project-target.mjs'
 import { exists, isDirEmpty, join, run, runCapture } from './lib/util.mjs'
 
-// PM that launched us; the wizard pre-selects it and `add`/non-interactive fall back to it.
 const detectedPm = detectPackageManager()
 
 const VERSION = JSON.parse(
@@ -274,7 +270,6 @@ const cancelled = (v) => {
   return v
 }
 
-/** Read --<capability> flags into { capability: adapter } (default adapter if bare). */
 function collectCapabilityFlags(flags) {
   const out = {}
   for (const cap of CAPABILITIES) {
@@ -465,7 +460,6 @@ function resolveMailer(value) {
   )
 }
 
-/** Ask which adapter to use for each picked capability; a module has nothing to pick. */
 async function pickAdapters(caps) {
   const out = {}
   for (const cap of caps) {
@@ -573,10 +567,8 @@ async function collectFromPrompts(argDir) {
     }),
   )
 
-  // Convex replaces tRPC and can't back the Postgres-coupled better-auth (Clerk/none only).
   const convex = database === 'convex'
 
-  // better-auth needs a Postgres database; with `none`/`convex` only offer db-less providers.
   const betterAuthOpt = {
     value: 'better-auth',
     label: 'better-auth',
@@ -595,7 +587,6 @@ async function collectFromPrompts(argDir) {
     }),
   )
 
-  // tRPC is independent of data and auth; only Convex occupies the same API axis.
   const wantsTrpc = convex
     ? false
     : cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: true }))
@@ -657,14 +648,12 @@ async function collectFromPrompts(argDir) {
 const pmRun = (pm, script, projectDir, opts = {}) =>
   run(pm.exec, pm.runArgs(script), { cwd: projectDir, ...opts })
 
-/** Install deps, normalize formatting, then report typecheck + biome status. */
 function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
   p.log.step(`${pm.name} install`)
   const installed = run(pm.exec, pm.installArgs, { cwd: projectDir })
   if (!installed && requireSuccess) {
     throw new Error(`${pm.name} install failed; verification and the initial commit were skipped`)
   }
-  // re-format under the fork's own Biome so the initial commit is lint-clean for any selection
   const formatted = pmRun(pm, 'check:write', projectDir, { stdio: 'ignore' })
   if (!formatted && requireSuccess) {
     throw new Error('Verification failed; the initial commit was skipped')
@@ -680,10 +669,6 @@ function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
   )
 }
 
-/**
- * Initialize only when the target is outside an existing repository. Hooks are
- * wired before install so generated-project lifecycle scripts see the right root.
- */
 function initGitRepo(projectDir) {
   if (runCapture('git', ['-C', projectDir, 'rev-parse', '--show-toplevel'])) {
     p.log.step('existing git repository detected (initialization skipped)')
@@ -697,7 +682,6 @@ function initGitRepo(projectDir) {
   return true
 }
 
-/** Record the verified generated baseline in a freshly initialized repository. */
 function commitInitialBaseline(projectDir) {
   run('git', ['-C', projectDir, 'add', '-A'])
   const msg = 'chore: initial commit from create-stack'
@@ -769,7 +753,6 @@ function creationPlanLines(a, pm) {
   ]
 }
 
-/** The "Done" note: selection recap + next steps. */
 function summaryLines(a, pm) {
   const capEntries = Object.entries(a.capabilities ?? {})
   const appRel = a.monorepo ? 'apps/web/' : ''
@@ -875,7 +858,6 @@ function resolveAdditionBatch(args) {
   return selections
 }
 
-/** Which additions to apply: a batch, one positional selection, or the grouped picker. */
 async function resolveAddSelections(args) {
   const batch = resolveAdditionBatch(args)
   if (batch) return batch
@@ -951,7 +933,6 @@ function validateAdditionInvocation(args) {
   }
 }
 
-/** `create-stack add <kind> [provider]` — enrich the resolved application target. */
 async function runAdd(args) {
   validateAdditionInvocation(args)
   const projectRoot = resolve(process.cwd())
@@ -1053,7 +1034,6 @@ async function runAdd(args) {
     'Added',
   )
 
-  // Wiring that means editing files the project owns, so the user applies it.
   const steps = added.flatMap((a) => (a.manualSteps ?? []).map((s) => `${a.name}: ${s}`))
   if (steps.length) p.note(steps.join('\n'), 'Finish by hand')
 

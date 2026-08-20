@@ -1,6 +1,3 @@
-// Shared test harness. Forks the live monorepo via CREATE_STACK_STACK_ROOT so a stale
-// cli/_stack snapshot never masks a broken base app or strip seam.
-
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -11,7 +8,6 @@ import { resolvePackageManager } from '../lib/package-manager.mjs'
 const here = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = resolve(here, '..', '..')
 
-// set before lib/paths.mjs evaluates → dynamic-import the consumers below
 process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 
 const { buildProject } = await import('../lib/build.mjs')
@@ -22,12 +18,6 @@ const PM = resolvePackageManager('pnpm')
 
 const tmpRoots = []
 
-/**
- * Build a project from a terse config into a throwaway dir.
- * @param {{ name?: string, framework: 'next'|'tanstack', database?: string, auth?: string,
- *   trpc?: boolean, mailer?: string, capabilities?: Record<string,string>, alias?: string, pm?: string }} cfg
- * @returns {{ dir: string, result: object }}
- */
 export function build(cfg) {
   const dir = mkdtempSync(join(tmpdir(), 'create-stack-test-'))
   tmpRoots.push(dir)
@@ -54,7 +44,6 @@ export function build(cfg) {
   return { dir: projectDir, result }
 }
 
-/** Remove every temp dir this run created. */
 export function cleanup() {
   for (const d of tmpRoots.splice(0)) rmSync(d, { recursive: true, force: true })
 }
@@ -71,7 +60,6 @@ export const exists = (p) => {
 export const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'))
 export const read = (p) => readFileSync(p, 'utf8')
 
-/** All files under a dir (recursive), as paths relative to it. */
 export function walk(dir, base = dir, out = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const abs = join(dir, entry.name)
@@ -85,14 +73,12 @@ export function walk(dir, base = dir, out = []) {
   return out
 }
 
-/** TS/TSX source files (relative paths) under projectDir/src. */
 export function srcFiles(projectDir) {
   const srcDir = join(projectDir, 'src')
   if (!exists(srcDir)) return []
   return walk(srcDir, projectDir).filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
 }
 
-/** Source files that contain any of the given import specifiers — should be empty. */
 export function filesImporting(projectDir, specifiers) {
   const hits = []
   for (const rel of srcFiles(projectDir)) {

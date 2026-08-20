@@ -2,9 +2,7 @@ import { Redis } from '@upstash/redis'
 import { CacheError, type CachePort } from '../port.js'
 import { wrapValue } from '../wrap.js'
 
-/** Minimal structural view of the Upstash REST client (eases testing). */
 export interface UpstashLike {
-  /** Returns the (auto-deserialized) value, or `null` if absent. */
   get(key: string): Promise<unknown>
   set(key: string, value: unknown, opts?: { ex?: number }): Promise<unknown>
   del(...keys: string[]): Promise<number>
@@ -12,19 +10,13 @@ export interface UpstashLike {
 }
 
 export interface UpstashAdapterOptions {
-  /** Inject a custom/mock client; defaults to a real `Redis`. */
   client?: UpstashLike
-  /** REST URL when no `client` is injected; falls back to `Redis.fromEnv()`. */
   url?: string
-  /** REST token when no `client` is injected. */
   token?: string
-  /** Prepended to every key. */
   keyPrefix?: string
 }
 
-/** HTTP/REST Redis adapter (Upstash); edge/serverless-friendly. JSON handled by the client. */
 export function upstashAdapter(options: UpstashAdapterOptions = {}): CachePort {
-  // No validation: every field is optional, so parsing would be a no-op.
   const defaultClient = () =>
     (options.url && options.token
       ? new Redis({ url: options.url, token: options.token })

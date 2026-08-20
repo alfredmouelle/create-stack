@@ -7,9 +7,7 @@ import { createEmailTheme, type EmailTheme, type EmailThemeOverride } from './th
 export interface EmailLayoutProps {
   preview: string
   children: React.ReactNode
-  /** Theme override, merged onto default. */
   theme?: EmailTheme | EmailThemeOverride
-  /** Footer year. Pass explicitly for deterministic output. */
   year?: number
 }
 

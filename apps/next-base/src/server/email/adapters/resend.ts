@@ -2,7 +2,6 @@ import { Resend } from 'resend'
 import { formatAddress } from '../address'
 import { type MailerAdapter, MailerError, type RenderedMessage } from '../port'
 
-/** Structural view of the Resend client (eases testing). */
 export interface ResendClient {
   emails: {
     send(payload: ResendSendPayload): Promise<{
@@ -28,7 +27,6 @@ interface ResendSendPayload {
 
 export interface ResendAdapterOptions {
   apiKey: string
-  /** Inject custom/mock client. Defaults to real `Resend`. */
   client?: ResendClient
 }
 
@@ -37,7 +35,6 @@ function toAttachmentContent(content: Uint8Array | string): Buffer | string {
 }
 
 export function resendAdapter(options: ResendAdapterOptions): MailerAdapter {
-  // Fail at construction, not on the first send().
   if (!options.apiKey) throw new MailerError('apiKey is required', { adapter: 'resend' })
   const client: ResendClient =
     options.client ?? (new Resend(options.apiKey) as unknown as ResendClient)

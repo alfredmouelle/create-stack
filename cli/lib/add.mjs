@@ -1,7 +1,3 @@
-// `create-stack add` — vendor a capability into an existing project, merging dep/env
-// deltas incrementally (same engine as the scaffold). On a multi-provider capability a
-// re-add changes the provider; keep-files retains the former provider files and deps.
-
 import { detectAlias, rewriteAlias } from './alias.mjs'
 import {
   adapterChoices,
@@ -28,15 +24,13 @@ const RECOMMENDED_PROVIDERS = { storage: 'r2', cache: 'upstash' }
 const CANONICAL_NAMES = { mailer: 'mail', 'error-tracking': 'errors' }
 const INTERNAL_NAMES = { mail: 'mailer', errors: 'error-tracking' }
 
-// Targets beyond the 6 port capabilities, with their vendored destination.
 const EXTRA_DIR = {
   mailer: 'src/server/email',
   'email-ui': 'src/emails/components',
   http: 'src/lib/http',
 }
-const NO_ADAPTER = new Set(['email-ui', 'http']) // single implementation, nothing to pick
+const NO_ADAPTER = new Set(['email-ui', 'http'])
 
-/** Everything the capability form of `add` accepts, using user-facing canonical names. */
 export const ADDABLE = [
   ...CAPABILITIES.map((cap) => CANONICAL_NAMES[cap] ?? cap),
   'mail',
@@ -44,7 +38,6 @@ export const ADDABLE = [
   'http',
 ]
 
-/** Normalize accepted historical aliases while keeping package-level names internal. */
 export const resolveAdditionKind = (kind) => {
   const internal = INTERNAL_NAMES[kind] ?? kind
   const canonical = CANONICAL_NAMES[internal] ?? internal
@@ -52,10 +45,8 @@ export const resolveAdditionKind = (kind) => {
   return accepted.includes(internal) ? { cap: internal, name: canonical } : null
 }
 
-/** Vendored destination dir (relative to the project) for a target. */
 export const targetDir = (cap) => EXTRA_DIR[cap] ?? capabilityDir(cap) ?? `src/server/${cap}`
 
-/** Options for the interactive `add` multi-select. */
 export const addableChoices = () => [
   ...capabilityChoices().map((choice) => ({
     ...choice,
@@ -66,7 +57,6 @@ export const addableChoices = () => [
   { value: 'http', label: 'HTTP', hint: 'fetch + response helpers' },
 ]
 
-/** Adapter picker (default + options) for a target, or null when it has no adapters. */
 export function adapterChoicesFor(cap) {
   cap = INTERNAL_NAMES[cap] ?? cap
   if (CAPABILITIES.includes(cap)) return adapterChoices(cap)
@@ -79,7 +69,6 @@ export function adapterChoicesFor(cap) {
   return null
 }
 
-/** Resolve a flag/positional adapter value to a valid adapter (or null for single-impl targets). */
 export function resolveTargetAdapter(cap, value) {
   cap = INTERNAL_NAMES[cap] ?? cap
   const uniqueProvider = UNIQUE_PROVIDERS[cap]
@@ -113,7 +102,6 @@ function resolveMailProvider(value) {
   return value
 }
 
-/** Infer the base framework from installed deps (next vs TanStack Start). */
 export function detectFramework(pkg) {
   const deps = { ...pkg.dependencies, ...pkg.devDependencies }
   if (deps['@tanstack/react-start'] || deps['@tanstack/react-router']) return 'tanstack'
@@ -126,15 +114,9 @@ const currentMailerAdapter = (projectDir) => {
   return exists(idx) ? (read(idx).match(/\.\/adapters\/([\w-]+)['"]/)?.[1] ?? null) : null
 }
 
-/** Provider currently selected by a swappable capability, or null when absent/inapplicable. */
 export const currentTargetAdapter = (projectDir, cap) =>
   cap === 'mailer' ? currentMailerAdapter(projectDir) : currentAdapter(projectDir, cap)
 
-/**
- * Vendor the target and report what changed. The mailer predates the capability
- * manifests and keeps its own engine; everything else goes through vendorCapability.
- * @returns {{ swappedFrom: string|null, removeDeps?: string[], addDeps, envKeys, requiredEnvKeys }}
- */
 function vendor({ projectDir, framework, projectName, cap, adapter, keep }) {
   if (cap === 'mailer') {
     const from = currentMailerAdapter(projectDir)
@@ -144,7 +126,6 @@ function vendor({ projectDir, framework, projectName, cap, adapter, keep }) {
     }
   }
 
-  // A module has no adapter, so nothing can have been swapped away from.
   const from = hasAdapters(cap) ? currentAdapter(projectDir, cap) : null
   const swappedFrom = from && from !== adapter ? from : null
   return {
@@ -157,20 +138,13 @@ function vendor({ projectDir, framework, projectName, cap, adapter, keep }) {
   }
 }
 
-/**
- * Vendor `cap` (+ `adapter`) into the project, swapping the adapter on a re-add unless
- * `keep` is set.
- * @returns {{ framework, projectName, addDeps, envKeys, swappedFrom: string|null, manualSteps: string[] }}
- */
 export function addCapability({ projectDir, cap, adapter, keep }) {
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
   const framework = detectFramework(pkg)
   const projectName = pkg.name ?? 'app'
-  // vendored sources ship with '~/'; align them to whatever alias this project already uses.
   const alias = detectAlias(projectDir)
 
-  // email-ui / http: just vendor the source, no deps or env.
   if (NO_ADAPTER.has(cap)) {
     vendorPackageSrc(cap, join(projectDir, targetDir(cap)))
     rewriteAlias(projectDir, alias)

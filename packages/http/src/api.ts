@@ -18,7 +18,6 @@ export interface ApiFetchOptions {
   credentials?: RequestCredentials
   cache?: RequestCache
   init?: RequestInit
-  /** Inject custom fetch (mock in tests, scoped client in adapters). */
   fetchImpl?: typeof globalThis.fetch
 }
 
@@ -301,11 +300,6 @@ function buildRequestBody(
   return JSON.stringify(body)
 }
 
-/**
- * Typed `fetch` wrapper: URL/query building, JSON encoding, timeouts,
- * content-negotiated parsing, `ApiFetchError`/`ApiParseError` on failure.
- * Non-2xx throws.
- */
 export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions = {},

@@ -9,7 +9,6 @@ afterAll(() => {
   for (const d of tmps) rmSync(d, { recursive: true, force: true })
 })
 
-// A throwaway project skeleton with the empty env.ts blocks writeEnv/appendEnv edit.
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'cs-env-'))
   tmps.push(dir)
@@ -63,7 +62,7 @@ describe('appendEnv', () => {
     writeEnv(dir, ['DATABASE_URL'], ['DATABASE_URL'])
     appendEnv(dir, ['REDIS_URL'], [])
     const ts = envTs(dir)
-    expect(ts).toContain('DATABASE_URL: v.pipe(v.string(), v.url()),') // untouched
+    expect(ts).toContain('DATABASE_URL: v.pipe(v.string(), v.url()),')
     expect(ts).toContain('REDIS_URL: v.optional(v.pipe(v.string(), v.url())),')
     expect(ts).toContain('REDIS_URL: process.env.REDIS_URL,')
     expect(envExample(dir)).toContain('REDIS_URL=')
@@ -81,7 +80,7 @@ describe('appendEnv', () => {
     writeEnv(dir, ['DATABASE_URL'], ['DATABASE_URL'])
     appendEnv(dir, ['REDIS_URL'], [])
     appendEnv(dir, ['REDIS_URL'], [])
-    expect(count(envTs(dir), /\n {4}REDIS_URL:/g)).toBe(2) // one in server, one in runtimeEnv
+    expect(count(envTs(dir), /\n {4}REDIS_URL:/g)).toBe(2)
     expect(count(envExample(dir), /^REDIS_URL=/gm)).toBe(1)
   })
 })

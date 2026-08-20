@@ -1,6 +1,5 @@
 import type { AnalyticsPort } from '../port.js'
 
-/** No-op analytics adapter (dev/tests/disabled); call sites still depend on the port. */
 export function noopAdapter(): AnalyticsPort {
   return {
     name: 'noop',

@@ -1,4 +1,3 @@
-/** JSON `Response` with correct content-type. */
 export function json(data: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(data), {
     ...init,
@@ -6,12 +5,10 @@ export function json(data: unknown, init: ResponseInit = {}): Response {
   })
 }
 
-/** `204 No Content` — canonical webhook ack. */
 export function noContent(init: ResponseInit = {}): Response {
   return new Response(null, { status: 204, ...init })
 }
 
-/** Plain-text `Response`. */
 export function text(body: string, init: ResponseInit = {}): Response {
   return new Response(body, {
     ...init,
@@ -19,7 +16,6 @@ export function text(body: string, init: ResponseInit = {}): Response {
   })
 }
 
-/** JSON error envelope. */
 export function error(message: string, status = 400, init: ResponseInit = {}): Response {
   return json({ error: message }, { ...init, status })
 }

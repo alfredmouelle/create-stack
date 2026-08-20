@@ -1,14 +1,9 @@
-// Manifests are the contract between the packages and the vendoring engine. When a
-// package is restructured, a stale `files` entry makes the CLI silently vendor an
-// incomplete capability, so every path is checked against the real tree.
-
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 
-// The live sources, never cli/_stack: this checks the contract authors edit.
 const PACKAGES = resolve(dirname(fileURLToPath(import.meta.url)), '../../packages')
 const REPO_ROOT = resolve(PACKAGES, '..')
 const names = readdirSync(PACKAGES).filter((n) => existsSync(join(PACKAGES, n, 'capability.json')))
@@ -92,7 +87,6 @@ describe.each(names)('%s', (name) => {
   })
 
   test('declared paths are files, not directories', () => {
-    // Directory entries silently pulled in whatever else lived beside them.
     for (const p of paths(m)) {
       expect(statSync(join(PACKAGES, name, p)).isFile(), `${name}: ${p} is a directory`).toBe(true)
     }
@@ -115,7 +109,6 @@ describe.each(names)('%s', (name) => {
       ...(m.deps ?? []),
       ...(m.sharedDeps ?? []),
       ...Object.values(m.adapters ?? {}).flatMap((a) => a.deps),
-      // per-framework deps are vendored too, so they need a pinned range just the same
       ...Object.values(m.frameworks ?? {}).flatMap((f) => f.deps ?? []),
     ].filter((d) => !d.startsWith('@alfredmouelle/'))
     for (const d of deps) {

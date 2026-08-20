@@ -1,6 +1,3 @@
-// Installed-project certification through the same executable CLI users invoke. Skipped
-// unless RUN_SMOKE=1; SMOKE_FRAMEWORK pins one base to split the matrix across runners.
-
 import { spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

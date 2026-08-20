@@ -1,8 +1,5 @@
 name: CI
 
-# Verifies the CLI scaffolds correctly before anything is published.
-# Fast job: install-free structural matrix. Smoke job: real install + typecheck + biome
-# on a generated project, one runner per base app.
 
 on:
   push:

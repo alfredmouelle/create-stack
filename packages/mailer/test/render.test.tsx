@@ -12,7 +12,6 @@ describe('renderEmail', () => {
     expect(html).toContain('Alfred')
     expect(html).toContain('https://app.test/verify')
 
-    // toPlainText strips the comment nodes React injects between text fragments
     expect(text).toMatch(/Welcome,\s*Alfred\s*!/i)
     expect(text).toContain('Verify my email')
     expect(text).not.toContain('<html')

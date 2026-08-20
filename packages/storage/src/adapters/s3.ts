@@ -8,12 +8,10 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { type PutOptions, type SignedUrlOptions, StorageError, type StoragePort } from '../port.js'
 
-/** Structural view of the S3 client (eases testing). */
 export interface S3ClientLike {
   send(command: unknown): Promise<unknown>
 }
 
-/** Presigner shape, injectable so tests never sign for real. */
 export type S3Presigner = (
   client: S3ClientLike,
   command: unknown,
@@ -26,9 +24,7 @@ export interface S3AdapterOptions {
   accessKeyId?: string
   secretAccessKey?: string
   endpoint?: string
-  /** Inject custom/mock client. Defaults to real `S3Client`. */
   client?: S3ClientLike
-  /** Inject custom/mock presigner. Defaults to `@aws-sdk/s3-request-presigner`. */
   presign?: S3Presigner
 }
 
@@ -50,7 +46,6 @@ function isNotFound(error: unknown): boolean {
 }
 
 export function s3Adapter(options: S3AdapterOptions): StoragePort {
-  // Fail at construction, not on the first call.
   if (!options.bucket) throw new StorageError('bucket is required', { adapter: 's3' })
   if (!options.region) throw new StorageError('region is required', { adapter: 's3' })
 

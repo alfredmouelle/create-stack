@@ -2,7 +2,6 @@ import { Redis } from 'ioredis'
 import { CacheError, type CachePort } from '../port.js'
 import { wrapValue } from '../wrap.js'
 
-/** Minimal structural view of the Redis client (eases testing). */
 export interface RedisLike {
   get(key: string): Promise<string | null>
   set(key: string, value: string, secondsToken?: 'EX', seconds?: number): Promise<unknown>
@@ -11,16 +10,12 @@ export interface RedisLike {
 }
 
 export interface RedisAdapterOptions {
-  /** Inject a custom/mock client; defaults to a real `Redis`. */
   client?: RedisLike
-  /** Connection URL when no `client` is injected. */
   url?: string
-  /** Prepended to every key. */
   keyPrefix?: string
 }
 
 export function redisAdapter(options: RedisAdapterOptions = {}): CachePort {
-  // No validation: every field is optional, so parsing would be a no-op.
   const defaultClient = () =>
     (options.url ? new Redis(options.url) : new Redis()) as unknown as RedisLike
   const client: RedisLike = options.client ?? defaultClient()

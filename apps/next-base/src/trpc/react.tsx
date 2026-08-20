@@ -13,10 +13,8 @@ import { createQueryClient } from './query-client'
 let clientQueryClientSingleton: QueryClient | undefined
 const getQueryClient = () => {
   if (typeof window === 'undefined') {
-    // Server: always new client.
     return createQueryClient()
   }
-  // Browser: reuse across renders.
   clientQueryClientSingleton ??= createQueryClient()
   return clientQueryClientSingleton
 }

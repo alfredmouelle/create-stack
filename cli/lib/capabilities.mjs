@@ -1,25 +1,9 @@
-// Capabilities come in two kinds, and `kind` in capability.json is the source of truth.
-//
-// A PORT has several adapters and is swappable at the composition root: pick one, the
-// rest of the app depends only on the interface. This registry adds what the manifest
-// can't carry — the env → constructor-arg mapping used to generate that root.
-//
-// A MODULE has a single provider used directly, because abstracting it would cost more
-// than it buys (jobs, error-tracking) or because there is no provider at all (http,
-// email-ui). Modules are vendored as-is plus whatever wiring the framework needs.
-
 import { readdirSync, statSync } from 'node:fs'
 import { STACK_ROOT } from './paths.mjs'
 import { copy, exists, join, read, readJSON, remove, write } from './util.mjs'
 
 const PKG = (cap) => join(STACK_ROOT, 'packages', cap)
 
-/**
- * Swappable capabilities. `dir` = vendored destination, `entry` = exported accessor
- * stem, `portType` = the interface returned. Each adapter maps constructor args to
- * env keys: [argName, ENV_KEY, required?]. A required arg is emitted as required in
- * env.ts, so the root reads env.X directly (guaranteed string).
- */
 const PORTS = {
   storage: {
     label: 'Storage',
@@ -111,7 +95,6 @@ const PORTS = {
   },
 }
 
-/** Single-provider capabilities. No adapter to pick, so no swap prompt. */
 const MODULES = {
   jobs: { label: 'Background jobs', dir: 'src/server/jobs', provider: 'inngest' },
   'error-tracking': {
@@ -125,7 +108,6 @@ const SPEC = { ...PORTS, ...MODULES }
 
 export const CAPABILITIES = Object.keys(SPEC)
 
-/** Canonical user-facing capability name (package names may retain historical identity). */
 export const canonicalCapabilityName = (cap) => (cap === 'error-tracking' ? 'errors' : cap)
 
 const capabilityManifest = (cap) => readJSON(join(PKG(cap), 'capability.json'))
@@ -136,13 +118,10 @@ const creationProvider = (cap) => {
   return manifest.creationRecommendedProvider ?? manifest.defaultAdapter
 }
 
-/** True when the capability offers a provider choice. */
 export const hasAdapters = (cap) => cap in PORTS
 
-/** Vendored destination for a capability. */
 export const capabilityDir = (cap) => SPEC[cap]?.dir
 
-/** Prompt options for the capability multiselect. */
 export const capabilityChoices = () =>
   CAPABILITIES.map((name) => ({
     value: name,
@@ -150,7 +129,6 @@ export const capabilityChoices = () =>
     hint: SPEC[name].adapters ? Object.keys(SPEC[name].adapters).join(' / ') : SPEC[name].provider,
   }))
 
-/** Adapter options + default for one capability, or null when it has no choice. */
 export const adapterChoices = (cap) => {
   const spec = PORTS[cap]
   if (!spec) return null
@@ -160,13 +138,11 @@ export const adapterChoices = (cap) => {
   }
 }
 
-/** Provider choices for project creation, with its context-specific recommendation. */
 export const creationProviderChoices = (cap) => {
   const choices = adapterChoices(cap)
   return choices ? { ...choices, defaultAdapter: creationProvider(cap) } : null
 }
 
-/** Resolve a possibly-empty adapter selection, or null for a single-provider module. */
 export function resolveAdapter(cap, value) {
   if (!SPEC[cap]) throw new Error(`Unknown capability: ${cap}`)
   const spec = PORTS[cap]
@@ -185,7 +161,6 @@ export function resolveAdapter(cap, value) {
   return value
 }
 
-/** Resolve the provider named by a creation selector, including single-provider modules. */
 export function resolveCreationProvider(cap, value) {
   if (cap in PORTS) {
     if (value === true || value == null || value === '') return creationProvider(cap)
@@ -197,11 +172,8 @@ export function resolveCreationProvider(cap, value) {
   throw new Error(`Unknown ${canonicalCapabilityName(cap)} provider: ${value} (have ${provider})`)
 }
 
-// env.ts is the single source of truth: required adapter keys are emitted without
-// v.optional there, so env.X is already a guaranteed string — no narrowing needed here.
 const ctorArgs = (args) => args.map(([name, key]) => `      ${name}: env.${key},`).join('\n')
 
-/** Lazy-singleton composition root: boots without env, constructs on first use. */
 function standardRoot({ entry, portType, adapterKey, fn, args }) {
   const getter = `get${entry[0].toUpperCase()}${entry.slice(1)}`
   const ctor = args.length ? `${fn}({\n${ctorArgs(args)}\n    })` : `${fn}()`
@@ -219,7 +191,6 @@ export function ${getter}(): ${portType} {
 `
 }
 
-/** Slug usable as an Inngest app id (no slashes, lowercase). */
 const slug = (name) =>
   name
     .split('/')
@@ -294,7 +265,6 @@ export const Route = createFileRoute('/api/inngest')({
 
 const JOBS_ROUTE_FILES = ['src/app/api/inngest/route.ts', 'src/routes/api/inngest.ts']
 
-/** jobs: composition root, example event + function, and the per-framework route shim. */
 function vendorJobs(projectDir, destDir, framework, projectName) {
   write(join(destDir, 'index.ts'), JOBS_INDEX(projectName))
   write(join(destDir, 'events.ts'), JOBS_EVENTS)
@@ -366,7 +336,6 @@ Sentry.init({
 })
 `
 
-/** error-tracking: the Sentry files that can be written standalone, per framework. */
 function vendorErrorTracking(projectDir, framework) {
   const sdk = SENTRY_SDK[framework]
   if (framework === 'next') {
@@ -390,10 +359,6 @@ export const onRouterTransitionStart = Sentry.captureRouterTransitionStart
   )
 }
 
-/**
- * Wiring the generator deliberately doesn't apply, because it means editing files the
- * project owns. Surfaced to the user instead of silently rewriting their config.
- */
 export const MANUAL_STEPS = {
   'error-tracking': {
     next: [
@@ -410,12 +375,10 @@ export const MANUAL_STEPS = {
   },
 }
 
-/** Copy a manifest path (rooted at the package) under destDir, stripping `src/`. */
 function copyPath(cap, relSrc, destDir) {
   copy(join(PKG(cap), relSrc), join(destDir, relSrc.replace(/^src\//, '')))
 }
 
-/** True if any vendored .ts file under dir still imports a cross-package. */
 function references(dir, mod) {
   for (const name of readdirSync(dir, { recursive: true })) {
     const p = join(dir, name)
@@ -424,7 +387,6 @@ function references(dir, mod) {
   return false
 }
 
-/** Run fn(path, source) over every vendored .ts/.tsx file under dir. */
 function walkTs(dir, fn) {
   for (const name of readdirSync(dir, { recursive: true })) {
     const p = join(dir, name)
@@ -432,18 +394,14 @@ function walkTs(dir, fn) {
   }
 }
 
-/** Rewrite every `from`-module import to `to` across vendored .ts files. */
 function rewriteImports(dir, from, to) {
   walkTs(dir, (p, src) => {
     if (src.includes(from)) write(p, src.split(from).join(to))
   })
 }
 
-// Package source uses NodeNext `.js` extensions on relative imports (for tsdown);
-// the base app + app bundlers (Next/Vite) expect extensionless. Strip them on vendor.
 const JS_EXT = /(from\s+['"]\.\.?\/[^'"]*?)\.js(['"])/g
 
-/** Drop `.js` from relative import specifiers across vendored .ts files. */
 function stripJsExtensions(dir) {
   walkTs(dir, (p, src) => {
     const next = src.replace(JS_EXT, '$1$2')
@@ -451,7 +409,6 @@ function stripJsExtensions(dir) {
   })
 }
 
-/** Vendor @alfredmouelle/http into src/lib/http (once) and point imports at it. */
 function vendorHttp(projectDir, destDir) {
   if (!references(destDir, '@alfredmouelle/http')) return
   const httpDest = join(projectDir, 'src/lib/http')
@@ -462,14 +419,6 @@ function vendorHttp(projectDir, destDir) {
   rewriteImports(destDir, '@alfredmouelle/http', '~/lib/http')
 }
 
-/**
- * Dep ranges for a capability; skips vendored @alfredmouelle/* deps.
- *
- * Ranges normally come from the package's own package.json, so they stay in lockstep
- * with what the tests run against. A module that ships wiring it doesn't import (the
- * Sentry framework SDKs) has nowhere to declare them, so its manifest pins them via
- * `versions` rather than letting them drift to `latest`.
- */
 function resolveDeps(cap, names, manifest) {
   const pkg = readJSON(join(PKG(cap), 'package.json'))
   const out = {}
@@ -481,7 +430,6 @@ function resolveDeps(cap, names, manifest) {
   return out
 }
 
-/** Files a module owns in the project, beyond its vendored dir (cleaned on re-vendor). */
 const MODULE_EXTRA_FILES = {
   jobs: JOBS_ROUTE_FILES,
   'error-tracking': [
@@ -495,14 +443,12 @@ const MODULE_EXTRA_FILES = {
   ],
 }
 
-/** Per-module wiring beyond the copied files (composition root, routes, init files). */
 const MODULE_WIRING = {
   jobs: ({ projectDir, destDir, framework, projectName }) =>
     vendorJobs(projectDir, destDir, framework, projectName),
   'error-tracking': ({ projectDir, framework }) => vendorErrorTracking(projectDir, framework),
 }
 
-/** Single-provider capability: copy its files, then wire it for this framework. */
 function vendorModule({ projectDir, destDir, framework, projectName, cap, manifest }) {
   for (const f of manifest.files) copyPath(cap, f, destDir)
   stripJsExtensions(destDir)
@@ -517,16 +463,14 @@ function vendorModule({ projectDir, destDir, framework, projectName, cap, manife
   }
 }
 
-/** Swappable capability: copy the port + chosen adapter, then generate the root. */
 function vendorPort({ projectDir, destDir, cap, adapter, spec, manifest }) {
   const aSpec = spec.adapters[adapter]
   if (!aSpec) throw new Error(`Unknown ${cap} adapter: ${adapter}`)
   const adManifest = manifest.adapters[adapter]
 
-  // port (+ shared) and the chosen adapter; the barrel index.ts is replaced below.
   const files = [...manifest.sharedFiles.filter((f) => f !== 'src/index.ts'), ...adManifest.files]
   for (const f of files) copyPath(cap, f, destDir)
-  stripJsExtensions(destDir) // NodeNext `.js` specifiers → extensionless (app bundler)
+  stripJsExtensions(destDir)
 
   write(
     join(destDir, 'index.ts'),
@@ -537,16 +481,10 @@ function vendorPort({ projectDir, destDir, cap, adapter, spec, manifest }) {
   return {
     addDeps: resolveDeps(cap, [...adManifest.deps, ...(manifest.sharedDeps ?? [])], manifest),
     envKeys: adManifest.env,
-    // a key the root reads as env.X must be required in env.ts (guaranteed string).
     requiredEnvKeys: (aSpec.args ?? []).filter(([, , req]) => req).map(([, key]) => key),
   }
 }
 
-/**
- * Vendor one capability into the fork. `keep` retains any adapter(s) already vendored
- * (additive, ports only); otherwise the dest is wiped first for a clean (re-)vendor.
- * @returns {{ addDeps: Record<string,string>, envKeys: string[], requiredEnvKeys: string[] }}
- */
 export function vendorCapability({ projectDir, framework, projectName, cap, adapter, keep }) {
   const spec = SPEC[cap]
   if (!spec) throw new Error(`Unknown capability: ${cap}`)
@@ -555,7 +493,7 @@ export function vendorCapability({ projectDir, framework, projectName, cap, adap
   const destDir = join(projectDir, spec.dir)
 
   if (!keep) {
-    remove(destDir) // clean swap: drop the old adapter(s) + composition root
+    remove(destDir)
     for (const f of MODULE_EXTRA_FILES[cap] ?? []) remove(join(projectDir, f))
   }
 
@@ -563,7 +501,6 @@ export function vendorCapability({ projectDir, framework, projectName, cap, adap
   return manifest.kind === 'module' ? vendorModule(args) : vendorPort(args)
 }
 
-/** The adapter currently wired in a vendored capability (from its index.ts import), or null. */
 export function currentAdapter(projectDir, cap) {
   if (!hasAdapters(cap)) return null
   const indexPath = join(projectDir, PORTS[cap].dir, 'index.ts')
@@ -571,7 +508,6 @@ export function currentAdapter(projectDir, cap) {
   return read(indexPath).match(/\.\/adapters\/([\w-]+)['"]/)?.[1] ?? null
 }
 
-/** Adapters whose source files are currently retained for a port capability. */
 export function installedAdapters(projectDir, cap) {
   if (!hasAdapters(cap)) return []
   const adaptersDir = join(projectDir, PORTS[cap].dir, 'adapters')
@@ -581,7 +517,6 @@ export function installedAdapters(projectDir, cap) {
     .map((name) => name.slice(0, -3))
 }
 
-/** Deps unique to installed former adapters — safe to drop on a non-keep provider change. */
 export function adapterRemovableDeps(cap, installed, to) {
   const manifest = readJSON(join(PKG(cap), 'capability.json'))
   const stay = new Set([...(manifest.adapters[to]?.deps ?? []), ...(manifest.sharedDeps ?? [])])
@@ -596,7 +531,6 @@ export function adapterRemovableDeps(cap, installed, to) {
   ]
 }
 
-/** Vendor a whole module's files (no adapter, no env/deps) — for email-ui & http. */
 export function vendorPackageSrc(pkgName, destDir) {
   remove(destDir)
   const manifest = readJSON(join(PKG(pkgName), 'capability.json'))

@@ -1,5 +1,3 @@
-// fs / exec / package.json helpers shared by the CLI. No external deps.
-
 import { spawnSync } from 'node:child_process'
 import {
   cpSync,
@@ -21,18 +19,15 @@ export const exists = (p) => existsSync(p)
 export const readJSON = (p) => JSON.parse(read(p))
 export const writeJSON = (p, obj) => write(p, `${JSON.stringify(obj, null, 2)}\n`)
 
-/** Remove file/dir if present (recursive, never throws on absent). */
 export const remove = (p) => {
   if (existsSync(p)) rmSync(p, { recursive: true, force: true })
 }
 
-/** Copy a file/dir tree. */
 export const copy = (from, to) => {
   mkdirSync(dirname(to), { recursive: true })
   cpSync(from, to, { recursive: true })
 }
 
-/** Copy a dir tree, skipping entries whose basename is excluded (rsync-less fork fallback). */
 export const copyTree = (from, to, excludeBasenames = []) => {
   const skip = new Set(excludeBasenames)
   mkdirSync(to, { recursive: true })
@@ -42,7 +37,6 @@ export const copyTree = (from, to, excludeBasenames = []) => {
   })
 }
 
-/** Edit a file in place via (content) => content. No-op if absent. */
 export const editFile = (p, fn) => {
   if (!existsSync(p)) return false
   const next = fn(read(p))
@@ -50,27 +44,22 @@ export const editFile = (p, fn) => {
   return true
 }
 
-/** Is the target absent or strictly empty? Existing entries are never overwritten. */
 export const isDirEmpty = (p) => {
   if (!existsSync(p)) return true
   return readdirSync(p).length === 0
 }
 
-/** Run a command (inherits stdio). True on exit 0. */
 export const run = (cmd, args, opts = {}) => {
   const res = spawnSync(cmd, args, { stdio: 'inherit', ...opts })
   return res.status === 0
 }
 
-/** Run a command, capturing trimmed stdout. '' on failure. */
 export const runCapture = (cmd, args, opts = {}) => {
   const res = spawnSync(cmd, args, { encoding: 'utf8', ...opts })
   return res.status === 0 ? (res.stdout || '').trim() : ''
 }
 
 export { join }
-
-// package.json helpers (mutate the parsed object in place)
 
 export const pkgRemoveDeps = (pkg, names) => {
   for (const field of ['dependencies', 'devDependencies']) {

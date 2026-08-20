@@ -1,12 +1,7 @@
-// Generated projects ship a GitHub Actions workflow mirroring the scaffold's own
-// quality gate — install + typecheck + biome — driven by the chosen package manager.
-// (Tests are hook-driven and optional: not every scaffold ships a test script/files.)
-
 import { join, write } from './util.mjs'
 
 const NODE_VERSION = 22
 
-// Per-PM setup + install steps (YAML, indented to sit in a job's `steps:` list).
 const SETUP = {
   pnpm: `      - uses: pnpm/action-setup@v4
         with:
@@ -30,7 +25,6 @@ const SETUP = {
       - run: bun install --frozen-lockfile`,
 }
 
-/** Write .github/workflows/ci.yml wired to the chosen package manager. */
 export function writeCiWorkflow(projectDir, pm) {
   const setup = SETUP[pm.name] ?? SETUP.npm
   const yaml = `name: CI

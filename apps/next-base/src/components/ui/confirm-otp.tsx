@@ -1,7 +1,5 @@
 'use client'
 
-// Await it from anywhere; the <ConfirmOtp /> Root is auto-mounted by `create-stack add component`.
-// const ok = await ConfirmOtp.call({ title: 'Enter code', verify: async (c) => c === '123456' })
 
 import { useState } from 'react'
 import { createCallable } from 'react-call'

@@ -1,19 +1,4 @@
 #!/usr/bin/env bash
-#
-# Symlink the skills in this repo's skills/ directory into an agent's config
-# directory, so editing a skill here updates what the agent uses — no copy step.
-#
-# Targets (each consumes a different on-disk format):
-#   --claude  (default)  ~/.claude/skills/<name>/         dir symlink (SKILL.md)
-#   --codex              ~/.codex/prompts/<name>.md       file symlink to SKILL.md
-#
-# Override the destination per target with $CLAUDE_SKILLS_DIR / $CODEX_PROMPTS_DIR.
-#
-# Usage:
-#   ./scripts/link-skills.sh                 # link into Claude (default)
-#   ./scripts/link-skills.sh --codex         # link into Codex
-#   ./scripts/link-skills.sh --claude --unlink
-#   ./scripts/link-skills.sh --codex --unlink
 
 set -euo pipefail
 
@@ -36,7 +21,6 @@ if [ ! -d "$SRC_DIR" ]; then
   exit 1
 fi
 
-# Resolve destination + linking style for the chosen target.
 case "$target" in
   claude) DEST_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"; style="dir" ;;
   codex)  DEST_DIR="${CODEX_PROMPTS_DIR:-$HOME/.codex/prompts}"; style="file" ;;
@@ -44,7 +28,6 @@ esac
 
 mkdir -p "$DEST_DIR"
 
-# Compute the link target path + the source path for a given skill.
 for skill_path in "$SRC_DIR"/*/; do
   [ -d "$skill_path" ] || continue
   name="$(basename "$skill_path")"
@@ -66,13 +49,11 @@ for skill_path in "$SRC_DIR"/*/; do
     continue
   fi
 
-  # Already the right symlink → nothing to do.
   if [ -L "$target_path" ] && [ "$(readlink "$target_path")" = "$src" ]; then
     echo "ok        $name"
     continue
   fi
 
-  # Stale symlink → drop it. Real file/dir → back it up first.
   if [ -L "$target_path" ]; then
     rm "$target_path"
   elif [ -e "$target_path" ]; then

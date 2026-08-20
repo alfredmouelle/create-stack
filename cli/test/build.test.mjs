@@ -1,6 +1,3 @@
-// Fast, install-free matrix: selected stack axes are present, excluded ones are gone,
-// and no dangling imports remain. The installed proof lives in smoke.test.mjs.
-
 import { afterAll, describe, expect, test } from 'vitest'
 import { build, cleanup, exists, filesImporting, read, readJSON } from './helpers.mjs'
 
@@ -10,13 +7,11 @@ const TRPC_DIR = 'src/trpc'
 const TRPC_DEP = '@trpc/server'
 const TRPC_IMPORTS = ['~/trpc', '~/server/api']
 
-// per-framework paths the auth axis touches
 const AUTH_PATHS = {
   tanstack: { shell: 'src/routes/__root.tsx', signIn: 'src/routes/sign-in.$.tsx' },
   next: { shell: 'src/app/layout.tsx', signIn: 'src/app/sign-in/[[...sign-in]]/page.tsx' },
 }
 
-// opt-in components are stripped from every scaffold (re-added via `create-stack add`).
 const STRIPPED_COMPONENT_FILES = [
   'src/components/data-table.tsx',
   'src/components/infinite-data-table.tsx',
@@ -44,7 +39,6 @@ function assertTrpc(dir, trpc, deps) {
   if (!trpc) expect(filesImporting(dir, TRPC_IMPORTS), 'dangling trpc imports').toEqual([])
 }
 
-// the auth axis: the chosen provider is wired, better-auth files gone when swapped
 function assertAuth(dir, auth, deps, framework) {
   const paths = AUTH_PATHS[framework]
   const baPresent = auth === 'better-auth'
@@ -68,9 +62,7 @@ function assertAuth(dir, auth, deps, framework) {
   }
 }
 
-// the ORM axis: the chosen provider is wired, the others (and Drizzle's config) are gone
 function assertDatabase(dir, database, deps, authKept, framework) {
-  // Convex replaces the SQL data layer entirely; only drizzle/prisma keep src/server/db.
   const hasSqlDb = database === 'drizzle' || database === 'prisma'
   expect(exists(`${dir}/src/server/db`), `db layer present=${hasSqlDb}`).toBe(hasSqlDb)
 
@@ -125,10 +117,8 @@ function assertMailer(dir, result, deps) {
     expect(filesImporting(dir, ['~/server/email']), 'dangling email imports').toEqual([])
     return
   }
-  // env.ts is the source of truth: the root reads env directly, no redundant guard
   const root = read(`${dir}/src/server/email/index.ts`)
   expect(root, 'no required() guard in email root').not.toContain('function required')
-  // resend/brevo read their key straight off env (ses uses the AWS credential chain)
   if (result.mailerProvider !== 'ses') expect(root).toContain('apiKey: env.')
 }
 
@@ -161,14 +151,12 @@ function assertTrpcContext(dir, database, auth) {
 function assertCapabilities(dir, env, capabilities = {}) {
   for (const cap of Object.keys(capabilities)) {
     expect(exists(`${dir}/src/server/${cap}`), `${cap} vendored`).toBe(true)
-    // no redundant env re-validation in the composition root
     expect(read(`${dir}/src/server/${cap}/index.ts`)).not.toContain('function required')
   }
   if (capabilities.storage === 's3') expect(env).toContain('S3_BUCKET')
   if (capabilities.cache === 'redis') expect(env).toContain('REDIS_URL')
 }
 
-// name, database (omit=drizzle), auth (omit=better-auth), trpc (omit=true), mailer, capabilities
 const CONFIGS = [
   { name: 'full' },
   { name: 'full-caps', capabilities: { storage: 's3', cache: 'redis' } },
@@ -231,7 +219,6 @@ for (const framework of ['tanstack', 'next']) {
         assertMailer(dir, result, deps)
         if (result.trpc) assertTrpcContext(dir, result.database, result.auth)
 
-        // env keys track the selection (Convex uses raw CONVEX_* keys, no DATABASE_URL)
         const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
         expect(env.includes('DATABASE_URL')).toBe(sqlDb)
         expect(env.includes('BETTER_AUTH_SECRET')).toBe(result.auth === 'better-auth')
@@ -240,7 +227,6 @@ for (const framework of ['tanstack', 'next']) {
         expect(env.includes(convexUrlKey)).toBe(result.database === 'convex')
         expect(env.includes('CONVEX_DEPLOYMENT')).toBe(result.database === 'convex')
 
-        // better-auth secret is generated into .env (gitignored); .env.example keeps the placeholder
         if (result.auth === 'better-auth') {
           const dotenv = read(`${dir}/.env`)
           expect(dotenv).toMatch(/BETTER_AUTH_SECRET=.+/)
@@ -254,7 +240,6 @@ for (const framework of ['tanstack', 'next']) {
 
         assertCapabilities(dir, env, cfg.capabilities)
 
-        // every scaffold ships a CI workflow wired to the chosen pm (pnpm in tests)
         const ci = read(`${dir}/.github/workflows/ci.yml`)
         expect(ci).toContain('pnpm install --frozen-lockfile')
         expect(ci).toContain('pnpm run typecheck')

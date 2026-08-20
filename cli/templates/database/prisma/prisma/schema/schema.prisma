@@ -7,7 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-/// Example model — replace with your own.
 model Post {
   id        String   @id @default(cuid())
   title     String

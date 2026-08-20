@@ -1,6 +1,3 @@
-// The chosen package manager drives makeStandalone: pnpm gets a workspace allowlist,
-// bun gets trustedDependencies, npm/yarn need neither.
-
 import { afterAll, describe, expect, test } from 'vitest'
 import { build, cleanup, exists, readJSON } from './helpers.mjs'
 

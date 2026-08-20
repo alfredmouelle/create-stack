@@ -1,10 +1,6 @@
 import pino from 'pino'
 import type { LogFields, Logger, LogLevel } from '../port.js'
 
-/**
- * Minimal structural view of a pino logger (eases testing).
- * Level methods follow pino's `(mergingObject, message)` convention.
- */
 export interface PinoLike {
   trace(obj: LogFields, msg: string): void
   debug(obj: LogFields, msg: string): void
@@ -15,11 +11,8 @@ export interface PinoLike {
 }
 
 export interface PinoAdapterOptions {
-  /** Min level to emit; defaults to `'info'`. */
   level?: LogLevel
-  /** Fields pinned onto every line. */
   bindings?: LogFields
-  /** Inject a custom/mock pino; defaults to a real `pino()`. */
   client?: PinoLike
 }
 

@@ -1,6 +1,5 @@
 name: Publish CLI
 
-# Publishes cli/package.json's version on a pushed v* tag, via Trusted Publishing (OIDC).
 
 on:
   push:
@@ -12,7 +11,6 @@ permissions:
   contents: read
 
 jobs:
-  # Gate: a broken scaffold must never reach npm.
   test:
     runs-on: ubuntu-latest
     steps:
@@ -37,10 +35,8 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
 
-      # OIDC publishing needs npm >= 11.5.1; pin 11.x, a bad @latest broke it (npm/cli#9722).
       - run: npm install -g npm@11
 
-      # Public repo, so trusted publishing attaches provenance on its own.
       - name: Publish
         working-directory: cli
         run: npm publish --access public
