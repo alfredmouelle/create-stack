@@ -13,6 +13,8 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { rawConfigSchema } from 'shadcn/schema'
+import { detectFramework } from './add.mjs'
+import { mountRoot, rootManualSteps } from './component.mjs'
 import { detectEffectivePackageManager } from './package-manager.mjs'
 import { STACK_ROOT } from './paths.mjs'
 import { COMPONENT_CATALOG, generateRegistry } from './registry.mjs'
@@ -264,6 +266,7 @@ function prepareItem(projectDir, config, name, { force = false } = {}) {
 }
 
 function componentResult(projectDir, config, name, before, force) {
+  const root = registryComponents[name].root ?? null
   const owned = componentTargets(projectDir, config, name).map(({ path }) => path)
   const copied = owned
     .filter((path) => (force || !before.has(path)) && pathExists(path))
@@ -271,7 +274,16 @@ function componentResult(projectDir, config, name, before, force) {
   const skipped = force
     ? []
     : owned.filter((path) => before.has(path)).map((path) => relative(projectDir, path))
-  return { copied, skipped, addDeps: {}, mounted: null, rootName: null }
+  const framework = detectFramework(readJSON(join(projectDir, 'package.json')))
+  const mounted = root ? mountRoot(projectDir, framework, root) : null
+  return {
+    copied,
+    skipped,
+    addDeps: {},
+    mounted,
+    rootName: root?.name ?? null,
+    manualSteps: root && !mounted ? rootManualSteps(projectDir, framework, root) : [],
+  }
 }
 
 function stageExistingFiles(projectDir, config, components, { force = false } = {}) {

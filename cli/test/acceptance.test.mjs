@@ -85,6 +85,24 @@ function startRegistry({ status = 200 } = {}) {
       },
     ]),
   )
+  items.set('alert-dialog', {
+    name: 'alert-dialog',
+    type: 'registry:ui',
+    title: 'Alert Dialog',
+    description: 'Alert dialog primitive',
+    dependencies: ['radix-ui', 'class-variance-authority'],
+    registryDependencies: [],
+    files: [
+      {
+        path: 'ui/alert-dialog.tsx',
+        type: 'registry:ui',
+        content: readFileSync(
+          new URL('../../apps/next-base/src/components/ui/alert-dialog.tsx', import.meta.url),
+          'utf8',
+        ),
+      },
+    ],
+  })
   const child = spawn(
     process.execPath,
     [
@@ -93,6 +111,7 @@ function startRegistry({ status = 200 } = {}) {
       `
 import { createServer } from 'node:http'
 const items = new Map(${JSON.stringify([...items])})
+const requests = new Map()
 const colors = {
   inlineColors: { light: {}, dark: {} },
   cssVars: { light: {}, dark: {} },
@@ -102,6 +121,13 @@ const colors = {
 const status = ${status}
 const server = createServer((request, response) => {
   const name = request.url?.split('/').at(-1)?.replace(/\\.json$/, '')
+  requests.set(name, (requests.get(name) ?? 0) + 1)
+  if (name === '__requests__') {
+    response.statusCode = 200
+    response.setHeader('content-type', 'application/json')
+    response.end(JSON.stringify(Object.fromEntries(requests)))
+    return
+  }
   const item = items.get(name)
   const payload = request.url?.includes('/colors/') ? colors : item
   response.statusCode = status === 200 && payload ? 200 : status
@@ -116,7 +142,12 @@ server.listen(0, '127.0.0.1', () => console.log(server.address().port))
   return new Promise((resolve) => {
     child.stdout.setEncoding('utf8')
     child.stdout.once('data', (output) => {
-      resolve({ child, url: `http://127.0.0.1:${Number(output.trim())}/r` })
+      const url = `http://127.0.0.1:${Number(output.trim())}/r`
+      resolve({
+        child,
+        url,
+        requests: async () => (await fetch(`${url}/__requests__`)).json(),
+      })
     })
   })
 }
@@ -306,6 +337,39 @@ test('a verified installation creates the generated baseline commit', () => {
     spawnSync('git', ['-C', fixture.project, 'log', '-1', '--pretty=%s'], { encoding: 'utf8' })
       .stdout,
   ).toBe('chore: initial commit from create-stack\n')
+})
+
+test('applies --keep-files and --force to their additions in a mixed batch', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  expect(
+    runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'storage', 'gcs', '--no-install'],
+    }).exitStatus,
+  ).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: [
+      'add',
+      '--with',
+      'storage=r2',
+      '--with',
+      'component=prompt',
+      '--keep-files',
+      '--force',
+      '--no-install',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Provider change: storage (gcs → r2, keeping files)')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
 })
 
 test.each([
@@ -1261,17 +1325,17 @@ test('adds a legacy component through add and protects local files unless forced
   const installed = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['add', 'component', 'alert', '--no-install'],
+    args: ['add', 'component', 'prompt', '--no-install'],
   })
 
   expect(installed.exitStatus).toBe(0)
   expect(installed.stdout).toContain('Addition plan')
-  expect(installed.stdout).toContain('Addition: component alert')
-  expect(installed.stdout).toContain('Added component alert')
+  expect(installed.stdout).toContain('Addition: component prompt')
+  expect(installed.stdout).toContain('Added component prompt')
   expect(installed.stderr).toBe('')
   expect(installed.requestedInput).toBe(false)
   expect(installed.targetMutated).toBe(true)
-  const componentFile = `${fixture.app}/src/components/ui/alert.tsx`
+  const componentFile = `${fixture.app}/src/components/ui/prompt.tsx`
   expect(existsSync(componentFile)).toBe(true)
   expect(existsSync(`${fixture.app}/node_modules`)).toBe(false)
 
@@ -1279,7 +1343,7 @@ test('adds a legacy component through add and protects local files unless forced
   const preserved = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['add', 'component', 'alert', '--no-install'],
+    args: ['add', 'component', 'prompt', '--no-install'],
   })
   expect(preserved.exitStatus).toBe(0)
   expect(readFileSync(componentFile, 'utf8')).toBe('// local edit\n')
@@ -1287,7 +1351,7 @@ test('adds a legacy component through add and protects local files unless forced
   const forced = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['add', 'component', 'alert', '--force', '--no-install'],
+    args: ['add', 'component', 'prompt', '--force', '--no-install'],
   })
   expect(forced.exitStatus).toBe(0)
   expect(readFileSync(componentFile, 'utf8')).not.toBe('// local edit\n')
@@ -1448,7 +1512,7 @@ test('reruns data-table safely and force-replaces only its owned files', async (
   } finally {
     registry.child.kill()
   }
-})
+}, 15_000)
 
 test('installs a mixed registry batch once with shared official primitives deduplicated', async () => {
   const fixture = createAcceptanceFixture('standalone')
@@ -1485,7 +1549,7 @@ test('installs a mixed registry batch once with shared official primitives dedup
   }
 })
 
-test('adds capabilities and components in one repeated --with batch', () => {
+test('adds capabilities and a legacy component in one repeated --with batch', () => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
 
@@ -1498,7 +1562,7 @@ test('adds capabilities and components in one repeated --with batch', () => {
       'storage=r2',
       '--with=jobs',
       '--with',
-      'component=alert',
+      'component=prompt',
       '--no-install',
     ],
   })
@@ -1507,10 +1571,10 @@ test('adds capabilities and components in one repeated --with batch', () => {
   expect(added.requestedInput).toBe(false)
   expect(added.stdout).toContain('Addition: storage (r2)')
   expect(added.stdout).toContain('Addition: jobs (inngest)')
-  expect(added.stdout).toContain('Addition: component alert')
+  expect(added.stdout).toContain('Addition: component prompt')
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
   expect(existsSync(`${fixture.app}/src/server/jobs/index.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/alert.tsx`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
 })
 
 test('adds date-picker through the packaged shadcn runtime and local item', async () => {
@@ -1540,6 +1604,144 @@ test('adds date-picker through the packaged shadcn runtime and local item', asyn
       "'use client'",
     )
     expect(readFileSync(fake.log, 'utf8')).toContain('install')
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test.each(['next', 'tanstack'])(
+  'adds confirm and alert registry items for %s',
+  async (framework) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework, pm: 'npm' }).exitStatus).toBe(0)
+    const fake = fakePackageManager(fixture)
+    const registry = await startRegistry()
+    const rootFile = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+
+    try {
+      const added = runCli({
+        cwd: fixture.app,
+        target: fixture.app,
+        env: { ...fake.env, REGISTRY_URL: registry.url },
+        args: ['add', '--with', 'component=confirm', '--with', 'component=alert', '--pm', 'npm'],
+      })
+
+      expect(added.exitStatus).toBe(0)
+      expect(added.stdout).toContain('Addition: component confirm')
+      expect(added.stdout).toContain('Addition: component alert')
+      expect(added.stdout).toContain('shadcn: alert-dialog')
+      expect((await registry.requests())['alert-dialog']).toBe(1)
+      expect(existsSync(`${fixture.app}/src/components/ui/confirm.tsx`)).toBe(true)
+      expect(existsSync(`${fixture.app}/src/components/ui/alert.tsx`)).toBe(true)
+      expect(existsSync(`${fixture.app}/src/components/ui/alert-dialog.tsx`)).toBe(true)
+
+      const root = readFileSync(`${fixture.app}/${rootFile}`, 'utf8')
+      expect(root).toContain(`import { Confirm } from '~/components/ui/confirm'`)
+      expect(root).toContain(`import { Alert } from '~/components/ui/alert'`)
+      expect(root).toContain('<Confirm />')
+      expect(root).toContain('<Alert />')
+      expect(readFileSync(fake.log, 'utf8')).toContain('run typecheck')
+    } finally {
+      registry.child.kill()
+    }
+  },
+)
+
+test('force replaces only the selected callable source', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+  const confirm = `${fixture.app}/src/components/ui/confirm.tsx`
+  const alert = `${fixture.app}/src/components/ui/alert.tsx`
+  const alertDialog = `${fixture.app}/src/components/ui/alert-dialog.tsx`
+
+  try {
+    expect(
+      runCli({
+        cwd: fixture.app,
+        target: fixture.app,
+        env: { ...fake.env, REGISTRY_URL: registry.url },
+        args: ['add', '--with', 'component=confirm', '--with', 'component=alert', '--pm', 'npm'],
+      }).exitStatus,
+    ).toBe(0)
+
+    const editedAlert = '// keep the other callable\n'
+    const editedPrimitive = '// keep the customized official primitive\n'
+    writeFileSync(confirm, '// replace this callable\n')
+    writeFileSync(alert, editedAlert)
+    writeFileSync(alertDialog, editedPrimitive)
+
+    const forced = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'confirm', '--pm', 'npm', '--force'],
+    })
+
+    expect(forced.exitStatus).toBe(0)
+    expect(readFileSync(confirm, 'utf8')).not.toContain('replace this callable')
+    expect(readFileSync(alert, 'utf8')).toBe(editedAlert)
+    expect(readFileSync(alertDialog, 'utf8')).toBe(editedPrimitive)
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test.each(['next', 'tanstack'])(
+  'manual root instructions preserve %s callable installation',
+  async (framework) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework, pm: 'npm' }).exitStatus).toBe(0)
+    const fake = fakePackageManager(fixture)
+    const registry = await startRegistry()
+    const rootFile = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+    writeFileSync(
+      `${fixture.app}/${rootFile}`,
+      'export default function CustomRoot() { return <div>customized root</div> }\n',
+    )
+
+    try {
+      const added = runCli({
+        cwd: fixture.app,
+        target: fixture.app,
+        env: { ...fake.env, REGISTRY_URL: registry.url },
+        args: ['add', 'component', 'confirm', '--pm', 'npm'],
+      })
+
+      expect(added.exitStatus).toBe(0)
+      expect(existsSync(`${fixture.app}/src/components/ui/confirm.tsx`)).toBe(true)
+      expect(added.stdout).toContain(`import { Confirm } from '~/components/ui/confirm'`)
+      expect(added.stdout).toContain('<Confirm />')
+      expect(readFileSync(`${fixture.app}/${rootFile}`, 'utf8')).not.toContain('Confirm')
+    } finally {
+      registry.child.kill()
+    }
+  },
+)
+
+test('a failed callable registry install restores its staged source without mounting Root', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry({ status: 500 })
+  const confirm = `${fixture.app}/src/components/ui/confirm.tsx`
+  const root = `${fixture.app}/src/app/layout.tsx`
+  const edited = '// restore this callable after failure\n'
+  writeFileSync(confirm, edited)
+
+  try {
+    const failed = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'confirm', '--pm', 'npm', '--force'],
+    })
+
+    expect(failed.exitStatus).toBe(1)
+    expect(readFileSync(confirm, 'utf8')).toBe(edited)
+    expect(readFileSync(root, 'utf8')).not.toContain('import { Confirm }')
+    expect(readFileSync(root, 'utf8')).not.toContain('<Confirm />')
   } finally {
     registry.child.kill()
   }
@@ -1900,39 +2102,6 @@ test('rejects an ambiguous batch target without prompting or mutation', () => {
   expect(result.stdout).toContain('--app')
   expect(result.requestedInput).toBe(false)
   expect(result.targetMutated).toBe(false)
-})
-
-test('applies --keep-files and --force to their additions in a mixed batch', () => {
-  const fixture = createAcceptanceFixture('standalone')
-  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
-  expect(
-    runCli({
-      cwd: fixture.app,
-      target: fixture.app,
-      args: ['add', 'storage', 'gcs', '--no-install'],
-    }).exitStatus,
-  ).toBe(0)
-
-  const result = runCli({
-    cwd: fixture.app,
-    target: fixture.app,
-    args: [
-      'add',
-      '--with',
-      'storage=r2',
-      '--with',
-      'component=alert',
-      '--keep-files',
-      '--force',
-      '--no-install',
-    ],
-  })
-
-  expect(result.exitStatus).toBe(0)
-  expect(result.stdout).toContain('Provider change: storage (gcs → r2, keeping files)')
-  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/alert.tsx`)).toBe(true)
 })
 
 test.each([

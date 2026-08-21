@@ -16,6 +16,15 @@ describe('component', () => {
     ])
   })
 
+  test('callables declare separate local items with shared official primitives', () => {
+    expect(COMPONENT_CATALOG.confirm.registryDependencies).toEqual(['alert-dialog'])
+    expect(COMPONENT_CATALOG.alert.registryDependencies).toEqual(['alert-dialog'])
+    expect(COMPONENT_CATALOG.confirm.dependencies).toEqual(['react-call'])
+    expect(COMPONENT_CATALOG.alert.dependencies).toEqual(['react-call'])
+    expect(COMPONENT_CATALOG.confirm.files.map((file) => file.path)).toEqual(['ui/confirm.tsx'])
+    expect(COMPONENT_CATALOG.alert.files.map((file) => file.path)).toEqual(['ui/alert.tsx'])
+  })
+
   test('data-table metadata remains available for base stripping without legacy vendoring', () => {
     expect(COMPONENTS['data-table'].files).toEqual(
       COMPONENT_CATALOG['data-table'].files.map(({ destination }) => destination),
