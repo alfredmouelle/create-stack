@@ -49,7 +49,13 @@ describe('component registry generation', () => {
       },
     }
 
-    expect(result.names).toEqual(['date-picker', ...Object.keys(expected)])
+    expect(result.names).toEqual([
+      'date-picker',
+      ...Object.keys(expected),
+      'confirm',
+      'alert',
+      'data-table',
+    ])
     for (const [name, contract] of Object.entries(expected)) {
       const item = readJSON(join(destination, `${name}.json`))
       expect(registryItemSchema.safeParse(item).success).toBe(true)
@@ -73,6 +79,9 @@ describe('component registry generation', () => {
       'choice',
       'confirm-passphrase',
       'confirm-otp',
+      'confirm',
+      'alert',
+      'data-table',
     ])
     expect(registryItemSchema.safeParse(item).success).toBe(true)
     expect(item.name).toBe('date-picker')
@@ -87,6 +96,21 @@ describe('component registry generation', () => {
       "import { Button } from '@/components/ui/button'",
     )
 
+    for (const [name, rootName] of [
+      ['confirm', 'Confirm'],
+      ['alert', 'Alert'],
+    ]) {
+      const callable = readJSON(join(destination, `${name}.json`))
+      expect(registryItemSchema.safeParse(callable).success).toBe(true)
+      expect(callable.registryDependencies).toEqual(['alert-dialog'])
+      expect(callable.dependencies).toEqual(['react-call'])
+      expect(callable.files.map((file) => file.path)).toEqual([`ui/${name}.tsx`])
+      expect(result.metadata[name].root).toEqual({
+        name: rootName,
+        module: `components/ui/${name}`,
+      })
+    }
+
     const index = readJSON(join(destination, 'index.json'))
     expect(registrySchema.safeParse(index).success).toBe(true)
     expect(index.items.map((entry) => entry.name)).toEqual([
@@ -95,6 +119,37 @@ describe('component registry generation', () => {
       'choice',
       'confirm-passphrase',
       'confirm-otp',
+      'confirm',
+      'alert',
+      'data-table',
+    ])
+  })
+
+  test('generates the complete data-table item with its direct and official dependencies', () => {
+    const destination = outputDir()
+    const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
+    const item = readJSON(join(destination, 'data-table.json'))
+
+    expect(registryItemSchema.safeParse(item).success).toBe(true)
+    expect(item.registryDependencies).toEqual(['table', 'skeleton', 'button'])
+    expect(item.dependencies).toEqual(['@tanstack/react-table@^8.21.3', 'lucide-react'])
+    expect(item.files.map((file) => file.path)).toEqual([
+      'components/data-table.tsx',
+      'components/infinite-data-table.tsx',
+      'components/sortable-header.tsx',
+      'hooks/use-data-table.tsx',
+    ])
+    expect(item.files.slice(0, 3).map((file) => file.type)).toEqual([
+      'registry:component',
+      'registry:component',
+      'registry:component',
+    ])
+    expect(item.files[3].type).toBe('registry:hook')
+    expect(result.metadata['data-table'].destinations).toEqual([
+      'src/components/data-table.tsx',
+      'src/components/infinite-data-table.tsx',
+      'src/components/sortable-header.tsx',
+      'src/hooks/use-data-table.tsx',
     ])
   })
 

@@ -17,27 +17,22 @@ export const COMPONENTS = {
   'data-table': {
     label: 'Data table',
     hint: 'sortable + infinite TanStack tables + useDataTable',
-    files: [
-      'src/components/data-table.tsx',
-      'src/components/infinite-data-table.tsx',
-      'src/components/sortable-header.tsx',
-      'src/hooks/use-data-table.tsx',
-    ],
-    deps: ['@tanstack/react-table'],
+    files: COMPONENT_CATALOG['data-table'].files.map(({ destination }) => destination),
+    deps: COMPONENT_CATALOG['data-table'].legacyDependencies,
   },
   confirm: {
     label: 'Confirm',
     hint: 'await a yes/no confirmation',
-    files: ['src/components/ui/confirm.tsx', 'src/components/ui/alert-dialog.tsx'],
-    deps: ['react-call'],
-    root: { name: 'Confirm', module: 'components/ui/confirm' },
+    files: COMPONENT_CATALOG.confirm.files.map(({ destination }) => destination),
+    deps: COMPONENT_CATALOG.confirm.dependencies,
+    root: COMPONENT_CATALOG.confirm.root,
   },
   alert: {
     label: 'Alert',
     hint: 'await an acknowledgement',
-    files: ['src/components/ui/alert.tsx', 'src/components/ui/alert-dialog.tsx'],
-    deps: ['react-call'],
-    root: { name: 'Alert', module: 'components/ui/alert' },
+    files: COMPONENT_CATALOG.alert.files.map(({ destination }) => destination),
+    deps: COMPONENT_CATALOG.alert.dependencies,
+    root: COMPONENT_CATALOG.alert.root,
   },
 }
 
@@ -65,7 +60,11 @@ Object.assign(COMPONENTS, {
 
 export const COMPONENT_NAMES = Object.keys(COMPONENTS)
 
-export const allComponentFiles = () => COMPONENT_NAMES.flatMap((n) => COMPONENTS[n].files)
+const REGISTRY_PRIMITIVE_FILES = ['src/components/ui/alert-dialog.tsx']
+
+export const allComponentFiles = () => [
+  ...new Set([...COMPONENT_NAMES.flatMap((n) => COMPONENTS[n].files), ...REGISTRY_PRIMITIVE_FILES]),
+]
 
 export const allComponentDeps = () => [
   ...new Set(COMPONENT_NAMES.flatMap((n) => COMPONENTS[n].deps)),
@@ -79,7 +78,7 @@ const ROOT_FILE = {
   tanstack: 'src/routes/__root.tsx',
 }
 
-function mountRoot(projectDir, framework, root) {
+export function mountRoot(projectDir, framework, root) {
   const path = join(projectDir, ROOT_FILE[framework] ?? '')
   if (!exists(path)) return false
 
@@ -92,9 +91,27 @@ function mountRoot(projectDir, framework, root) {
   if (bodyClose === -1 || lastImport === -1) return false
 
   lines.splice(bodyClose, 0, `        <${root.name} />`)
-  lines.splice(lastImport + 1, 0, `import { ${root.name} } from '~/${root.module}'`)
+  lines.splice(
+    lastImport + 1,
+    0,
+    `import { ${root.name} } from '${detectAlias(projectDir)}/${root.module}'`,
+  )
   write(path, lines.join('\n'))
   return true
+}
+
+export function rootManualSteps(projectDir, framework, root) {
+  const path = ROOT_FILE[framework]
+  const alias = detectAlias(projectDir)
+  const importStatement = `import { ${root.name} } from '${alias}/${root.module}'`
+  const jsx = `<${root.name} />`
+
+  return [
+    `In ${path ?? 'your framework root'}, add this import:`,
+    importStatement,
+    'Render this JSX inside the root <body>:',
+    jsx,
+  ]
 }
 
 function resolveDeps(framework, names) {
@@ -108,6 +125,9 @@ function resolveDeps(framework, names) {
 export function vendorComponent({ projectDir, name, force = false }) {
   const comp = COMPONENTS[name]
   if (!comp) throw new Error(`Unknown component: ${name} (have ${COMPONENT_NAMES.join(', ')})`)
+  if (COMPONENT_CATALOG[name]) {
+    throw new Error(`Component ${name} is registry-backed and must be installed through shadcn`)
+  }
 
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)

@@ -181,22 +181,23 @@ create-stack add --with jobs --with component=confirm # mixed batch
 
 ## Components
 
-These UI components are not part of the base app. `create-stack add` copies their files, merges
-their dependencies, and realigns imports to your alias. Existing files are **never overwritten**
-unless you pass `--force`. The callable dialogs use
+These UI components are not part of the base app. `create-stack add` installs their local shadcn
+registry items, so the target application's `components.json` controls aliases, styles, icons,
+and official primitives. Existing Create Stack files are **never overwritten** unless you pass
+`--force`; customized shadcn primitives remain untouched. The callable dialogs use
 [react-call](https://react-call.desko.dev), and the CLI mounts their `<Root />` in the app shell
 (TanStack `__root` or the Next.js root layout), so `.call()` works after install.
 
-| Component | Vendors | Deps |
-| --- | --- | --- |
-| `date-picker` | `ui/date-picker`, `ui/date-range-picker` (+ calendar, popover, lib/date) | react-day-picker, date-fns |
-| `data-table` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | @tanstack/react-table |
-| `confirm` | `ui/confirm` (+ alert-dialog), waits for a yes/no result | react-call |
-| `alert` | `ui/alert` (+ alert-dialog), waits for confirmation | react-call |
-| `prompt` | `ui/prompt` (+ dialog), waits for text input | react-call |
-| `choice` | `ui/choice` (+ dialog), waits for a selection | react-call |
-| `confirm-passphrase` | `ui/confirm-passphrase` (+ dialog), checks an exact phrase | react-call |
-| `confirm-otp` | `ui/confirm-otp` (+ dialog, input-otp), checks an OTP code | react-call |
+| Component | Create Stack files | Official shadcn primitives | Direct packages |
+| --- | --- | --- | --- |
+| `date-picker` | `ui/date-picker`, `ui/date-range-picker`, `lib/date` | calendar, popover, button | react-day-picker, date-fns, lucide-react |
+| `data-table` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | table, skeleton, button | @tanstack/react-table@^8.21.3, lucide-react |
+| `confirm` | `ui/confirm`, waits for a yes/no result | alert-dialog | react-call |
+| `alert` | `ui/alert`, waits for confirmation | alert-dialog | react-call |
+| `prompt` | `ui/prompt`, waits for text input | dialog | react-call |
+| `choice` | `ui/choice`, waits for a selection | dialog | react-call |
+| `confirm-passphrase` | `ui/confirm-passphrase`, checks an exact phrase | dialog | react-call |
+| `confirm-otp` | `ui/confirm-otp`, checks an OTP code | dialog, input-otp | react-call |
 
 ```bash
 create-stack add                              # grouped capabilities + components picker

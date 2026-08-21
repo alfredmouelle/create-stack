@@ -166,7 +166,13 @@ function resolveAliasTarget(projectDir, alias) {
 
 function itemTarget(projectDir, config, file) {
   const aliasName =
-    file.type === 'registry:lib' ? 'lib' : file.type === 'registry:hook' ? 'hooks' : 'ui'
+    file.type === 'registry:lib'
+      ? 'lib'
+      : file.type === 'registry:hook'
+        ? 'hooks'
+        : file.type === 'registry:component'
+          ? 'components'
+          : 'ui'
   const alias = config.aliases[aliasName] ?? config.aliases.components
   const itemPrefix = `${aliasName}/`
   const itemPath = file.path.startsWith(itemPrefix) ? file.path.slice(itemPrefix.length) : file.path
