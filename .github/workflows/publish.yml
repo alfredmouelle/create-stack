@@ -30,12 +30,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: pnpm/action-setup@v6
+
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
 
       - run: npm install -g npm@11
+      - run: pnpm install --frozen-lockfile
 
       - name: Publish
         working-directory: cli
