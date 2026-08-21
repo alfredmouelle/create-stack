@@ -1,30 +1,28 @@
 # @alfredmouelle/jobs
 
-Background jobs on [Inngest](https://www.inngest.com), used **directly**. This is
-not a port: there is no `JobsPort`, no adapter, no swappable provider. The only
-thing vendored is the HTTP wiring, because that is the only part that is actually
-reusable.
+Background jobs on [Inngest](https://www.inngest.com). Application code uses the
+Inngest SDK directly. The package adds the framework-agnostic HTTP wiring that
+the generated app mounts.
 
-## Why there is no port here
+## Why the SDK stays visible
 
-There used to be one. It modelled events (`trigger`) and single-event handlers
-(`defineJob`), and it deliberately excluded everything that makes a job runner
-worth using: durable multi-step functions (`step.run`, `step.waitForEvent`),
-concurrency limits, retries, cron triggers, fan-out, typed event schemas.
+An earlier port modelled events (`trigger`) and single-event handlers
+(`defineJob`). It left out the parts that make a job runner useful: durable
+multi-step functions (`step.run`, `step.waitForEvent`), concurrency limits,
+retries, cron triggers, fan-out, and typed event schemas.
 
-That made the port a lowest common denominator. Real code reached past it for
-`adapter.client` on day one, so the seam cost a layer and bought nothing. Worse,
-it froze a v3-era `createFunction(config, trigger, handler)` call behind a
-structural mock, so the unit tests stayed green while the vendored code threw
-against Inngest v4.
+The port became a lowest common denominator. Real code reached past it for
+`adapter.client`, so it added a layer without hiding useful complexity. It also
+froze a v3-era `createFunction(config, trigger, handler)` call behind a structural
+mock. Unit tests stayed green while the generated code failed against Inngest v4.
 
-Jobs are now written against the SDK. You lose the ability to swap to Trigger.dev
-by changing one line, which was never real anyway: the two products have
-different execution models, and porting means rewriting the handlers regardless.
+Jobs now use the SDK. Moving to Trigger.dev would require rewriting handlers because
+the two products have different execution models. A one-line provider swap would
+not deliver that migration.
 
 ## Usage
 
-Declare typed events once, then trigger and handle them.
+Declare typed events once, then send and handle them.
 
 ```ts
 // src/server/jobs/events.ts
@@ -36,7 +34,7 @@ export const userSignedUp = eventType('user/signed-up', {
 ```
 
 ```ts
-// src/server/jobs/index.ts, the composition root, generated for you
+// src/server/jobs/index.ts, generated as the composition root
 import { Inngest } from 'inngest'
 import { env } from '~/env'
 
@@ -63,7 +61,7 @@ export const sendWelcome = jobs.createFunction(
 export const functions = [sendWelcome]
 ```
 
-Trigger from anywhere. `create()` is what carries the types through `send`:
+Send the event from anywhere. `create()` carries the event type through `send`:
 
 ```ts
 import { userSignedUp } from '~/server/jobs/events'
@@ -74,8 +72,8 @@ await jobs.send(userSignedUp.create({ userId: '123' }))
 
 ## Serving
 
-Inngest invokes your functions over HTTP. `jobsHandler` wraps Inngest's
-framework-agnostic `edge` handler, so one handler mounts under either framework:
+Inngest invokes functions over HTTP. `jobsHandler` wraps Inngest's
+framework-agnostic `edge` handler so the same handler works in either framework:
 
 ```ts
 // src/server/jobs/serve.ts
@@ -108,13 +106,12 @@ export const Route = createFileRoute('/api/inngest')({
 })
 ```
 
-`PUT` is what Inngest calls to sync your function list, so do not drop it.
+Inngest uses `PUT` to sync the function list. Keep that route mounted.
 
 ## Signing key
 
-`jobsHandler` takes no `signingKey`, because `serve()` has no such option in
-Inngest v4. It belongs on the client or, more usually, in `INNGEST_SIGNING_KEY`,
-which the SDK reads on its own.
+`jobsHandler` takes no `signingKey`. Inngest v4 does not accept that option in
+`serve()`. Put the key in `INNGEST_SIGNING_KEY`; the SDK reads it there.
 
 ## Env
 
@@ -125,12 +122,14 @@ which the SDK reads on its own.
 
 ## Testing jobs
 
-There is no `memory` adapter to swap in. Test the handler as the plain function
-it is, which is both simpler and closer to what runs in production:
+Test the handler as a plain function. This matches what runs in production:
 
 ```ts
 const result = await sendWelcome.fn({ event: userSignedUp.create({ userId: '1' }), step })
 ```
 
-For an end-to-end run, the Inngest dev server executes your real functions
-against the real runtime: `npx inngest-cli@latest dev`.
+For an end-to-end run, start the Inngest dev server:
+
+```bash
+npx inngest-cli@latest dev
+```

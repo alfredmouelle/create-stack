@@ -1,7 +1,8 @@
-# tanstack-base
+# TanStack Start base app
 
-Reference TanStack Start app: fork it to start a new project. Comes wired with
-the full personal foundation:
+Reference TanStack Start project used by `create-stack`. Fork it when you want
+the base without the CLI, or let the CLI select and trim it for a new project.
+It includes:
 
 - **baseline**: `~/*` alias, typed `env.ts`, strict Biome, Tailwind v4 + shadcn
   (Geist, dark mode)
@@ -17,12 +18,12 @@ the full personal foundation:
 pnpm --filter @alfredmouelle/tanstack-base dev    # http://localhost:3000
 ```
 
-Add more swappable tools with **add-capability**.
+Add more capabilities later with `create-stack add`.
 
 ## Coming from ESLint + Prettier?
 
-This stack uses [Biome](https://biomejs.dev) instead. One tool, no config
-juggling, near-instant. The mental map:
+This stack uses [Biome](https://biomejs.dev) instead. One tool handles formatting
+and linting, with one configuration file:
 
 | You knew                           | Here                               |
 | ---------------------------------- | ---------------------------------- |
@@ -31,17 +32,17 @@ juggling, near-instant. The mental map:
 | `.eslintrc` + `.prettierrc`        | a single `biome.jsonc`             |
 | `// eslint-disable-next-line foo`  | `// biome-ignore lint/foo: reason` |
 
-Format-on-save (VS Code + Zed) and the pre-commit hook are already wired.
-Prefer ESLint? Nothing stops you from swapping it in, but the whole base is
-tuned for Biome.
+Format-on-save for VS Code and Zed, plus the pre-commit hook, are already wired.
+You can replace Biome with ESLint and Prettier, but the base app's configuration
+and hooks currently target Biome.
 
 # Author
 
-Alfred MOUELLE | FullStack Developer
+Alfred MOUELLE | Full-stack developer
 
 [![ComeUp](https://img.shields.io/static/v1?style=for-the-badge&label=&message=ComeUp&color=yellow)](https://comeup.com/@alfredmouelle)
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/alfredmouelle)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredmouelle)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/alfredmouelle)
+[![X](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/alfredmouelle)
 [![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:alfredmouelle@gmail.com)
 [![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)

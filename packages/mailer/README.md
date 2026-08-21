@@ -1,8 +1,7 @@
 # @alfredmouelle/mailer
 
-Transactional email behind a tiny port. Bodies are **always** React Email
-components: the mailer renders them to HTML + plain text before they reach the
-provider, so application code never touches raw HTML.
+Transactional email through one port. Messages use React Email components. The
+mailer renders them to HTML and plain text before sending them to a provider.
 
 ## Usage
 
@@ -10,13 +9,13 @@ provider, so application code never touches raw HTML.
 import { createMailer, resendAdapter } from '@alfredmouelle/mailer'
 import { WelcomeEmail } from './emails/welcome'
 
-// composition root: pick the provider here, once
+// Choose the provider in the composition root.
 export const mailer = createMailer({
   from: 'Acme <no-reply@acme.com>',
   adapter: resendAdapter({ apiKey: process.env.RESEND_API_KEY! }),
 })
 
-// anywhere in the app: depends only on the Mailer port
+// Application code depends only on the Mailer port.
 await mailer.send({
   to: 'user@example.com',
   subject: 'Welcome',
@@ -46,7 +45,7 @@ adapter: sesAdapter({ region: process.env.AWS_REGION })
 The SES adapter sends via the `SendEmail` Simple content path. Attachments need
 a raw MIME message, which it does not build; passing `attachments` throws.
 
-No call site changes: they all depend on `Mailer`, never on a provider.
+Call sites stay on `Mailer`.
 
 ## Templates & theming
 
@@ -56,6 +55,7 @@ local preview studio (`pnpm --filter @alfredmouelle/email-ui email:dev`).
 
 ## Adding a provider
 
-Implement `MailerAdapter` (`src/port.ts`): a `name` and a `send(message: RenderedMessage)`
-that returns `{ id }`. The message arrives already rendered and address-normalized.
-Look at `src/adapters/resend.ts` (SDK-based) or `src/adapters/brevo.ts` (fetch-based) as templates.
+Implement `MailerAdapter` in `src/port.ts` with a `name` and a
+`send(message: RenderedMessage)` method that returns `{ id }`. The message arrives
+already rendered and address-normalized. Use `src/adapters/resend.ts` or
+`src/adapters/brevo.ts` as references.

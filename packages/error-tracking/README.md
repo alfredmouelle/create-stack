@@ -1,42 +1,40 @@
 # @alfredmouelle/error-tracking
 
-Error tracking on [Sentry](https://sentry.io), wired the way Sentry documents it.
-This is not a port: there is no `ErrorTrackingPort`, no adapter. App code calls
-`Sentry.captureException` directly.
+Error tracking on [Sentry](https://sentry.io), using Sentry's framework setup.
+The package exports shared initialization options. Application code calls the
+Sentry SDK directly.
 
-## Why there is no port here
+## Why Sentry stays visible
 
-The port used to expose `captureException`, `captureMessage`, `setUser`,
-`addBreadcrumb` and `flush`, with a `console` adapter as the alternative
-provider. That framing had the abstraction backwards: almost none of Sentry's
-value flows through those five methods.
+The old port exposed `captureException`, `captureMessage`, `setUser`,
+`addBreadcrumb`, and `flush`, with a `console` adapter as the alternative
+provider. That abstraction covered only a small part of Sentry's value.
 
-What a `captureException` wrapper structurally cannot give you:
+The setup also needs to cover errors and work that a `captureException` wrapper
+cannot see:
 
-- **Server Component, middleware and proxy errors** (`onRequestError`). Next.js
-  swallows these and renders the error boundary. No application `try/catch` sees
-  them.
+- **Server Component, middleware, and proxy errors** (`onRequestError`). Next.js
+  handles these outside application `try/catch` blocks.
 - **React root render errors** (`app/global-error.tsx`).
-- **TanStack server errors** (`wrapFetchWithSentry`, the request and function
-  middlewares), which fire outside your code.
-- **Auto-instrumentation and tracing.** Requires Sentry to initialise *before*
-  the app loads (`--import ./instrument.server.mjs`, or Next's
-  `instrumentation.ts`). A helper imported partway through your module graph is
-  structurally too late.
+- **TanStack server errors** (`wrapFetchWithSentry`, request middleware, and
+  function middleware), which fire outside application code.
+- **Auto-instrumentation and tracing.** Sentry must initialize *before* the app
+  loads, through `--import ./instrument.server.mjs` or Next's `instrumentation.ts`.
+  A helper imported later in the module graph is too late.
 - **Source maps.** Build-time upload via `withSentryConfig` /
   `sentryTanstackStart`. Without them, production stack traces are minified noise.
-- **Per-request scope isolation.** Without the real setup, user and tag context
-  leaks between concurrent requests.
-- **Uncaught exceptions and unhandled rejections**, caught by the default
-  integrations. A port only ever sees what you hand it.
+- **Per-request scope isolation.** The framework setup keeps user and tag context
+  separate across concurrent requests.
+- **Uncaught exceptions and unhandled rejections**, which Sentry's default
+  integrations capture. A port sees only the errors application code hands it.
 
-And the `console` adapter was never a provider you would switch to in production,
-so the swap the port existed to enable was not a real one.
+The `console` adapter also was not a production provider. Swapping it for Sentry
+did not represent a real deployment choice.
 
-## What this module is
+## What this package exports
 
-One thing: `sentryOptions`, which builds the `Sentry.init` options shared by
-every runtime (Node, edge, browser) so they cannot drift apart.
+`sentryOptions` builds the `Sentry.init` options shared by Node, edge, and browser
+runtimes, so those configurations stay aligned.
 
 ```ts
 import { sentryOptions } from '~/server/error-tracking'
@@ -49,12 +47,11 @@ Sentry.init({
 })
 ```
 
-It resolves the environment, defaults the trace sample rate (everything in
-development, 10% elsewhere), enables structured logs, and, importantly, sets
-`enabled: false` when there is no DSN, so a checkout without `SENTRY_DSN` runs
-fine instead of failing.
+It reads the environment, samples every trace in development and 10% elsewhere,
+enables structured logs, and sets `enabled: false` when `SENTRY_DSN` is absent.
+That lets a checkout without Sentry credentials run normally.
 
-Everything else is the SDK, called directly:
+Use the SDK directly for the rest:
 
 ```ts
 import * as Sentry from '@sentry/nextjs'

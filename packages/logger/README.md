@@ -1,18 +1,17 @@
 # @alfredmouelle/logger
 
-Structured logging behind a tiny port. Application code logs against the
-`Logger` interface; the backend (pino, console) is chosen once at the
-composition root and never leaks into call sites.
+Structured logging through one port. Choose pino or console in the composition
+root. Application code uses the `Logger` interface.
 
 ## Usage
 
 ```ts
 import { pinoAdapter } from '@alfredmouelle/logger'
 
-// composition root: pick the backend here, once
+// Choose the backend in the composition root.
 export const logger = pinoAdapter({ level: 'info', bindings: { app: 'web' } })
 
-// anywhere in the app: depends only on the Logger port
+// Application code depends only on the Logger port.
 logger.info('user signed in', { userId: '42' })
 
 // pin context for a request / job
@@ -30,10 +29,10 @@ import { consoleAdapter } from '@alfredmouelle/logger'
 export const logger = consoleAdapter({ level: 'debug' })
 ```
 
-No call-site changes: they all depend on `Logger`, never on a backend.
+Call sites stay on `Logger`.
 
 ## Adding a backend
 
-Implement `Logger` (`src/port.ts`): a `name`, the five level methods
-`(msg, fields?)`, and `child(bindings)`. Look at `src/adapters/pino.ts`
-(SDK-based) or `src/adapters/console.ts` (pure) as templates.
+Implement `Logger` in `src/port.ts` with `name`, the five level methods
+`(msg, fields?)`, and `child(bindings)`. Use `src/adapters/pino.ts` or
+`src/adapters/console.ts` as references.

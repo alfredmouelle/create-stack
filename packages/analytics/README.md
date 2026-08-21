@@ -1,21 +1,20 @@
 # @alfredmouelle/analytics
 
-Product analytics behind a tiny port. Capture events and identify users through
-a swappable adapter; application code depends only on `AnalyticsPort`, never on
-a provider.
+Product analytics through one port. Capture events and identify users through an
+adapter while application code depends only on `AnalyticsPort`.
 
 ## Usage
 
 ```ts
 import { posthogAdapter } from '@alfredmouelle/analytics'
 
-// composition root: pick the provider here, once
+// Choose the provider in the composition root.
 export const analytics = posthogAdapter({
   apiKey: process.env.POSTHOG_API_KEY!,
   host: process.env.POSTHOG_HOST,
 })
 
-// anywhere in the app: depends only on the AnalyticsPort
+// Application code depends only on AnalyticsPort.
 analytics.capture({
   event: 'user_signed_up',
   distinctId: 'user_123',
@@ -28,15 +27,14 @@ analytics.identify({ distinctId: 'user_123', properties: { email: 'a@acme.com' }
 await analytics.shutdown()
 ```
 
-`capture` and `identify` are fire-and-forget (like the PostHog SDK): they
-enqueue work and return immediately. Use `flush()` to drain pending events and
-`shutdown()` to flush + release resources.
+`capture` and `identify` enqueue work and return immediately, matching the
+PostHog SDK. Call `flush()` to drain pending events. Call `shutdown()` to flush
+and release resources.
 
 ## Swapping provider: Plausible
 
-Use the privacy-first Plausible adapter (server-side Events API). Set the site
-domain; the page `url`, `referrer` and client `ip` are read from each event's
-`properties`:
+Use the Plausible adapter with its server-side Events API. Set the site domain.
+The page `url`, `referrer`, and client `ip` come from each event's `properties`:
 
 ```ts
 import { plausibleAdapter } from '@alfredmouelle/analytics'
@@ -50,8 +48,8 @@ analytics.capture({
 })
 ```
 
-Plausible is cookieless and stores no person profiles, so `identify` is a no-op
-and `distinctId` is forwarded only as a `distinct_id` custom property.
+Plausible uses no cookies and stores no person profiles. `identify` is therefore
+a no-op, and `distinctId` is forwarded only as a `distinct_id` custom property.
 
 ## Disabling analytics
 
@@ -63,9 +61,9 @@ import { noopAdapter } from '@alfredmouelle/analytics'
 export const analytics = noopAdapter()
 ```
 
-No call site changes: they all depend on `AnalyticsPort`.
+Call sites stay on `AnalyticsPort`.
 
 ## Adding a provider
 
-Implement `AnalyticsPort` (`src/port.ts`): a `name`, `capture`, `identify`,
-`flush`, and `shutdown`. Look at `src/adapters/posthog` (SDK-based) as a template.
+Implement `AnalyticsPort` in `src/port.ts` with `name`, `capture`, `identify`,
+`flush`, and `shutdown`. Use `src/adapters/posthog` as the SDK-based reference.

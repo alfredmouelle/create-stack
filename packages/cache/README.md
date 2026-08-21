@@ -1,27 +1,27 @@
 # @alfredmouelle/cache
 
-Key/value cache behind a tiny port. Values are serialized as JSON, so the same
-call sites work against Redis in production and an in-memory map in dev/tests.
+JSON key/value cache through one port. The same call sites work with Redis in
+production or an in-memory map in development and tests.
 
 ## Usage
 
 ```ts
 import { redisAdapter } from '@alfredmouelle/cache'
 
-// composition root: pick the backend here, once
+// Choose the backend in the composition root.
 export const cache = redisAdapter({ url: process.env.REDIS_URL! })
 
-// anywhere in the app: depends only on the CachePort
+// Application code depends only on CachePort.
 await cache.set('user:1', { name: 'Alfred' }, 60)
 const user = await cache.get<{ name: string }>('user:1')
 
-// read-through: compute once, cache for 5 min
+// Read-through: compute once, then cache for 5 minutes.
 const stats = await cache.wrap('stats', () => computeStats(), 300)
 ```
 
 ## Swapping backend
 
-Change one line in the composition root:
+Change the adapter in the composition root:
 
 ```ts
 import { memoryAdapter } from '@alfredmouelle/cache'
@@ -29,7 +29,7 @@ import { memoryAdapter } from '@alfredmouelle/cache'
 export const cache = memoryAdapter()
 ```
 
-No call site changes: they all depend on `CachePort`, never on a backend.
+Call sites stay on `CachePort`.
 
 For edge/serverless runtimes where TCP (and `ioredis`) is unavailable, use the
 HTTP/REST `upstashAdapter` instead (same port, JSON handled by the client):
@@ -43,7 +43,6 @@ export const cache = upstashAdapter()
 
 ## Adding a backend
 
-Implement `CachePort` (`src/port.ts`): `name`, `get`, `set`, `delete`,
-`has`, and `wrap`. Reuse `wrapValue` (`src/wrap.ts`) for the read-through
-`wrap` so the logic stays in one place. Look at `src/adapters/redis.ts` (SDK-based)
-or `src/adapters/memory.ts` (in-process) as templates.
+Implement `CachePort` in `src/port.ts` with `name`, `get`, `set`, `delete`,
+`has`, and `wrap`. Reuse `wrapValue` from `src/wrap.ts` for read-through caching.
+Use `src/adapters/redis.ts` or `src/adapters/memory.ts` as references.

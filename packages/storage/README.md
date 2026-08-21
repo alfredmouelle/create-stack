@@ -1,22 +1,21 @@
 # @alfredmouelle/storage
 
-Object storage behind a tiny port: `put` / `get` / `delete` / `exists` plus
-signed URLs. Application code depends only on the `StoragePort`; the provider
-(S3, Cloudflare R2, Google Cloud Storage, local filesystem) is chosen once at
-the composition root.
+Object storage through one port. It exposes `put`, `get`, `delete`, `exists`, and
+signed URLs. Choose the provider, such as S3, Cloudflare R2, Google Cloud Storage,
+or the local filesystem, in the composition root.
 
 ## Usage
 
 ```ts
 import { s3Adapter, type StoragePort } from '@alfredmouelle/storage'
 
-// composition root: pick the provider here, once
+// Choose the provider in the composition root.
 export const storage: StoragePort = s3Adapter({
   bucket: process.env.S3_BUCKET!,
   region: process.env.S3_REGION!,
 })
 
-// anywhere in the app: depends only on the StoragePort
+// Application code depends only on StoragePort.
 await storage.put('avatars/alfred.png', bytes, { contentType: 'image/png' })
 const data = await storage.get('avatars/alfred.png') // Uint8Array | null
 const url = await storage.getSignedUrl('avatars/alfred.png', { operation: 'get' })
@@ -35,7 +34,7 @@ export const storage = gcsAdapter({ bucket: process.env.GCS_BUCKET! })
 ```ts
 import { r2Adapter } from '@alfredmouelle/storage'
 
-// Cloudflare R2 is S3-compatible: same behavior, R2 endpoint + `auto` region.
+// R2 is S3-compatible. The adapter uses the R2 endpoint and `auto` region.
 export const storage = r2Adapter({
   bucket: process.env.R2_BUCKET!,
   accountId: process.env.R2_ACCOUNT_ID!,
@@ -49,17 +48,16 @@ export const storage = r2Adapter({
 ```ts
 import { localAdapter } from '@alfredmouelle/storage'
 
-// dev/tests only: getSignedUrl returns `${publicBaseUrl}/${key}`, it does NOT sign.
+// Development and tests: getSignedUrl returns `${publicBaseUrl}/${key}` without signing.
 export const storage = localAdapter({ baseDir: '.storage', publicBaseUrl: '/files' })
 ```
 
-No call site changes: they all depend on `StoragePort`, never on a provider.
+Call sites stay on `StoragePort`.
 
 ## Adding a provider
 
-Implement `StoragePort` (`src/port.ts`): a `name` plus `put` / `get` /
-`delete` / `exists` / `getSignedUrl`. `get` returns `null` for a missing key and
-`delete` is a no-op on a missing key. Check required options at
-construction so misconfiguration fails fast. Look at `src/adapters/s3.ts`
-(SDK-based, injectable client + presigner) or `src/adapters/local.ts`
-(filesystem) as templates.
+Implement `StoragePort` in `src/port.ts` with `name`, `put`, `get`, `delete`,
+`exists`, and `getSignedUrl`. `get` returns `null` for a missing key, and
+`delete` does nothing when the key is missing. Validate required options during
+construction so misconfiguration fails fast. Use `src/adapters/s3.ts` or
+`src/adapters/local.ts` as references.

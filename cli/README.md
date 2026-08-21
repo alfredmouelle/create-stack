@@ -1,10 +1,10 @@
 <h1 align="center">create-stack</h1>
 
 <p align="center">
-  Choose a framework and the pieces your app needs. create-stack starts from a
-  complete base app, keeps your selections, and removes the rest.
+  Pick a framework and the pieces your app needs. create-stack starts from a base
+  app, keeps your selections, and removes the rest.
   <br>
-  <sub><strong>Next.js App Router</strong> and <strong>TanStack Start</strong> are supported today.</sub>
+  <sub>Supports <strong>Next.js App Router</strong> and <strong>TanStack Start</strong>.</sub>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <strong><a href="https://create-stack.alfredmouelle.com">Website &amp; interactive stack builder →</a></strong>
+  <strong><a href="https://create-stack.alfredmouelle.com">Website and interactive stack builder</a></strong>
 </p>
 
 <p align="center">
@@ -27,10 +27,10 @@
 ---
 
 Choose a framework, then select a database, tRPC, auth, mailer, and optional capabilities.
-create-stack starts from a complete base app, keeps the pieces you select, writes the project
-identity and `.env`, installs dependencies, and runs typecheck and Biome. With Git enabled, it
-creates the initial commit after those checks pass.
-**Next.js App Router** and **TanStack Start** are supported today.
+create-stack forks a base app, removes the pieces you did not select, writes the project
+identity and `.env`, installs dependencies, and runs typecheck and Biome. With Git enabled,
+it creates the initial commit after those checks pass.
+The supported frameworks are **Next.js App Router** and **TanStack Start**.
 
 > **Open source (MIT).** The source and issue tracker are on
 > [github.com/alfredmouelle/create-stack](https://github.com/alfredmouelle/create-stack).
@@ -91,7 +91,7 @@ the installed version.
 Capability flags are optional. Pass a bare flag to select its default or only provider. Leave
 the flag out to skip it. Any stack or capability flag switches creation to non-interactive mode.
 
-The CLI fills in omitted stack choices using these rules:
+When flags omit stack choices, the CLI applies these rules:
 
 - `--no-db` selects Clerk, keeps tRPC, and omits mail.
 - If Better Auth stays selected, the CLI adds Drizzle when the database is omitted and Resend
@@ -104,40 +104,30 @@ The CLI fills in omitted stack choices using these rules:
 # accept all defaults without prompts
 pnpm dlx @alfredmouelle/create-stack my-app --yes
 
-# Prisma instead of Drizzle
-pnpm dlx @alfredmouelle/create-stack my-app --database prisma
-
-# Clerk instead of better-auth
-pnpm dlx @alfredmouelle/create-stack my-app --auth clerk
-
-# Convex (realtime db + API) with Clerk auth
+# Convex with Clerk auth
 pnpm dlx @alfredmouelle/create-stack my-app --database convex --auth clerk
 
-# Next.js, just tRPC, no data or auth, don't install
+# Next.js with tRPC, no data or auth, without installing dependencies
 pnpm dlx @alfredmouelle/create-stack api --framework next --minimal --trpc --no-install
 
-# put the app in apps/web inside an Nx monorepo
-pnpm dlx @alfredmouelle/create-stack my-app --monorepo nx
-
-# frontend-only project
-pnpm dlx @alfredmouelle/create-stack site --minimal
-
-# with capabilities: R2 storage, Upstash cache, Inngest jobs, Sentry errors
-pnpm dlx @alfredmouelle/create-stack my-app --storage --cache --jobs --errors
+# Nx monorepo with the common capabilities
+pnpm dlx @alfredmouelle/create-stack my-app --monorepo nx --storage --cache --jobs --errors
 ```
 
 ## Generated project
 
-- **Framework.** Next.js App Router or TanStack Start with SSR and routing.
-- **Structure.** A standalone app, or an app in `apps/web` inside a Turborepo or Nx monorepo with workspace task caching and git hooks.
-- **Database.** Drizzle or Prisma 7 with Postgres, a driver adapter, schema, seed, and keyset pagination. Convex provides a realtime database and API. You can also omit the database.
-- **tRPC v11.** A typed API with SSR/RSC integration and a health router.
-- **Auth.** better-auth with email and password, verification, Google OAuth, and auth pages. Clerk provides hosted auth, middleware, sign-in and sign-up pages, and `UserButton`. You can also omit auth.
-- **Mailer.** Resend, Brevo, or SES behind one mailer interface with React Email templates.
-- **Checks.** Tailwind v4, shadcn, Geist, a theme toggle, strict Biome, typed `env.ts`, a Dockerfile, git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
+Depending on your selections, the generated project can include:
+
+- Next.js App Router or TanStack Start with SSR and routing.
+- A standalone app, or an app in `apps/web` inside a Turborepo or Nx monorepo with workspace task caching and Git hooks.
+- Drizzle or Prisma 7 with Postgres, a driver adapter, schema, seed, and keyset pagination. Convex provides a realtime database and API. The database is optional.
+- tRPC v11 with SSR/RSC integration and a health router.
+- better-auth with email and password, verification, Google OAuth, and auth pages. Clerk provides hosted auth, middleware, sign-in and sign-up pages. Auth is optional.
+- Resend, Brevo, or SES behind one mailer interface with React Email templates.
+- Tailwind v4, shadcn, Geist, a theme toggle, strict Biome, typed `env.ts`, a Dockerfile, Git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
 
 The CLI removes files, dependencies, env keys, and wiring for choices you leave out. It then
-checks the generated project with typecheck and Biome.
+runs typecheck and Biome in the generated project.
 
 ## Capabilities
 
@@ -165,15 +155,15 @@ the app needs it, so you can install the code before setting provider keys.
 | `email-ui` | n/a | React Email primitives and theme |
 | `http` | n/a | typed fetch helpers |
 
-Run `create-stack add` later to add more capabilities or components. Re-adding a port with a
+Run `create-stack add` later to add capabilities or components. Re-adding a port with a
 different adapter **swaps** it. Use `--keep-files` to keep both adapters. Re-adding a module
 copies it again. Repeat `--with` to validate and apply capabilities and components together.
-The CLI checks every entry before changing project files.
+The CLI checks every entry before it changes project files.
 
 ```bash
 create-stack add                                      # grouped interactive picker
 create-stack add storage r2                           # one capability + provider
-create-stack add cache upstash                        # swap redis → upstash
+create-stack add cache upstash                        # swap Redis for Upstash
 create-stack add jobs                                 # provider omitted
 create-stack add --with storage=r2 --with jobs        # capability batch
 create-stack add --with jobs --with component=confirm # mixed batch
@@ -181,12 +171,12 @@ create-stack add --with jobs --with component=confirm # mixed batch
 
 ## Components
 
-These UI components are not part of the base app. `create-stack add` installs their local shadcn
-registry items, so the target application's `components.json` controls aliases, styles, icons,
-and official primitives. Existing Create Stack files are **never overwritten** unless you pass
+These UI components are separate from the base app. `create-stack add` installs their local
+shadcn registry items, so the target application's `components.json` controls aliases, styles,
+icons, and official primitives. Existing Create Stack files stay untouched unless you pass
 `--force`; customized shadcn primitives remain untouched. The callable dialogs use
-[react-call](https://react-call.desko.dev), and the CLI mounts their `<Root />` in the app shell
-(TanStack `__root` or the Next.js root layout), so `.call()` works after install.
+[react-call](https://react-call.desko.dev). The CLI mounts their `<Root />` in the app shell,
+either TanStack `__root` or the Next.js root layout, so `.call()` works after installation.
 
 | Component | Create Stack files | Official shadcn primitives | Direct packages |
 | --- | --- | --- | --- |
@@ -206,7 +196,7 @@ create-stack add --with component=confirm \
   --with component=prompt                     # several components
 ```
 
-You can `await` the callable dialogs from anywhere. Their `<Root />` is already mounted:
+Await the callable dialogs from anywhere. Their `<Root />` is already mounted:
 
 ```tsx
 const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })
@@ -227,16 +217,16 @@ const confirmed = await ConfirmPassphrase.call({ title: 'Delete repo?', phrase: 
 const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => api.checkOtp(code) })
 ```
 
-## After scaffolding
+## After creating a project
 
 ```bash
 cd my-app
 pnpm install     # only if you passed --no-install
-# edit .env      # placeholders are already there
+# edit .env      # placeholders are already present
 pnpm dev
 ```
 
-Outside an existing repository, the CLI initializes a new Git repository. It creates the first
+When the target is not inside an existing repository, the CLI initializes a new Git repository. It creates the first
 commit only after installation and verification pass. If Git `user.name` or `user.email` is not
 set, it skips that commit. `--no-install` leaves the project uncommitted because its checks did
 not run. `--no-git` disables Git initialization. The published package includes everything it
@@ -253,5 +243,5 @@ Inspired by [create-t3-app](https://create.t3.gg) and the work of [Theo Browne](
 [![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)
 [![ComeUp](https://img.shields.io/static/v1?style=for-the-badge&label=&message=ComeUp&color=yellow)](https://comeup.com/@alfredmouelle)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredmouelle)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/alfredmouelle)
+[![X](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/alfredmouelle)
 [![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:alfredmouelle@gmail.com)

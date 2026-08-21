@@ -1,7 +1,7 @@
 # @alfredmouelle/email-ui
 
-Composable React Email primitives with a **swappable theme**. Build templates
-once; restyle every email by passing a theme override, no template changes.
+Composable React Email primitives with theme tokens. Build a template once and
+change its brand or colors through a theme override.
 
 ## Primitives
 
@@ -16,7 +16,7 @@ export function VerifyEmail({ url }: { url: string }) {
   return (
     <EmailLayout preview="Confirm your email.">
       <EmailHeading kicker="Confirmation">Confirm your address.</EmailHeading>
-      <EmailButton href={url}>Confirm →</EmailButton>
+      <EmailButton href={url}>Confirm email</EmailButton>
     </EmailLayout>
   )
 }
@@ -38,8 +38,8 @@ const theme = createEmailTheme({
 <EmailLayout preview="…" theme={theme}>…</EmailLayout>
 ```
 
-Pass `year={...}` to `EmailLayout` to keep rendered output deterministic (tests,
-snapshots). Otherwise it uses the current year.
+Pass `year={...}` to `EmailLayout` when tests or snapshots need deterministic
+output. Without it, the component uses the current year.
 
 ## Local preview
 
@@ -47,5 +47,5 @@ snapshots). Otherwise it uses the current year.
 pnpm --filter @alfredmouelle/email-ui email:dev   # react-email studio on :3001
 ```
 
-Drop `*.tsx` files in `emails/` that default-export a preview component
-(see `emails/verify-email.tsx`).
+Add `*.tsx` files to `emails/` and default-export a preview component. See
+`emails/verify-email.tsx` for an example.

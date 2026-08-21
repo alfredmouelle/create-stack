@@ -1,15 +1,16 @@
 # @alfredmouelle/http
 
-The shared HTTP foundation for the monorepo: a typed `fetch` wrapper and a set
-of Web-standard helpers that both Next.js and TanStack Start understand.
+Shared HTTP helpers for the monorepo. The package provides a typed `fetch`
+wrapper and Web-standard request and response helpers for Next.js and TanStack
+Start.
 
-> Use this for talking to APIs that have **no official SDK**. When a provider
-> ships an SDK, prefer the SDK (see `@alfredmouelle/mailer`, `@alfredmouelle/storage`, …).
+> Use this for APIs without an official SDK. When a provider ships an SDK, use
+> that SDK instead. See `@alfredmouelle/mailer` and `@alfredmouelle/storage`.
 
 ## `apiFetch`: typed fetch wrapper
 
-URL/query building, JSON encoding, timeouts, content-negotiated parsing, and
-rich typed errors. Non-2xx responses throw.
+`apiFetch` builds URLs and queries, encodes JSON, applies timeouts, parses the
+response, and throws typed errors for non-2xx responses.
 
 ```ts
 import { apiFetch, isApiFetchError } from '@alfredmouelle/http'
@@ -38,19 +39,19 @@ Errors: `ApiFetchError` (`status`, `statusText`, `url`, `serverMessage`,
 
 ## Web-standard handlers & responses
 
-Write handlers once against `Request -> Response`; mount them in any framework.
+Write handlers against `Request` and `Response`, then mount them in either framework.
 
 ```ts
 import { json, noContent, type WebhookHandler } from '@alfredmouelle/http'
 
 export const handleWebhook: WebhookHandler = async (req) => {
   const event = await req.json()
-  // …process…
+  // Process the event.
   return noContent()
 }
 
 // Next:      export const POST = handleWebhook
-// TanStack:  a server route → handleWebhook(request)
+// TanStack:  a server route calls handleWebhook(request)
 ```
 
 Response helpers: `json(data, init)`, `noContent(init)`, `text(body, init)`,

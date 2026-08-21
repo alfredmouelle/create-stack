@@ -1,20 +1,20 @@
 # create-stack
 
-> An opinionated, framework-agnostic SaaS foundation. Swappable capabilities
-> behind tiny **ports & adapters**, single-provider **modules** for the rest,
-> ready to drop into any new project.
+> A SaaS foundation and CLI for scaffolding Next.js or TanStack Start projects.
+> Replaceable integrations live behind ports. Integrations with one useful provider
+> ship as modules.
 
 [![npm](https://img.shields.io/npm/v/@alfredmouelle/create-stack?color=cb3837&logo=npm&label=create-stack)](https://www.npmjs.com/package/@alfredmouelle/create-stack)
 [![license](https://img.shields.io/npm/l/@alfredmouelle/create-stack?color=blue)](./LICENSE)
 [![node](https://img.shields.io/node/v/@alfredmouelle/create-stack?color=339933&logo=node.js&logoColor=white)](https://nodejs.org)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-A pnpm + turbo monorepo where the external tools worth swapping (email, storage,
-cache, logging, analytics) live behind a tiny **port**. App code depends only on
-the port, never on a provider, so swapping Resend for Brevo, or S3 for R2, is one
-line in a composition root, not a refactor. The tools that are not worth swapping
-(jobs on Inngest, error tracking on Sentry) are vendored as **modules** and used
-directly, wiring included.
+This pnpm and Turborepo monorepo keeps replaceable integrations such as email,
+storage, cache, logging, and analytics behind a **port**. Application code depends
+on that port. The composition root selects the provider, so switching Resend for
+Brevo or S3 for R2 stays local to one place. Jobs use Inngest directly, and error
+tracking uses Sentry directly. Those integrations ship as **modules** with their
+framework wiring included.
 
 > **Two package names, one project.** `@alfredmouelle/create-stack` is the
 > published CLI you install to scaffold a project. `@alfredmouelle/stack` is this
@@ -22,8 +22,8 @@ directly, wiring included.
 
 ## Quickstart
 
-Scaffold a new project (stack options + capabilities, dependencies installed and
-verified, baseline committed to Git):
+Scaffold a project with the selected stack, installed dependencies, verification,
+and an initial Git commit:
 
 ```bash
 pnpm create @alfredmouelle/stack@latest my-app
@@ -31,25 +31,24 @@ pnpm create @alfredmouelle/stack@latest my-app
 pnpm dlx @alfredmouelle/create-stack@latest my-app
 ```
 
-You pick the framework, monorepo orchestrator, package manager, import alias, database,
-authentication, tRPC, mailer, and capabilities interactively; the CLI forks the matching
-base app and wires them in.
+The wizard asks for the framework, monorepo orchestrator, package manager, import alias,
+database, authentication, tRPC, mailer, and capabilities. The CLI forks the matching
+base app and applies those choices.
 
 ## Why
 
-Every new SaaS started the same way: clean the boilerplate, set up the linter,
-re-install the same libs, re-wire the same integrations. This repo captures those
-patterns once. It is opinionated by design (these are the defaults I ship with),
-but the agnostic part means a tool is never welded to the codebase: it sits
-behind an adapter and can be replaced wholesale. Fork it, or bend the defaults to
-your own taste.
+Every new SaaS project needs the same early work: clean the boilerplate, configure
+the checks, install the common libraries, and wire the usual integrations. This
+repo keeps that work in one place. The defaults are opinionated, while the
+replaceable integrations stay behind adapters. Fork the base apps or change the
+defaults to fit your project.
 
 ## Capabilities
 
 Each `packages/<capability>/` is a self-contained capability with a
-`capability.json` manifest and tests. The `kind` field in that manifest is the
-source of truth: a **port** has several adapters and is swappable at the
-composition root, a **module** has one provider (or none) and is used directly.
+`capability.json` manifest and tests. Its `kind` field defines the wiring model:
+a **port** has several adapters selected at the composition root, while a
+**module** has one provider, or no provider, and is used directly.
 
 ### Ports (swappable)
 
@@ -79,15 +78,13 @@ Design rules:
   framework integration *is* the product (the error-tracking wiring).
 - **Official SDKs** are always preferred over hand-rolled fetch (except `http`,
   whose whole job is fetch).
-- **Provider selection by env var**, static imports. (Switch to lazy import +
-  per-adapter subexports only if a target deploys to the edge.)
-- **Don't abstract what you won't swap.** No port for a single obvious
-  implementation, and none either when the port would have to hide what makes the
-  provider worth using: the jobs port modelled neither durable steps, nor cron,
-  nor concurrency, nor fan-out, so real code reached past it immediately; and
-  Sentry's value (Server Component errors via `onRequestError`, source maps,
-  preloaded OTel instrumentation, per-request scope isolation) is structurally
-  out of reach of a `captureException` wrapper.
+- **Provider selection by env var**, with static imports. Use lazy imports and
+  per-adapter subexports only when an edge deployment requires them.
+- **Abstract a dependency when the abstraction earns its keep.** A single obvious
+  implementation stays a module. Jobs need durable steps, cron, concurrency, fan-out,
+  and typed events, so the SDK remains visible. Sentry needs request hooks, source
+  maps, early instrumentation, and per-request scope isolation, so a small
+  `captureException` wrapper would hide the useful parts.
 
 ## Structure
 
@@ -108,11 +105,11 @@ scripts/
 capability.schema.json   # the manifest schema each capability.json follows
 ```
 
-`apps/*-base` are **real starter apps**, the absolute references you fork for a
-new project. They carry the personal baseline (strict Biome, `~/*` alias, typed
-`env.ts`) and nothing app-specific; new projects are scaffolded (framework, monorepo
-orchestrator, package manager, import alias, and stack axes) with **create-stack** (which can
-rewrite the `~/*` alias to your choice), and tools are added per-project with **add-capability**.
+`apps/*-base` are **real starter apps**. The CLI forks one of them for each new
+project. They carry the baseline, including strict Biome, the `~/*` alias, and
+typed `env.ts`, without application-specific code. `create-stack` selects the
+framework, monorepo orchestrator, package manager, import alias, and stack axes.
+`add-capability` adds tools after creation.
 
 ## Development
 
@@ -137,14 +134,14 @@ The skills live here (versioned) and are symlinked into the agent's config, so
 editing them in this repo updates what the agent uses, no copy step.
 
 ```bash
-pnpm link:skills          # → Claude (~/.claude/skills)
-pnpm link:skills:codex    # → Codex  (~/.codex/prompts)
+pnpm link:skills          # Claude (~/.claude/skills)
+pnpm link:skills:codex    # Codex  (~/.codex/prompts)
 ```
 
-- **`/create-stack`**: scaffold a new project by running the published
+- **`/create-stack`**: create a project with the published
   `@alfredmouelle/create-stack` CLI (framework + stack axes + capabilities, installs &
   inits git).
-- **`/add-capability <capability> [adapter]`**: vendor a capability into the
+- **`/add-capability <capability> [adapter]`**: add a capability to the
   current project (e.g. `/add-capability mailer resend`). Ports take an adapter
   argument, modules take none. Server capabilities land in `src/server/<cap>/`,
   pure utils in `src/lib/`, templates in `src/emails/`.
@@ -184,6 +181,6 @@ Alfred MOUELLE | FullStack Developer
 [![ComeUp](https://img.shields.io/static/v1?style=for-the-badge&label=&message=ComeUp&color=yellow)](https://comeup.com/@alfredmouelle)
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/alfredmouelle)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredmouelle)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/alfredmouelle)
+[![X](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/alfredmouelle)
 [![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:alfredmouelle@gmail.com)
 [![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)
