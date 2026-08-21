@@ -13,6 +13,17 @@ import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './ac
 
 test.afterAll(cleanupAcceptanceFixtures)
 
+const ALERT_DIALOG_SOURCE = `
+export const AlertDialog = () => null
+export const AlertDialogContent = () => null
+export const AlertDialogDescription = () => null
+export const AlertDialogFooter = () => null
+export const AlertDialogHeader = () => null
+export const AlertDialogTitle = () => null
+export const AlertDialogAction = () => null
+export const AlertDialogCancel = () => null
+`
+
 function createProject(fixture, { framework, monorepo, pm }) {
   return runCli({
     cwd: fixture.root,
@@ -106,10 +117,7 @@ function startRegistry({ status = 200 } = {}) {
       {
         path: 'ui/alert-dialog.tsx',
         type: 'registry:ui',
-        content: readFileSync(
-          new URL('../../apps/next-base/src/components/ui/alert-dialog.tsx', import.meta.url),
-          'utf8',
-        ),
+        content: ALERT_DIALOG_SOURCE,
       },
     ],
   })

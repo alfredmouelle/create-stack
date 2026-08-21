@@ -12,7 +12,7 @@ const AUTH_PATHS = {
   next: { shell: 'src/app/layout.tsx', signIn: 'src/app/sign-in/[[...sign-in]]/page.tsx' },
 }
 
-const STRIPPED_COMPONENT_FILES = [
+const OPTIONAL_COMPONENT_FILES = [
   'src/components/data-table.tsx',
   'src/components/infinite-data-table.tsx',
   'src/components/sortable-header.tsx',
@@ -22,14 +22,17 @@ const STRIPPED_COMPONENT_FILES = [
   'src/components/ui/calendar.tsx',
   'src/components/ui/popover.tsx',
   'src/lib/date.ts',
+  'src/components/ui/confirm.tsx',
+  'src/components/ui/alert.tsx',
   'src/components/ui/prompt.tsx',
   'src/components/ui/choice.tsx',
   'src/components/ui/confirm-passphrase.tsx',
   'src/components/ui/confirm-otp.tsx',
   'src/components/ui/dialog.tsx',
   'src/components/ui/input-otp.tsx',
+  'src/components/ui/alert-dialog.tsx',
 ]
-const STRIPPED_COMPONENT_DEPS = [
+const OPTIONAL_COMPONENT_DEPS = [
   '@tanstack/react-table',
   'react-day-picker',
   'date-fns',
@@ -37,10 +40,10 @@ const STRIPPED_COMPONENT_DEPS = [
   'input-otp',
 ]
 
-function assertComponentsStripped(dir, deps) {
-  for (const f of STRIPPED_COMPONENT_FILES)
-    expect(exists(`${dir}/${f}`), `${f} stripped`).toBe(false)
-  for (const d of STRIPPED_COMPONENT_DEPS) expect(d in deps, `${d} removed`).toBe(false)
+function assertOptionalComponentsAbsent(dir, deps) {
+  for (const f of OPTIONAL_COMPONENT_FILES)
+    expect(exists(`${dir}/${f}`), `${f} absent from base`).toBe(false)
+  for (const d of OPTIONAL_COMPONENT_DEPS) expect(d in deps, `${d} absent from base`).toBe(false)
 }
 
 const allDeps = (pkg) => ({ ...pkg.dependencies, ...pkg.devDependencies })
@@ -227,7 +230,7 @@ for (const framework of ['tanstack', 'next']) {
         assertTrpc(dir, result.trpc, deps)
         assertAuth(dir, result.auth, deps, framework)
         assertDatabase(dir, result.database, deps, result.auth === 'better-auth', framework)
-        assertComponentsStripped(dir, deps)
+        assertOptionalComponentsAbsent(dir, deps)
         assertMailer(dir, result, deps)
         if (result.trpc) assertTrpcContext(dir, result.database, result.auth)
 

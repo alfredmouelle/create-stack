@@ -30,7 +30,6 @@ import {
   creationProviderChoices,
   resolveCreationProvider,
 } from './lib/capabilities.mjs'
-import { COMPONENT_NAMES, COMPONENTS, vendorComponent } from './lib/component.mjs'
 import { resolveDatabase } from './lib/database.mjs'
 import { packageName } from './lib/identity.mjs'
 import {
@@ -45,6 +44,7 @@ import {
   relativeApplicationPath,
   resolveApplicationPath,
 } from './lib/project-target.mjs'
+import { COMPONENT_CATALOG, COMPONENT_NAMES } from './lib/registry.mjs'
 import { installRegistryComponents, preflightRegistryComponents } from './lib/shadcn.mjs'
 import { exists, isDirEmpty, join, run, runCapture } from './lib/util.mjs'
 
@@ -873,8 +873,8 @@ async function resolveAddSelections(args) {
         Capabilities: addableChoices(),
         Components: COMPONENT_NAMES.map((name) => ({
           value: `component=${name}`,
-          label: COMPONENTS[name].label,
-          hint: COMPONENTS[name].hint,
+          label: COMPONENT_CATALOG[name].label,
+          hint: COMPONENT_CATALOG[name].hint,
         })),
       },
     }),
@@ -934,13 +934,11 @@ function validateAdditionInvocation(args) {
   }
 }
 
-function addSelection({ selection, projectDir, force, keepFiles, registryResults }) {
+function addSelection({ selection, projectDir, keepFiles, registryResults }) {
   if (selection.type === 'component') {
-    return {
-      ...selection,
-      ...(registryResults.get(selection.name) ??
-        vendorComponent({ projectDir, name: selection.name, force })),
-    }
+    const result = registryResults.get(selection.name)
+    if (!result) throw new Error(`Missing registry result for component: ${selection.name}`)
+    return { ...selection, ...result }
   }
 
   return {
@@ -1050,7 +1048,7 @@ async function runAdd(args) {
 
   const registryResults = installRegistryResults(registryPreflight)
   const added = selections.map((selection) =>
-    addSelection({ selection, projectDir, force, keepFiles, registryResults }),
+    addSelection({ selection, projectDir, keepFiles, registryResults }),
   )
   if (!args.flags['no-install']) installAndVerify(projectDir, pm)
 

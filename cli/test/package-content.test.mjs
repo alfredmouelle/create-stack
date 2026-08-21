@@ -63,6 +63,24 @@ test('published package includes the local registry and its executable shadcn ru
     expect(contents.stdout).toContain(`package/_stack/registry/${name}.json`)
   }
   expect(contents.stdout).toContain('package/_stack/registry/index.json')
+  for (const framework of ['next-base', 'tanstack-base']) {
+    for (const file of [
+      'src/components/data-table.tsx',
+      'src/components/infinite-data-table.tsx',
+      'src/components/sortable-header.tsx',
+      'src/hooks/use-data-table.tsx',
+      'src/components/ui/date-picker.tsx',
+      'src/components/ui/date-range-picker.tsx',
+      'src/components/ui/calendar.tsx',
+      'src/components/ui/popover.tsx',
+      'src/components/ui/confirm.tsx',
+      'src/components/ui/alert.tsx',
+      'src/components/ui/alert-dialog.tsx',
+      'src/lib/date.ts',
+    ]) {
+      expect(contents.stdout).not.toContain(`package/_stack/apps/${framework}/${file}`)
+    }
+  }
 
   const packageJson = JSON.parse(
     spawnSync('tar', ['-xOf', archive, 'package/package.json'], { encoding: 'utf8' }).stdout,
