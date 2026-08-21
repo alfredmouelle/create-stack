@@ -39,39 +39,29 @@ export const COMPONENTS = {
     deps: ['react-call'],
     root: { name: 'Alert', module: 'components/ui/alert' },
   },
-  prompt: {
-    label: 'Prompt',
-    hint: 'await a text input',
-    files: ['src/components/ui/prompt.tsx', 'src/components/ui/dialog.tsx'],
-    deps: ['react-call'],
-    root: { name: 'Prompt', module: 'components/ui/prompt' },
-  },
-  choice: {
-    label: 'Choice',
-    hint: 'await a pick from a list',
-    files: ['src/components/ui/choice.tsx', 'src/components/ui/dialog.tsx'],
-    deps: ['react-call'],
-    root: { name: 'Choice', module: 'components/ui/choice' },
-  },
-  'confirm-passphrase': {
-    label: 'Confirm (passphrase)',
-    hint: 'type an exact phrase to confirm',
-    files: ['src/components/ui/confirm-passphrase.tsx', 'src/components/ui/dialog.tsx'],
-    deps: ['react-call'],
-    root: { name: 'ConfirmPassphrase', module: 'components/ui/confirm-passphrase' },
-  },
-  'confirm-otp': {
-    label: 'Confirm (OTP)',
-    hint: 'verify an OTP code to confirm',
-    files: [
-      'src/components/ui/confirm-otp.tsx',
-      'src/components/ui/dialog.tsx',
-      'src/components/ui/input-otp.tsx',
-    ],
-    deps: ['react-call', 'input-otp'],
-    root: { name: 'ConfirmOtp', module: 'components/ui/confirm-otp' },
-  },
 }
+
+const registryComponent = (name, label, hint) => {
+  const entry = COMPONENT_CATALOG[name]
+  return {
+    label,
+    hint,
+    files: entry.files.map(({ destination }) => destination),
+    deps: entry.dependencies,
+    root: entry.root,
+  }
+}
+
+Object.assign(COMPONENTS, {
+  prompt: registryComponent('prompt', 'Prompt', 'await a text input'),
+  choice: registryComponent('choice', 'Choice', 'await a pick from a list'),
+  'confirm-passphrase': registryComponent(
+    'confirm-passphrase',
+    'Confirm (passphrase)',
+    'type an exact phrase to confirm',
+  ),
+  'confirm-otp': registryComponent('confirm-otp', 'Confirm (OTP)', 'verify an OTP code to confirm'),
+})
 
 export const COMPONENT_NAMES = Object.keys(COMPONENTS)
 

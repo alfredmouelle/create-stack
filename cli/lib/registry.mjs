@@ -7,6 +7,28 @@ const REGISTRY_SCHEMA_URL = 'https://ui.shadcn.com/schema/registry.json'
 
 const COMPONENT_SOURCE_ROOT = 'apps/next-base/src'
 const COMPONENT_PACKAGE_ROOT = 'apps/next-base'
+const CALLABLE_SOURCE_ROOT = 'cli/registry'
+const CALLABLE_PACKAGE_ROOT = 'cli/registry'
+
+const callableEntry = ({ name, title, description, rootName, registryDependencies }) => ({
+  name,
+  type: 'registry:component',
+  title,
+  description,
+  sourceRoot: CALLABLE_SOURCE_ROOT,
+  packageRoot: CALLABLE_PACKAGE_ROOT,
+  registryDependencies,
+  dependencies: ['react-call'],
+  files: [
+    {
+      source: `components/ui/${name}.tsx`,
+      path: `ui/${name}.tsx`,
+      destination: `src/components/ui/${name}.tsx`,
+      type: 'registry:ui',
+    },
+  ],
+  root: { name: rootName, module: `components/ui/${name}` },
+})
 
 export const COMPONENT_CATALOG = {
   'date-picker': {
@@ -41,6 +63,34 @@ export const COMPONENT_CATALOG = {
       },
     ],
   },
+  prompt: callableEntry({
+    name: 'prompt',
+    title: 'Prompt',
+    description: 'A callable dialog that waits for text input.',
+    rootName: 'Prompt',
+    registryDependencies: ['dialog', 'button', 'input', 'label'],
+  }),
+  choice: callableEntry({
+    name: 'choice',
+    title: 'Choice',
+    description: 'A callable dialog that waits for a selection.',
+    rootName: 'Choice',
+    registryDependencies: ['dialog', 'button'],
+  }),
+  'confirm-passphrase': callableEntry({
+    name: 'confirm-passphrase',
+    title: 'Confirm Passphrase',
+    description: 'A callable dialog that checks an exact phrase.',
+    rootName: 'ConfirmPassphrase',
+    registryDependencies: ['dialog', 'button', 'input', 'label'],
+  }),
+  'confirm-otp': callableEntry({
+    name: 'confirm-otp',
+    title: 'Confirm OTP',
+    description: 'A callable dialog that checks a one-time password.',
+    rootName: 'ConfirmOtp',
+    registryDependencies: ['dialog', 'button', 'input-otp'],
+  }),
 }
 
 export const COMPONENT_NAMES = Object.keys(COMPONENT_CATALOG)

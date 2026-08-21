@@ -196,7 +196,7 @@ unless you pass `--force`. The callable dialogs use
 | `prompt` | `ui/prompt` (+ dialog), waits for text input | react-call |
 | `choice` | `ui/choice` (+ dialog), waits for a selection | react-call |
 | `confirm-passphrase` | `ui/confirm-passphrase` (+ dialog), checks an exact phrase | react-call |
-| `confirm-otp` | `ui/confirm-otp` (+ dialog, input-otp), checks an OTP code | react-call, input-otp |
+| `confirm-otp` | `ui/confirm-otp` (+ dialog, input-otp), checks an OTP code | react-call |
 
 ```bash
 create-stack add                              # grouped capabilities + components picker

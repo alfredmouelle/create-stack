@@ -66,7 +66,7 @@ exit 0
 
 function startRegistry({ status = 200 } = {}) {
   const items = new Map(
-    ['calendar', 'popover', 'button'].map((name) => [
+    ['calendar', 'popover', 'button', 'dialog', 'input', 'label', 'input-otp'].map((name) => [
       name,
       {
         name,
@@ -108,6 +108,7 @@ const server = createServer((request, response) => {
   response.setHeader('content-type', 'application/json')
   response.end(JSON.stringify(payload ?? { error: 'not found' }))
 })
+
 server.listen(0, '127.0.0.1', () => console.log(server.address().port))
 `,
     ],
@@ -124,6 +125,65 @@ server.listen(0, '127.0.0.1', () => console.log(server.address().port))
 function expectNoCommit(projectDir) {
   expect(spawnSync('git', ['-C', projectDir, 'rev-parse', '--verify', 'HEAD']).status).not.toBe(0)
 }
+
+test.each([
+  ['next', 'src/app/layout.tsx', "import { Prompt } from '~/components/ui/prompt'"],
+  ['tanstack', 'src/routes/__root.tsx', "import { Prompt } from '~/components/ui/prompt'"],
+])(
+  'adds prompt and mounts its Root in the %s application',
+  async (framework, rootFile, importLine) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework, pm: 'npm' }).exitStatus).toBe(0)
+    const fake = fakePackageManager(fixture)
+    const registry = await startRegistry()
+
+    try {
+      const added = runCli({
+        cwd: fixture.app,
+        target: fixture.app,
+        env: { ...fake.env, REGISTRY_URL: registry.url },
+        args: ['add', 'component', 'prompt', '--pm', 'npm'],
+      })
+
+      expect(added.exitStatus).toBe(0)
+      expect(added.stdout).toContain('shadcn: dialog, button, input, label')
+      expect(added.stdout).toContain('mounted <Prompt />')
+      const root = readFileSync(`${fixture.app}/${rootFile}`, 'utf8')
+      expect(root).toContain(importLine)
+      expect(root).toContain('<Prompt />')
+      expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
+    } finally {
+      registry.child.kill()
+    }
+  },
+)
+
+test('keeps a callable installed and prints exact Root instructions for a customized framework root', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const rootPath = `${fixture.app}/src/app/layout.tsx`
+  const originalRoot = readFileSync(rootPath, 'utf8')
+  writeFileSync(rootPath, originalRoot.replace('</body>', ''))
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+
+  try {
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'choice', '--pm', 'npm'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain("import { Choice } from '~/components/ui/choice'")
+    expect(added.stdout).toContain('<Choice />')
+    expect(readFileSync(rootPath, 'utf8')).not.toContain('<Choice />')
+    expect(existsSync(`${fixture.app}/src/components/ui/choice.tsx`)).toBe(true)
+  } finally {
+    registry.child.kill()
+  }
+})
 
 test('the executable CLI reports prompts without mutating its target', () => {
   const fixture = createAcceptanceFixture('standalone')

@@ -23,12 +23,57 @@ function readJSON(path) {
 }
 
 describe('component registry generation', () => {
+  test('generates the dialog-based callable items with their own sources and roots', () => {
+    const destination = outputDir()
+    const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
+    const expected = {
+      prompt: {
+        registryDependencies: ['dialog', 'button', 'input', 'label'],
+        dependencies: ['react-call'],
+        root: { name: 'Prompt', module: 'components/ui/prompt' },
+      },
+      choice: {
+        registryDependencies: ['dialog', 'button'],
+        dependencies: ['react-call'],
+        root: { name: 'Choice', module: 'components/ui/choice' },
+      },
+      'confirm-passphrase': {
+        registryDependencies: ['dialog', 'button', 'input', 'label'],
+        dependencies: ['react-call'],
+        root: { name: 'ConfirmPassphrase', module: 'components/ui/confirm-passphrase' },
+      },
+      'confirm-otp': {
+        registryDependencies: ['dialog', 'button', 'input-otp'],
+        dependencies: ['react-call'],
+        root: { name: 'ConfirmOtp', module: 'components/ui/confirm-otp' },
+      },
+    }
+
+    expect(result.names).toEqual(['date-picker', ...Object.keys(expected)])
+    for (const [name, contract] of Object.entries(expected)) {
+      const item = readJSON(join(destination, `${name}.json`))
+      expect(registryItemSchema.safeParse(item).success).toBe(true)
+      expect(item.registryDependencies).toEqual(contract.registryDependencies)
+      expect(item.dependencies).toEqual(contract.dependencies)
+      expect(result.metadata[name].root).toEqual(contract.root)
+      expect(item.files).toHaveLength(1)
+      expect(item.files[0].path).toBe(`ui/${name}.tsx`)
+      expect(item.files[0].content).toContain("import { createCallable } from 'react-call'")
+    }
+  })
+
   test('generates a schema-valid date-picker item from the catalog', () => {
     const destination = outputDir()
     const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
     const item = readJSON(join(destination, 'date-picker.json'))
 
-    expect(result.names).toEqual(['date-picker'])
+    expect(result.names).toEqual([
+      'date-picker',
+      'prompt',
+      'choice',
+      'confirm-passphrase',
+      'confirm-otp',
+    ])
     expect(registryItemSchema.safeParse(item).success).toBe(true)
     expect(item.name).toBe('date-picker')
     expect(item.registryDependencies).toEqual(['calendar', 'popover', 'button'])
@@ -44,7 +89,13 @@ describe('component registry generation', () => {
 
     const index = readJSON(join(destination, 'index.json'))
     expect(registrySchema.safeParse(index).success).toBe(true)
-    expect(index.items.map((entry) => entry.name)).toEqual(['date-picker'])
+    expect(index.items.map((entry) => entry.name)).toEqual([
+      'date-picker',
+      'prompt',
+      'choice',
+      'confirm-passphrase',
+      'confirm-otp',
+    ])
   })
 
   test('rejects invalid catalog data, missing sources, and unresolved package dependencies', () => {

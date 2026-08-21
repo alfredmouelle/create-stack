@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -105,6 +105,38 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
       () => {
         const { projectDir } = scaffold(framework, 'date-picker', ['--minimal'])
         runCli(['add', 'component', 'date-picker'], projectDir)
+        verify(projectDir)
+      },
+      TIMEOUT,
+    )
+
+    test(
+      `${framework}/dialog-callables`,
+      () => {
+        const { projectDir } = scaffold(framework, 'dialog-callables', ['--minimal'])
+        runCli(
+          [
+            'add',
+            '--with',
+            'component=prompt',
+            '--with',
+            'component=choice',
+            '--with',
+            'component=confirm-passphrase',
+            '--with',
+            'component=confirm-otp',
+          ],
+          projectDir,
+        )
+        const rootFile = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+        const root = readFileSync(join(projectDir, rootFile), 'utf8')
+        for (const name of ['Prompt', 'Choice', 'ConfirmPassphrase', 'ConfirmOtp']) {
+          expect(root).toContain(`<${name} />`)
+        }
+        const prompt = readFileSync(`${projectDir}/src/components/ui/prompt.tsx`, 'utf8')
+        expect(prompt.includes("'use client'") || prompt.includes('"use client"')).toBe(
+          framework === 'next',
+        )
         verify(projectDir)
       },
       TIMEOUT,
