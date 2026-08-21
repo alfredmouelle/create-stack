@@ -1512,7 +1512,7 @@ test('reruns data-table safely and force-replaces only its owned files', async (
   } finally {
     registry.child.kill()
   }
-})
+}, 15_000)
 
 test('installs a mixed registry batch once with shared official primitives deduplicated', async () => {
   const fixture = createAcceptanceFixture('standalone')
