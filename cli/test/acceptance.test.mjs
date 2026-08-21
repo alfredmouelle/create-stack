@@ -151,7 +151,10 @@ test.each([
       const root = readFileSync(`${fixture.app}/${rootFile}`, 'utf8')
       expect(root).toContain(importLine)
       expect(root).toContain('<Prompt />')
-      expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
+      const prompt = readFileSync(`${fixture.app}/src/components/ui/prompt.tsx`, 'utf8')
+      expect(prompt.includes("'use client'") || prompt.includes('"use client"')).toBe(
+        framework === 'next',
+      )
     } finally {
       registry.child.kill()
     }

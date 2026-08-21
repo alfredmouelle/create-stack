@@ -178,6 +178,21 @@ function officialTarget(projectDir, config, name) {
   return join(resolveAliasTarget(projectDir, alias), `${name}.tsx`)
 }
 
+function applyRscDirective(item, config) {
+  if (config.rsc) return item
+
+  return {
+    ...item,
+    files: item.files?.map((file) => ({
+      ...file,
+      content:
+        typeof file.content === 'string'
+          ? file.content.replace(/^(['"])use client\1;?\s*/, '')
+          : file.content,
+    })),
+  }
+}
+
 function componentTargets(projectDir, config, name) {
   return registryComponents[name].files.map((file) => ({
     file,
@@ -244,7 +259,7 @@ function prepareItem(projectDir, config, name, { force = false } = {}) {
     sourcePath = join(temporaryRoot, `${name}.json`)
   }
 
-  const item = JSON.parse(readFileSync(sourcePath, 'utf8'))
+  const item = applyRscDirective(JSON.parse(readFileSync(sourcePath, 'utf8')), config)
   item.files = (item.files ?? []).filter(
     (file) => force || !pathExists(itemTarget(projectDir, config, file)),
   )
