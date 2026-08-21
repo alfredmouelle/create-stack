@@ -28,7 +28,7 @@ describe('component registry generation', () => {
     const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
     const item = readJSON(join(destination, 'date-picker.json'))
 
-    expect(result.names).toEqual(['date-picker'])
+    expect(result.names).toEqual(['date-picker', 'data-table'])
     expect(registryItemSchema.safeParse(item).success).toBe(true)
     expect(item.name).toBe('date-picker')
     expect(item.registryDependencies).toEqual(['calendar', 'popover', 'button'])
@@ -44,7 +44,35 @@ describe('component registry generation', () => {
 
     const index = readJSON(join(destination, 'index.json'))
     expect(registrySchema.safeParse(index).success).toBe(true)
-    expect(index.items.map((entry) => entry.name)).toEqual(['date-picker'])
+    expect(index.items.map((entry) => entry.name)).toEqual(['date-picker', 'data-table'])
+  })
+
+  test('generates the complete data-table item with its direct and official dependencies', () => {
+    const destination = outputDir()
+    const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
+    const item = readJSON(join(destination, 'data-table.json'))
+
+    expect(registryItemSchema.safeParse(item).success).toBe(true)
+    expect(item.registryDependencies).toEqual(['table', 'skeleton', 'button'])
+    expect(item.dependencies).toEqual(['@tanstack/react-table@^8.21.3', 'lucide-react'])
+    expect(item.files.map((file) => file.path)).toEqual([
+      'components/data-table.tsx',
+      'components/infinite-data-table.tsx',
+      'components/sortable-header.tsx',
+      'hooks/use-data-table.tsx',
+    ])
+    expect(item.files.slice(0, 3).map((file) => file.type)).toEqual([
+      'registry:component',
+      'registry:component',
+      'registry:component',
+    ])
+    expect(item.files[3].type).toBe('registry:hook')
+    expect(result.metadata['data-table'].destinations).toEqual([
+      'src/components/data-table.tsx',
+      'src/components/infinite-data-table.tsx',
+      'src/components/sortable-header.tsx',
+      'src/hooks/use-data-table.tsx',
+    ])
   })
 
   test('rejects invalid catalog data, missing sources, and unresolved package dependencies', () => {

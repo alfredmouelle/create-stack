@@ -109,5 +109,15 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
       },
       TIMEOUT,
     )
+
+    test(
+      `${framework}/data-table`,
+      () => {
+        const { projectDir } = scaffold(framework, 'data-table', ['--minimal'])
+        runCli(['add', 'component', 'data-table'], projectDir)
+        verify(projectDir)
+      },
+      TIMEOUT,
+    )
   }
 })
