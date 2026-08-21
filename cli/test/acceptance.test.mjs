@@ -112,7 +112,7 @@ function startRegistry({ status = 200 } = {}) {
     title: 'Alert Dialog',
     description: 'Alert dialog primitive',
     dependencies: ['radix-ui', 'class-variance-authority'],
-    registryDependencies: [],
+    registryDependencies: ['button'],
     files: [
       {
         path: 'ui/alert-dialog.tsx',
