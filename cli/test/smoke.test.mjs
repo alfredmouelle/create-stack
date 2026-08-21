@@ -51,9 +51,10 @@ function runCli(args, cwd) {
   expect(run(process.execPath, [cliEntry, ...args], cwd), `create-stack ${args.join(' ')}`).toBe(0)
 }
 
-function verify(projectDir) {
+function verify(projectDir, { build = false } = {}) {
   expect(run('pnpm', ['run', 'typecheck'], projectDir), 'installed project typecheck').toBe(0)
   expect(run('pnpm', ['run', 'check'], projectDir), 'installed project format check').toBe(0)
+  if (build) expect(run('pnpm', ['run', 'build'], projectDir), 'installed project build').toBe(0)
 }
 
 function readJson(path) {
@@ -179,7 +180,10 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
     for (const workflow of CREATION_WORKFLOWS) {
       test(
         `${framework}/${workflow.name}`,
-        () => verify(scaffold(framework, workflow.name, workflow.options).projectDir),
+        () =>
+          verify(scaffold(framework, workflow.name, workflow.options).projectDir, {
+            build: framework === 'tanstack' && workflow.name === 'minimal',
+          }),
         TIMEOUT,
       )
     }
