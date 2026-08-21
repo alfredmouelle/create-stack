@@ -66,7 +66,7 @@ exit 0
 
 function startRegistry({ status = 200 } = {}) {
   const items = new Map(
-    ['calendar', 'popover', 'button'].map((name) => [
+    ['calendar', 'popover', 'button', 'table', 'skeleton'].map((name) => [
       name,
       {
         name,
@@ -74,7 +74,7 @@ function startRegistry({ status = 200 } = {}) {
         title: name,
         description: name,
         dependencies: [],
-        registryDependencies: [],
+        registryDependencies: name === 'calendar' ? ['button'] : [],
         files: [
           {
             path: `ui/${name}.tsx`,
@@ -337,6 +337,39 @@ test('a verified installation creates the generated baseline commit', () => {
     spawnSync('git', ['-C', fixture.project, 'log', '-1', '--pretty=%s'], { encoding: 'utf8' })
       .stdout,
   ).toBe('chore: initial commit from create-stack\n')
+})
+
+test('applies --keep-files and --force to their additions in a mixed batch', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
+  expect(
+    runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'storage', 'gcs', '--no-install'],
+    }).exitStatus,
+  ).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: [
+      'add',
+      '--with',
+      'storage=r2',
+      '--with',
+      'component=prompt',
+      '--keep-files',
+      '--force',
+      '--no-install',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Provider change: storage (gcs → r2, keeping files)')
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
 })
 
 test.each([
@@ -1283,7 +1316,7 @@ test.each([
   expect(result.targetMutated).toBe(false)
 })
 
-test('adds a component through add and protects local files unless forced', () => {
+test('adds a legacy component through add and protects local files unless forced', () => {
   const fixture = createAcceptanceFixture('standalone')
   const created = createProject(fixture, { framework: 'tanstack' })
 
@@ -1292,17 +1325,17 @@ test('adds a component through add and protects local files unless forced', () =
   const installed = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['add', 'component', 'data-table', '--no-install'],
+    args: ['add', 'component', 'prompt', '--no-install'],
   })
 
   expect(installed.exitStatus).toBe(0)
   expect(installed.stdout).toContain('Addition plan')
-  expect(installed.stdout).toContain('Addition: component data-table')
-  expect(installed.stdout).toContain('Added component data-table')
+  expect(installed.stdout).toContain('Addition: component prompt')
+  expect(installed.stdout).toContain('Added component prompt')
   expect(installed.stderr).toBe('')
   expect(installed.requestedInput).toBe(false)
   expect(installed.targetMutated).toBe(true)
-  const componentFile = `${fixture.app}/src/components/data-table.tsx`
+  const componentFile = `${fixture.app}/src/components/ui/prompt.tsx`
   expect(existsSync(componentFile)).toBe(true)
   expect(existsSync(`${fixture.app}/node_modules`)).toBe(false)
 
@@ -1310,7 +1343,7 @@ test('adds a component through add and protects local files unless forced', () =
   const preserved = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['add', 'component', 'data-table', '--no-install'],
+    args: ['add', 'component', 'prompt', '--no-install'],
   })
   expect(preserved.exitStatus).toBe(0)
   expect(readFileSync(componentFile, 'utf8')).toBe('// local edit\n')
@@ -1318,30 +1351,218 @@ test('adds a component through add and protects local files unless forced', () =
   const forced = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['add', 'component', 'data-table', '--force', '--no-install'],
+    args: ['add', 'component', 'prompt', '--force', '--no-install'],
   })
   expect(forced.exitStatus).toBe(0)
   expect(readFileSync(componentFile, 'utf8')).not.toBe('// local edit\n')
 })
 
-test('adds capabilities and components in one repeated --with batch', () => {
+test('routes data-table through shadcn instead of the legacy no-install vendor path', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'component', 'data-table', '--pm', 'npm', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('shadcn-backed additions install dependencies immediately')
+  expect(result.targetMutated).toBe(false)
+  expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(false)
+})
+
+test('adds data-table through the packaged shadcn runtime and local item', async () => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
   const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+
+  try {
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'data-table', '--pm', 'npm'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain('Addition: component data-table')
+    expect(added.stdout).toContain('shadcn: table, skeleton, button')
+    expect(added.stdout).toContain('Added component data-table')
+    for (const file of [
+      'src/components/data-table.tsx',
+      'src/components/infinite-data-table.tsx',
+      'src/components/sortable-header.tsx',
+      'src/hooks/use-data-table.tsx',
+    ]) {
+      expect(existsSync(`${fixture.app}/${file}`), file).toBe(true)
+    }
+    for (const file of ['table.tsx', 'skeleton.tsx', 'button.tsx']) {
+      expect(existsSync(`${fixture.app}/src/components/ui/${file}`), file).toBe(true)
+    }
+    expect(readFileSync(`${fixture.app}/src/components/data-table.tsx`, 'utf8')).toContain(
+      "'~/components/ui/table'",
+    )
+    expect(readFileSync(fake.log, 'utf8')).toContain('install')
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('writes data-table files through custom component, UI, and hook aliases', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const configPath = `${fixture.app}/components.json`
+  const config = JSON.parse(readFileSync(configPath, 'utf8'))
+  config.aliases.components = '~/widgets'
+  config.aliases.ui = '~/widgets/ui-kit'
+  config.aliases.hooks = '~/state'
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+
+  try {
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'data-table', '--pm', 'npm'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(existsSync(`${fixture.app}/src/widgets/data-table.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/widgets/infinite-data-table.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/widgets/sortable-header.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/state/use-data-table.tsx`)).toBe(true)
+    for (const file of ['table.tsx', 'skeleton.tsx', 'button.tsx']) {
+      expect(existsSync(`${fixture.app}/src/widgets/ui-kit/${file}`), file).toBe(true)
+    }
+    expect(readFileSync(`${fixture.app}/src/widgets/data-table.tsx`, 'utf8')).toContain(
+      "'~/widgets/ui-kit/table'",
+    )
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('reruns data-table safely and force-replaces only its owned files', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+  const localFiles = [
+    'src/components/data-table.tsx',
+    'src/components/infinite-data-table.tsx',
+    'src/components/sortable-header.tsx',
+    'src/hooks/use-data-table.tsx',
+  ]
+  const officialFiles = [
+    'src/components/ui/table.tsx',
+    'src/components/ui/skeleton.tsx',
+    'src/components/ui/button.tsx',
+  ]
+
+  try {
+    const first = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'data-table', '--pm', 'npm'],
+    })
+    expect(first.exitStatus).toBe(0)
+
+    const originals = new Map(
+      [...localFiles, ...officialFiles].map((file) => [
+        file,
+        readFileSync(`${fixture.app}/${file}`, 'utf8'),
+      ]),
+    )
+    for (const file of localFiles) writeFileSync(`${fixture.app}/${file}`, `// edited ${file}\n`)
+    for (const file of officialFiles)
+      writeFileSync(`${fixture.app}/${file}`, `// edited official ${file}\n`)
+
+    const rerun = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'data-table', '--pm', 'npm'],
+    })
+    expect(rerun.exitStatus).toBe(0)
+    for (const file of [...localFiles, ...officialFiles]) {
+      expect(readFileSync(`${fixture.app}/${file}`, 'utf8')).toBe(
+        `// edited${officialFiles.includes(file) ? ' official' : ''} ${file}\n`,
+      )
+    }
+
+    const forced = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'data-table', '--pm', 'npm', '--force'],
+    })
+    expect(forced.exitStatus).toBe(0)
+    for (const file of localFiles) {
+      expect(readFileSync(`${fixture.app}/${file}`, 'utf8')).toBe(originals.get(file))
+    }
+    for (const file of officialFiles) {
+      expect(readFileSync(`${fixture.app}/${file}`, 'utf8')).toBe(`// edited official ${file}\n`)
+    }
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('installs a mixed registry batch once with shared official primitives deduplicated', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+
+  try {
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: [
+        'add',
+        '--with',
+        'component=date-picker',
+        '--with',
+        'component=data-table',
+        '--pm',
+        'npm',
+      ],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain('shadcn: calendar, popover, button, table, skeleton')
+    expect(added.stdout.match(/shadcn:.*button/g)).toHaveLength(1)
+    expect(readFileSync(fake.log, 'utf8').trim().split('\n')[0]).toBe(
+      'install -- @tanstack/react-table@^8.21.3 react-day-picker date-fns',
+    )
+    expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(true)
+    expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('adds capabilities and a legacy component in one repeated --with batch', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
 
   const added = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    env: fake.env,
     args: [
       'add',
       '--with',
       'storage=r2',
       '--with=jobs',
       '--with',
-      'component=data-table',
-      '--pm',
-      'npm',
+      'component=prompt',
       '--no-install',
     ],
   })
@@ -1350,10 +1571,10 @@ test('adds capabilities and components in one repeated --with batch', () => {
   expect(added.requestedInput).toBe(false)
   expect(added.stdout).toContain('Addition: storage (r2)')
   expect(added.stdout).toContain('Addition: jobs (inngest)')
-  expect(added.stdout).toContain('Addition: component data-table')
+  expect(added.stdout).toContain('Addition: component prompt')
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
   expect(existsSync(`${fixture.app}/src/server/jobs/index.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(true)
+  expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
 })
 
 test('adds date-picker through the packaged shadcn runtime and local item', async () => {
@@ -1881,39 +2102,6 @@ test('rejects an ambiguous batch target without prompting or mutation', () => {
   expect(result.stdout).toContain('--app')
   expect(result.requestedInput).toBe(false)
   expect(result.targetMutated).toBe(false)
-})
-
-test('applies --keep-files and --force to their additions in a mixed batch', () => {
-  const fixture = createAcceptanceFixture('standalone')
-  expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
-  expect(
-    runCli({
-      cwd: fixture.app,
-      target: fixture.app,
-      args: ['add', 'storage', 'gcs', '--no-install'],
-    }).exitStatus,
-  ).toBe(0)
-
-  const result = runCli({
-    cwd: fixture.app,
-    target: fixture.app,
-    args: [
-      'add',
-      '--with',
-      'storage=r2',
-      '--with',
-      'component=data-table',
-      '--keep-files',
-      '--force',
-      '--no-install',
-    ],
-  })
-
-  expect(result.exitStatus).toBe(0)
-  expect(result.stdout).toContain('Provider change: storage (gcs → r2, keeping files)')
-  expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(true)
 })
 
 test.each([

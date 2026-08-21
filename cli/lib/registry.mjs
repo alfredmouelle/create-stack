@@ -79,6 +79,43 @@ export const COMPONENT_CATALOG = {
       },
     ],
   },
+  'data-table': {
+    name: 'data-table',
+    type: 'registry:component',
+    title: 'Data Table',
+    description: 'Standard and infinite TanStack tables with sorting and visibility state.',
+    sourceRoot: COMPONENT_SOURCE_ROOT,
+    packageRoot: COMPONENT_PACKAGE_ROOT,
+    registryDependencies: ['table', 'skeleton', 'button'],
+    dependencies: ['@tanstack/react-table@^8.21.3', 'lucide-react'],
+    legacyDependencies: ['@tanstack/react-table'],
+    files: [
+      {
+        source: 'components/data-table.tsx',
+        path: 'components/data-table.tsx',
+        destination: 'src/components/data-table.tsx',
+        type: 'registry:component',
+      },
+      {
+        source: 'components/infinite-data-table.tsx',
+        path: 'components/infinite-data-table.tsx',
+        destination: 'src/components/infinite-data-table.tsx',
+        type: 'registry:component',
+      },
+      {
+        source: 'components/sortable-header.tsx',
+        path: 'components/sortable-header.tsx',
+        destination: 'src/components/sortable-header.tsx',
+        type: 'registry:component',
+      },
+      {
+        source: 'hooks/use-data-table.tsx',
+        path: 'hooks/use-data-table.tsx',
+        destination: 'src/hooks/use-data-table.tsx',
+        type: 'registry:hook',
+      },
+    ],
+  },
 }
 
 export const COMPONENT_NAMES = Object.keys(COMPONENT_CATALOG)
@@ -118,6 +155,11 @@ function readPackageDependencies(rootDir, packageRoot) {
     ...Object.keys(packageJson.peerDependencies ?? {}),
     ...Object.keys(packageJson.optionalDependencies ?? {}),
   ])
+}
+
+function dependencyName(specifier) {
+  const at = specifier.startsWith('@') ? specifier.indexOf('@', 1) : specifier.indexOf('@')
+  return at === -1 ? specifier : specifier.slice(0, at)
 }
 
 function canonicalizeImports(content) {
@@ -175,7 +217,7 @@ function buildItem({ rootDir, name, entry }) {
   const sourceRoot = resolveInside(rootDir, entry.sourceRoot, `${name} source root`)
   const packageDependencies = readPackageDependencies(rootDir, entry.packageRoot)
   for (const dependency of entry.dependencies) {
-    if (!packageDependencies.has(dependency)) {
+    if (!packageDependencies.has(dependencyName(dependency))) {
       throw new Error(`Unresolved declared dependency "${dependency}" in registry item "${name}"`)
     }
   }

@@ -17,13 +17,8 @@ export const COMPONENTS = {
   'data-table': {
     label: 'Data table',
     hint: 'sortable + infinite TanStack tables + useDataTable',
-    files: [
-      'src/components/data-table.tsx',
-      'src/components/infinite-data-table.tsx',
-      'src/components/sortable-header.tsx',
-      'src/hooks/use-data-table.tsx',
-    ],
-    deps: ['@tanstack/react-table'],
+    files: COMPONENT_CATALOG['data-table'].files.map(({ destination }) => destination),
+    deps: COMPONENT_CATALOG['data-table'].legacyDependencies,
   },
   confirm: {
     label: 'Confirm',
@@ -140,6 +135,9 @@ function resolveDeps(framework, names) {
 export function vendorComponent({ projectDir, name, force = false }) {
   const comp = COMPONENTS[name]
   if (!comp) throw new Error(`Unknown component: ${name} (have ${COMPONENT_NAMES.join(', ')})`)
+  if (COMPONENT_CATALOG[name]) {
+    throw new Error(`Component ${name} is registry-backed and must be installed through shadcn`)
+  }
 
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)

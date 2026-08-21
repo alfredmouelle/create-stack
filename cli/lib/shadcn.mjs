@@ -163,7 +163,13 @@ function resolveAliasTarget(projectDir, alias) {
 
 function itemTarget(projectDir, config, file) {
   const aliasName =
-    file.type === 'registry:lib' ? 'lib' : file.type === 'registry:hook' ? 'hooks' : 'ui'
+    file.type === 'registry:lib'
+      ? 'lib'
+      : file.type === 'registry:hook'
+        ? 'hooks'
+        : file.type === 'registry:component'
+          ? 'components'
+          : 'ui'
   const alias = config.aliases[aliasName] ?? config.aliases.components
   const itemPrefix = `${aliasName}/`
   const itemPath = file.path.startsWith(itemPrefix) ? file.path.slice(itemPrefix.length) : file.path
@@ -280,19 +286,26 @@ function componentResult(projectDir, config, name, before, force) {
   }
 }
 
-function stageExistingFiles(projectDir, config, components) {
-  const paths = new Set()
+function stageExistingFiles(projectDir, config, components, { force = false } = {}) {
+  const paths = new Map()
   for (const name of components) {
-    for (const { path } of componentTargets(projectDir, config, name)) paths.add(path)
+    if (force) {
+      for (const { path } of componentTargets(projectDir, config, name)) paths.set(path, false)
+    }
+    for (const dependency of registryComponents[name].registryDependencies ?? []) {
+      paths.set(officialTarget(projectDir, config, dependency), true)
+    }
   }
 
   const root = mkdtempSync(join(tmpdir(), 'create-stack-shadcn-preserve-'))
   const staged = []
   try {
-    for (const [index, path] of [...paths].filter(pathExists).entries()) {
+    for (const [index, [path, restoreOnSuccess]] of [...paths]
+      .filter(([path]) => pathExists(path))
+      .entries()) {
       const backup = join(root, `${index}-${basename(path)}`)
       renameSync(path, backup)
-      staged.push({ path, backup })
+      staged.push({ path, backup, restoreOnSuccess })
     }
   } catch (error) {
     restoreStagedFiles(root, staged)
@@ -301,7 +314,7 @@ function stageExistingFiles(projectDir, config, components) {
 
   return {
     restore: () => restoreStagedFiles(root, staged),
-    discard: () => rmSync(root, { recursive: true, force: true }),
+    discard: () => discardStagedFiles(root, staged),
   }
 }
 
@@ -310,6 +323,19 @@ function restoreStagedFiles(root, staged) {
     if (pathExists(path)) rmSync(path, { recursive: true, force: true })
     mkdirSync(dirname(path), { recursive: true })
     if (pathExists(backup)) renameSync(backup, path)
+  }
+  rmSync(root, { recursive: true, force: true })
+}
+
+function discardStagedFiles(root, staged) {
+  for (const { path, backup, restoreOnSuccess } of staged) {
+    if (restoreOnSuccess) {
+      if (pathExists(path)) rmSync(path, { recursive: true, force: true })
+      mkdirSync(dirname(path), { recursive: true })
+      if (pathExists(backup)) renameSync(backup, path)
+    } else if (pathExists(backup)) {
+      rmSync(backup, { recursive: true, force: true })
+    }
   }
   rmSync(root, { recursive: true, force: true })
 }
@@ -325,7 +351,7 @@ export function installRegistryComponents({ projectDir, config, components, forc
       ),
     ]),
   )
-  const preserved = force ? stageExistingFiles(projectDir, config, components) : null
+  const preserved = stageExistingFiles(projectDir, config, components, { force })
   const items = []
   let succeeded = false
 
@@ -357,10 +383,8 @@ export function installRegistryComponents({ projectDir, config, components, forc
       ]),
     )
   } finally {
-    if (preserved) {
-      if (succeeded) preserved.discard()
-      else preserved.restore()
-    }
+    if (succeeded) preserved.discard()
+    else preserved.restore()
     for (const item of items) item.cleanup()
   }
 }
