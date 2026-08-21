@@ -1,5 +1,6 @@
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -41,6 +42,16 @@ const initCommand = (pm) => `${INIT_COMMANDS[pm.name] ?? 'npx'} shadcn@${SHADCN_
 
 function configPath(projectDir) {
   return join(projectDir, 'components.json')
+}
+
+function pathExists(path) {
+  try {
+    lstatSync(path)
+    return true
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false
+    throw error
+  }
 }
 
 function readComponentsConfig(projectDir, pm) {
@@ -107,18 +118,15 @@ export function preflightRegistryComponents({ projectDir, pm, components, noInst
       'Cannot add shadcn-backed additions with --no-install; shadcn-backed additions install dependencies immediately.',
     )
   }
-  if (force) {
-    throw new Error(
-      `--force is not supported for registry-backed component ${names[0]} until safe replacement is available.`,
-    )
-  }
   packageManagerMismatch(projectDir, pm)
+  if (force) assertSafeLegacyDestinations(projectDir, config, names)
 
   return {
     projectDir,
     config,
     components: names,
     registryDependencies: registryDependencies(components),
+    force,
   }
 }
 
@@ -165,6 +173,51 @@ function officialTarget(projectDir, config, name) {
   return join(resolveAliasTarget(projectDir, alias), `${name}.tsx`)
 }
 
+function componentTargets(projectDir, config, name) {
+  return registryComponents[name].files.map((file) => ({
+    file,
+    path: itemTarget(projectDir, config, file),
+  }))
+}
+
+function displayPath(projectDir, path) {
+  return relative(projectDir, path) || path
+}
+
+function legacyDestinationConflicts(projectDir, config, name) {
+  const entry = registryComponents[name]
+  const conflicts = []
+
+  for (const { file, path: configured } of componentTargets(projectDir, config, name)) {
+    const historical = resolve(projectDir, file.destination)
+    if (historical !== configured && pathExists(historical)) {
+      conflicts.push({ historical, configured })
+    }
+  }
+
+  for (const file of entry.legacyFiles ?? []) {
+    const historical = resolve(projectDir, file)
+    const primitive = basename(file, '.tsx')
+    const configured = officialTarget(projectDir, config, primitive)
+    if (historical !== configured && pathExists(historical)) {
+      conflicts.push({ historical, configured })
+    }
+  }
+
+  return conflicts
+}
+
+function assertSafeLegacyDestinations(projectDir, config, components) {
+  for (const name of components) {
+    const conflict = legacyDestinationConflicts(projectDir, config, name)[0]
+    if (!conflict) continue
+
+    throw new Error(
+      `Cannot safely replace legacy Create Stack file at ${displayPath(projectDir, conflict.historical)}: components.json resolves it to ${displayPath(projectDir, conflict.configured)}. The CLI will not move legacy files or rewrite imports.`,
+    )
+  }
+}
+
 function registryItemPath(name) {
   const candidates = [
     join(STACK_ROOT, 'registry', `${name}.json`),
@@ -174,7 +227,7 @@ function registryItemPath(name) {
   return candidates.find((candidate) => existsSync(candidate)) ?? null
 }
 
-function prepareItem(projectDir, config, name) {
+function prepareItem(projectDir, config, name, { force = false } = {}) {
   const packagedPath = registryItemPath(name)
   let temporaryRoot = null
   let sourcePath = packagedPath
@@ -187,9 +240,11 @@ function prepareItem(projectDir, config, name) {
   }
 
   const item = JSON.parse(readFileSync(sourcePath, 'utf8'))
-  item.files = (item.files ?? []).filter((file) => !exists(itemTarget(projectDir, config, file)))
+  item.files = (item.files ?? []).filter(
+    (file) => force || !pathExists(itemTarget(projectDir, config, file)),
+  )
   item.registryDependencies = (item.registryDependencies ?? []).filter(
-    (dependency) => !exists(officialTarget(projectDir, config, dependency)),
+    (dependency) => !pathExists(officialTarget(projectDir, config, dependency)),
   )
 
   const outputRoot = temporaryRoot ?? mkdtempSync(join(tmpdir(), 'create-stack-registry-'))
@@ -202,57 +257,75 @@ function prepareItem(projectDir, config, name) {
   }
 }
 
-function componentResult(projectDir, config, name, before) {
-  const entry = registryComponents[name]
-  const owned = entry.files.map((file) => itemTarget(projectDir, config, file))
+function componentResult(projectDir, config, name, before, force) {
+  const owned = componentTargets(projectDir, config, name).map(({ path }) => path)
   const copied = owned
-    .filter((path) => !before.has(path) && exists(path))
+    .filter((path) => (force || !before.has(path)) && pathExists(path))
     .map((path) => relative(projectDir, path))
-  const skipped = owned.filter((path) => before.has(path)).map((path) => relative(projectDir, path))
+  const skipped = force
+    ? []
+    : owned.filter((path) => before.has(path)).map((path) => relative(projectDir, path))
   return { copied, skipped, addDeps: {}, mounted: null, rootName: null }
 }
 
 function stageExistingFiles(projectDir, config, components) {
   const paths = new Set()
   for (const name of components) {
-    const entry = registryComponents[name]
-    for (const file of entry.files) paths.add(itemTarget(projectDir, config, file))
-    for (const dependency of entry.registryDependencies ?? []) {
-      paths.add(officialTarget(projectDir, config, dependency))
-    }
+    for (const { path } of componentTargets(projectDir, config, name)) paths.add(path)
   }
 
   const root = mkdtempSync(join(tmpdir(), 'create-stack-shadcn-preserve-'))
   const staged = []
-  for (const [index, path] of [...paths].filter(exists).entries()) {
-    const backup = join(root, `${index}-${basename(path)}`)
-    renameSync(path, backup)
-    staged.push({ path, backup })
+  try {
+    for (const [index, path] of [...paths].filter(pathExists).entries()) {
+      const backup = join(root, `${index}-${basename(path)}`)
+      renameSync(path, backup)
+      staged.push({ path, backup })
+    }
+  } catch (error) {
+    restoreStagedFiles(root, staged)
+    throw error
   }
 
   return {
-    restore() {
-      for (const { path, backup } of staged) {
-        if (exists(path)) rmSync(path, { recursive: true, force: true })
-        mkdirSync(dirname(path), { recursive: true })
-        renameSync(backup, path)
-      }
-      rmSync(root, { recursive: true, force: true })
-    },
+    restore: () => restoreStagedFiles(root, staged),
+    discard: () => rmSync(root, { recursive: true, force: true }),
   }
 }
 
-export function installRegistryComponents({ projectDir, config, components }) {
-  const items = components.map((name) => {
-    const entry = registryComponents[name]
-    const before = new Set(
-      entry.files.map((file) => itemTarget(projectDir, config, file)).filter(exists),
-    )
-    return { name, before, ...prepareItem(projectDir, config, name) }
-  })
-  const preserved = stageExistingFiles(projectDir, config, components)
+function restoreStagedFiles(root, staged) {
+  for (const { path, backup } of staged) {
+    if (pathExists(path)) rmSync(path, { recursive: true, force: true })
+    mkdirSync(dirname(path), { recursive: true })
+    if (pathExists(backup)) renameSync(backup, path)
+  }
+  rmSync(root, { recursive: true, force: true })
+}
+
+export function installRegistryComponents({ projectDir, config, components, force = false }) {
+  const before = new Map(
+    components.map((name) => [
+      name,
+      new Set(
+        componentTargets(projectDir, config, name)
+          .map(({ path }) => path)
+          .filter(pathExists),
+      ),
+    ]),
+  )
+  const preserved = force ? stageExistingFiles(projectDir, config, components) : null
+  const items = []
+  let succeeded = false
 
   try {
+    for (const name of components) {
+      items.push({
+        name,
+        before: before.get(name),
+        ...prepareItem(projectDir, config, name, { force }),
+      })
+    }
+
     const success = run(
       process.execPath,
       [SHADCN_ENTRY, 'add', '--yes', '--cwd', projectDir, ...items.map(({ path }) => path)],
@@ -260,15 +333,22 @@ export function installRegistryComponents({ projectDir, config, components }) {
     )
     if (!success) {
       throw new Error(
-        `shadcn failed while adding ${components.join(', ')}; no fallback files were copied. The project may have package metadata or lockfile changes.`,
+        `shadcn failed while adding ${components.join(', ')}; no fallback files were copied. Shadcn may already have changed project package metadata or a lockfile; the CLI does not promise full transactionality.`,
       )
     }
 
+    succeeded = true
     return new Map(
-      items.map(({ name, before }) => [name, componentResult(projectDir, config, name, before)]),
+      items.map(({ name, before }) => [
+        name,
+        componentResult(projectDir, config, name, before, force),
+      ]),
     )
   } finally {
-    preserved.restore()
+    if (preserved) {
+      if (succeeded) preserved.discard()
+      else preserved.restore()
+    }
     for (const item of items) item.cleanup()
   }
 }

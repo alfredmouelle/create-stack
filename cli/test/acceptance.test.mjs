@@ -1403,22 +1403,197 @@ test.each([
   expect(existsSync(config)).toBe(_case === 'invalid')
 })
 
-test.each([
-  [['--no-install'], 'shadcn-backed additions install dependencies immediately'],
-  [['--force'], '--force is not supported for registry-backed component date-picker'],
-])('rejects unsupported date-picker flags before mutation', (flags, diagnostic) => {
+test.each([[['--no-install'], 'shadcn-backed additions install dependencies immediately']])(
+  'rejects unsupported date-picker flags before mutation',
+  (flags, diagnostic) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+
+    const result = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'component', 'date-picker', '--pm', 'npm', ...flags],
+    })
+
+    expect(result.exitStatus).toBe(1)
+    expect(result.stdout).toContain(diagnostic)
+    expect(result.targetMutated).toBe(false)
+  },
+)
+
+test('rerunning date-picker without --force preserves all existing files', async () => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+  const files = [
+    'src/components/ui/date-picker.tsx',
+    'src/components/ui/date-range-picker.tsx',
+    'src/lib/date.ts',
+    'src/components/ui/calendar.tsx',
+    'src/components/ui/popover.tsx',
+    'src/components/ui/button.tsx',
+  ]
+
+  try {
+    const first = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'date-picker', '--pm', 'npm'],
+    })
+    expect(first.exitStatus).toBe(0)
+    const contents = new Map(
+      files.map((file) => [file, readFileSync(`${fixture.app}/${file}`, 'utf8')]),
+    )
+
+    const second = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'date-picker', '--pm', 'npm'],
+    })
+
+    expect(second.exitStatus).toBe(0)
+    for (const [file, content] of contents) {
+      expect(readFileSync(`${fixture.app}/${file}`, 'utf8')).toBe(content)
+    }
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('--force replaces Create Stack files without overwriting shadcn primitives', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+  const localFiles = [
+    'src/components/ui/date-picker.tsx',
+    'src/components/ui/date-range-picker.tsx',
+    'src/lib/date.ts',
+  ]
+  const officialFiles = [
+    'src/components/ui/calendar.tsx',
+    'src/components/ui/popover.tsx',
+    'src/components/ui/button.tsx',
+  ]
+
+  try {
+    expect(
+      runCli({
+        cwd: fixture.app,
+        target: fixture.app,
+        env: { ...fake.env, REGISTRY_URL: registry.url },
+        args: ['add', 'component', 'date-picker', '--pm', 'npm'],
+      }).exitStatus,
+    ).toBe(0)
+
+    const editedOfficial = new Map(officialFiles.map((file) => [file, `// edited ${file}\n`]))
+    for (const file of localFiles) writeFileSync(`${fixture.app}/${file}`, `// edited ${file}\n`)
+    for (const [file, content] of editedOfficial) writeFileSync(`${fixture.app}/${file}`, content)
+
+    const forced = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'date-picker', '--pm', 'npm', '--force'],
+    })
+
+    expect(forced.exitStatus).toBe(0)
+    for (const file of localFiles) {
+      expect(readFileSync(`${fixture.app}/${file}`, 'utf8')).not.toContain('// edited')
+    }
+    for (const [file, content] of editedOfficial) {
+      expect(readFileSync(`${fixture.app}/${file}`, 'utf8')).toBe(content)
+    }
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('--force restores staged Create Stack files when shadcn fails', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  let registry = await startRegistry()
+  const localFile = `${fixture.app}/src/components/ui/date-picker.tsx`
+  const edited = '// keep this edit after a failed replacement\n'
+
+  try {
+    expect(
+      runCli({
+        cwd: fixture.app,
+        target: fixture.app,
+        env: { ...fake.env, REGISTRY_URL: registry.url },
+        args: ['add', 'component', 'date-picker', '--pm', 'npm'],
+      }).exitStatus,
+    ).toBe(0)
+    writeFileSync(localFile, edited)
+    registry.child.kill()
+    registry = await startRegistry({ status: 500 })
+
+    const failed = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'date-picker', '--pm', 'npm', '--force'],
+    })
+
+    expect(failed.exitStatus).toBe(1)
+    expect(failed.stdout).toContain('package metadata')
+    expect(failed.stdout).toContain('lockfile')
+    expect(readFileSync(localFile, 'utf8')).toBe(edited)
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('--force replaces a historical component at its configured destination', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+  const historical = `${fixture.app}/src/components/ui/date-picker.tsx`
+
+  try {
+    writeFileSync(historical, '// historical Create Stack component\n')
+    const forced = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'date-picker', '--pm', 'npm', '--force'],
+    })
+
+    expect(forced.exitStatus).toBe(0)
+    expect(readFileSync(historical, 'utf8')).not.toContain('historical')
+  } finally {
+    registry.child.kill()
+  }
+})
+
+test('--force refuses to move a historical component to a different configured destination', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const historical = `${fixture.app}/src/components/ui/date-picker.tsx`
+  const config = `${fixture.app}/components.json`
+  const parsed = JSON.parse(readFileSync(config, 'utf8'))
+  parsed.aliases.ui = '~/custom-ui'
+  writeFileSync(config, `${JSON.stringify(parsed, null, 2)}\n`)
+  writeFileSync(historical, '// historical Create Stack component\n')
 
   const result = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: ['add', 'component', 'date-picker', '--pm', 'npm', ...flags],
+    args: ['add', 'component', 'date-picker', '--pm', 'npm', '--force'],
   })
 
   expect(result.exitStatus).toBe(1)
-  expect(result.stdout).toContain(diagnostic)
+  expect(result.stdout).toContain('src/components/ui/date-picker.tsx')
+  expect(result.stdout).toContain('src/custom-ui/date-picker.tsx')
   expect(result.targetMutated).toBe(false)
+  expect(readFileSync(historical, 'utf8')).toContain('historical')
+  expect(existsSync(`${fixture.app}/src/custom-ui/date-picker.tsx`)).toBe(false)
 })
 
 test('rejects a package-manager override that disagrees with shadcn metadata', () => {
