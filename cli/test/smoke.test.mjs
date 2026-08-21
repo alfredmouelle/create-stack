@@ -60,6 +60,15 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'))
 }
 
+function visitFiles(root, visit) {
+  if (!existsSync(root)) return
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const path = join(root, entry.name)
+    if (entry.isDirectory()) visitFiles(path, visit)
+    else visit(path, entry)
+  }
+}
+
 function configureShadcn(projectDir, configuration) {
   const path = join(projectDir, 'components.json')
   const config = readJson(path)
@@ -98,31 +107,21 @@ function relocateConfiguredSources(projectDir) {
     readFileSync(biomePath, 'utf8').replace('!**/components/ui', '!**/design/primitives'),
   )
 
-  const rewriteImports = (root) => {
-    for (const entry of readdirSync(root, { withFileTypes: true })) {
-      const path = join(root, entry.name)
-      if (entry.isDirectory()) {
-        rewriteImports(path)
-      } else if (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx')) {
-        const source = readFileSync(path, 'utf8')
-        const rewritten = source
-          .replaceAll('~/components/ui/', '~/design/primitives/')
-          .replaceAll('~/lib/utils', '~/shared/utils')
-        if (rewritten !== source) writeFileSync(path, rewritten)
-      }
-    }
-  }
-  rewriteImports(sourceRoot)
+  visitFiles(sourceRoot, (path, entry) => {
+    if (!entry.name.endsWith('.ts') && !entry.name.endsWith('.tsx')) return
+    const source = readFileSync(path, 'utf8')
+    const rewritten = source
+      .replaceAll('~/components/ui/', '~/design/primitives/')
+      .replaceAll('~/lib/utils', '~/shared/utils')
+    if (rewritten !== source) writeFileSync(path, rewritten)
+  })
 }
 
 function filesNamed(root, name) {
-  if (!existsSync(root)) return []
   const found = []
-  for (const entry of readdirSync(root, { withFileTypes: true })) {
-    const path = join(root, entry.name)
-    if (entry.isDirectory()) found.push(...filesNamed(path, name))
-    else if (entry.name === name) found.push(path)
-  }
+  visitFiles(root, (path, entry) => {
+    if (entry.name === name) found.push(path)
+  })
   return found
 }
 
