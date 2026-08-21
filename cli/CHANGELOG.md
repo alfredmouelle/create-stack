@@ -13,6 +13,13 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-21
+
+### Added
+
+- `create-stack add` now installs validated local registry components, including
+  `date-picker`, `data-table`, and callable dialog components, into generated apps.
+
 ### Changed
 
 - **BREAKING:** creation now uses `--trpc` / `--no-trpc`, and every enrichment goes
@@ -26,6 +33,12 @@ commits are batched into a single tagged version rather than one tag per commit.
   R2, bare `--cache` chooses Upstash, and jobs/errors accept either their bare selector
   or the explicit `inngest`/`sentry` provider. `--errors` is canonical while
   `--error-tracking` remains its readable alias.
+- The CLI packages its registry and preserves existing shadcn UI files when adding
+  components. Pass `--force` when replacing a component is intentional.
+
+### Fixed
+
+- Fresh TanStack Start projects build in production again.
 
 ## [0.11.0] - 2026-07-23
 
