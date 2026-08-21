@@ -51,7 +51,17 @@ test('published package includes the local registry and its executable shadcn ru
   const contents = spawnSync('tar', ['-tzf', archive], { encoding: 'utf8' })
   expect(contents.status, contents.stderr).toBe(0)
   expect(contents.stdout).toContain('package/_stack/registry/date-picker.json')
-  expect(contents.stdout).toContain('package/_stack/registry/data-table.json')
+  for (const name of [
+    'prompt',
+    'choice',
+    'confirm-passphrase',
+    'confirm-otp',
+    'confirm',
+    'alert',
+    'data-table',
+  ]) {
+    expect(contents.stdout).toContain(`package/_stack/registry/${name}.json`)
+  }
   expect(contents.stdout).toContain('package/_stack/registry/index.json')
 
   const packageJson = JSON.parse(

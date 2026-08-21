@@ -22,8 +22,20 @@ const STRIPPED_COMPONENT_FILES = [
   'src/components/ui/calendar.tsx',
   'src/components/ui/popover.tsx',
   'src/lib/date.ts',
+  'src/components/ui/prompt.tsx',
+  'src/components/ui/choice.tsx',
+  'src/components/ui/confirm-passphrase.tsx',
+  'src/components/ui/confirm-otp.tsx',
+  'src/components/ui/dialog.tsx',
+  'src/components/ui/input-otp.tsx',
 ]
-const STRIPPED_COMPONENT_DEPS = ['@tanstack/react-table', 'react-day-picker', 'date-fns']
+const STRIPPED_COMPONENT_DEPS = [
+  '@tanstack/react-table',
+  'react-day-picker',
+  'date-fns',
+  'react-call',
+  'input-otp',
+]
 
 function assertComponentsStripped(dir, deps) {
   for (const f of STRIPPED_COMPONENT_FILES)

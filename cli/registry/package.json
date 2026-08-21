@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "dependencies": {
+    "react-call": "^2.0.2"
+  }
+}

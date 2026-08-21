@@ -66,7 +66,17 @@ exit 0
 
 function startRegistry({ status = 200 } = {}) {
   const items = new Map(
-    ['calendar', 'popover', 'button', 'table', 'skeleton'].map((name) => [
+    [
+      'calendar',
+      'popover',
+      'button',
+      'dialog',
+      'input',
+      'label',
+      'input-otp',
+      'table',
+      'skeleton',
+    ].map((name) => [
       name,
       {
         name,
@@ -134,6 +144,7 @@ const server = createServer((request, response) => {
   response.setHeader('content-type', 'application/json')
   response.end(JSON.stringify(payload ?? { error: 'not found' }))
 })
+
 server.listen(0, '127.0.0.1', () => console.log(server.address().port))
 `,
     ],
@@ -155,6 +166,68 @@ server.listen(0, '127.0.0.1', () => console.log(server.address().port))
 function expectNoCommit(projectDir) {
   expect(spawnSync('git', ['-C', projectDir, 'rev-parse', '--verify', 'HEAD']).status).not.toBe(0)
 }
+
+test.each([
+  ['next', 'src/app/layout.tsx', "import { Prompt } from '~/components/ui/prompt'"],
+  ['tanstack', 'src/routes/__root.tsx', "import { Prompt } from '~/components/ui/prompt'"],
+])(
+  'adds prompt and mounts its Root in the %s application',
+  async (framework, rootFile, importLine) => {
+    const fixture = createAcceptanceFixture('standalone')
+    expect(createProject(fixture, { framework, pm: 'npm' }).exitStatus).toBe(0)
+    const fake = fakePackageManager(fixture)
+    const registry = await startRegistry()
+
+    try {
+      const added = runCli({
+        cwd: fixture.app,
+        target: fixture.app,
+        env: { ...fake.env, REGISTRY_URL: registry.url },
+        args: ['add', 'component', 'prompt', '--pm', 'npm'],
+      })
+
+      expect(added.exitStatus).toBe(0)
+      expect(added.stdout).toContain('shadcn: dialog, button, input, label')
+      expect(added.stdout).toContain('mounted <Prompt />')
+      const root = readFileSync(`${fixture.app}/${rootFile}`, 'utf8')
+      expect(root).toContain(importLine)
+      expect(root).toContain('<Prompt />')
+      const prompt = readFileSync(`${fixture.app}/src/components/ui/prompt.tsx`, 'utf8')
+      expect(prompt.includes("'use client'") || prompt.includes('"use client"')).toBe(
+        framework === 'next',
+      )
+    } finally {
+      registry.child.kill()
+    }
+  },
+)
+
+test('keeps a callable installed and prints exact Root instructions for a customized framework root', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
+  const rootPath = `${fixture.app}/src/app/layout.tsx`
+  const originalRoot = readFileSync(rootPath, 'utf8')
+  writeFileSync(rootPath, originalRoot.replace('</body>', ''))
+  const fake = fakePackageManager(fixture)
+  const registry = await startRegistry()
+
+  try {
+    const added = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      env: { ...fake.env, REGISTRY_URL: registry.url },
+      args: ['add', 'component', 'choice', '--pm', 'npm'],
+    })
+
+    expect(added.exitStatus).toBe(0)
+    expect(added.stdout).toContain("import { Choice } from '~/components/ui/choice'")
+    expect(added.stdout).toContain('<Choice />')
+    expect(readFileSync(rootPath, 'utf8')).not.toContain('<Choice />')
+    expect(existsSync(`${fixture.app}/src/components/ui/choice.tsx`)).toBe(true)
+  } finally {
+    registry.child.kill()
+  }
+})
 
 test('the executable CLI reports prompts without mutating its target', () => {
   const fixture = createAcceptanceFixture('standalone')
@@ -339,7 +412,7 @@ test('a verified installation creates the generated baseline commit', () => {
   ).toBe('chore: initial commit from create-stack\n')
 })
 
-test('applies --keep-files and --force to their additions in a mixed batch', () => {
+test('applies --keep-files to a provider change in a mixed batch', () => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)
   expect(
@@ -353,23 +426,13 @@ test('applies --keep-files and --force to their additions in a mixed batch', () 
   const result = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: [
-      'add',
-      '--with',
-      'storage=r2',
-      '--with',
-      'component=prompt',
-      '--keep-files',
-      '--force',
-      '--no-install',
-    ],
+    args: ['add', '--with', 'storage=r2', '--keep-files', '--no-install'],
   })
 
   expect(result.exitStatus).toBe(0)
   expect(result.stdout).toContain('Provider change: storage (gcs → r2, keeping files)')
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/gcs.ts`)).toBe(true)
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
 })
 
 test.each([
@@ -1316,47 +1379,6 @@ test.each([
   expect(result.targetMutated).toBe(false)
 })
 
-test('adds a legacy component through add and protects local files unless forced', () => {
-  const fixture = createAcceptanceFixture('standalone')
-  const created = createProject(fixture, { framework: 'tanstack' })
-
-  expect(created.exitStatus).toBe(0)
-
-  const installed = runCli({
-    cwd: fixture.app,
-    target: fixture.app,
-    args: ['add', 'component', 'prompt', '--no-install'],
-  })
-
-  expect(installed.exitStatus).toBe(0)
-  expect(installed.stdout).toContain('Addition plan')
-  expect(installed.stdout).toContain('Addition: component prompt')
-  expect(installed.stdout).toContain('Added component prompt')
-  expect(installed.stderr).toBe('')
-  expect(installed.requestedInput).toBe(false)
-  expect(installed.targetMutated).toBe(true)
-  const componentFile = `${fixture.app}/src/components/ui/prompt.tsx`
-  expect(existsSync(componentFile)).toBe(true)
-  expect(existsSync(`${fixture.app}/node_modules`)).toBe(false)
-
-  writeFileSync(componentFile, '// local edit\n')
-  const preserved = runCli({
-    cwd: fixture.app,
-    target: fixture.app,
-    args: ['add', 'component', 'prompt', '--no-install'],
-  })
-  expect(preserved.exitStatus).toBe(0)
-  expect(readFileSync(componentFile, 'utf8')).toBe('// local edit\n')
-
-  const forced = runCli({
-    cwd: fixture.app,
-    target: fixture.app,
-    args: ['add', 'component', 'prompt', '--force', '--no-install'],
-  })
-  expect(forced.exitStatus).toBe(0)
-  expect(readFileSync(componentFile, 'utf8')).not.toBe('// local edit\n')
-})
-
 test('routes data-table through shadcn instead of the legacy no-install vendor path', () => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
@@ -1549,32 +1571,22 @@ test('installs a mixed registry batch once with shared official primitives dedup
   }
 })
 
-test('adds capabilities and a legacy component in one repeated --with batch', () => {
+test('adds capabilities in one repeated --with batch', () => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
 
   const added = runCli({
     cwd: fixture.app,
     target: fixture.app,
-    args: [
-      'add',
-      '--with',
-      'storage=r2',
-      '--with=jobs',
-      '--with',
-      'component=prompt',
-      '--no-install',
-    ],
+    args: ['add', '--with', 'storage=r2', '--with=jobs', '--no-install'],
   })
 
   expect(added.exitStatus).toBe(0)
   expect(added.requestedInput).toBe(false)
   expect(added.stdout).toContain('Addition: storage (r2)')
   expect(added.stdout).toContain('Addition: jobs (inngest)')
-  expect(added.stdout).toContain('Addition: component prompt')
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
   expect(existsSync(`${fixture.app}/src/server/jobs/index.ts`)).toBe(true)
-  expect(existsSync(`${fixture.app}/src/components/ui/prompt.tsx`)).toBe(true)
 })
 
 test('adds date-picker through the packaged shadcn runtime and local item', async () => {

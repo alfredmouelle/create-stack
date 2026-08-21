@@ -14,7 +14,6 @@ import { basename, dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { rawConfigSchema } from 'shadcn/schema'
 import { detectFramework } from './add.mjs'
-import { mountRoot, rootManualSteps } from './component.mjs'
 import { detectEffectivePackageManager } from './package-manager.mjs'
 import { STACK_ROOT } from './paths.mjs'
 import { COMPONENT_CATALOG, generateRegistry } from './registry.mjs'
@@ -30,6 +29,10 @@ const INIT_COMMANDS = {
   npm: 'npx',
   yarn: 'yarn dlx',
   bun: 'bunx',
+}
+const ROOT_FILES = {
+  next: 'src/app/layout.tsx',
+  tanstack: 'src/routes/__root.tsx',
 }
 
 const registryComponents = Object.fromEntries(
@@ -181,6 +184,21 @@ function officialTarget(projectDir, config, name) {
   return join(resolveAliasTarget(projectDir, alias), `${name}.tsx`)
 }
 
+function applyRscDirective(item, config) {
+  if (config.rsc) return item
+
+  return {
+    ...item,
+    files: item.files?.map((file) => ({
+      ...file,
+      content:
+        typeof file.content === 'string'
+          ? file.content.replace(/^(['"])use client\1;?\s*/, '')
+          : file.content,
+    })),
+  }
+}
+
 function componentTargets(projectDir, config, name) {
   return registryComponents[name].files.map((file) => ({
     file,
@@ -247,7 +265,7 @@ function prepareItem(projectDir, config, name, { force = false } = {}) {
     sourcePath = join(temporaryRoot, `${name}.json`)
   }
 
-  const item = JSON.parse(readFileSync(sourcePath, 'utf8'))
+  const item = applyRscDirective(JSON.parse(readFileSync(sourcePath, 'utf8')), config)
   item.files = (item.files ?? []).filter(
     (file) => force || !pathExists(itemTarget(projectDir, config, file)),
   )
@@ -265,8 +283,68 @@ function prepareItem(projectDir, config, name, { force = false } = {}) {
   }
 }
 
+function rootModuleSpecifier(config, module) {
+  const aliases = config.aliases ?? {}
+  const uiAlias = aliases.ui
+  const componentAlias = aliases.components
+  if (module.startsWith('components/ui/') && (uiAlias || componentAlias)) {
+    const prefix = uiAlias ? '' : 'ui/'
+    const alias = (uiAlias ?? componentAlias).replace(/\/$/, '')
+    return `${alias}/${prefix}${module.slice('components/ui/'.length)}`
+  }
+  if (module.startsWith('components/') && componentAlias) {
+    return `${componentAlias.replace(/\/$/, '')}/${module.slice('components/'.length)}`
+  }
+  return module
+}
+
+function manualRootSteps(root, importStatement) {
+  return [importStatement, `<${root.name} />`]
+}
+
+function mountRoot(projectDir, config, name) {
+  const root = registryComponents[name].root
+  if (!root) return { mounted: null, rootName: null, manualSteps: [] }
+
+  const pkg = readJSON(join(projectDir, 'package.json'))
+  const framework = detectFramework(pkg)
+  const rootPath = join(projectDir, ROOT_FILES[framework])
+  const importStatement = `import { ${root.name} } from '${rootModuleSpecifier(config, root.module)}'`
+  const jsx = `<${root.name} />`
+
+  if (!pathExists(rootPath)) {
+    return {
+      mounted: false,
+      rootName: root.name,
+      manualSteps: manualRootSteps(root, importStatement),
+    }
+  }
+
+  const lines = readFileSync(rootPath, 'utf8').split('\n')
+  if (lines.some((line) => line.includes(jsx))) {
+    return { mounted: true, rootName: root.name, manualSteps: [] }
+  }
+
+  const bodyClose = lines.findIndex((line) => line.includes('</body>'))
+  let lastImport = -1
+  for (let index = 0; index < lines.length; index++) {
+    if (/^import\b/.test(lines[index])) lastImport = index
+  }
+  if (bodyClose === -1 || lastImport === -1) {
+    return {
+      mounted: false,
+      rootName: root.name,
+      manualSteps: manualRootSteps(root, importStatement),
+    }
+  }
+
+  lines.splice(bodyClose, 0, `        ${jsx}`)
+  lines.splice(lastImport + 1, 0, importStatement)
+  writeFileSync(rootPath, lines.join('\n'))
+  return { mounted: true, rootName: root.name, manualSteps: [] }
+}
+
 function componentResult(projectDir, config, name, before, force) {
-  const root = registryComponents[name].root ?? null
   const owned = componentTargets(projectDir, config, name).map(({ path }) => path)
   const copied = owned
     .filter((path) => (force || !before.has(path)) && pathExists(path))
@@ -274,38 +352,28 @@ function componentResult(projectDir, config, name, before, force) {
   const skipped = force
     ? []
     : owned.filter((path) => before.has(path)).map((path) => relative(projectDir, path))
-  const framework = detectFramework(readJSON(join(projectDir, 'package.json')))
-  const mounted = root ? mountRoot(projectDir, framework, root) : null
-  return {
-    copied,
-    skipped,
-    addDeps: {},
-    mounted,
-    rootName: root?.name ?? null,
-    manualSteps: root && !mounted ? rootManualSteps(projectDir, framework, root) : [],
-  }
+  return { copied, skipped, addDeps: {}, ...mountRoot(projectDir, config, name) }
 }
 
-function stageExistingFiles(projectDir, config, components, { force = false } = {}) {
+function stageExistingFiles(projectDir, config, components, force) {
   const paths = new Map()
   for (const name of components) {
     if (force) {
-      for (const { path } of componentTargets(projectDir, config, name)) paths.set(path, false)
+      for (const { path } of componentTargets(projectDir, config, name)) paths.set(path, 'owned')
     }
     for (const dependency of registryComponents[name].registryDependencies ?? []) {
-      paths.set(officialTarget(projectDir, config, dependency), true)
+      const path = officialTarget(projectDir, config, dependency)
+      if (!paths.has(path)) paths.set(path, 'official')
     }
   }
 
   const root = mkdtempSync(join(tmpdir(), 'create-stack-shadcn-preserve-'))
   const staged = []
   try {
-    for (const [index, [path, restoreOnSuccess]] of [...paths]
-      .filter(([path]) => pathExists(path))
-      .entries()) {
+    for (const [index, [path, kind]] of [...paths].filter(([path]) => pathExists(path)).entries()) {
       const backup = join(root, `${index}-${basename(path)}`)
       renameSync(path, backup)
-      staged.push({ path, backup, restoreOnSuccess })
+      staged.push({ path, backup, kind })
     }
   } catch (error) {
     restoreStagedFiles(root, staged)
@@ -314,30 +382,27 @@ function stageExistingFiles(projectDir, config, components, { force = false } = 
 
   return {
     restore: () => restoreStagedFiles(root, staged),
-    discard: () => discardStagedFiles(root, staged),
+    complete() {
+      restoreStagedEntries(staged.filter(({ kind }) => kind === 'official'))
+      for (const { backup } of staged.filter(({ kind }) => kind === 'owned')) {
+        if (pathExists(backup)) rmSync(backup, { recursive: true, force: true })
+      }
+      rmSync(root, { recursive: true, force: true })
+    },
   }
 }
 
 function restoreStagedFiles(root, staged) {
+  restoreStagedEntries(staged)
+  rmSync(root, { recursive: true, force: true })
+}
+
+function restoreStagedEntries(staged) {
   for (const { path, backup } of staged) {
     if (pathExists(path)) rmSync(path, { recursive: true, force: true })
     mkdirSync(dirname(path), { recursive: true })
     if (pathExists(backup)) renameSync(backup, path)
   }
-  rmSync(root, { recursive: true, force: true })
-}
-
-function discardStagedFiles(root, staged) {
-  for (const { path, backup, restoreOnSuccess } of staged) {
-    if (restoreOnSuccess) {
-      if (pathExists(path)) rmSync(path, { recursive: true, force: true })
-      mkdirSync(dirname(path), { recursive: true })
-      if (pathExists(backup)) renameSync(backup, path)
-    } else if (pathExists(backup)) {
-      rmSync(backup, { recursive: true, force: true })
-    }
-  }
-  rmSync(root, { recursive: true, force: true })
 }
 
 export function installRegistryComponents({ projectDir, config, components, force = false }) {
@@ -351,7 +416,7 @@ export function installRegistryComponents({ projectDir, config, components, forc
       ),
     ]),
   )
-  const preserved = stageExistingFiles(projectDir, config, components, { force })
+  const preserved = stageExistingFiles(projectDir, config, components, force)
   const items = []
   let succeeded = false
 
@@ -383,7 +448,7 @@ export function installRegistryComponents({ projectDir, config, components, forc
       ]),
     )
   } finally {
-    if (succeeded) preserved.discard()
+    if (succeeded) preserved.complete()
     else preserved.restore()
     for (const item of items) item.cleanup()
   }
