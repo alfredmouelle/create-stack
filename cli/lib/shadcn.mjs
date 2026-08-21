@@ -3,6 +3,7 @@ import {
   lstatSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   renameSync,
   rmSync,
@@ -355,17 +356,43 @@ function componentResult(projectDir, config, name, before, force) {
   return { copied, skipped, addDeps: {}, ...mountRoot(projectDir, config, name) }
 }
 
+function existingUiFiles(projectDir, config) {
+  const root = resolveAliasTarget(projectDir, config.aliases.ui ?? config.aliases.components)
+  if (!pathExists(root)) return []
+
+  const files = []
+  const visit = (path) => {
+    if (lstatSync(path).isDirectory()) {
+      for (const entry of readdirSync(path)) visit(join(path, entry))
+      return
+    }
+    files.push(path)
+  }
+
+  visit(root)
+  return files
+}
+
+function addComponentFiles(paths, projectDir, config, name, force) {
+  if (force) {
+    for (const { path } of componentTargets(projectDir, config, name)) paths.set(path, 'owned')
+  }
+  for (const dependency of registryComponents[name].registryDependencies ?? []) {
+    const path = officialTarget(projectDir, config, dependency)
+    if (!paths.has(path)) paths.set(path, 'official')
+  }
+}
+
+function addExistingUiFiles(paths, projectDir, config) {
+  for (const path of existingUiFiles(projectDir, config)) {
+    if (!paths.has(path)) paths.set(path, 'official')
+  }
+}
+
 function stageExistingFiles(projectDir, config, components, force) {
   const paths = new Map()
-  for (const name of components) {
-    if (force) {
-      for (const { path } of componentTargets(projectDir, config, name)) paths.set(path, 'owned')
-    }
-    for (const dependency of registryComponents[name].registryDependencies ?? []) {
-      const path = officialTarget(projectDir, config, dependency)
-      if (!paths.has(path)) paths.set(path, 'official')
-    }
-  }
+  for (const name of components) addComponentFiles(paths, projectDir, config, name, force)
+  addExistingUiFiles(paths, projectDir, config)
 
   const root = mkdtempSync(join(tmpdir(), 'create-stack-shadcn-preserve-'))
   const staged = []
