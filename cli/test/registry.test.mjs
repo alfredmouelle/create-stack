@@ -28,7 +28,7 @@ describe('component registry generation', () => {
     const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
     const item = readJSON(join(destination, 'date-picker.json'))
 
-    expect(result.names).toEqual(['date-picker'])
+    expect(result.names).toEqual(['date-picker', 'confirm', 'alert'])
     expect(registryItemSchema.safeParse(item).success).toBe(true)
     expect(item.name).toBe('date-picker')
     expect(item.registryDependencies).toEqual(['calendar', 'popover', 'button'])
@@ -42,9 +42,24 @@ describe('component registry generation', () => {
       "import { Button } from '@/components/ui/button'",
     )
 
+    for (const [name, rootName] of [
+      ['confirm', 'Confirm'],
+      ['alert', 'Alert'],
+    ]) {
+      const callable = readJSON(join(destination, `${name}.json`))
+      expect(registryItemSchema.safeParse(callable).success).toBe(true)
+      expect(callable.registryDependencies).toEqual(['alert-dialog'])
+      expect(callable.dependencies).toEqual(['react-call'])
+      expect(callable.files.map((file) => file.path)).toEqual([`ui/${name}.tsx`])
+      expect(result.metadata[name].root).toEqual({
+        name: rootName,
+        module: `components/ui/${name}`,
+      })
+    }
+
     const index = readJSON(join(destination, 'index.json'))
     expect(registrySchema.safeParse(index).success).toBe(true)
-    expect(index.items.map((entry) => entry.name)).toEqual(['date-picker'])
+    expect(index.items.map((entry) => entry.name)).toEqual(['date-picker', 'confirm', 'alert'])
   })
 
   test('rejects invalid catalog data, missing sources, and unresolved package dependencies', () => {
