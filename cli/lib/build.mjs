@@ -3,7 +3,6 @@ import { rewriteAlias } from './alias.mjs'
 import { applyAuth } from './auth.mjs'
 import { MANUAL_STEPS, vendorCapability } from './capabilities.mjs'
 import { writeCiWorkflow } from './ci.mjs'
-import { allComponentDeps, allComponentFiles } from './component.mjs'
 import { applyDatabase } from './database.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
@@ -12,15 +11,7 @@ import { wrapMonorepo } from './monorepo.mjs'
 import { detectPackageManager } from './package-manager.mjs'
 import { forkBase, makeStandalone } from './scaffold.mjs'
 import { stripUnselectedFeatures } from './strip.mjs'
-import {
-  join,
-  pkgAddDeps,
-  pkgRemoveDeps,
-  pkgRemoveScripts,
-  readJSON,
-  remove,
-  writeJSON,
-} from './util.mjs'
+import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON } from './util.mjs'
 
 export function buildProject({
   projectDir,
@@ -46,7 +37,6 @@ export function buildProject({
   const authRes = applyAuth({ projectDir: appDir, framework, auth, trpcKept: trpc })
   const db = applyDatabase({ projectDir: appDir, database, framework, auth, authKept: authUsesDb })
 
-  for (const rel of allComponentFiles()) remove(join(appDir, rel))
   const mailer = keptMailer
     ? swapMailer(appDir, mailerProvider)
     : { addDeps: {}, removeDeps: [], envKeys: [], requiredEnvKeys: [] }
@@ -67,7 +57,6 @@ export function buildProject({
   pkgRemoveDeps(pkg, [
     ...strip.removeDeps,
     ...mailer.removeDeps,
-    ...allComponentDeps(),
     ...db.removeDeps,
     ...authRes.removeDeps,
   ])

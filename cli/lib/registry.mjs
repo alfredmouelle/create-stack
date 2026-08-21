@@ -5,13 +5,23 @@ import { registryItemSchema, registrySchema } from 'shadcn/schema'
 const REGISTRY_ITEM_SCHEMA_URL = 'https://ui.shadcn.com/schema/registry-item.json'
 const REGISTRY_SCHEMA_URL = 'https://ui.shadcn.com/schema/registry.json'
 
-const COMPONENT_SOURCE_ROOT = 'apps/next-base/src'
-const COMPONENT_PACKAGE_ROOT = 'apps/next-base'
+const COMPONENT_SOURCE_ROOT = 'cli/registry'
+const COMPONENT_PACKAGE_ROOT = 'cli/registry'
 const CALLABLE_SOURCE_ROOT = 'cli/registry'
 const CALLABLE_PACKAGE_ROOT = 'cli/registry'
 
-const callableEntry = ({ name, title, description, rootName, registryDependencies }) => ({
+const callableEntry = ({
   name,
+  label,
+  hint,
+  title,
+  description,
+  rootName,
+  registryDependencies,
+}) => ({
+  name,
+  label,
+  hint,
   type: 'registry:component',
   title,
   description,
@@ -33,6 +43,8 @@ const callableEntry = ({ name, title, description, rootName, registryDependencie
 export const COMPONENT_CATALOG = {
   'date-picker': {
     name: 'date-picker',
+    label: 'Date picker',
+    hint: 'single + range, calendar, popover',
     type: 'registry:component',
     title: 'Date Picker',
     description: 'Single-date and date-range pickers with a calendar popover.',
@@ -40,7 +52,6 @@ export const COMPONENT_CATALOG = {
     packageRoot: COMPONENT_PACKAGE_ROOT,
     registryDependencies: ['calendar', 'popover', 'button'],
     dependencies: ['react-day-picker', 'date-fns', 'lucide-react'],
-    legacyDependencies: ['react-day-picker', 'date-fns'],
     legacyFiles: ['src/components/ui/calendar.tsx', 'src/components/ui/popover.tsx'],
     files: [
       {
@@ -65,6 +76,8 @@ export const COMPONENT_CATALOG = {
   },
   prompt: callableEntry({
     name: 'prompt',
+    label: 'Prompt',
+    hint: 'await a text input',
     title: 'Prompt',
     description: 'A callable dialog that waits for text input.',
     rootName: 'Prompt',
@@ -72,6 +85,8 @@ export const COMPONENT_CATALOG = {
   }),
   choice: callableEntry({
     name: 'choice',
+    label: 'Choice',
+    hint: 'await a pick from a list',
     title: 'Choice',
     description: 'A callable dialog that waits for a selection.',
     rootName: 'Choice',
@@ -79,6 +94,8 @@ export const COMPONENT_CATALOG = {
   }),
   'confirm-passphrase': callableEntry({
     name: 'confirm-passphrase',
+    label: 'Confirm (passphrase)',
+    hint: 'type an exact phrase to confirm',
     title: 'Confirm Passphrase',
     description: 'A callable dialog that checks an exact phrase.',
     rootName: 'ConfirmPassphrase',
@@ -86,6 +103,8 @@ export const COMPONENT_CATALOG = {
   }),
   'confirm-otp': callableEntry({
     name: 'confirm-otp',
+    label: 'Confirm (OTP)',
+    hint: 'verify an OTP code to confirm',
     title: 'Confirm OTP',
     description: 'A callable dialog that checks a one-time password.',
     rootName: 'ConfirmOtp',
@@ -93,6 +112,8 @@ export const COMPONENT_CATALOG = {
   }),
   confirm: {
     name: 'confirm',
+    label: 'Confirm',
+    hint: 'await a yes/no confirmation',
     type: 'registry:component',
     title: 'Confirm',
     description: 'Awaitable yes/no confirmation built on react-call and alert-dialog.',
@@ -112,6 +133,8 @@ export const COMPONENT_CATALOG = {
   },
   alert: {
     name: 'alert',
+    label: 'Alert',
+    hint: 'await an acknowledgement',
     type: 'registry:component',
     title: 'Alert',
     description: 'Awaitable acknowledgement built on react-call and alert-dialog.',
@@ -131,6 +154,8 @@ export const COMPONENT_CATALOG = {
   },
   'data-table': {
     name: 'data-table',
+    label: 'Data table',
+    hint: 'sortable + infinite TanStack tables + useDataTable',
     type: 'registry:component',
     title: 'Data Table',
     description: 'Standard and infinite TanStack tables with sorting and visibility state.',
@@ -138,7 +163,6 @@ export const COMPONENT_CATALOG = {
     packageRoot: COMPONENT_PACKAGE_ROOT,
     registryDependencies: ['table', 'skeleton', 'button'],
     dependencies: ['@tanstack/react-table@^8.21.3', 'lucide-react'],
-    legacyDependencies: ['@tanstack/react-table'],
     files: [
       {
         source: 'components/data-table.tsx',
