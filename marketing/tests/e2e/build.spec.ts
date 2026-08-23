@@ -12,6 +12,50 @@ test.describe('stack configurator', () => {
     await expect(page.getByRole('button', { name: 'Copy command' })).toBeEnabled()
   })
 
+  test('keeps the complete command horizontally inspectable', async ({ page }) => {
+    await page.goto('/build')
+
+    const command = page.getByRole('textbox', { name: 'Generated Create Stack command' })
+    await expect(command).toHaveValue('pnpm dlx @alfredmouelle/create-stack@latest my-app')
+    await expect(command).toHaveAttribute(
+      'title',
+      'Scroll horizontally to inspect the full command',
+    )
+    await expect(page.locator('.build-command-display')).toHaveAttribute('data-overflowing', 'true')
+    await expect(page.locator('.build-command-scroll-cue')).toBeVisible()
+  })
+
+  test('keeps capability card geometry stable when toggling a provider', async ({ page }) => {
+    await page.goto('/build')
+
+    const capability = page.locator('.build-capability').first()
+    const before = await capability.boundingBox()
+    await page.getByRole('checkbox', { name: /Object storage/ }).check()
+    await expect(page.getByRole('combobox', { name: 'Object storage provider' })).toBeVisible()
+    const selected = await capability.boundingBox()
+    await page.getByRole('checkbox', { name: /Object storage/ }).uncheck()
+    const after = await capability.boundingBox()
+
+    expect(before).not.toBeNull()
+    expect(selected).not.toBeNull()
+    expect(after).not.toBeNull()
+    expect(selected?.height).toBe(before?.height)
+    expect(after?.height).toBe(before?.height)
+  })
+
+  test('uses the branded checkbox treatment for capabilities', async ({ page }) => {
+    await page.goto('/build')
+
+    const checkbox = page.getByRole('checkbox', { name: /Analytics/ })
+    await expect(checkbox).toHaveCSS('border-radius', '0px')
+    await expect(checkbox).toHaveCSS('background-color', 'rgb(249, 251, 249)')
+
+    await checkbox.check()
+
+    await expect(checkbox).toHaveCSS('background-color', 'rgb(24, 88, 209)')
+    await expect(checkbox).toHaveCSS('border-color', 'rgb(24, 88, 209)')
+  })
+
   test('renders a valid explicit selection and updates the shareable URL', async ({
     context,
     page,
@@ -29,7 +73,8 @@ test.describe('stack configurator', () => {
     await page.getByRole('radio', { name: 'None no transactional mail' }).check()
     await page.getByRole('radio', { name: /Nx app in apps\/web/ }).check()
     await page.getByRole('checkbox', { name: /Object storage/ }).check()
-    await page.getByRole('combobox', { name: 'Object storage provider' }).selectOption('r2')
+    await page.getByRole('combobox', { name: 'Object storage provider' }).click()
+    await page.getByRole('option', { name: 'r2' }).click()
     await page.getByRole('button', { name: 'npm', exact: true }).click()
 
     await expect(page.getByRole('textbox', { name: 'Generated Create Stack command' })).toHaveValue(
@@ -127,4 +172,19 @@ test.describe('stack configurator mobile layout', () => {
     await expect(page.getByRole('button', { name: 'Copy command' })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
   })
+})
+
+test('uses pointer cursors for interactive controls', async ({ page }) => {
+  await page.goto('/build')
+
+  await expect(page.locator('.build-choice').first()).toHaveCSS('cursor', 'pointer')
+  await expect(page.locator('.build-capability-toggle').first()).toHaveCSS('cursor', 'pointer')
+  await expect(page.locator('.build-additional > summary')).toHaveCSS('cursor', 'pointer')
+  await page.getByRole('checkbox').first().check()
+  await expect(page.getByRole('combobox').first()).toHaveCSS('cursor', 'pointer')
+  await expect(page.getByRole('button', { name: 'Copy command' })).toHaveCSS('cursor', 'pointer')
+
+  await page.goto('/')
+  await expect(page.locator('a').first()).toHaveCSS('cursor', 'pointer')
+  await expect(page.getByRole('button', { name: 'Copy command' })).toHaveCSS('cursor', 'pointer')
 })

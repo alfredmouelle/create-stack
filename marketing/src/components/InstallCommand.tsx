@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { installCommand, PACKAGE_MANAGERS, type PackageManager } from '../lib/install-command'
 
 type CopyState = 'idle' | 'copied' | 'error'
@@ -7,7 +7,23 @@ export default function InstallCommand() {
   const commandInput = useRef<HTMLInputElement>(null)
   const [packageManager, setPackageManager] = useState<PackageManager>('pnpm')
   const [copyState, setCopyState] = useState<CopyState>('idle')
+  const [isCommandOverflowing, setIsCommandOverflowing] = useState(false)
   const command = installCommand(packageManager)
+
+  useEffect(() => {
+    const input = commandInput.current
+    if (!input) return
+
+    const updateOverflow = () => {
+      if (input.value !== command) return
+      setIsCommandOverflowing(input.scrollWidth > input.clientWidth + 1)
+    }
+
+    updateOverflow()
+    const observer = new ResizeObserver(updateOverflow)
+    observer.observe(input)
+    return () => observer.disconnect()
+  }, [command])
 
   async function copyCommand() {
     try {
@@ -29,12 +45,22 @@ export default function InstallCommand() {
   return (
     <section aria-labelledby="install-heading" className="command-card">
       <div className="command-label">
-        <span id="install-heading">Start with a project</span>
-        <span aria-hidden="true" />
+        <span aria-hidden="true" className="terminal-window">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="command-label-title" id="install-heading">
+          create-stack / install
+        </span>
       </div>
       <div className="command-body">
         <p className="command-intro">Run this command to create the project.</p>
-        <label className="command-line" htmlFor="install-command">
+        <label
+          className="command-line"
+          data-overflowing={isCommandOverflowing}
+          htmlFor="install-command"
+        >
           <span aria-hidden="true" className="command-prompt">
             ${' '}
           </span>
@@ -44,8 +70,12 @@ export default function InstallCommand() {
             onFocus={(event) => event.currentTarget.select()}
             readOnly
             ref={commandInput}
+            title="Scroll horizontally to inspect the full command"
             value={command}
           />
+          <span aria-hidden="true" className="command-scroll-cue">
+            ↔
+          </span>
         </label>
         <div className="command-actions">
           <fieldset aria-label="Package manager" className="manager-group">

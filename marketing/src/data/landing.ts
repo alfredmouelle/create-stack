@@ -20,7 +20,7 @@ export const terminalTranscript = {
   version: 1,
   lines: [
     { kind: 'command', text: 'pnpm dlx @alfredmouelle/create-stack@latest orbit' },
-    { kind: 'muted', text: 'create-stack — fork a base app, strip it to your selection' },
+    { kind: 'muted', text: 'create-stack: fork a base app, strip it to your selection' },
     { kind: 'output', text: 'Target: orbit' },
     { kind: 'output', text: 'Framework: TanStack Start' },
     { kind: 'output', text: 'Database: drizzle' },
