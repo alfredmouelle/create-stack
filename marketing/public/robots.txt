@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://create-stack.alfredmouelle.com/sitemap.xml

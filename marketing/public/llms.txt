@@ -1,9 +1,0 @@
-# Create Stack
-
-Create Stack generates a SaaS project from your choices. It supports Next.js and TanStack Start.
-Database, authentication, email, and other infrastructure capabilities use replaceable providers.
-
-Start with `pnpm dlx @alfredmouelle/create-stack@latest my-app`.
-
-Repository: https://github.com/alfredmouelle/create-stack
-Inspired by create-t3-app by Theo Browne.
