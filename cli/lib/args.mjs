@@ -110,31 +110,3 @@ export function normalizeAlias(v) {
   if (!ALIAS_RE.test(t)) throw new Error(`Invalid import alias: ${JSON.stringify(v)}`)
   return t
 }
-
-export function resolveInteractiveStack(trpc, database, auth, mailer) {
-  const adjustments = []
-  let includeTrpc = trpc
-  let a = auth ?? 'better-auth'
-  let db = database ?? 'drizzle'
-
-  if (db === 'convex') {
-    if (includeTrpc) {
-      includeTrpc = false
-      adjustments.push('Convex is its own API layer, tRPC removed')
-    }
-    if (a === 'better-auth') {
-      a = 'none'
-      adjustments.push('better-auth needs Postgres, auth set to none (pair Convex with Clerk)')
-    }
-  } else if (a === 'better-auth' && db === 'none') {
-    db = 'drizzle'
-    adjustments.push('better-auth needs a database, Drizzle added')
-  }
-
-  let mailerProvider = mailer ?? 'resend'
-  if (a === 'better-auth' && mailerProvider === 'none') {
-    mailerProvider = 'resend'
-    adjustments.push('better-auth sends its own emails, Resend added')
-  }
-  return { trpc: includeTrpc, database: db, auth: a, mailerProvider, adjustments }
-}

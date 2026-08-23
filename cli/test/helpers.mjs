@@ -2,8 +2,8 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolveInteractiveStack } from '../lib/args.mjs'
 import { resolvePackageManager } from '../lib/package-manager.mjs'
+import { resolveCreationConfiguration } from '../lib/stack-config.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = resolve(here, '..', '..')
@@ -21,12 +21,12 @@ export function build(cfg) {
   const dir = mkdtempSync(join(tmpdir(), 'create-stack-test-'))
   tmpRoots.push(dir)
   const projectDir = join(dir, cfg.name ?? 'app')
-  const { trpc, database, auth, mailerProvider } = resolveInteractiveStack(
-    cfg.trpc ?? true,
-    cfg.database,
-    cfg.auth,
-    cfg.mailer,
-  )
+  const { trpc, database, auth, mailerProvider } = resolveCreationConfiguration({
+    trpc: cfg.trpc,
+    database: cfg.database,
+    auth: cfg.auth,
+    mailer: cfg.mailer,
+  })
   const result = buildProject({
     projectDir,
     projectName: cfg.name ?? 'app',
