@@ -1,0 +1,11 @@
+---
+import BuildConfigurator from '../components/BuildConfigurator'
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  description="Choose a framework, database, authentication provider, mailer, monorepo, and capabilities, then copy the matching Create Stack command."
+  title="Build your stack · create-stack"
+>
+  <BuildConfigurator client:load />
+</BaseLayout>
