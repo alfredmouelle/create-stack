@@ -1,5 +1,12 @@
 ---
 import '../styles/global.css'
+import {
+  getBuildSiteMetadata,
+  OG_IMAGE_ALT,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+} from '../lib/site-metadata'
 
 interface Props {
   title?: string
@@ -7,10 +14,11 @@ interface Props {
 }
 
 const {
-  title = 'Create Stack. A real app wired around your choices',
-  description = 'Create Stack generates a working SaaS project from your choices. It wires the selected pieces together and removes the rest.',
+  title = SITE_TITLE,
+  description = SITE_DESCRIPTION,
 } = Astro.props
-const canonical = new URL(Astro.url.pathname, Astro.site)
+const metadata = getBuildSiteMetadata(import.meta.env.MODE, import.meta.env.PUBLIC_MARKETING_BUILD_MODE)
+const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
 ---
 
 <!doctype html>
@@ -19,6 +27,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
+    <meta name="robots" content={metadata.indexable ? 'index, follow' : 'noindex, nofollow'} />
     <meta name="theme-color" content="#edf2ef" />
     <meta name="author" content="Alfred MOUELLE" />
     <link rel="canonical" href={canonical} />
@@ -28,13 +37,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="create-stack" />
-    <meta property="og:image" content={new URL('/og-image.png', Astro.site)} />
-    <meta property="og:image:alt" content="Create Stack. A real app wired around your choices" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:image" content={metadata.ogImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={OG_IMAGE_ALT} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={new URL('/og-image.png', Astro.site)} />
+    <meta name="twitter:image" content={metadata.ogImageUrl} />
+    <meta name="twitter:image:alt" content={OG_IMAGE_ALT} />
     <title>{title}</title>
   </head>
   <body>

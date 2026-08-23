@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "astro dev --mode public",
+    "build": "astro build --mode public",
+    "build:public": "astro build --mode public",
+    "build:validation": "astro build --mode validation",
     "preview": "astro preview",
     "test": "vitest run src",
     "test:watch": "vitest",
