@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { cpSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,6 +30,13 @@ const copyApp = (from, to) =>
 
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })
+
+execFileSync('pnpm', ['--dir', ROOT, '--filter', '@alfredmouelle/stack-config', 'build'], {
+  stdio: 'inherit',
+})
+cpSync(join(ROOT, 'packages/stack-config/dist/index.mjs'), join(OUT, 'stack-config/index.mjs'), {
+  recursive: true,
+})
 
 for (const base of ['next-base', 'tanstack-base']) {
   copyApp(join(ROOT, 'apps', base), join(OUT, 'apps', base))

@@ -3,6 +3,7 @@ import {
   accessSync,
   constants,
   copyFileSync,
+  cpSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -32,10 +33,12 @@ test('published package includes the local registry and its executable shadcn ru
 
   writeFileSync(join(packageRoot, 'package.json'), readFileSync(join(CLI_ROOT, 'package.json')))
   writeFileSync(join(consumerRoot, 'package.json'), '{"private":true}\n')
+  copyFileSync(join(CLI_ROOT, 'index.mjs'), join(packageRoot, 'index.mjs'))
+  cpSync(join(CLI_ROOT, 'lib'), join(packageRoot, 'lib'), { recursive: true })
+  cpSync(join(CLI_ROOT, 'templates'), join(packageRoot, 'templates'), { recursive: true })
+  cpSync(join(CLI_ROOT, 'docs'), join(packageRoot, 'docs'), { recursive: true })
   mkdirSync(join(packageRoot, 'scripts'))
-  mkdirSync(join(packageRoot, 'lib'))
   copyFileSync(join(CLI_ROOT, 'scripts/bundle.mjs'), join(packageRoot, 'scripts/bundle.mjs'))
-  copyFileSync(join(CLI_ROOT, 'lib/registry.mjs'), join(packageRoot, 'lib/registry.mjs'))
   symlinkSync(join(CLI_ROOT, 'node_modules'), join(packageRoot, 'node_modules'), 'dir')
 
   const packed = spawnSync('pnpm', ['pack', '--pack-destination', destination], {
@@ -51,6 +54,8 @@ test('published package includes the local registry and its executable shadcn ru
   const contents = spawnSync('tar', ['-tzf', archive], { encoding: 'utf8' })
   expect(contents.status, contents.stderr).toBe(0)
   expect(contents.stdout).toContain('package/_stack/registry/date-picker.json')
+  expect(contents.stdout).toContain('package/_stack/stack-config/index.mjs')
+  expect(contents.stdout).not.toContain('package/_stack/stack-config/index.ts')
   for (const name of [
     'prompt',
     'choice',
@@ -86,6 +91,12 @@ test('published package includes the local registry and its executable shadcn ru
     spawnSync('tar', ['-xOf', archive, 'package/package.json'], { encoding: 'utf8' }).stdout,
   )
   expect(packageJson.dependencies.shadcn).toBe('4.17.0')
+  expect({
+    ...packageJson.dependencies,
+    ...packageJson.optionalDependencies,
+    ...packageJson.peerDependencies,
+    ...packageJson.devDependencies,
+  }).not.toHaveProperty('@alfredmouelle/stack-config')
 
   const installed = spawnSync('pnpm', ['add', '--ignore-scripts', archive], {
     cwd: consumerRoot,
@@ -114,4 +125,26 @@ test('published package includes the local registry and its executable shadcn ru
   accessSync(runtimePath, constants.X_OK)
   const runtime = spawnSync(runtimePath, ['--help'], { encoding: 'utf8' })
   expect(runtime.status, runtime.stderr).toBe(0)
+
+  const installedCli = join(consumerRoot, 'node_modules/@alfredmouelle/create-stack')
+  const smoke = spawnSync(
+    process.execPath,
+    [join(installedCli, 'index.mjs'), 'packed-project', '--minimal', '--no-install', '--no-git'],
+    {
+      cwd: consumerRoot,
+      env: {
+        ...process.env,
+        CREATE_STACK_STACK_ROOT: undefined,
+        CREATE_STACK_BUNDLE_ROOT: undefined,
+        NO_COLOR: '1',
+      },
+      encoding: 'utf8',
+    },
+  )
+  expect(smoke.status, smoke.stderr).toBe(0)
+  expect(smoke.stderr).toBe('')
+  expect(smoke.stdout).toContain('Database: (none) — minimal exclusion')
+  expect(readFileSync(join(consumerRoot, 'packed-project/package.json'), 'utf8')).toContain(
+    '"name": "packed-project"',
+  )
 }, 30_000)

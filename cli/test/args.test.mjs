@@ -1,11 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import {
-  csv,
-  isValidAlias,
-  normalizeAlias,
-  parseArgs,
-  resolveInteractiveStack,
-} from '../lib/args.mjs'
+import { csv, isValidAlias, normalizeAlias, parseArgs } from '../lib/args.mjs'
+import { resolveCreationConfiguration } from '../lib/stack-config.mjs'
 
 describe('parseArgs', () => {
   test('positionals + --key value', () => {
@@ -62,52 +57,50 @@ describe('csv', () => {
   })
 })
 
-describe('resolveInteractiveStack', () => {
+describe('resolveCreationConfiguration', () => {
   test('trpc remains independent when the database is excluded', () => {
-    const { trpc, database } = resolveInteractiveStack(true, 'none', 'none', 'resend')
+    const { trpc, database } = resolveCreationConfiguration({
+      trpc: true,
+      database: 'none',
+      auth: 'none',
+      mailer: 'resend',
+    })
     expect(trpc).toBe(true)
     expect(database).toBe('none')
   })
-  test('better-auth needs a database + forces a real mailer', () => {
-    const { database, auth, mailerProvider } = resolveInteractiveStack(
-      false,
-      'none',
-      'better-auth',
-      'none',
-    )
+  test('better-auth completes omitted database and mailer dependencies', () => {
+    const { database, auth, mailerProvider } = resolveCreationConfiguration({
+      trpc: false,
+      auth: 'better-auth',
+    })
     expect(auth).toBe('better-auth')
     expect(database).toBe('drizzle')
     expect(mailerProvider).toBe('resend')
   })
   test('clerk needs neither a database nor a mailer', () => {
-    const { database, auth, mailerProvider } = resolveInteractiveStack(
-      false,
-      'none',
-      'clerk',
-      'none',
-    )
+    const { database, auth, mailerProvider } = resolveCreationConfiguration({
+      trpc: false,
+      database: 'none',
+      auth: 'clerk',
+      mailer: 'none',
+    })
     expect(auth).toBe('clerk')
     expect(database).toBe('none')
     expect(mailerProvider).toBe('none')
   })
   test('keeps the chosen ORM and mailer when tRPC is excluded', () => {
-    const { trpc, database, mailerProvider } = resolveInteractiveStack(
-      false,
-      'prisma',
-      'none',
-      'ses',
-    )
+    const { trpc, database, mailerProvider } = resolveCreationConfiguration({
+      trpc: false,
+      database: 'prisma',
+      auth: 'none',
+      mailer: 'ses',
+    })
     expect(trpc).toBe(false)
     expect(database).toBe('prisma')
     expect(mailerProvider).toBe('ses')
   })
   test('a minimal project keeps no database, auth, mailer, or tRPC', () => {
-    const { trpc, database, auth, mailerProvider } = resolveInteractiveStack(
-      false,
-      'none',
-      'none',
-      'none',
-    )
+    const { trpc, database, auth, mailerProvider } = resolveCreationConfiguration({ minimal: true })
     expect(trpc).toBe(false)
     expect(database).toBe('none')
     expect(auth).toBe('none')
