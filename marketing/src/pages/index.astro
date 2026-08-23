@@ -1,0 +1,119 @@
+---
+import InstallCommand from '../components/InstallCommand'
+import Terminal from '../components/Terminal'
+import { features } from '../data/landing'
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+
+<BaseLayout>
+  <main>
+    <div class="page-shell">
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <p class="eyebrow">A working project</p>
+          <h1 class="hero-title" id="hero-title">A real app, <em>wired</em> around your choices.</h1>
+          <p class="hero-copy">
+            Create Stack starts with a working SaaS project. Choose the pieces you need, and the
+            CLI removes the rest. It wires routes, providers, environment variables, and checks
+            before you make the first commit.
+          </p>
+          <div class="hero-meta" aria-label="Create Stack highlights">
+            <span>Next.js + TanStack Start</span>
+            <span>TypeScript-first</span>
+            <span>MIT licensed</span>
+          </div>
+        </div>
+        <InstallCommand client:load />
+      </section>
+
+      <section class="terminal-section section-rule" aria-labelledby="terminal-title">
+        <div class="terminal-wrap">
+          <div>
+            <p class="section-kicker">Watch it run</p>
+            <h2 class="section-title" id="terminal-title">The setup work is already done.</h2>
+            <p class="section-copy">
+              Pick a stack. The CLI writes the files, checks the result, and leaves you with a
+              project you can edit right away.
+            </p>
+          </div>
+          <Terminal client:load />
+        </div>
+      </section>
+
+      <section class="features-section section-rule" id="why" aria-labelledby="features-title">
+        <div class="features-heading">
+          <div>
+            <p class="section-kicker">What the CLI gives you</p>
+            <h2 class="section-title" id="features-title">Start with the app already wired.</h2>
+          </div>
+          <p>
+            The generated project chooses the initial providers for you. You can still change
+            them as the product grows.
+          </p>
+        </div>
+        <div class="feature-grid">
+          {features.map((feature) => (
+            <article class="feature-card">
+              <span class="feature-label">{feature.label}</span>
+              <h3 class="feature-title">{feature.title}</h3>
+              <p class="feature-text">{feature.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="principles-section" aria-labelledby="principles-title">
+        <div>
+          <p class="section-kicker">How it works</p>
+          <h2 class="section-title" id="principles-title">
+            Choose what goes in. Keep providers replaceable.
+          </h2>
+          <p class="section-copy">
+            Create Stack gives you a useful default, then keeps each capability behind a clear
+            interface. When the product grows, you can replace a provider without rewriting its
+            callers.
+          </p>
+        </div>
+        <ul class="principles-list">
+          <li class="principle">
+            <span class="principle-mark">→</span>
+            <div>
+              <strong>Start with a working app</strong>
+              <span>You get an application first. Setup should not be the main project.</span>
+            </div>
+          </li>
+          <li class="principle">
+            <span class="principle-mark">→</span>
+            <div>
+              <strong>Swap providers without a rewrite</strong>
+              <span>Each capability has an interface, so replacing a provider stays local.</span>
+            </div>
+          </li>
+          <li class="principle">
+            <span class="principle-mark">→</span>
+            <div>
+              <strong>Keep the project readable</strong>
+              <span>Create Stack generates ordinary files you can open, edit, and keep.</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="page-shell footer-inner">
+      <div>
+        <p>&gt;_ create-stack · made for the first useful commit</p>
+        <p class="footer-credit">
+          Open source (MIT) on <a href="https://github.com/alfredmouelle/create-stack">GitHub</a>.
+          Inspired by <a href="https://create.t3.gg">create-t3-app</a> by Theo Browne.
+        </p>
+      </div>
+      <div class="footer-links">
+        <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack">npm ↗</a>
+        <a href="https://github.com/alfredmouelle/create-stack">GitHub ↗</a>
+      </div>
+    </div>
+  </footer>
+</BaseLayout>

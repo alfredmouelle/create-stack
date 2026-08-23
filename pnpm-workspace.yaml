@@ -1,4 +1,5 @@
 packages:
+  - "marketing"
   - "packages/*"
   - "apps/*"
   - "cli"

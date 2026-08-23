@@ -1,0 +1,57 @@
+---
+import '../styles/global.css'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = 'Create Stack. A real app wired around your choices',
+  description = 'Create Stack generates a working SaaS project from your choices. It wires the selected pieces together and removes the rest.',
+} = Astro.props
+const canonical = new URL(Astro.url.pathname, Astro.site)
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#edf2ef" />
+    <meta name="author" content="Alfred MOUELLE" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="create-stack" />
+    <meta property="og:image" content={new URL('/og-image.png', Astro.site)} />
+    <meta property="og:image:alt" content="Create Stack. A real app wired around your choices" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL('/og-image.png', Astro.site)} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="page-shell header-inner">
+        <a class="wordmark" href="/" aria-label="Create Stack home">
+          <span class="wordmark-mark" aria-hidden="true">&gt;_</span>
+          <span>create-stack</span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="/#why">Why Create Stack</a>
+          <a class="nav-github" href="https://github.com/alfredmouelle/create-stack">
+            GitHub <span aria-hidden="true">↗</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+    <slot />
+  </body>
+</html>

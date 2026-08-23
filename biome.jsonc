@@ -10,6 +10,8 @@
       "!**/.next",
       "!**/.output",
       "!**/.nitro",
+      "!**/.astro",
+      "!**/*.astro",
       "!**/routeTree.gen.ts",
       "!**/components/ui",
       "!cli/templates",
