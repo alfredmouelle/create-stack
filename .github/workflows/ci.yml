@@ -42,3 +42,19 @@ jobs:
       - run: pnpm --filter @alfredmouelle/create-stack test:smoke
         env:
           SMOKE_FRAMEWORK: ${{ matrix.framework }}
+
+  marketing:
+    name: marketing (typecheck, unit, browser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @alfredmouelle/marketing typecheck
+      - run: pnpm --filter @alfredmouelle/marketing test
+      - run: pnpm --filter @alfredmouelle/marketing exec playwright install --with-deps chromium
+      - run: pnpm --filter @alfredmouelle/marketing test:e2e
