@@ -7,11 +7,14 @@
     "build": "astro build --mode public",
     "build:public": "astro build --mode public",
     "build:validation": "astro build --mode validation",
+    "deploy": "node scripts/deploy.mjs",
     "preview": "astro preview",
+    "smoke": "node scripts/smoke.mjs",
     "test": "vitest run src",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "typecheck": "astro check && tsc --noEmit",
+    "verify:deployment": "node scripts/verify-deployment.mjs",
     "check": "biome check ."
   },
   "dependencies": {
@@ -32,6 +35,7 @@
     "@types/react-dom": "^19.2.4",
     "@playwright/test": "1.58.2",
     "typescript": "^6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "wrangler": "4.125.0"
   }
 }
