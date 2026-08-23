@@ -9,6 +9,7 @@ allowBuilds:
   sharp: true
   lightningcss: true
   '@sentry/cli': true
+  workerd: true
 onlyBuiltDependencies:
   - esbuild
   - protobufjs
