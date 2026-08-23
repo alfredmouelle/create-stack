@@ -140,3 +140,39 @@ test.describe('mobile keyboard experience', () => {
     await expect(copy).toBeVisible()
   })
 })
+
+test('uses the same branded mark in the wordmark and favicon', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.locator('.wordmark-mark')).toHaveAttribute('src', '/favicon.svg')
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute(
+    'href',
+    '/favicon.svg',
+  )
+})
+
+test('keeps the install card controls on the left like a terminal window', async ({ page }) => {
+  await page.goto('/')
+
+  const commandBar = page.locator('.command-label')
+  const windowControls = commandBar.locator('.terminal-window')
+  const title = commandBar.locator('.command-label-title')
+
+  await expect(windowControls).toBeVisible()
+  await expect(windowControls.locator('i')).toHaveCount(3)
+  await expect(title).toHaveText('create-stack / install')
+
+  const controlsBox = await windowControls.boundingBox()
+  const titleBox = await title.boundingBox()
+  expect(controlsBox?.x).toBeLessThan(titleBox?.x ?? Number.POSITIVE_INFINITY)
+})
+
+test('makes a long install command horizontally inspectable', async ({ page }) => {
+  await page.goto('/')
+
+  const command = page.getByRole('textbox', { name: 'Create Stack install command' })
+  await expect(command).toHaveAttribute('title', 'Scroll horizontally to inspect the full command')
+  await expect(page.locator('.command-line')).toHaveAttribute('data-overflowing', 'true')
+  await expect(page.locator('.command-scroll-cue')).toBeVisible()
+  await expect(command).toHaveValue(canonicalPnpmCommand)
+})

@@ -111,6 +111,137 @@ function reasonKindFor(result: BuildStateResult, axis: string) {
   return result.reasons.find((reason) => reason.axis === axis)?.kind
 }
 
+function ProviderSelect({
+  capabilityName,
+  capabilityLabel,
+  options,
+  value,
+  onChange,
+}: {
+  capabilityName: string
+  capabilityLabel: string
+  options: readonly string[]
+  value: string
+  onChange: (value: string) => void
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState(() =>
+    Math.max(options.indexOf(value), 0),
+  )
+  const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const listboxId = `${capabilityName}-provider-options`
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    function closeOnOutsidePointer(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
+  }, [isOpen])
+
+  useEffect(() => {
+    if (isOpen) setHighlightedIndex(Math.max(options.indexOf(value), 0))
+  }, [isOpen, options, value])
+
+  function choose(index: number) {
+    const nextValue = options[index]
+    if (!nextValue) return
+    onChange(nextValue)
+    setIsOpen(false)
+    triggerRef.current?.focus()
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+    const lastIndex = options.length - 1
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault()
+        setIsOpen(true)
+        setHighlightedIndex((current) => Math.min(current + 1, lastIndex))
+        break
+      case 'ArrowUp':
+        event.preventDefault()
+        setIsOpen(true)
+        setHighlightedIndex((current) => Math.max(current - 1, 0))
+        break
+      case 'Home':
+        event.preventDefault()
+        setIsOpen(true)
+        setHighlightedIndex(0)
+        break
+      case 'End':
+        event.preventDefault()
+        setIsOpen(true)
+        setHighlightedIndex(lastIndex)
+        break
+      case 'Enter':
+      case ' ':
+        event.preventDefault()
+        if (isOpen) choose(highlightedIndex)
+        else setIsOpen(true)
+        break
+      case 'Escape':
+        if (isOpen) {
+          event.preventDefault()
+          setIsOpen(false)
+        }
+        break
+      default:
+        break
+    }
+  }
+
+  return (
+    <div className="build-select-control" ref={rootRef}>
+      <button
+        aria-activedescendant={isOpen ? `${listboxId}-${highlightedIndex}` : undefined}
+        aria-controls={listboxId}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-label={`${capabilityLabel} provider`}
+        className="build-select-trigger"
+        onClick={() => setIsOpen((current) => !current)}
+        onKeyDown={handleKeyDown}
+        ref={triggerRef}
+        role="combobox"
+        type="button"
+      >
+        <span>{value}</span>
+        <span aria-hidden="true" className="build-select-arrow" />
+      </button>
+      {isOpen ? (
+        <div
+          aria-label={`${capabilityLabel} provider options`}
+          className="build-select-menu"
+          id={listboxId}
+          role="listbox"
+        >
+          {options.map((option, index) => (
+            <div
+              aria-selected={value === option}
+              className="build-select-option"
+              data-highlighted={highlightedIndex === index}
+              id={`${listboxId}-${index}`}
+              key={option}
+              onClick={() => choose(index)}
+              onMouseEnter={() => setHighlightedIndex(index)}
+              role="option"
+              tabIndex={-1}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function copyFailureMessage() {
   return 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.'
 }
@@ -278,29 +409,27 @@ function CapabilityOption({
           <small>{selected ? 'included' : 'not included'}</small>
         </span>
       </label>
-      {selected ? (
-        <label className="build-provider-field">
-          <span>Provider</span>
-          <select
-            aria-label={`${capability.label} provider`}
-            onChange={(event) =>
-              updateState({
-                capabilities: {
-                  ...state.capabilities,
-                  [capability.name]: event.currentTarget.value,
-                },
-              })
-            }
-            value={provider}
-          >
-            {capability.providers.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
+      <div className="build-provider-slot" data-state={selected ? 'active' : 'empty'}>
+        {selected ? (
+          <div className="build-provider-field">
+            <span>Provider</span>
+            <ProviderSelect
+              capabilityLabel={capability.label}
+              capabilityName={capability.name}
+              onChange={(value) =>
+                updateState({
+                  capabilities: {
+                    ...state.capabilities,
+                    [capability.name]: value,
+                  },
+                })
+              }
+              options={capability.providers}
+              value={provider ?? capability.recommendedProvider}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -393,6 +522,24 @@ function CommandPanel({
   updateState: UpdateState
   copyCommand: () => void
 }) {
+  const [isCommandOverflowing, setIsCommandOverflowing] = useState(false)
+  const command = result.command ?? 'Resolve the choices above to continue'
+
+  useEffect(() => {
+    const input = commandInput.current
+    if (!input) return
+
+    const updateOverflow = () => {
+      if (input.value !== command) return
+      setIsCommandOverflowing(input.scrollWidth > input.clientWidth + 1)
+    }
+
+    updateOverflow()
+    const observer = new ResizeObserver(updateOverflow)
+    observer.observe(input)
+    return () => observer.disconnect()
+  }, [command, commandInput])
+
   return (
     <section aria-labelledby="command-heading" className="build-command-panel">
       <div className="build-command-heading">
@@ -402,7 +549,7 @@ function CommandPanel({
         </div>
         <span className="build-command-status">non-interactive</span>
       </div>
-      <div className="build-command-display">
+      <div className="build-command-display" data-overflowing={isCommandOverflowing}>
         <span aria-hidden="true">$</span>
         <input
           aria-label="Generated Create Stack command"
@@ -410,8 +557,12 @@ function CommandPanel({
           onFocus={(event) => event.currentTarget.select()}
           readOnly
           ref={commandInput}
-          value={result.command ?? 'Resolve the choices above to continue'}
+          title="Scroll horizontally to inspect the full command"
+          value={command}
         />
+        <span aria-hidden="true" className="build-command-scroll-cue">
+          ↔
+        </span>
       </div>
       <fieldset className="build-package-managers">
         <legend className="sr-only">Package manager</legend>

@@ -98,7 +98,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
     header.bar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
   .bar-in { display: flex; align-items: center; justify-content: space-between; height: 58px; }
   .brand { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
-  .brand .sq { width: 20px; height: 20px; border-radius: 5px; background: var(--accent); display: grid; place-items: center; color: var(--accent-ink); font-size: 12px; }
+  .brand .mark { width: 20px; height: 20px; display: block; }
   .bar-links { display: flex; align-items: center; gap: 4px; }
   .bar-links a { font-size: 13.5px; color: var(--ink-2); padding: 7px 12px; border-radius: 8px; }
   .bar-links a:hover { color: var(--ink); background: var(--surface-2); }
@@ -247,7 +247,7 @@ posthog.init('phc_AEMsXVZV6mDPZ32awWWzYYLjLwcxHs56G2GDmfdNkQgb', {
 <body>
 <header class="bar">
   <div class="shell bar-in">
-    <span class="brand"><span class="sq">&gt;_</span>create-stack</span>
+    <span class="brand"><img class="mark" src="/favicon.svg" alt="">create-stack</span>
     <nav class="bar-links">
       <a href="#builder">Builder</a>
       <a href="#stack">Project</a>
