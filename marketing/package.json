@@ -6,8 +6,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "vitest run",
+    "test": "vitest run src",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "astro check && tsc --noEmit",
     "check": "biome check ."
   },
@@ -26,6 +27,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@playwright/test": "1.58.2",
     "typescript": "^6.0.3",
     "vitest": "4.1.10"
   }

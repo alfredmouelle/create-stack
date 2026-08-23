@@ -16,15 +16,23 @@ export const features = [
   },
 ] as const
 
-export const terminalLines = [
-  { kind: 'command', text: 'pnpm dlx @alfredmouelle/create-stack@latest orbit' },
-  { kind: 'muted', text: 'create-stack 0.12 · resolving recommended stack' },
-  { kind: 'output', text: '◆ framework    TanStack Start' },
-  { kind: 'output', text: '◆ data         Drizzle + PostgreSQL' },
-  { kind: 'output', text: '◆ auth         better-auth' },
-  { kind: 'output', text: '◆ api          tRPC' },
-  { kind: 'muted', text: 'writing project files...' },
-  { kind: 'success', text: '✓ generated orbit in 8.4s' },
-  { kind: 'success', text: '✓ typecheck passed · biome clean' },
-  { kind: 'ready', text: '→ cd orbit && pnpm dev' },
-] as const
+export const terminalTranscript = {
+  version: 1,
+  lines: [
+    { kind: 'command', text: 'pnpm dlx @alfredmouelle/create-stack@latest orbit' },
+    { kind: 'muted', text: 'create-stack — fork a base app, strip it to your selection' },
+    { kind: 'output', text: 'Target: orbit' },
+    { kind: 'output', text: 'Framework: TanStack Start' },
+    { kind: 'output', text: 'Database: drizzle' },
+    { kind: 'output', text: 'Auth: better-auth' },
+    { kind: 'output', text: 'tRPC: yes' },
+    { kind: 'output', text: 'Mailer: resend' },
+    { kind: 'muted', text: 'Forking + stripping the base app' },
+    { kind: 'success', text: '✓ Project scaffolded' },
+    { kind: 'muted', text: 'pnpm install' },
+    { kind: 'muted', text: 'Verifying (typecheck + biome)' },
+    { kind: 'success', text: '✓ typecheck + biome clean' },
+  ],
+} as const
+
+export const terminalLines = terminalTranscript.lines

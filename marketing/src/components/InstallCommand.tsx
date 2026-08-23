@@ -1,16 +1,17 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { installCommand, PACKAGE_MANAGERS, type PackageManager } from '../lib/install-command'
 
 type CopyState = 'idle' | 'copied' | 'error'
 
 export default function InstallCommand() {
+  const commandInput = useRef<HTMLInputElement>(null)
   const [packageManager, setPackageManager] = useState<PackageManager>('pnpm')
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const command = installCommand(packageManager)
 
   async function copyCommand() {
     try {
-      if (!navigator.clipboard) {
+      if (!navigator.clipboard?.writeText) {
         throw new Error('Clipboard API unavailable')
       }
 
@@ -18,6 +19,10 @@ export default function InstallCommand() {
       setCopyState('copied')
     } catch {
       setCopyState('error')
+      requestAnimationFrame(() => {
+        commandInput.current?.focus()
+        commandInput.current?.select()
+      })
     }
   }
 
@@ -38,11 +43,13 @@ export default function InstallCommand() {
             id="install-command"
             onFocus={(event) => event.currentTarget.select()}
             readOnly
+            ref={commandInput}
             value={command}
           />
         </label>
         <div className="command-actions">
           <fieldset aria-label="Package manager" className="manager-group">
+            <legend className="sr-only">Package manager</legend>
             {PACKAGE_MANAGERS.map((manager) => (
               <button
                 aria-pressed={packageManager === manager}
@@ -72,7 +79,7 @@ export default function InstallCommand() {
           {copyState === 'copied'
             ? 'Command copied to your clipboard.'
             : copyState === 'error'
-              ? 'Copy unavailable. Select the command manually.'
+              ? 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.'
               : 'No account required. Change my-app before you run it.'}
         </p>
       </div>
