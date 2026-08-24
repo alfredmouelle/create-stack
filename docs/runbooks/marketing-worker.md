@@ -33,7 +33,7 @@ With Cloudflare credentials available in the current shell, deploy the safe vali
 ```sh
 export CLOUDFLARE_API_TOKEN
 export CLOUDFLARE_ACCOUNT_ID
-MARKETING_BUILD_MODE=validation pnpm --filter @alfredmouelle/marketing deploy
+MARKETING_BUILD_MODE=validation pnpm --filter @alfredmouelle/marketing run deploy
 ```
 
 The single package `deploy` script runs the production Astro build, starts a local preview, checks it over HTTP, and invokes the pinned workspace Wrangler only if those checks pass. It does not perform a post-deployment check because a local command cannot know which Worker URL should be considered authoritative; run the verification command below with the URL printed by Wrangler.
@@ -86,7 +86,7 @@ That change requires its own review, a protected production environment, and an 
 `validation` is the default because a temporary Worker must not compete with the public site in search indexes. The public build is deliberate:
 
 ```sh
-MARKETING_BUILD_MODE=public pnpm --filter @alfredmouelle/marketing deploy
+MARKETING_BUILD_MODE=public pnpm --filter @alfredmouelle/marketing run deploy
 ```
 
 Use `public` only after the intended public hostname is ready. The public build emits the production canonical URL, indexable robots instructions, sitemap, social metadata, and local assets. Confirm the final hostname serves the expected title, canonical URL, `robots.txt` with `Allow: /`, and a sitemap containing the public origin.

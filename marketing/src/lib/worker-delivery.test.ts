@@ -41,7 +41,7 @@ describe('marketing Worker delivery contract', () => {
     expect(workflow).toContain('cancel-in-progress: true')
     expect(workflow).toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('secrets.CLOUDFLARE_ACCOUNT_ID')
-    expect(workflow).toContain('pnpm --filter @alfredmouelle/marketing deploy')
+    expect(workflow).toContain('pnpm --filter @alfredmouelle/marketing run deploy')
     expect(workflow).toContain('pnpm --filter @alfredmouelle/marketing verify:deployment')
     expect(workflow).not.toContain('publish.yml')
   })
