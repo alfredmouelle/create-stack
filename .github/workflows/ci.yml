@@ -4,13 +4,51 @@ name: CI
 on:
   pull_request:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      marketing: ${{ steps.filter.outputs.marketing }}
+      cli: ${{ steps.filter.outputs.cli }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            # Keep this list aligned with deploy-marketing.yml.
+            marketing:
+              - 'marketing/**'
+              - 'packages/stack-config/**'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/deploy-marketing.yml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'pnpm-lock.yaml'
+            cli:
+              - 'cli/**'
+              - 'apps/**'
+              - 'packages/**'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/publish.yml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'pnpm-lock.yaml'
+              - 'turbo.json'
+              - 'tsconfig.base.json'
+
   build-tests:
     name: build matrix (fast)
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,6 +62,8 @@ jobs:
 
   smoke:
     name: smoke (${{ matrix.framework }})
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -43,6 +83,8 @@ jobs:
 
   marketing:
     name: marketing (typecheck, unit, browser)
+    needs: changes
+    if: needs.changes.outputs.marketing == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
