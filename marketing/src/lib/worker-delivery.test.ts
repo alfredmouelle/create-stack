@@ -18,13 +18,13 @@ const workflow = readFileSync(
 const runbook = readFileSync(resolve(repositoryRoot, 'docs/runbooks/marketing-worker.md'), 'utf8')
 
 describe('marketing Worker delivery contract', () => {
-  it('keeps the Worker configuration isolated from the legacy root config', () => {
+  it('keeps the Worker configuration isolated from the retired root deployment', () => {
     expect(workerConfig).toMatchObject({
       assets: { directory: './dist' },
       name: 'create-stack-marketing',
       workers_dev: true,
     })
-    expect(existsSync(resolve(repositoryRoot, 'wrangler.jsonc'))).toBe(true)
+    expect(existsSync(resolve(repositoryRoot, 'wrangler.jsonc'))).toBe(false)
   })
 
   it('uses one package deployment script and a pinned local Wrangler', () => {
@@ -34,9 +34,14 @@ describe('marketing Worker delivery contract', () => {
     expect(packageJson.devDependencies.wrangler).toMatch(/^\d+\.\d+\.\d+$/)
   })
 
-  it('keeps CI deployment dormant, serialized, and secret-backed', () => {
+  it('deploys filtered main changes and remains manual, serialized, and secret-backed', () => {
     expect(workflow).toContain('workflow_dispatch:')
-    expect(workflow).not.toMatch(/^\s+(push|pull_request):/m)
+    expect(workflow).toContain('push:')
+    expect(workflow).toContain('branches:')
+    expect(workflow).toContain('- main')
+    expect(workflow).toContain('marketing/**')
+    expect(workflow).toContain('packages/stack-config/**')
+    expect(workflow).toContain("inputs.worker_url || 'https://create-stack.alfredmouelle.com'")
     expect(workflow).toContain('group: deploy-marketing')
     expect(workflow).toContain('cancel-in-progress: true')
     expect(workflow).toContain('secrets.CLOUDFLARE_API_TOKEN')
@@ -52,7 +57,7 @@ describe('marketing Worker delivery contract', () => {
       'First local deployment',
       'GitHub secret setup',
       'Public Worker deployment',
-      'filtered deployment from `main`',
+      'Push filtering',
       'Public metadata',
       'custom domain',
       'Post-deployment checks',
@@ -60,7 +65,6 @@ describe('marketing Worker delivery contract', () => {
       'Pages fallback',
       'workers.dev',
       '30-day rollback period',
-      'legacy retirement',
     ]) {
       expect(runbook).toContain(requiredSection)
     }

@@ -54,6 +54,9 @@ test.describe('stack configurator', () => {
 
     await expect(checkbox).toHaveCSS('background-color', 'rgb(24, 88, 209)')
     await expect(checkbox).toHaveCSS('border-color', 'rgb(24, 88, 209)')
+    await expect
+      .poll(() => checkbox.evaluate((element) => getComputedStyle(element, '::before').content))
+      .toBe('none')
   })
 
   test('renders a valid explicit selection and updates the shareable URL', async ({
