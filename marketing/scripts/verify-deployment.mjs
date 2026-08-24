@@ -1,7 +1,6 @@
 import { assertMarketingResponse, rollbackGuidance } from './http-checks.mjs'
 
 const deploymentUrl = process.env.MARKETING_DEPLOYMENT_URL ?? process.argv[2]
-const mode = process.env.MARKETING_BUILD_MODE ?? 'validation'
 
 if (!deploymentUrl) {
   console.error(
@@ -12,11 +11,9 @@ if (!deploymentUrl) {
 }
 
 try {
-  const result = await assertMarketingResponse(deploymentUrl, {
-    expectedIndexable: mode === 'public',
-  })
+  const result = await assertMarketingResponse(deploymentUrl)
   process.stdout.write(
-    `[marketing] deployed Worker smoke passed for ${mode} build (${result.url})\n`,
+    `[marketing] deployed Worker smoke passed for public build (${result.url})\n`,
   )
 } catch (error) {
   console.error(

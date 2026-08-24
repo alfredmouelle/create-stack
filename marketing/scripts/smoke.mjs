@@ -5,7 +5,6 @@ import { assertMarketingResponse } from './http-checks.mjs'
 
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 const port = process.env.MARKETING_SMOKE_PORT ?? '4321'
-const mode = process.env.MARKETING_BUILD_MODE ?? 'validation'
 const localUrl = `http://127.0.0.1:${port}/`
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
@@ -53,10 +52,8 @@ const preview = spawn(
 
 try {
   await waitForPreview(localUrl, preview)
-  const result = await assertMarketingResponse(localUrl, {
-    expectedIndexable: mode === 'public',
-  })
-  process.stdout.write(`[marketing] local HTTP smoke passed for ${mode} build (${result.url})\n`)
+  const result = await assertMarketingResponse(localUrl)
+  process.stdout.write(`[marketing] local HTTP smoke passed for public build (${result.url})\n`)
 } catch (error) {
   console.error(
     `[marketing] local HTTP smoke failed: ${error instanceof Error ? error.message : error}`,
