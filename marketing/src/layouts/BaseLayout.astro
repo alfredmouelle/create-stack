@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css'
+import ConsentBanner from '../components/ConsentBanner'
 import {
   getSiteMetadata,
   OG_IMAGE_ALT,
@@ -29,7 +30,7 @@ const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#edf2ef" />
-    <meta name="author" content="Alfred MOUELLE" />
+    <meta name="author" content="Alfred Mouelle" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -75,5 +76,6 @@ const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
       </div>
     </header>
     <slot />
+    <ConsentBanner client:load />
   </body>
 </html>

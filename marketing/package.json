@@ -23,6 +23,7 @@
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@alfredmouelle/stack-config": "workspace:*",
     "astro": "^7.2.4",
+    "posthog-js": "^1.418.11",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

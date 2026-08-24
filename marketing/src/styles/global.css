@@ -705,6 +705,138 @@ input:disabled {
   color: var(--blue);
 }
 
+.consent-banner {
+  position: fixed;
+  left: max(16px, calc((100vw - 1180px) / 2));
+  bottom: 24px;
+  z-index: 40;
+  width: min(440px, calc(100vw - 32px));
+  border: 1px solid var(--terminal-line);
+  background: var(--terminal);
+  box-shadow: 12px 12px 0 rgb(24 88 209 / 15%);
+  color: var(--terminal-ink);
+}
+
+.consent-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--terminal-line);
+  background: #142436;
+  color: var(--terminal-muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  padding: 13px 16px;
+}
+
+.consent-label .terminal-window {
+  flex: none;
+}
+
+.consent-label .terminal-window i {
+  width: 7px;
+  height: 7px;
+}
+
+.consent-body {
+  display: grid;
+  gap: 12px;
+  padding: 21px 18px 18px;
+}
+
+.consent-kicker {
+  margin: 0;
+  color: #66a2ff;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.consent-body h2 {
+  margin: 0;
+  color: #fff;
+  font-family: var(--display);
+  font-size: 1.85rem;
+  font-weight: 550;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.consent-body p:not(.consent-kicker) {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--terminal-muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.consent-body a {
+  width: fit-content;
+  color: #9fc2ff;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-underline-offset: 4px;
+}
+
+.consent-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.consent-actions button,
+.consent-settings-trigger {
+  border: 1px solid transparent;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.consent-actions .consent-refuse {
+  border-color: #3a5f86;
+  background: transparent;
+  color: var(--terminal-ink);
+  padding: 9px 12px;
+}
+
+.consent-actions .consent-refuse:hover {
+  border-color: #66a2ff;
+  color: #fff;
+}
+
+.consent-accept {
+  background: var(--blue);
+  color: #fff;
+  padding: 10px 13px;
+}
+
+.consent-accept:hover {
+  background: #2e6be3;
+}
+
+.consent-settings-trigger {
+  position: fixed;
+  left: max(20px, calc((100vw - 1180px) / 2));
+  bottom: 24px;
+  z-index: 39;
+  border-color: var(--line-strong);
+  background: var(--paper);
+  box-shadow: 4px 4px 0 rgb(24 88 209 / 12%);
+  color: var(--ink);
+  padding: 9px 11px;
+}
+
+.consent-settings-trigger:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
 .not-found {
   min-height: calc(100svh - 150px);
   display: grid;
@@ -861,6 +993,82 @@ input:disabled {
   margin: 0;
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.privacy-page {
+  padding: clamp(52px, 8vw, 92px) 0 120px;
+}
+
+.privacy-intro {
+  max-width: 760px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 48px;
+}
+
+.privacy-intro h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(3.3rem, 7vw, 6.5rem);
+  font-weight: 540;
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+}
+
+.privacy-intro > p:not(.section-kicker):not(.privacy-updated) {
+  max-width: 42ch;
+  margin: 25px 0 0;
+  color: var(--muted);
+}
+
+.privacy-updated {
+  margin: 24px 0 0;
+  color: var(--blue);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+
+.privacy-content {
+  max-width: 760px;
+}
+
+.privacy-content section {
+  border-bottom: 1px solid var(--line);
+  padding: 42px 0 45px;
+}
+
+.privacy-content h2 {
+  margin: 0;
+  color: var(--blue);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.privacy-content p,
+.privacy-content li {
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.privacy-content p {
+  margin: 17px 0 0;
+}
+
+.privacy-content ul {
+  display: grid;
+  gap: 8px;
+  margin: 17px 0 0;
+  padding-left: 20px;
+}
+
+.privacy-content a {
+  color: var(--blue);
+  text-underline-offset: 3px;
 }
 
 .build-page {
@@ -1723,6 +1931,16 @@ input:disabled {
     bottom: 16px;
   }
 
+  .consent-banner {
+    left: 16px;
+    bottom: 16px;
+  }
+
+  .consent-settings-trigger {
+    left: 16px;
+    bottom: 16px;
+  }
+
   .build-intro {
     align-items: start;
     flex-direction: column;
@@ -1809,6 +2027,14 @@ input:disabled {
 
   .footer-links {
     gap: 16px;
+  }
+
+  .consent-actions {
+    justify-content: stretch;
+  }
+
+  .consent-actions button {
+    flex: 1;
   }
 }
 

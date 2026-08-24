@@ -105,9 +105,21 @@ describe('marketing metadata builds', () => {
     }
   })
 
-  it('does not carry legacy analytics or remote font metadata into the build', () => {
+  it('keeps trackers out of the document shell and uses local font metadata', () => {
     const html = readBuildFile(publicBuild, 'index.html')
 
-    expect(html).not.toMatch(/posthog|fonts\.googleapis|fonts\.gstatic|googletagmanager/i)
+    expect(html).not.toMatch(/posthog\.init|fonts\.googleapis|fonts\.gstatic|googletagmanager/i)
+  })
+
+  it('publishes the professional privacy contact and readable provider links', () => {
+    const html = readBuildFile(publicBuild, 'index.html')
+    const privacy = readBuildFile(publicBuild, 'privacy/index.html')
+
+    expect(html).toContain('<meta name="author" content="Alfred Mouelle">')
+    expect(privacy).toContain(
+      '<a href="https://posthog.com/privacy" rel="noreferrer" target="_blank">privacy policy</a> and <a href="https://trust.posthog.com/"',
+    )
+    expect(privacy).toContain('mailto:contact@alfredmouelle.com')
+    expect(privacy).not.toContain('@gmail.com')
   })
 })

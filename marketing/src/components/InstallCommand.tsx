@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { captureCommandCopied } from '../lib/analytics'
 import { installCommand, PACKAGE_MANAGERS, type PackageManager } from '../lib/install-command'
 
 type CopyState = 'idle' | 'copied' | 'error'
@@ -33,6 +34,10 @@ export default function InstallCommand() {
 
       await navigator.clipboard.writeText(command)
       setCopyState('copied')
+      captureCommandCopied({
+        source: 'hero',
+        packageManager,
+      })
     } catch {
       setCopyState('error')
       requestAnimationFrame(() => {
