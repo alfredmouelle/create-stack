@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **Release cadence.** Consumers always run the latest via `npx` / `pnpm dlx`, so releases
-are cut when there is user-facing value — a new framework, stack option, capability, or adapter; a
+are cut when there is user-facing value, such as a new framework, stack option, capability, or adapter; a
 fix to the generated output, or a wizard/UX change. Internal refactors, tests, CI and
 docs-only changes accumulate under _Unreleased_ until the next meaningful release; related
 commits are batched into a single tagged version rather than one tag per commit.
@@ -49,7 +49,7 @@ commits are batched into a single tagged version rather than one tag per commit.
   instead of the default one. Leave it empty for a standard bucket.
 - **On-brand icons and web manifest** in both base apps: the create-stack mark as a
   `.ico` and a dark-mode-aware `.svg`, 192/512 PNGs, and a manifest wired into the head
-  and named after your project — so an installed PWA carries your app, not a sample.
+  and named after your project, so an installed PWA carries your app, not a sample.
 - [`@total-typescript/ts-reset`](https://github.com/total-typescript/ts-reset) in both base
   apps, which tightens `JSON.parse`, `.filter(Boolean)` and friends across your code.
 
@@ -131,7 +131,7 @@ commits are batched into a single tagged version rather than one tag per commit.
 ### Added
 
 - **Callable UI components**: six opt-in dialogs installable with
-  `create-stack component <name>` — `confirm`, `alert`, `prompt`, `choice`,
+  `create-stack component <name>`: `confirm`, `alert`, `prompt`, `choice`,
   `confirm-passphrase` and `confirm-otp`. Built on
   [react-call](https://react-call.desko.dev), they are `await`-able from anywhere
   (`const ok = await Confirm.call({ … })`); installing one vendors its dialog plus the
@@ -199,34 +199,34 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Added
 
-- **Auto-generated `BETTER_AUTH_SECRET`** — when better-auth is selected, a fresh random
+- **Auto-generated `BETTER_AUTH_SECRET`**: when better-auth is selected, a fresh random
   secret is written to `.env` (gitignored) so the app boots without a manual step;
   `.env.example` keeps the shared placeholder. Uses Node's crypto (no `openssl` needed).
-- **GitHub Actions CI** — every scaffold now ships `.github/workflows/ci.yml` that runs
+- **GitHub Actions CI**: every scaffold now ships `.github/workflows/ci.yml` that runs
   install + typecheck + Biome on push to `main` and on pull requests, wired to the package
   manager you chose (pnpm / npm / yarn / bun). Mirrors the scaffold's own quality gate.
-- **Convex as a database choice** — `--database convex` (and a wizard option) scaffolds a
+- **Convex as a database choice**: `--database convex` (and a wizard option) scaffolds a
   Convex backend instead of a SQL ORM: a committed `convex/` directory (schema, an example
   query/mutation and the generated `_generated` client), a realtime provider wired into the
   app shell, and a `convex-demo` page. Convex is the API too, so it replaces tRPC (dropped
   automatically) and its own react-query wiring. Because it isn't Postgres, it pairs with
-  Clerk or no auth — better-auth is coerced off. Run `<pm> run convex` once to provision a
+  Clerk or no auth. Better-auth is coerced off. Run `<pm> run convex` once to provision a
   deployment; keys live in `.env` (`CONVEX_DEPLOYMENT` + `{VITE_,NEXT_PUBLIC_}CONVEX_URL`).
 
 ## [0.6.0] - 2026-07-07
 
 ### Added
 
-- **Choose your database** — new `--database` flag and wizard step: `drizzle` (default),
+- **Choose your database**: new `--database` flag and wizard step: `drizzle` (default),
   `prisma`, or `none`. `prisma` scaffolds a Prisma 7 setup (the `prisma-client` generator +
   `@prisma/adapter-pg` reusing `pg`, a multi-file schema whose auth models track the auth
   choice, a `postinstall` client generation, and a seed harness); `none` produces a
   database-less vitrine. Prisma's build scripts are allowlisted so `install` stays clean on
   pnpm/bun.
-- **Choose your auth provider** — new `--auth` flag and wizard step: `better-auth`
+- **Choose your auth provider**: new `--auth` flag and wizard step: `better-auth`
   (default), `clerk`, or `none`. `clerk` vendors the provider, middleware, sign-in / sign-up
   and a protected dashboard for both Next.js and TanStack Start. Clerk is hosted, so it needs
-  neither a database nor a mailer — `--auth clerk --database none` is a valid authenticated
+  neither a database nor a mailer. `--auth clerk --database none` is a valid authenticated
   vitrine.
 - Generated projects now ship **git hooks** (via `.githooks`, activated safely on first
   install).
@@ -243,7 +243,7 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Changed
 
-- **BREAKING — `data-table` is no longer a `--foundations` value.** Date pickers and data
+- **BREAKING: `data-table` is no longer a `--foundations` value.** Date pickers and data
   tables no longer ship in the base scaffold; they are stripped from every project and
   installed on demand with `create-stack component [name]` (`--force` overwrites local
   edits). The `datatable` component also vendors a polished `useDataTable` hook
@@ -279,7 +279,7 @@ commits are batched into a single tagged version rather than one tag per commit.
 ### Fixed
 
 - Generated composition roots no longer re-validate env vars that `env.ts` already marks
-  required — the redundant `required()` guard is dropped in capability and mailer roots,
+  required. The redundant `required()` guard is dropped in capability and mailer roots,
   with `env.ts` as the single source of truth.
 
 ## [0.4.2] - 2026-06-23
@@ -302,7 +302,7 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Added
 
-- `create-stack add` — vendor capabilities into an existing project behind a port.
+- `create-stack add`: vendor capabilities into an existing project behind a port.
 - `add` extended to **mailer / email-kit / http**, with adapter swap and `--keep`.
 - `--help` / `--version` flags and short-flag parsing.
 - `cpSync` fallback when `rsync` is absent (native Windows support).

@@ -11,6 +11,7 @@ import {
   resolveBuildState,
   serializeBuildState,
 } from '../lib/build-config'
+import BackToTop from './BackToTop'
 
 type ChoiceOption = {
   value: string | boolean
@@ -712,39 +713,42 @@ function BuildPage({
   copyShareLink: () => void
 }) {
   return (
-    <main className="build-page page-shell">
-      <div className="build-intro">
-        <div>
-          <p className="section-kicker">Build your stack</p>
-          <h1>Choose the shape of your first useful commit.</h1>
-          <p>
-            Start from the same recommended stack as the CLI. Explicit choices stay explicit, while
-            compatible omissions are completed with a reason you can see.
-          </p>
+    <>
+      <main className="build-page page-shell">
+        <div className="build-intro">
+          <div>
+            <p className="section-kicker">Build your stack</p>
+            <h1>Choose the shape of your first useful commit.</h1>
+            <p>
+              Start from the same recommended stack as the CLI. Explicit choices stay explicit,
+              while compatible omissions are completed with a reason you can see.
+            </p>
+          </div>
+          <button className="build-reset-button" onClick={restoreRecommended} type="button">
+            Reset to recommended
+          </button>
         </div>
-        <button className="build-reset-button" onClick={restoreRecommended} type="button">
-          Reset to recommended
-        </button>
-      </div>
 
-      <div className="build-layout">
-        <section aria-label="Stack choices" className="build-form">
-          <ProjectPanel state={state} updateState={updateState} />
-          <StackPanel result={result} state={state} updateState={updateState} />
-          <AdditionalPanel state={state} updateState={updateState} />
-        </section>
-        <BuildSidebar
-          commandInput={commandInput}
-          copyCommand={copyCommand}
-          copyShareLink={copyShareLink}
-          copyState={copyState}
-          result={result}
-          shareState={shareState}
-          state={state}
-          updateState={updateState}
-        />
-      </div>
-    </main>
+        <div className="build-layout">
+          <section aria-label="Stack choices" className="build-form">
+            <ProjectPanel state={state} updateState={updateState} />
+            <StackPanel result={result} state={state} updateState={updateState} />
+            <AdditionalPanel state={state} updateState={updateState} />
+          </section>
+          <BuildSidebar
+            commandInput={commandInput}
+            copyCommand={copyCommand}
+            copyShareLink={copyShareLink}
+            copyState={copyState}
+            result={result}
+            shareState={shareState}
+            state={state}
+            updateState={updateState}
+          />
+        </div>
+      </main>
+      <BackToTop />
+    </>
   )
 }
 

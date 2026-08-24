@@ -175,6 +175,19 @@ test.describe('stack configurator mobile layout', () => {
     await expect(page.getByRole('button', { name: 'Copy command' })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
   })
+
+  test('offers a back-to-top control after scrolling', async ({ page }) => {
+    await page.goto('/build')
+
+    await page.evaluate(() =>
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' }),
+    )
+    const backToTop = page.getByRole('button', { name: 'Back to top' })
+    await expect(backToTop).toBeVisible()
+    await backToTop.click()
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(10)
+    await expect(backToTop).not.toBeVisible()
+  })
 })
 
 test('uses pointer cursors for interactive controls', async ({ page }) => {

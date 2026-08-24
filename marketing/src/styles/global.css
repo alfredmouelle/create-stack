@@ -734,8 +734,173 @@ input:disabled {
   text-underline-offset: 5px;
 }
 
+.changelog-page {
+  padding: clamp(52px, 8vw, 92px) 0 120px;
+}
+
+.changelog-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 40px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 48px;
+}
+
+.changelog-intro h1 {
+  max-width: 11ch;
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(3.3rem, 7vw, 6.5rem);
+  font-weight: 540;
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+}
+
+.changelog-intro p:not(.section-kicker) {
+  max-width: 42ch;
+  margin: 25px 0 0;
+  color: var(--muted);
+}
+
+.changelog-source {
+  flex: none;
+  margin-bottom: 4px;
+}
+
+.changelog-list {
+  max-width: 1020px;
+}
+
+.changelog-release {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: clamp(28px, 6vw, 92px);
+  border-bottom: 1px solid var(--line);
+  padding: 52px 0 58px;
+}
+
+.changelog-release-meta {
+  align-self: start;
+  position: sticky;
+  top: 24px;
+}
+
+.changelog-version {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+
+.changelog-version[data-version="Unreleased"] {
+  color: var(--orange);
+}
+
+.changelog-release-meta time {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+}
+
+.changelog-release-body {
+  min-width: 0;
+}
+
+.changelog-section + .changelog-section {
+  margin-top: 38px;
+}
+
+.changelog-section h2 {
+  margin: 0;
+  color: var(--blue);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.changelog-section ul {
+  display: grid;
+  gap: 0;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.changelog-section li {
+  border-top: 1px solid var(--line);
+  padding: 14px 0 16px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.changelog-section li:first-child {
+  border-top-color: var(--line-strong);
+}
+
+.changelog-section a {
+  color: var(--blue);
+  text-underline-offset: 3px;
+}
+
+.changelog-section code {
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 35%);
+  font-family: var(--mono);
+  font-size: 0.82em;
+  padding: 2px 4px;
+}
+
+.changelog-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .build-page {
   padding: clamp(52px, 8vw, 92px) 0 120px;
+}
+
+.back-to-top {
+  position: fixed;
+  right: max(20px, calc((100vw - 1180px) / 2));
+  bottom: 24px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 rgb(24 88 209 / 12%);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 650;
+  padding: 9px 11px;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.back-to-top:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: var(--blue);
+  transform: translateY(-1px);
+}
+
+.back-to-top:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
 }
 
 .build-intro {
@@ -1473,6 +1638,29 @@ input:disabled {
     gap: 50px;
   }
 
+  .changelog-intro {
+    align-items: start;
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .changelog-release {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .changelog-release-meta {
+    position: static;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .changelog-release-meta time {
+    margin-top: 0;
+  }
+
   .hero-title {
     max-width: 13ch;
   }
@@ -1509,7 +1697,7 @@ input:disabled {
     font-size: 0.65rem;
   }
 
-  .main-nav a:nth-child(2) {
+  .main-nav a:nth-child(3) {
     display: none;
   }
 
@@ -1528,6 +1716,11 @@ input:disabled {
 
   .build-page {
     padding-top: 58px;
+  }
+
+  .back-to-top {
+    right: 16px;
+    bottom: 16px;
   }
 
   .build-intro {
@@ -1625,7 +1818,8 @@ input:disabled {
   }
 
   .main-nav a,
-  .copy-button {
+  .copy-button,
+  .back-to-top {
     transition: none;
   }
 }
