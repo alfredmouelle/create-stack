@@ -51,7 +51,7 @@ The workflow is [.github/workflows/deploy-marketing.yml](../../.github/workflows
 
 ## Public Worker deployment
 
-The workflow is manual and always builds the public site. In GitHub Actions, run **Deploy marketing Worker** from `main` and enter the full URL of the endpoint to verify, for example:
+The workflow deploys the public site on filtered pushes to `main` and remains available manually. For a manual run, open **Deploy marketing site** from `main` and enter the full URL of the endpoint to verify, for example:
 
 ```sh
 MARKETING_DEPLOYMENT_URL='https://<worker-subdomain>.workers.dev' \
@@ -60,9 +60,9 @@ pnpm --filter @alfredmouelle/marketing verify:deployment
 
 The check expects HTTP 200, the Create Stack page title, `robots.txt` with `Allow: /`, a sitemap, and the public canonical metadata. Also inspect the Worker in the Cloudflare dashboard and confirm the deployment is serving `marketing/dist`.
 
-## Future filtered deployment from `main`
+## Push filtering
 
-The workflow is manual today. If automatic delivery is separately authorized later, keep the workflow independent from npm publication and filter the `main` trigger to the marketing delivery surface, for example:
+The workflow deploys on pushes to `main` when one of the marketing delivery inputs changes. It remains independent from npm publication and keeps the manual trigger available:
 
 ```yaml
 on:
@@ -78,7 +78,7 @@ on:
       - pnpm-lock.yaml
 ```
 
-That change requires its own review and a protected production environment. Retain the manual `workflow_dispatch` trigger after enabling `main` so an operator can redeploy a selected commit. Do not enable this trigger while completing the current migration.
+The push deployment verifies `https://create-stack.alfredmouelle.com`. A manual run may provide a different endpoint through the `worker_url` input.
 
 ## Public metadata
 

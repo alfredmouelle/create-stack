@@ -1066,16 +1066,6 @@ input:disabled {
     background 160ms ease;
 }
 
-.build-capability-toggle input::before {
-  width: 5px;
-  height: 9px;
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  content: "";
-  transform: rotate(45deg) scale(0);
-  transition: transform 120ms ease;
-}
-
 .build-capability-toggle input:hover {
   border-color: var(--blue);
   background: var(--blue-soft);
@@ -1086,8 +1076,9 @@ input:disabled {
   background: var(--blue);
 }
 
-.build-capability-toggle input:checked::before {
-  transform: rotate(45deg) scale(1);
+.build-capability-toggle input:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
 }
 
 .build-capability-toggle span,
@@ -1518,8 +1509,13 @@ input:disabled {
     font-size: 0.65rem;
   }
 
-  .main-nav a:first-child {
+  .main-nav a:nth-child(2) {
     display: none;
+  }
+
+  .main-nav a:first-child {
+    color: var(--blue);
+    font-weight: 650;
   }
 
   .hero {

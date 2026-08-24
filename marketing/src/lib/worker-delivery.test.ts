@@ -34,9 +34,14 @@ describe('marketing Worker delivery contract', () => {
     expect(packageJson.devDependencies.wrangler).toMatch(/^\d+\.\d+\.\d+$/)
   })
 
-  it('keeps CI deployment dormant, serialized, and secret-backed', () => {
+  it('deploys filtered main changes and remains manual, serialized, and secret-backed', () => {
     expect(workflow).toContain('workflow_dispatch:')
-    expect(workflow).not.toMatch(/^\s+(push|pull_request):/m)
+    expect(workflow).toContain('push:')
+    expect(workflow).toContain('branches:')
+    expect(workflow).toContain('- main')
+    expect(workflow).toContain('marketing/**')
+    expect(workflow).toContain('packages/stack-config/**')
+    expect(workflow).toContain("inputs.worker_url || 'https://create-stack.alfredmouelle.com'")
     expect(workflow).toContain('group: deploy-marketing')
     expect(workflow).toContain('cancel-in-progress: true')
     expect(workflow).toContain('secrets.CLOUDFLARE_API_TOKEN')
@@ -52,7 +57,7 @@ describe('marketing Worker delivery contract', () => {
       'First local deployment',
       'GitHub secret setup',
       'Public Worker deployment',
-      'filtered deployment from `main`',
+      'Push filtering',
       'Public metadata',
       'custom domain',
       'Post-deployment checks',

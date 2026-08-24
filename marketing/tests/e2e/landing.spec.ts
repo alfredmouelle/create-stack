@@ -132,11 +132,9 @@ test.describe('mobile keyboard experience', () => {
     await expect(terminal).toContainText('pnpm dlx @alfredmouelle/create-stack@latest orbit')
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
-    await expect(
-      page
-        .getByRole('navigation', { name: 'Main navigation' })
-        .getByRole('link', { name: 'GitHub' }),
-    ).toBeVisible()
+    const navigation = page.getByRole('navigation', { name: 'Main navigation' })
+    await expect(navigation.getByRole('link', { name: 'Build', exact: true })).toBeVisible()
+    await expect(navigation.getByRole('link', { name: 'GitHub' })).toBeVisible()
     await expect(copy).toBeVisible()
   })
 })
