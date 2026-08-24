@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import BackToTop from '../components/BackToTop'
+import { CHANGELOG_RELEASES, renderInline } from '../lib/changelog'
+---
+
+<BaseLayout
+  description="A record of the user-facing changes shipped in Create Stack."
+  title="Changelog · create-stack"
+>
+  <main class="changelog-page page-shell">
+    <header class="changelog-intro">
+      <div>
+        <p class="section-kicker">Changelog</p>
+        <h1>What changed in create-stack.</h1>
+        <p>New capabilities, fixes, and changes to the generated project.</p>
+      </div>
+      <a
+        class="text-link changelog-source"
+        href="https://github.com/alfredmouelle/create-stack/blob/main/cli/CHANGELOG.md"
+        rel="noreferrer"
+        target="_blank"
+      >
+        View source ↗
+      </a>
+    </header>
+
+    <div class="changelog-list">
+      {CHANGELOG_RELEASES.map((release) => (
+        <article class="changelog-release">
+          <div class="changelog-release-meta">
+            <p class="changelog-version" data-version={release.version}>{release.version}</p>
+            {release.date ? <time datetime={release.date}>{release.date}</time> : null}
+          </div>
+          <div class="changelog-release-body">
+            {release.sections.length ? (
+              release.sections.map((section) => (
+                <section class="changelog-section">
+                  <h2>{section.heading}</h2>
+                  <ul>
+                    {section.items.map((item) => <li set:html={renderInline(item)} />)}
+                  </ul>
+                </section>
+              ))
+            ) : (
+              <p class="changelog-empty">No entries yet.</p>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+  </main>
+  <BackToTop client:load />
+</BaseLayout>

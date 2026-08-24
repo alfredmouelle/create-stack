@@ -134,9 +134,27 @@ test.describe('mobile keyboard experience', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
     const navigation = page.getByRole('navigation', { name: 'Main navigation' })
     await expect(navigation.getByRole('link', { name: 'Build', exact: true })).toBeVisible()
+    await expect(navigation.getByRole('link', { name: 'Changelog', exact: true })).toBeVisible()
     await expect(navigation.getByRole('link', { name: 'GitHub' })).toBeVisible()
     await expect(copy).toBeVisible()
   })
+})
+
+test('publishes the changelog route', async ({ page }) => {
+  await page.goto('/changelog')
+
+  await expect(page.getByRole('heading', { name: 'What changed in create-stack.' })).toBeVisible()
+  await expect(page.getByText('0.12.0', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'View source ↗' })).toHaveAttribute(
+    'href',
+    'https://github.com/alfredmouelle/create-stack/blob/main/cli/CHANGELOG.md',
+  )
+
+  await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' }))
+  const backToTop = page.getByRole('button', { name: 'Back to top' })
+  await expect(backToTop).toBeVisible()
+  await backToTop.click()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(10)
 })
 
 test('uses the same branded mark in the wordmark and favicon', async ({ page }) => {
