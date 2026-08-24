@@ -6,7 +6,6 @@
     "dev": "astro dev --mode public",
     "build": "astro build --mode public",
     "build:public": "astro build --mode public",
-    "build:validation": "astro build --mode validation",
     "deploy": "node scripts/deploy.mjs",
     "preview": "astro preview",
     "smoke": "node scripts/smoke.mjs",

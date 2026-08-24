@@ -3,14 +3,6 @@ name: Deploy marketing Worker
 on:
   workflow_dispatch:
     inputs:
-      build_mode:
-        description: Build mode to deploy to the isolated Worker
-        required: true
-        default: validation
-        type: choice
-        options:
-          - validation
-          - public
       worker_url:
         description: Full URL of the deployed Worker to verify after deployment
         required: true
@@ -40,9 +32,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          MARKETING_BUILD_MODE: ${{ inputs.build_mode }}
       - name: Verify deployed Worker
         run: pnpm --filter @alfredmouelle/marketing verify:deployment
         env:
-          MARKETING_BUILD_MODE: ${{ inputs.build_mode }}
           MARKETING_DEPLOYMENT_URL: ${{ inputs.worker_url }}

@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css'
 import {
-  getBuildSiteMetadata,
+  getSiteMetadata,
   OG_IMAGE_ALT,
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -17,7 +17,7 @@ const {
   title = SITE_TITLE,
   description = SITE_DESCRIPTION,
 } = Astro.props
-const metadata = getBuildSiteMetadata(import.meta.env.MODE, import.meta.env.PUBLIC_MARKETING_BUILD_MODE)
+const metadata = getSiteMetadata()
 const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
 ---
 
@@ -27,7 +27,7 @@ const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
-    <meta name="robots" content={metadata.indexable ? 'index, follow' : 'noindex, nofollow'} />
+    <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#edf2ef" />
     <meta name="author" content="Alfred MOUELLE" />
     <link rel="canonical" href={canonical} />

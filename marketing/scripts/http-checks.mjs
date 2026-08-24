@@ -43,10 +43,22 @@ function assertSuccessfulResponse(url, response, expectedContentType) {
   }
 }
 
-export async function assertMarketingResponse(
-  rawUrl,
-  { expectedIndexable = true, fetchImpl = globalThis.fetch } = {},
-) {
+function wildcardRobotsGroups(body) {
+  return body
+    .split(/\r?\n\s*\r?\n/)
+    .map((group) => group.trim())
+    .filter((group) => /(?:^|\n)\s*User-agent:\s*\*\s*$/im.test(group))
+}
+
+function hasRobotsDirective(group, directive, value = '/') {
+  return new RegExp(`(?:^|\\n)\\s*${directive}:\\s*${value}\\s*$`, 'im').test(group)
+}
+
+function hasSitemapDirective(group) {
+  return /(?:^|\n)\s*Sitemap:\s*\S+\s*$/im.test(group)
+}
+
+export async function assertMarketingResponse(rawUrl, { fetchImpl = globalThis.fetch } = {}) {
   if (typeof fetchImpl !== 'function') {
     throw new Error('The current Node runtime does not provide fetch')
   }
@@ -65,16 +77,13 @@ export async function assertMarketingResponse(
   const robots = await readResponse(robotsUrl, fetchImpl)
   assertSuccessfulResponse(robotsUrl, robots.response, 'text/plain')
 
-  const allowsCrawling = robots.body.includes('Allow: /')
-  const blocksCrawling = robots.body.includes('Disallow: /')
-  const includesSitemap = robots.body.includes('Sitemap:')
+  const policyGroups = wildcardRobotsGroups(robots.body)
+  const allowsCrawling = policyGroups.some((group) => hasRobotsDirective(group, 'Allow'))
+  const blocksCrawling = policyGroups.some((group) => hasRobotsDirective(group, 'Disallow'))
+  const includesSitemap = hasSitemapDirective(robots.body)
 
-  if (expectedIndexable && (!allowsCrawling || !includesSitemap || blocksCrawling)) {
+  if (!allowsCrawling || !includesSitemap || blocksCrawling) {
     throw new Error(`Worker response at ${robotsUrl} did not expose the public indexing policy`)
-  }
-
-  if (!expectedIndexable && (!blocksCrawling || allowsCrawling || includesSitemap)) {
-    throw new Error(`Worker response at ${robotsUrl} did not expose the validation noindex policy`)
   }
 
   return {

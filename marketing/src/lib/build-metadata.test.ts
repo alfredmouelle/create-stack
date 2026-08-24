@@ -3,7 +3,6 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { getBuildSiteMetadata } from './site-metadata'
 
 const publicOrigin = 'https://create-stack.alfredmouelle.com'
 const requiredPublicAssets = [
@@ -17,19 +16,17 @@ const requiredPublicAssets = [
 
 let buildRoot = ''
 let publicBuild = ''
-let validationBuild = ''
 
 function readBuildFile(buildPath: string, fileName: string) {
   return readFileSync(join(buildPath, fileName), 'utf8')
 }
 
-function buildMarketingSite(mode: 'public' | 'validation') {
-  const outputPath = join(buildRoot, mode)
+function buildMarketingSite() {
+  const outputPath = join(buildRoot, 'public')
   const buildEnvironment: typeof process.env = {
     ...process.env,
     ASTRO_TELEMETRY_DISABLED: '1',
     NODE_ENV: 'production',
-    PUBLIC_MARKETING_BUILD_MODE: mode,
     npm_config_node_env: 'production',
   }
   delete buildEnvironment.VITEST
@@ -38,7 +35,7 @@ function buildMarketingSite(mode: 'public' | 'validation') {
   delete buildEnvironment.npm_lifecycle_script
   execFileSync(
     join(process.cwd(), 'node_modules/.bin/astro'),
-    ['build', '--mode', mode, '--outDir', relative(process.cwd(), outputPath)],
+    ['build', '--mode', 'public', '--outDir', relative(process.cwd(), outputPath)],
     {
       cwd: process.cwd(),
       env: buildEnvironment,
@@ -51,27 +48,11 @@ function buildMarketingSite(mode: 'public' | 'validation') {
 describe('marketing metadata builds', () => {
   beforeAll(() => {
     buildRoot = mkdtempSync(join(tmpdir(), 'create-stack-marketing-'))
-    publicBuild = buildMarketingSite('public')
-    validationBuild = buildMarketingSite('validation')
+    publicBuild = buildMarketingSite()
   }, 120_000)
 
   afterAll(() => {
     rmSync(buildRoot, { force: true, recursive: true })
-  })
-
-  it('does not let the test-only fallback override an explicit build mode', () => {
-    expect(getBuildSiteMetadata('validation', 'public').indexable).toBe(false)
-    expect(getBuildSiteMetadata('public', 'validation').indexable).toBe(true)
-  })
-
-  it('keeps validation builds out of search indexes', () => {
-    const html = readBuildFile(validationBuild, 'index.html')
-    const robots = readBuildFile(validationBuild, 'robots.txt')
-
-    expect(html).toContain('<meta name="robots" content="noindex, nofollow">')
-    expect(robots).toContain('User-agent: *\nDisallow: /')
-    expect(robots).not.toContain('Allow: /')
-    expect(robots).not.toContain('Sitemap:')
   })
 
   it('publishes the production metadata contract and local assets', () => {
@@ -81,6 +62,7 @@ describe('marketing metadata builds', () => {
     const llms = readBuildFile(publicBuild, 'llms.txt')
 
     expect(html).toContain('<meta name="robots" content="index, follow">')
+    expect(html).not.toContain('noindex')
     expect(html).toContain(
       '<meta name="description" content="Create Stack generates a working SaaS project from your choices. It wires the selected pieces together and removes the rest.">',
     )
@@ -112,6 +94,7 @@ describe('marketing metadata builds', () => {
       '<meta name="twitter:image" content="https://create-stack.alfredmouelle.com/og-image.png">',
     )
     expect(robots).toContain('User-agent: *\nAllow: /')
+    expect(robots).not.toContain('Disallow: /')
     expect(robots).toContain(`Sitemap: ${publicOrigin}/sitemap.xml`)
     expect(sitemap).toContain(`<loc>${publicOrigin}/</loc>`)
     expect(llms).toContain('pnpm dlx @alfredmouelle/create-stack@latest my-app')
