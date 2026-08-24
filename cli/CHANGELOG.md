@@ -5,11 +5,10 @@ All notable changes to `@alfredmouelle/create-stack` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**Release cadence.** Consumers always run the latest via `npx` / `pnpm dlx`, so releases
-are cut when there is user-facing value, such as a new framework, stack option, capability, or adapter; a
-fix to the generated output, or a wizard/UX change. Internal refactors, tests, CI and
-docs-only changes accumulate under _Unreleased_ until the next meaningful release; related
-commits are batched into a single tagged version rather than one tag per commit.
+**Release cadence.** Consumers always run the latest version with `npx` or `pnpm dlx`,
+so releases ship when they add user-facing value. That includes a new framework, stack
+option, capability, adapter, generated-output fix, or wizard change. Tests, CI, internal
+refactors, and documentation-only changes wait for the next release that adds product value.
 
 ## [Unreleased]
 
@@ -17,24 +16,21 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Added
 
-- `create-stack add` now installs validated local registry components, including
+- `create-stack add` can now install validated local UI components, including
   `date-picker`, `data-table`, and callable dialog components, into generated apps.
 
 ### Changed
 
-- **BREAKING:** creation now uses `--trpc` / `--no-trpc`, and every enrichment goes
-  through `create-stack add`. Removed spellings fail with a targeted replacement instead
-  of running compatibility behavior; the canonical additions are `data-table` and
-  `email-ui`.
-- tRPC is now an independent API choice in interactive creation too, including projects
-  without a database or authentication. Generated Next.js and TanStack Start contexts are
-  verified with data and auth, data only, auth only, or neither.
-- Creation capability selectors now follow one provider rule: bare `--storage` chooses
-  R2, bare `--cache` chooses Upstash, and jobs/errors accept either their bare selector
-  or the explicit `inngest`/`sentry` provider. `--errors` is canonical while
-  `--error-tracking` remains its readable alias.
-- The CLI packages its registry and preserves existing shadcn UI files when adding
-  components. Pass `--force` when replacing a component is intentional.
+- **Breaking:** Creation now uses `--trpc` and `--no-trpc`, while every enrichment goes
+  through `create-stack add`. The old spellings fail with a replacement message. Use
+  `data-table` and `email-ui` for the renamed additions.
+- tRPC is now an independent choice. You can select it without a database or auth, and
+  generated Next.js and TanStack Start projects are checked across all four data and auth combinations.
+- Capability selectors now follow one provider rule. Bare `--storage` uses R2, bare
+  `--cache` uses Upstash, and jobs and errors accept either their bare selector or their
+  explicit provider. `--errors` is the canonical spelling, with `--error-tracking` kept as an alias.
+- The CLI now bundles its component registry and preserves existing shadcn UI files when
+  adding components. Use `--force` when replacing a component is intentional.
 
 ### Fixed
 
@@ -44,278 +40,184 @@ commits are batched into a single tagged version rather than one tag per commit.
 
 ### Added
 
-- **R2 jurisdictions**: `R2_JURISDICTION` (`eu` or `fedramp`) now reaches the storage
-  composition root, so a jurisdiction-restricted bucket talks to its own endpoint host
-  instead of the default one. Leave it empty for a standard bucket.
-- **On-brand icons and web manifest** in both base apps: the create-stack mark as a
-  `.ico` and a dark-mode-aware `.svg`, 192/512 PNGs, and a manifest wired into the head
-  and named after your project, so an installed PWA carries your app, not a sample.
-- [`@total-typescript/ts-reset`](https://github.com/total-typescript/ts-reset) in both base
-  apps, which tightens `JSON.parse`, `.filter(Boolean)` and friends across your code.
+- R2 storage now accepts `R2_JURISDICTION` with `eu` or `fedramp`, and sends restricted
+  buckets to the matching endpoint. Leave it empty for a standard bucket.
+- Both base apps now include the create-stack icon, a dark-mode-aware SVG, 192 and 512 PNGs,
+  and a manifest that uses the generated project name.
+- Both base apps now include `@total-typescript/ts-reset` for stricter types around common
+  operations such as `JSON.parse` and `.filter(Boolean)`.
 
 ### Changed
 
-- **Picking R2 no longer vendors an S3 adapter.** The R2 adapter used to wrap the S3 one,
-  so `src/server/storage/adapters/` shipped an `s3.ts` you never asked for. It is now
-  standalone, and the directory holds only the adapter you chose.
+- Choosing R2 now vendors a standalone adapter. Generated projects no longer include an
+  unused S3 adapter alongside it.
 
 ### Fixed
 
-- **R2 presigned uploads.** The adapter now disables the AWS SDK v3 default flexible
-  checksums, which R2 rejects: on a presigned PUT the CRC32 is computed at signing time,
-  without the body, so it could never match.
-- **A project name derived from a path.** `create-stack ./apps/api` stamped the whole path
-  into `package.json`, the README and the document title, which npm rejects outright. Only
-  the last segment names the package now, normalized to what npm accepts.
-- A freshly scaffolded Next app no longer 404s on `/favicon.ico`.
+- R2 presigned uploads no longer send the AWS SDK flexible checksums that R2 rejects.
+- A project created from `./apps/api` now uses `api`, rather than the whole path, for its
+  package name, README, and document title.
+- Fresh Next.js projects now serve `/favicon.ico` correctly.
 
 ## [0.10.0] - 2026-07-20
 
 ### Changed
 
-- **BREAKING: capabilities now come in two kinds, and the vendored layout is flatter.**
-  `kind` in `capability.json` is the source of truth: a _port_ (`storage`, `cache`,
-  `logger`, `analytics`, `mailer`) keeps several adapters and stays swappable at the
-  composition root, while a _module_ (`jobs`, `error-tracking`, plus the provider-less
-  `http` and `email-kit`) has a single provider used directly, with no adapter to pick.
-  Vendored files moved with it: `src/server/<cap>/core/port.ts` is now
-  `src/server/<cap>/port.ts`, and `src/server/<cap>/adapters/<name>/index.ts` is now
-  `src/server/<cap>/adapters/<name>.ts`. Projects generated before this release carry the
-  old tree; re-running `create-stack add <capability>` re-vendors it cleanly in the new
-  shape (it wipes the capability directory first, so drop any local edits you want to keep
-  beforehand).
-- **`jobs` is Inngest, used directly.** The scaffold now writes the real Inngest client,
-  a typed example event and function, and the serve route, instead of a `defineJob` /
-  `trigger` port. The port modelled neither durable steps, nor cron, nor concurrency, nor
-  fan-out, so real code reached past it for the underlying client on day one.
-- **`error-tracking` is Sentry, wired the way Sentry documents it.** The capability now
-  ships shared `Sentry.init` options plus the per-framework files it can write on its own
-  (Next: `instrumentation.ts` with `onRequestError`, the server/edge/client configs and
-  `global-error.tsx`; TanStack Start: `instrument.server.mjs` and `instrument.client.tsx`).
-  The steps that mean editing files you own (`withSentryConfig` in `next.config.ts`, the
-  `sentryTanstackStart` plugin, `wrapFetchWithSentry`, the request/function middlewares)
-  are printed at the end of the run instead of being applied. Server-Component errors,
-  source maps, preloaded OTel instrumentation and per-request scope isolation are
-  unreachable from a `captureException` wrapper, which is what the old port was.
-- `--jobs` and `--error-tracking` take no value: passing an adapter name now errors instead
-  of being silently accepted.
-- Capability packages no longer depend on `valibot`. The per-capability `config.ts` schemas
-  are gone; they only asserted "non-empty string" on values that `env.ts` already validates.
+- **Breaking:** Capabilities now have two wiring models. Ports such as storage, cache,
+  logger, analytics, and mailer keep several replaceable adapters. Modules such as jobs,
+  error tracking, HTTP, and email-kit use one provider directly. The generated file layout
+  follows the same distinction.
+- Jobs now use Inngest directly. New projects get the client, a typed example event and
+  function, and the serve route without an extra job port.
+- Error tracking now uses Sentry directly. The CLI writes the framework files it owns and
+  prints the steps that still need edits in files owned by the project.
+- `--jobs` and `--error-tracking` are now provider-free flags. Passing an adapter name fails
+  instead of being silently accepted.
+- Capability packages no longer depend on `valibot`. Their local config schemas were
+  redundant with the environment validation already generated for each project.
 
 ### Removed
 
-- **Adapters that were never a real swap**: `trigger` and `memory` for `jobs`, `console`
-  for `error-tracking`. `--jobs trigger`, `--jobs memory` and `--error-tracking console`
-  are no longer valid.
+- The `trigger` and `memory` jobs adapters and the `console` error-tracking adapter are no
+  longer generated. They were not real provider swaps.
 
 ### Fixed
 
-- **`jobs` was broken at runtime in every scaffolded project.** The Inngest adapter called
-  the v3 three-argument `createFunction(config, trigger, handler)` while the package pins
-  `inngest@^4.7.0`, whose signature takes two arguments. A structural cast hid it from
-  typecheck and the unit tests mocked the v3 shape, so it stayed green while throwing in
-  the generated app. Same for `signingKey` passed to `serve()`, which is not an option in
-  v4 (set `INNGEST_SIGNING_KEY` and the SDK reads it).
-- **Mailer dependency**: the manifest declared `@react-email/render`, which nothing
-  imports (the code imports `react-email`), and installed it at `latest`. Dropped.
-- **Monorepo scaffolds could not build.** The generated root `package.json` had no
-  `packageManager` field, which turbo 2.10 requires to resolve a workspace, so
-  `--monorepo turbo` failed on the first build. Both turbo and Nx roots now pin it.
-- **Sentry started up pointing at a placeholder DSN.** `SENTRY_DSN` was seeded with a
-  fake value, so a fresh project logged `Invalid Sentry Dsn` and shipped events nowhere.
-  It is now left empty, which the new module reads as "Sentry off" until you configure it.
-- The run summary no longer prints `jobs (null)` for a capability that has no adapter.
+- Jobs now run with the Inngest v4 API. The generated code no longer calls the removed v3
+  function signature or passes `signingKey` to `serve()`.
+- The mailer manifest no longer installs the unused `@react-email/render` package.
+- Monorepo projects now include the `packageManager` field that Turbo and Nx need to build.
+- Fresh projects no longer start Sentry with a fake DSN. Sentry stays off until you configure one.
+- The run summary no longer prints `jobs (null)` for a capability without an adapter.
 
 ## [0.9.0] - 2026-07-16
 
 ### Added
 
-- **Callable UI components**: six opt-in dialogs installable with
-  `create-stack component <name>`: `confirm`, `alert`, `prompt`, `choice`,
-  `confirm-passphrase` and `confirm-otp`. Built on
-  [react-call](https://react-call.desko.dev), they are `await`-able from anywhere
-  (`const ok = await Confirm.call({ … })`); installing one vendors its dialog plus the
-  shadcn primitives it needs (dialog / alert-dialog / input-otp) and auto-mounts its
-  `<Root />` in the app shell (TanStack `__root`, Next root layout), so `.call()` works
-  right after install. `create-stack component` now also accepts several names at once.
-- **Selection warnings**: the scaffold now reports when a choice triggers an automatic
-  adjustment (e.g. Convex removing tRPC, better-auth pulling in a database) instead of
-  adjusting silently.
+- `create-stack component` can install six callable UI components: `confirm`, `alert`,
+  `prompt`, `choice`, `confirm-passphrase`, and `confirm-otp`. Each component includes the
+  dialog and shadcn primitives it needs, and `.call()` is ready after installation.
+- The scaffold now warns when a choice changes another choice, such as Convex removing tRPC
+  or better-auth adding a database.
 
 ### Changed
 
-- **Warm default theme**: both base apps now ship a warm-paper background with a terracotta
-  accent (light + dark) and a tighter radius scale, matching the create-stack site so a
-  fresh scaffold looks on-brand out of the box.
+- Both base apps now start with the warm-paper theme and terracotta accent used by the
+  create-stack site, in light and dark mode.
 
 ## [0.8.1] - 2026-07-10
 
 ### Changed
 
-- **Neutral project metadata**: base-app `package.json` files no longer carry author
-  fields, and the scaffolded project's description is now generic ("scaffolded with
-  create-stack") rather than referencing the personal reference stack.
+- Base app metadata no longer carries author fields. Generated projects use the neutral
+  description `scaffolded with create-stack`.
 
 ### Fixed
 
-- **Prisma in a monorepo**: Prisma's engine build scripts (`prisma`, `@prisma/engines`)
-  are now allowlisted in the monorepo root workspace, so `install` runs them and
-  `db:migrate` / `db:studio` / `db:generate` work without a manual approve-builds step.
-  Also fixes an invalid root `pnpm-workspace.yaml` (unquoted scoped keys) that aborted
-  install outright.
-- **Email preview**: scaffolded projects now ship `@react-email/ui`, so `email:dev`
-  launches the React Email preview server directly instead of prompting to install a
-  missing package on first run.
-- **Monorepo fork**: the fork destination's parent directory is created before copying,
-  fixing scaffolds that target `apps/web`.
+- Prisma now works in monorepos. Its engine packages are allowlisted, and the generated
+  workspace configuration is valid for pnpm.
+- Email preview now starts with the package it imports instead of asking for a missing package.
+- Monorepo scaffolds now create the target parent directory before copying the app.
 
 ## [0.8.0] - 2026-07-10
 
 ### Added
 
-- **Monorepo scaffolding**: new `--monorepo [turbo|nx]` flag and wizard step. Instead of a
-  standalone app, create-stack can place the app in `apps/web` inside a Turborepo or Nx
-  monorepo. It generates the root `package.json` (scripts delegated to the orchestrator),
-  `turbo.json` / `nx.json` with per-framework build outputs, the workspace config and
-  native-build allowlist, a shared Biome config at the root, and hoists the app's git hooks
-  to the repo root. Bare `--monorepo` uses Turborepo; omit it for a standalone app.
+- `--monorepo turbo` and `--monorepo nx` now place the generated app in `apps/web` with the
+  workspace configuration, shared Biome setup, and root git hooks already connected.
 
 ### Changed
 
-- **Redesigned landing page**: freshly scaffolded projects now open on a polished hero
-  ("Everything's wired. Start building.") with a terminal panel and Documentation / GitHub
-  links, replacing the bare placeholder, built on the existing design system (theme-aware,
-  links open in a new tab).
-
-### Fixed
-
-- **Package-manager-agnostic git hooks**: the generated pre-commit / pre-push hooks no
-  longer assume pnpm. They run via `npx` / `npm run`, so they work on projects scaffolded
-  with npm, yarn or bun, and inside a monorepo (where Biome now resolves at the repo root).
-- **Clean app metadata**: base-app templates no longer carry the maintainer's author
-  fields, so scaffolded projects start without stray author metadata.
+- Fresh projects now open with a working landing page instead of the old placeholder. The
+  page includes the first app screen and links to the project documentation and GitHub.
+- Generated git hooks now work with npm, yarn, bun, and pnpm, including inside a monorepo.
+- Base app templates no longer carry maintainer metadata into generated projects.
 
 ## [0.7.0] - 2026-07-09
 
 ### Added
 
-- **Auto-generated `BETTER_AUTH_SECRET`**: when better-auth is selected, a fresh random
-  secret is written to `.env` (gitignored) so the app boots without a manual step;
-  `.env.example` keeps the shared placeholder. Uses Node's crypto (no `openssl` needed).
-- **GitHub Actions CI**: every scaffold now ships `.github/workflows/ci.yml` that runs
-  install + typecheck + Biome on push to `main` and on pull requests, wired to the package
-  manager you chose (pnpm / npm / yarn / bun). Mirrors the scaffold's own quality gate.
-- **Convex as a database choice**: `--database convex` (and a wizard option) scaffolds a
-  Convex backend instead of a SQL ORM: a committed `convex/` directory (schema, an example
-  query/mutation and the generated `_generated` client), a realtime provider wired into the
-  app shell, and a `convex-demo` page. Convex is the API too, so it replaces tRPC (dropped
-  automatically) and its own react-query wiring. Because it isn't Postgres, it pairs with
-  Clerk or no auth. Better-auth is coerced off. Run `<pm> run convex` once to provision a
-  deployment; keys live in `.env` (`CONVEX_DEPLOYMENT` + `{VITE_,NEXT_PUBLIC_}CONVEX_URL`).
+- Generated projects now include GitHub Actions CI for install, typecheck, and Biome on pull
+  requests and pushes to `main`. The workflow uses the package manager selected during setup.
+- Convex is now available as a database choice. It generates the schema, example query and
+  mutation, client, app wiring, and a demo page. Convex replaces tRPC and does not require
+  Postgres or better-auth.
+- Projects using better-auth now get a random `BETTER_AUTH_SECRET` in `.env`.
 
 ## [0.6.0] - 2026-07-07
 
 ### Added
 
-- **Choose your database**: new `--database` flag and wizard step: `drizzle` (default),
-  `prisma`, or `none`. `prisma` scaffolds a Prisma 7 setup (the `prisma-client` generator +
-  `@prisma/adapter-pg` reusing `pg`, a multi-file schema whose auth models track the auth
-  choice, a `postinstall` client generation, and a seed harness); `none` produces a
-  database-less vitrine. Prisma's build scripts are allowlisted so `install` stays clean on
-  pnpm/bun.
-- **Choose your auth provider**: new `--auth` flag and wizard step: `better-auth`
-  (default), `clerk`, or `none`. `clerk` vendors the provider, middleware, sign-in / sign-up
-  and a protected dashboard for both Next.js and TanStack Start. Clerk is hosted, so it needs
-  neither a database nor a mailer. `--auth clerk --database none` is a valid authenticated
-  vitrine.
-- Generated projects now ship **git hooks** (via `.githooks`, activated safely on first
-  install).
+- The wizard and CLI now support Drizzle, Prisma, or no database with `--database`.
+- The wizard and CLI now support better-auth, Clerk, or no auth with `--auth`.
+- Generated projects now include git hooks that run after the first install.
 
 ### Changed
 
-- The ORM and auth are now their own axes, so `--foundations` covers only `trpc`. Selections
-  are normalized for you: `trpc` and `better-auth` pull in a database (falling back to
-  `drizzle`), `better-auth` forces a real mailer, and `clerk` frees both. Legacy
-  `--foundations drizzle|prisma|better-auth` soft-maps onto the new `--database` / `--auth`
-  flags.
+- Database and auth are now separate choices. tRPC and better-auth can request a database,
+  while Clerk can run without one. The old `--foundations` spellings map to the new options.
 
 ## [0.5.0] - 2026-06-25
 
 ### Changed
 
-- **BREAKING: `data-table` is no longer a `--foundations` value.** Date pickers and data
-  tables no longer ship in the base scaffold; they are stripped from every project and
-  installed on demand with `create-stack component [name]` (`--force` overwrites local
-  edits). The `datatable` component also vendors a polished `useDataTable` hook
-  (sorting / filtering / column visibility, opt-in `localStorage` persistence,
-  `useReactTable` options passthrough).
-- Lighter dev/prod runtime in generated projects: tRPC `loggerLink` logs only downstream
-  errors in dev (not every op), the timing middleware's `console.log` is gated to dev so it
-  no longer fires in production, and the default query `staleTime` is raised from 30s to
-  60s. TanStack devtools are code-split behind a DEV-only lazy import, so they and their
-  deps are dropped from production builds.
+- **Breaking:** Date pickers and data tables are no longer part of the base scaffold. Install
+  them with `create-stack component [name]`; use `--force` when replacing local edits.
+- Generated projects now do less work in production. Devtools are loaded only in development,
+  runtime logs are quieter, and the default query cache lasts 60 seconds instead of 30.
 
 ### Added
 
-- Per-subcommand help: `add --help` and `component --help` print focused usage, while the
-  global help is slimmed by collapsing the capability-adapter enumerations.
+- `add --help` and `component --help` now show focused help without the full capability list.
 
 ## [0.4.3] - 2026-06-23
 
 ### Added
 
-- Configurable **import alias**: choose the `<alias>/*` prefix in the wizard or with
-  `--alias` (default `~`). Rewrites sources, `tsconfig.json` paths and `components.json`;
-  `create-stack add` aligns vendored files to the project's existing alias.
-- Choose the **package manager** in the wizard or with `--pm` (`pnpm` / `npm` / `yarn` /
-  `bun`); pre-selects the auto-detected one. The choice drives install, scripts and the
-  generated workspace files.
-
-### Changed
-
-- Base apps: date picker / range picker now have dropdown month/year navigation and
-  English labels.
+- Choose the import alias with `--alias` or in the wizard. The CLI updates source files,
+  TypeScript paths, and `components.json` together.
+- Choose npm, yarn, pnpm, or bun with `--pm` or in the wizard. The choice controls install,
+  scripts, and generated workspace files.
 
 ### Fixed
 
-- Generated composition roots no longer re-validate env vars that `env.ts` already marks
-  required. The redundant `required()` guard is dropped in capability and mailer roots,
-  with `env.ts` as the single source of truth.
+- Generated composition roots no longer validate environment variables twice. `env.ts` is
+  now the single source of truth.
 
 ## [0.4.2] - 2026-06-23
 
 ### Fixed
 
-- README demo GIF is served via an absolute jsDelivr URL so it renders on the npm page.
+- The README demo now uses an absolute jsDelivr URL, so it renders on npm as well as GitHub.
 
 ## [0.4.1] - 2026-06-23
 
-### Fixed
+### Added
 
-- Mark the CLI entry (`index.mjs`) executable so the `bin` runs after install.
+- The CLI entry is executable after installation, so the package binary runs correctly.
 
 ### Changed
 
-- README: npm badges, terminal demo GIF, author section.
+- The README now includes npm badges, the terminal demo, and an author section.
 
 ## [0.4.0] - 2026-06-23
 
 ### Added
 
-- `create-stack add`: vendor capabilities into an existing project behind a port.
-- `add` extended to **mailer / email-kit / http**, with adapter swap and `--keep`.
-- `--help` / `--version` flags and short-flag parsing.
-- `cpSync` fallback when `rsync` is absent (native Windows support).
+- `create-stack add` can add capabilities to an existing project behind a port.
+- `add` now supports mailer, email-kit, and HTTP, including adapter swaps and `--keep`.
+- The CLI now supports `--help`, `--version`, short flags, and a native copy fallback for
+  systems without `rsync`.
 
 ### Fixed
 
-- Always re-format scaffold output so the initial commit is lint-clean for any selection.
+- Scaffold output is formatted before the initial commit, regardless of the selected stack.
 
 ## [0.3.1] - 2026-06-23
 
 ### Changed
 
-- Drop the repository link from the published package (private repo).
+- The published package no longer links to the private repository.
 
 ## [0.3.0] - 2026-06-23
 
@@ -323,11 +225,10 @@ First published release.
 
 ### Added
 
-- Interactive, deterministic scaffolder: fork a base app (Next.js / TanStack Start) and
-  strip it to the selected foundations (Drizzle, tRPC, better-auth, data tables).
-- Swappable **capabilities** vendored at scaffold time (storage, cache, jobs, logger,
-  analytics, error-tracking) behind ports; Upstash Redis cache adapter.
-- Mailer providers (Resend / Brevo / SES) and a typed env module (`src/env.ts`) that
-  requires the provider/adapter keys the generated code mandates.
-- Detect the launching package manager instead of assuming pnpm.
-- Auto `git init` + initial commit after scaffolding.
+- An interactive, deterministic CLI that forks a Next.js or TanStack Start app and keeps the
+  database, tRPC, auth, and UI pieces you select.
+- Storage, cache, jobs, logger, analytics, and error-tracking capabilities that can be
+  selected during scaffolding and kept behind ports.
+- Resend, Brevo, and SES mailer providers, plus typed environment validation for generated apps.
+- Package-manager detection for npm, yarn, pnpm, and bun.
+- `git init` and an initial commit after scaffolding succeeds.

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css'
+import { ClientRouter, fade } from 'astro:transitions'
 import ConsentBanner from '../components/ConsentBanner'
 import {
   getSiteMetadata,
@@ -23,7 +24,7 @@ const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate={fade({ duration: '180ms' })}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -49,6 +50,7 @@ const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={metadata.ogImageUrl} />
     <meta name="twitter:image:alt" content={OG_IMAGE_ALT} />
+    <ClientRouter />
     <title>{title}</title>
   </head>
   <body>
