@@ -24,6 +24,6 @@ export function getSiteMetadata(): SiteMetadata {
     ogImageUrl: `${PUBLIC_SITE_ORIGIN}${OG_IMAGE_PATH}`,
     robots: `User-agent: *\nAllow: /\n\nSitemap: ${sitemapUrl}\n`,
     sitemap: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>${canonicalUrl}</loc>\n  </url>\n</urlset>\n`,
-    llms: `# Create Stack\n\nCreate Stack generates a SaaS project from your choices. It supports Next.js and TanStack Start.\nDatabase, authentication, email, and other infrastructure capabilities use replaceable providers.\n\nStart with \`pnpm dlx @alfredmouelle/create-stack@latest my-app\`.\n\nWebsite: ${canonicalUrl}\nRepository: https://github.com/alfredmouelle/create-stack\nInspired by create-t3-app by Theo Browne.\n`,
+    llms: `# Create Stack\n\nCreate Stack generates a SaaS project from your choices. It supports Next.js and TanStack Start.\nDatabase, authentication, email, and other infrastructure capabilities use replaceable providers.\n\nStart with \`pnpm dlx @alfredmouelle/create-stack@latest my-app\`.\n\nWebsite: ${canonicalUrl}\nRepository: https://github.com/alfredmouelle/create-stack\n`,
   }
 }
