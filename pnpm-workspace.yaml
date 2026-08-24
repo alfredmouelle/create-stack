@@ -10,6 +10,9 @@ allowBuilds:
   lightningcss: true
   '@sentry/cli': true
   workerd: true
+  core-js: true
+minimumReleaseAgeExclude:
+  - posthog-js@1.418.11
 onlyBuiltDependencies:
   - esbuild
   - protobufjs

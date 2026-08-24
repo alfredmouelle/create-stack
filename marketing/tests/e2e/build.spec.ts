@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test'
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('create-stack.analytics-consent', 'v1:rejected')
+  })
+})
+
 test.describe('stack configurator', () => {
   test('starts with the recommended stack and exposes its resolution reasons', async ({ page }) => {
     await page.goto('/build')

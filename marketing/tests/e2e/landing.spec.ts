@@ -2,6 +2,12 @@ import { devices, expect, test } from '@playwright/test'
 
 const canonicalPnpmCommand = 'pnpm dlx @alfredmouelle/create-stack@latest my-app'
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('create-stack.analytics-consent', 'v1:rejected')
+  })
+})
+
 test.describe('install command', () => {
   test('selects each package manager and reports clipboard success', async ({
     context,

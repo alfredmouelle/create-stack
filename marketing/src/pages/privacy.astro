@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  description="How create-stack handles analytics, consent, and privacy on the marketing site."
+  title="Privacy · create-stack"
+>
+  <main class="privacy-page page-shell">
+    <header class="privacy-intro">
+      <p class="section-kicker">Privacy</p>
+      <h1>Analytics with a clear boundary.</h1>
+      <p>
+        This page explains what the create-stack marketing site sends to PostHog and what it does
+        not send.
+      </p>
+      <p class="privacy-updated">Last updated: August 24, 2026</p>
+    </header>
+
+    <div class="privacy-content">
+      <section>
+        <h2>Analytics is off by default</h2>
+        <p>
+          The site does not load PostHog until you choose "Accept analytics". You can refuse or
+          change your choice at any time through the Privacy settings button.
+        </p>
+      </section>
+
+      <section>
+        <h2>What we measure</h2>
+        <p>After consent, the site sends a small set of events to the EU PostHog endpoint:</p>
+        <ul>
+          <li>page views and page leaves;</li>
+          <li>copying the install command from the home page or stack builder;</li>
+          <li>copying a stack share link from the stack builder.</li>
+        </ul>
+        <p>
+          The command text, project name, URL query string, form text, email addresses, and other
+          user-entered values are not sent. Automatic click capture, dead clicks, session replay,
+          surveys, and feature experiments are disabled.
+        </p>
+      </section>
+
+      <section>
+        <h2>Storage and withdrawal</h2>
+        <p>
+          The consent choice is stored locally. After you accept, PostHog may store an anonymous
+          analytics identifier in your browser while analytics is enabled. If you withdraw
+          consent, it stops sending events and removes the PostHog identifier stored by this site.
+        </p>
+      </section>
+
+      <section>
+        <h2>Provider and retention</h2>
+        <p>
+          PostHog processes the events for us through its EU endpoint. We aim to keep raw analytics
+          events for no more than 12 months, with the project retention setting kept aligned with
+          this policy. PostHog's own privacy and security information is available from
+          {' '}
+          <a href="https://posthog.com/privacy" rel="noreferrer" target="_blank">privacy policy</a>{' '}
+          and{' '}
+          <a href="https://trust.posthog.com/" rel="noreferrer" target="_blank">trust center</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>
+          For a privacy question or request, contact Alfred Mouelle at{' '}
+          <a href="mailto:contact@alfredmouelle.com">contact@alfredmouelle.com</a>.
+        </p>
+      </section>
+    </div>
+  </main>
+</BaseLayout>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { captureCommandCopied, captureShareLinkCopied } from '../lib/analytics'
 import {
   type BuildState,
   type BuildStateResult,
@@ -810,6 +811,12 @@ export default function BuildConfigurator() {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable')
       await navigator.clipboard.writeText(result.command)
       setCopyState('copied')
+      captureCommandCopied({
+        configuration: result.configuration,
+        packageManager: state.packageManager,
+        source: 'wizard',
+        state,
+      })
     } catch {
       setCopyState('error')
       requestAnimationFrame(() => {
@@ -824,6 +831,7 @@ export default function BuildConfigurator() {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable')
       await navigator.clipboard.writeText(window.location.href)
       setShareState('copied')
+      captureShareLinkCopied()
     } catch {
       setShareState('error')
     }
