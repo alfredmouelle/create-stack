@@ -2,7 +2,7 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-This repo is **single-context**: one `CONTEXT.md` and one `docs/adr/` at the root, covering the CLI, the base apps, the capability packages and the site together.
+This repo is **single-context**: one `CONTEXT.md` and one `docs/adr/` at the root, covering the CLI, the base apps, the capability packages and the marketing site together.
 
 ## Before exploring, read these
 
@@ -22,7 +22,7 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 ├── cli/
 ├── apps/
 ├── packages/
-└── site/
+└── marketing/
 ```
 
 ## Use the glossary's vocabulary

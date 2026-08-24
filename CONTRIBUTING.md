@@ -74,7 +74,7 @@ values only when you exercise the database, auth or a capability.
 | `packages/<capability>/` | One self-contained capability: a pure-TS port + one adapter per provider + a `capability.json` manifest + tests |
 | `apps/` | Reference apps used to exercise capabilities end to end |
 | `skills/` | Agent skills shipped with the repo |
-| `site/` | The landing page |
+| `marketing/` | The public marketing site and its Worker deployment |
 | `scripts/` | Repo tooling |
 
 ## Architecture rules

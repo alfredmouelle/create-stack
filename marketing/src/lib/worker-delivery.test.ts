@@ -18,13 +18,13 @@ const workflow = readFileSync(
 const runbook = readFileSync(resolve(repositoryRoot, 'docs/runbooks/marketing-worker.md'), 'utf8')
 
 describe('marketing Worker delivery contract', () => {
-  it('keeps the Worker configuration isolated from the legacy root config', () => {
+  it('keeps the Worker configuration isolated from the retired root deployment', () => {
     expect(workerConfig).toMatchObject({
       assets: { directory: './dist' },
       name: 'create-stack-marketing',
       workers_dev: true,
     })
-    expect(existsSync(resolve(repositoryRoot, 'wrangler.jsonc'))).toBe(true)
+    expect(existsSync(resolve(repositoryRoot, 'wrangler.jsonc'))).toBe(false)
   })
 
   it('uses one package deployment script and a pinned local Wrangler', () => {
@@ -60,7 +60,6 @@ describe('marketing Worker delivery contract', () => {
       'Pages fallback',
       'workers.dev',
       '30-day rollback period',
-      'legacy retirement',
     ]) {
       expect(runbook).toContain(requiredSection)
     }
