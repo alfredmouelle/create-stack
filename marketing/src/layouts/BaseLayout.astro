@@ -77,5 +77,22 @@ const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
     </header>
     <slot />
     <ConsentBanner client:load />
+    <footer class="site-footer">
+      <div class="page-shell footer-inner">
+        <div>
+          <p>&gt;_ create-stack · made for the first useful commit</p>
+          <p class="footer-credit">
+            Open source (MIT) on <a href="https://github.com/alfredmouelle/create-stack">GitHub</a>.
+            Inspired by <a href="https://create.t3.gg">create-t3-app</a> by Theo Browne.
+          </p>
+        </div>
+        <div class="footer-links">
+          <a href="/changelog">Changelog ↗</a>
+          <a href="/privacy">Privacy ↗</a>
+          <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack">npm ↗</a>
+          <a href="https://github.com/alfredmouelle/create-stack">GitHub ↗</a>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>

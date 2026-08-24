@@ -62,7 +62,7 @@ export default function Terminal() {
           <i />
           <i />
         </span>
-        <span>create-stack / session 01</span>
+        <span>create-stack / run</span>
       </div>
       <div aria-live="polite" className="terminal-lines">
         {terminalLines.slice(0, playback.visibleLineCount).map((line) => (

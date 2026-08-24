@@ -40,4 +40,23 @@ test.describe('analytics consent', () => {
     ).toBeVisible()
     await expect(page.getByText('Analytics is off by default')).toBeVisible()
   })
+
+  test('keeps privacy settings clear of the footer at the bottom of the page', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Refuse' }).click()
+    await page.evaluate(() => {
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, document.documentElement.scrollHeight)
+    })
+
+    const trigger = page.getByRole('button', { name: 'Open privacy settings' })
+    await expect(trigger).toBeVisible()
+
+    const triggerBox = await trigger.boundingBox()
+    const footerBox = await page.locator('.footer-inner').boundingBox()
+
+    expect(triggerBox).not.toBeNull()
+    expect(footerBox).not.toBeNull()
+    expect(triggerBox!.y).toBeGreaterThanOrEqual(footerBox!.y + footerBox!.height)
+  })
 })

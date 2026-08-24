@@ -99,6 +99,7 @@ describe('marketing metadata builds', () => {
     expect(sitemap).toContain(`<loc>${publicOrigin}/</loc>`)
     expect(llms).toContain('pnpm dlx @alfredmouelle/create-stack@latest my-app')
     expect(llms).toContain(`Website: ${publicOrigin}/`)
+    expect(llms).not.toContain('Inspired by')
 
     for (const asset of requiredPublicAssets) {
       expect(existsSync(join(publicBuild, asset))).toBe(true)
