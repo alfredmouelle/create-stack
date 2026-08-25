@@ -57,6 +57,7 @@ test.describe('analytics consent', () => {
 
     expect(triggerBox).not.toBeNull()
     expect(footerBox).not.toBeNull()
-    expect(triggerBox!.y).toBeGreaterThanOrEqual(footerBox!.y + footerBox!.height)
+    if (!triggerBox || !footerBox) throw new Error('Expected privacy settings and footer bounds')
+    expect(triggerBox.y).toBeGreaterThanOrEqual(footerBox.y + footerBox.height)
   })
 })

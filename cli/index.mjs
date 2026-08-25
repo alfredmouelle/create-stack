@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
 import {
   ADDABLE,
@@ -42,12 +40,11 @@ import { COMPONENT_CATALOG, COMPONENT_NAMES } from './lib/registry.mjs'
 import { installRegistryComponents, preflightRegistryComponents } from './lib/shadcn.mjs'
 import { resolveCreationConfiguration } from './lib/stack-config.mjs'
 import { exists, isDirEmpty, join, run, runCapture } from './lib/util.mjs'
+import { CLI_VERSION } from './lib/version.mjs'
 
 const detectedPm = detectPackageManager()
 
-const VERSION = JSON.parse(
-  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
-).version
+const VERSION = CLI_VERSION
 
 const HELP = `create-stack — fork a base app, strip it to your selection.
 

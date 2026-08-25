@@ -1,3 +1,4 @@
+import { renderProjectReadme } from './identity.mjs'
 import { TEMPLATES } from './paths.mjs'
 import { NATIVE_BUILD_DEPS } from './scaffold.mjs'
 import { copy, exists, join, readJSON, remove, write, writeJSON } from './util.mjs'
@@ -88,37 +89,16 @@ const runAppScript = (pm, script) => {
   return `${pm.name} --dir apps/web run ${script}`
 }
 
-function rootReadme(name, pm, toolLabel, hasDatabase, hasDatabaseSchema) {
-  return `# ${name}
-
-${toolLabel} monorepo scaffolded with [create-stack](https://create-stack.alfredmouelle.com).
-
-## Structure
-
-- \`apps/web\`: the application.
-- \`packages/\`: shared packages (empty; add your own here).
-
-## Getting started
-
-\`\`\`sh
-${pm.name} install
-${pm.devCmd}
-\`\`\`
-
-${toolLabel} orchestrates \`dev\`, \`build\`, \`typecheck\`, \`check\` and \`check:write\` across the workspace.
-${
-  hasDatabase
-    ? `
-## Local database
-
-\`\`\`bash
-./start-database.sh
-${hasDatabaseSchema ? (pm.name === 'npm' ? 'npm run db:push' : `${pm.name} db:push`) : ''}
-\`\`\`
-`
-    : ''
-}
-`
+function rootReadme(name, pm, database, hasDatabase, hasDatabaseSchema) {
+  return renderProjectReadme({
+    projectName: name,
+    pm,
+    hasDatabase,
+    hasDatabaseSchema,
+    database,
+    monorepo: true,
+    appPath: 'apps/web',
+  })
 }
 
 export function wrapMonorepo({
@@ -128,6 +108,8 @@ export function wrapMonorepo({
   framework,
   pm,
   tool,
+  database,
+  metadata,
   hasDatabase = false,
   hasDatabaseSchema = false,
   appNativeBuilds = [],
@@ -155,6 +137,7 @@ export function wrapMonorepo({
       [spec.dep[0]]: spec.dep[1],
       ...(biomeVersion ? { '@biomejs/biome': biomeVersion } : {}),
     },
+    createStackMetadata: metadata,
   }
   if (!isPnpm) rootPkg.workspaces = wsGlobs
   if (pm?.name === 'bun') rootPkg.trustedDependencies = nativeBuilds
@@ -168,7 +151,7 @@ export function wrapMonorepo({
   write(join(rootDir, '.gitignore'), rootGitignore(spec.cacheDir))
   write(
     join(rootDir, 'README.md'),
-    rootReadme(projectName, pm, spec.label, hasDatabase, hasDatabaseSchema),
+    rootReadme(projectName, pm, database, hasDatabase, hasDatabaseSchema),
   )
   write(join(rootDir, 'packages/.gitkeep'), '')
   remove(join(appDir, 'README.md'))
