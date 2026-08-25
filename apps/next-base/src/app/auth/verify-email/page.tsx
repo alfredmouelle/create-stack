@@ -18,7 +18,7 @@ export default async function VerifyEmailPage({
         </>
       }
       footer={
-        <Link className="text-foreground hover:underline" href="/auth/sign-in">
+        <Link className="text-primary hover:text-primary/80 hover:underline" href="/auth/sign-in">
           Back to sign in
         </Link>
       }

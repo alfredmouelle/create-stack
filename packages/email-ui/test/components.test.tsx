@@ -34,6 +34,8 @@ describe('email-ui components', () => {
 
   it('applies the default theme colors', async () => {
     const html = await render(<SampleEmail />)
+    expect(html).toContain(defaultTheme.brand.name)
+    expect(html).toContain(defaultTheme.colors.primary)
     expect(html).toContain(defaultTheme.colors.pageBg)
     expect(html).toContain(defaultTheme.colors.fgStrong)
   })
@@ -41,13 +43,14 @@ describe('email-ui components', () => {
   it('lets a theme override swap colors and brand without touching templates', async () => {
     const override: EmailThemeOverride = {
       brand: { name: 'NEON' },
-      colors: { pageBg: '#000000', fgStrong: '#00ff88' },
+      colors: { pageBg: '#000000', fgStrong: '#00ff88', primary: '#ff00aa' },
     }
     const html = await render(<SampleEmail theme={override} />)
 
     expect(html).toContain('NEON')
     expect(html).toContain('#000000')
     expect(html).toContain('#00ff88')
+    expect(html).toContain('#ff00aa')
   })
 
   it('createEmailTheme deep-merges onto the default theme', () => {

@@ -10,9 +10,11 @@ interface AuthCardProps {
 
 export function AuthCard({ title, description, children, footer }: AuthCardProps) {
   return (
-    <Card className="gap-0 rounded-2xl border-border/60 py-0 shadow-[0_2px_8px_-2px_var(--color-border),0_12px_32px_-12px_var(--color-border)]">
+    <Card className="gap-0 rounded-2xl border-border/60 bg-card/95 py-0 shadow-[0_2px_8px_-2px_var(--color-border),0_12px_32px_-12px_var(--color-border)]">
       <CardHeader className="px-8 pt-8 pb-0">
-        <CardTitle className="font-semibold text-2xl tracking-tight">{title}</CardTitle>
+        <CardTitle className="font-heading font-semibold text-2xl tracking-tight">
+          {title}
+        </CardTitle>
         {description ? (
           <CardDescription className="pt-1 leading-relaxed">{description}</CardDescription>
         ) : null}

@@ -1,4 +1,4 @@
-import { Body, Container, Head, Html, Link, Preview, Section, Tailwind, Text } from 'react-email'
+import { Body, Container, Head, Html, Link, Preview, Section, Text } from 'react-email'
 import { EmailThemeProvider, useEmailTheme } from './context'
 import { createEmailTheme, type EmailTheme, type EmailThemeOverride } from './theme'
 
@@ -27,46 +27,44 @@ export function EmailLayout({ preview, children, theme, year }: EmailLayoutProps
       <Html lang="en">
         <Head />
         <Preview>{preview}</Preview>
-        <Tailwind>
-          <Body style={{ backgroundColor: colors.pageBg, fontFamily, margin: 0, padding: 0 }}>
-            <Container
-              style={{
-                backgroundColor: colors.cardBg,
-                border: `1px solid ${colors.border}`,
-                borderRadius: 16,
-                margin: '40px auto',
-                maxWidth: 520,
-                padding: 0,
-              }}
+        <Body style={{ backgroundColor: colors.pageBg, fontFamily, margin: 0, padding: 0 }}>
+          <Container
+            style={{
+              backgroundColor: colors.cardBg,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 16,
+              margin: '40px auto',
+              maxWidth: 520,
+              padding: 0,
+            }}
+          >
+            <Section
+              style={{ borderBottom: `1px solid ${colors.borderSubtle}`, padding: '20px 36px' }}
             >
-              <Section
-                style={{ borderBottom: `1px solid ${colors.borderSubtle}`, padding: '20px 36px' }}
+              <Text
+                style={{
+                  color: colors.primary ?? colors.fgStrong,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  margin: 0,
+                }}
               >
-                <Text
-                  style={{
-                    color: colors.fgStrong,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    letterSpacing: '0.3em',
-                    margin: 0,
-                  }}
-                >
-                  {brand.name}
-                </Text>
-              </Section>
+                &gt;_ {brand.name}
+              </Text>
+            </Section>
 
-              <Section style={{ padding: '32px 36px 28px' }}>{children}</Section>
+            <Section style={{ padding: '32px 36px 28px' }}>{children}</Section>
 
-              <Section
-                style={{ borderTop: `1px solid ${colors.borderSubtle}`, padding: '20px 36px 24px' }}
-              >
-                <Text style={{ color: colors.fgFaint, fontSize: 11, margin: 0 }}>
-                  © {footerYear} {brand.footer}
-                </Text>
-              </Section>
-            </Container>
-          </Body>
-        </Tailwind>
+            <Section
+              style={{ borderTop: `1px solid ${colors.borderSubtle}`, padding: '20px 36px 24px' }}
+            >
+              <Text style={{ color: colors.fgFaint, fontSize: 11, margin: 0 }}>
+                © {footerYear} {brand.footer}
+              </Text>
+            </Section>
+          </Container>
+        </Body>
       </Html>
     </EmailThemeProvider>
   )
@@ -143,7 +141,8 @@ export interface EmailButtonProps {
 
 export function EmailButton({ href, children, variant = 'primary' }: EmailButtonProps) {
   const { colors } = useEmailTheme()
-  const backgroundColor = variant === 'destructive' ? colors.destructive : colors.fgStrong
+  const backgroundColor =
+    variant === 'destructive' ? colors.destructive : (colors.primary ?? colors.fgStrong)
 
   return (
     <Section style={{ margin: '28px 0 0' }}>
