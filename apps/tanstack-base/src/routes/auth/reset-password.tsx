@@ -52,7 +52,10 @@ function ResetPassword() {
     <AuthCard
       description="Choose a new password for your account."
       footer={
-        <Link className="cursor-pointer text-foreground hover:underline" to="/auth/forgot-password">
+        <Link
+          className="cursor-pointer text-primary hover:text-primary/80 hover:underline"
+          to="/auth/forgot-password"
+        >
           Request a new link
         </Link>
       }

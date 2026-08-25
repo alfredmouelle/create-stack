@@ -47,7 +47,10 @@ function SignUp() {
       footer={
         <>
           Already have an account?{' '}
-          <Link className="ml-1 cursor-pointer text-foreground hover:underline" to="/auth/sign-in">
+          <Link
+            className="ml-1 cursor-pointer text-primary hover:text-primary/80 hover:underline"
+            to="/auth/sign-in"
+          >
             Sign in
           </Link>
         </>

@@ -15,7 +15,7 @@ export default async function SignInPage() {
         <>
           No account yet?{' '}
           <Link
-            className="ml-1 cursor-pointer text-foreground hover:underline"
+            className="ml-1 cursor-pointer text-primary hover:text-primary/80 hover:underline"
             href="/auth/sign-up"
           >
             Create an account
