@@ -12,6 +12,19 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+### Added
+
+- SQL projects using Drizzle or Prisma now include `start-database.sh`, which starts a
+  local PostgreSQL container with Docker or Podman. The generated `.env` and README use
+  the local connection details.
+
+### Changed
+
+- Generated Next.js and TanStack Start apps now use create-stack's starter branding in
+  the home page, auth screens, email templates, theme, fonts, icons, and web manifest.
+- Generated projects now record the create-stack CLI version in `createStackMetadata` and
+  include a README with setup, local database, documentation, and deployment instructions.
+
 ## [0.12.0] - 2026-08-21
 
 ### Added
