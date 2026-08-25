@@ -1,6 +1,6 @@
 import { accessSync, constants } from 'node:fs'
 import { afterAll, describe, expect, test } from 'vitest'
-import { build, cleanup, exists, read, readJSON } from './helpers.mjs'
+import { build, cleanup, exists, REPO_ROOT, read, readJSON } from './helpers.mjs'
 
 afterAll(cleanup)
 
@@ -48,6 +48,18 @@ for (const framework of ['tanstack', 'next']) {
           const rootPkg = readJSON(`${dir}/package.json`)
           expect(rootPkg.name, 'root name').toBe('acme')
           expect(rootPkg.private, 'root private').toBe(true)
+          expect(rootPkg.createStackMetadata, 'root scaffold metadata').toMatchObject({
+            schemaVersion: 1,
+            initVersion: readJSON(`${REPO_ROOT}/cli/package.json`).version,
+            framework,
+            monorepo: tool,
+            packageManager: pm,
+          })
+          expect(appPkg.createStackMetadata, 'app scaffold metadata').toMatchObject({
+            initVersion: rootPkg.createStackMetadata.initVersion,
+            framework,
+            monorepo: tool,
+          })
           for (const s of ['dev', 'build', 'typecheck', 'check', 'check:write']) {
             expect(rootPkg.scripts[s], `root ${s}`).toBe(spec.script(s))
           }
@@ -72,6 +84,9 @@ for (const framework of ['tanstack', 'next']) {
 
           expect(exists(`${dir}/README.md`), 'root README').toBe(true)
           expect(exists(`${app}/README.md`), 'no app README').toBe(false)
+          expect(read(`${dir}/README.md`), 'stack documentation').toContain('## Stack')
+          expect(read(`${dir}/README.md`), 'workspace env path').toContain('apps/web/.env')
+          expect(read(`${dir}/README.md`), 'workspace structure').toContain('apps/web')
           expect(exists(`${dir}/packages/.gitkeep`), 'packages placeholder').toBe(true)
 
           expect(exists(`${dir}/start-database.sh`), 'root database script').toBe(true)

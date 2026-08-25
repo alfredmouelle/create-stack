@@ -5,7 +5,7 @@ import { MANUAL_STEPS, vendorCapability } from './capabilities.mjs'
 import { writeCiWorkflow } from './ci.mjs'
 import { applyDatabase, isSqlDatabase, localDatabaseUrl, writeDatabaseScript } from './database.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
-import { stampIdentity } from './identity.mjs'
+import { creationMetadata, stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
 import { wrapMonorepo } from './monorepo.mjs'
 import { detectPackageManager } from './package-manager.mjs'
@@ -106,9 +106,22 @@ export function buildProject({
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
+  const metadata = creationMetadata({
+    framework,
+    database,
+    auth,
+    trpc,
+    mailerProvider,
+    capabilities,
+    monorepo,
+    pm,
+  })
+
   stampIdentity(appDir, projectName, pm, {
     hasDatabase: isSqlDatabase(database),
     hasDatabaseSchema,
+    database,
+    metadata,
   })
   writeCiWorkflow(projectDir, pm)
 
@@ -124,6 +137,7 @@ export function buildProject({
       tool: monorepo,
       hasDatabase: isSqlDatabase(database),
       hasDatabaseSchema,
+      metadata,
       appNativeBuilds: db.nativeBuilds,
     })
 

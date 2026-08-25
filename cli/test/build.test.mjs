@@ -1,6 +1,6 @@
 import { accessSync, constants } from 'node:fs'
 import { afterAll, describe, expect, test } from 'vitest'
-import { build, cleanup, exists, filesImporting, read, readJSON } from './helpers.mjs'
+import { build, cleanup, exists, filesImporting, REPO_ROOT, read, readJSON } from './helpers.mjs'
 
 afterAll(cleanup)
 
@@ -48,6 +48,31 @@ function assertOptionalComponentsAbsent(dir, deps) {
 }
 
 const allDeps = (pkg) => ({ ...pkg.dependencies, ...pkg.devDependencies })
+
+function assertCreationMetadata(pkg, cfg, result, framework, readme) {
+  expect(pkg.createStackMetadata).toEqual({
+    schemaVersion: 1,
+    initVersion: readJSON(`${REPO_ROOT}/cli/package.json`).version,
+    framework,
+    database: result.database,
+    auth: result.auth,
+    trpc: result.trpc,
+    mailer: result.mailerProvider,
+    capabilities: cfg.capabilities ?? {},
+    monorepo: false,
+    packageManager: 'pnpm',
+  })
+
+  for (const heading of [
+    '## Stack',
+    '## Common commands',
+    '## Environment',
+    '## Project structure',
+    '## Add capabilities',
+  ]) {
+    expect(readme, `${heading} in README`).toContain(heading)
+  }
+}
 
 function assertTrpc(dir, trpc, deps) {
   expect(exists(`${dir}/${TRPC_DIR}`), `trpc dir present=${trpc}`).toBe(trpc)
@@ -244,6 +269,9 @@ for (const framework of ['tanstack', 'next']) {
         expect(pkg.name).toBe(cfg.name)
         expect(pkg.private).toBe(true)
         expect(exists(`${dir}/src/env.ts`)).toBe(true)
+
+        const readme = read(`${dir}/README.md`)
+        assertCreationMetadata(pkg, cfg, result, framework, readme)
 
         assertTrpc(dir, result.trpc, deps)
         assertAuth(dir, result.auth, deps, framework)
