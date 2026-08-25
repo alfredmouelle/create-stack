@@ -81,7 +81,14 @@ const TOOLS = {
   },
 }
 
-function rootReadme(name, pm, toolLabel) {
+const runAppScript = (pm, script) => {
+  if (pm.name === 'npm') return `npm --prefix apps/web run ${script}`
+  if (pm.name === 'yarn') return `yarn --cwd apps/web ${script}`
+  if (pm.name === 'bun') return `bun --cwd apps/web run ${script}`
+  return `${pm.name} --dir apps/web run ${script}`
+}
+
+function rootReadme(name, pm, toolLabel, hasDatabase, hasDatabaseSchema) {
   return `# ${name}
 
 ${toolLabel} monorepo scaffolded with [create-stack](https://create-stack.alfredmouelle.com).
@@ -99,6 +106,18 @@ ${pm.devCmd}
 \`\`\`
 
 ${toolLabel} orchestrates \`dev\`, \`build\`, \`typecheck\`, \`check\` and \`check:write\` across the workspace.
+${
+  hasDatabase
+    ? `
+## Local database
+
+\`\`\`bash
+./start-database.sh
+${hasDatabaseSchema ? (pm.name === 'npm' ? 'npm run db:push' : `${pm.name} db:push`) : ''}
+\`\`\`
+`
+    : ''
+}
 `
 }
 
@@ -109,6 +128,8 @@ export function wrapMonorepo({
   framework,
   pm,
   tool,
+  hasDatabase = false,
+  hasDatabaseSchema = false,
   appNativeBuilds = [],
 }) {
   const spec = TOOLS[tool]
@@ -118,13 +139,18 @@ export function wrapMonorepo({
 
   const appPkg = readJSON(join(appDir, 'package.json'))
   const biomeVersion = appPkg.devDependencies?.['@biomejs/biome']
+  const databaseScripts = Object.fromEntries(
+    Object.keys(appPkg.scripts ?? {})
+      .filter((script) => script.startsWith('db:'))
+      .map((script) => [script, runAppScript(pm, script)]),
+  )
 
   const rootPkg = {
     name: projectName,
     version: '0.1.0',
     private: true,
     packageManager: `${pm?.name ?? 'pnpm'}@${PM_VERSIONS[pm?.name] ?? PM_VERSIONS.pnpm}`,
-    scripts: { ...spec.scripts, prepare: PREPARE },
+    scripts: { ...spec.scripts, ...databaseScripts, prepare: PREPARE },
     devDependencies: {
       [spec.dep[0]]: spec.dep[1],
       ...(biomeVersion ? { '@biomejs/biome': biomeVersion } : {}),
@@ -140,7 +166,10 @@ export function wrapMonorepo({
 
   copy(join(TEMPLATES, 'biome.jsonc'), join(rootDir, 'biome.jsonc'))
   write(join(rootDir, '.gitignore'), rootGitignore(spec.cacheDir))
-  write(join(rootDir, 'README.md'), rootReadme(projectName, pm, spec.label))
+  write(
+    join(rootDir, 'README.md'),
+    rootReadme(projectName, pm, spec.label, hasDatabase, hasDatabaseSchema),
+  )
   write(join(rootDir, 'packages/.gitkeep'), '')
   remove(join(appDir, 'README.md'))
 

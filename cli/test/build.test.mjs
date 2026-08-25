@@ -1,3 +1,4 @@
+import { accessSync, constants } from 'node:fs'
 import { afterAll, describe, expect, test } from 'vitest'
 import { build, cleanup, exists, filesImporting, read, readJSON } from './helpers.mjs'
 
@@ -80,6 +81,16 @@ function assertAuth(dir, auth, deps, framework) {
 function assertDatabase(dir, database, deps, authKept, framework) {
   const hasSqlDb = database === 'drizzle' || database === 'prisma'
   expect(exists(`${dir}/src/server/db`), `db layer present=${hasSqlDb}`).toBe(hasSqlDb)
+  expect(exists(`${dir}/start-database.sh`), `local database script present=${hasSqlDb}`).toBe(
+    hasSqlDb,
+  )
+
+  if (hasSqlDb) {
+    const script = read(`${dir}/start-database.sh`)
+    expect(script).toContain(`ENV_FILE="\${SCRIPT_DIR}/.env"`)
+    expect(script).toContain('docker.io/postgres:18-alpine')
+    expect(() => accessSync(`${dir}/start-database.sh`, constants.X_OK)).not.toThrow()
+  }
 
   if (database === 'convex') {
     expect('convex' in deps, 'convex dep').toBe(true)
@@ -123,6 +134,13 @@ function assertDatabase(dir, database, deps, authKept, framework) {
     expect('@prisma/client' in deps, 'prisma removed').toBe(false)
     expect(filesImporting(dir, ['~/server/db']), 'dangling db imports').toEqual([])
   }
+}
+
+function assertLocalDatabaseEnv(dir, projectName, database) {
+  if (!['drizzle', 'prisma'].includes(database)) return
+  expect(read(`${dir}/.env`)).toContain(
+    `DATABASE_URL=postgres://postgres:postgres@localhost:5432/${projectName}`,
+  )
 }
 
 function assertMailer(dir, result, deps) {
@@ -252,6 +270,8 @@ for (const framework of ['tanstack', 'next']) {
             'BETTER_AUTH_SECRET=change-me-with-a-long-random-string',
           )
         }
+
+        assertLocalDatabaseEnv(dir, cfg.name, result.database)
 
         assertCapabilities(dir, env, cfg.capabilities)
 

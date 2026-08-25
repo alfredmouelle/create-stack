@@ -1,3 +1,4 @@
+import { accessSync, constants } from 'node:fs'
 import { afterAll, describe, expect, test } from 'vitest'
 import { build, cleanup, exists, read, readJSON } from './helpers.mjs'
 
@@ -72,6 +73,16 @@ for (const framework of ['tanstack', 'next']) {
           expect(exists(`${dir}/README.md`), 'root README').toBe(true)
           expect(exists(`${app}/README.md`), 'no app README').toBe(false)
           expect(exists(`${dir}/packages/.gitkeep`), 'packages placeholder').toBe(true)
+
+          expect(exists(`${dir}/start-database.sh`), 'root database script').toBe(true)
+          expect(read(`${dir}/start-database.sh`)).toContain(
+            `ENV_FILE="\${SCRIPT_DIR}/apps/web/.env"`,
+          )
+          expect(() => accessSync(`${dir}/start-database.sh`, constants.X_OK)).not.toThrow()
+          expect(rootPkg.scripts['db:push'], 'root db:push delegation').toBe(
+            pm === 'npm' ? 'npm --prefix apps/web run db:push' : `${pm} --dir apps/web run db:push`,
+          )
+          expect(read(`${dir}/README.md`), 'database instructions').toContain('./start-database.sh')
 
           const ci = read(`${dir}/.github/workflows/ci.yml`)
           expect(ci).toContain(`${pm} run typecheck`)

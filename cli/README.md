@@ -120,7 +120,7 @@ Depending on your selections, the generated project can include:
 
 - Next.js App Router or TanStack Start with SSR and routing.
 - A standalone app, or an app in `apps/web` inside a Turborepo or Nx monorepo with workspace task caching and Git hooks.
-- Drizzle or Prisma 7 with Postgres, a driver adapter, schema, seed, and keyset pagination. Convex provides a realtime database and API. The database is optional.
+- Drizzle or Prisma 7 with Postgres, a driver adapter, schema, seed, keyset pagination, and a `start-database.sh` script that runs a local Postgres container through Docker or Podman. The generated `.env` already points to that database. Convex provides a realtime database and API. The database is optional.
 - tRPC v11 with SSR/RSC integration and a health router.
 - better-auth with email and password, verification, Google OAuth, and auth pages. Clerk provides hosted auth, middleware, sign-in and sign-up pages. Auth is optional.
 - Resend, Brevo, or SES behind one mailer interface with React Email templates.

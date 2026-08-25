@@ -667,6 +667,17 @@ function creationPlanLines(a, pm) {
   ]
 }
 
+function localDatabaseSummaryLines(database, auth, pm) {
+  if (database !== 'drizzle' && database !== 'prisma') return []
+  const lines = ['  ./start-database.sh  # start local PostgreSQL']
+  const hasSchema = database === 'prisma' || auth === 'better-auth'
+  if (hasSchema) {
+    const dbPushCmd = pm.name === 'npm' ? 'npm run db:push' : `${pm.name} db:push`
+    lines.push(`  ${dbPushCmd}  # apply the database schema`)
+  }
+  return lines
+}
+
 function summaryLines(a, pm) {
   const capEntries = Object.entries(a.capabilities ?? {})
   const appRel = a.monorepo ? 'apps/web/' : ''
@@ -692,7 +703,8 @@ function summaryLines(a, pm) {
     const prefix = a.monorepo ? 'cd apps/web && ' : ''
     lines.push(`  ${prefix}${pm.name} run convex  # provisions a deployment + sets CONVEX_URL`)
   }
-  lines.push(`  # edit ${appRel}.env (already generated with placeholders)`, `  ${pm.devCmd}`)
+  lines.push(...localDatabaseSummaryLines(a.database, a.auth, pm))
+  lines.push(`  # edit ${appRel}.env (generated with local defaults)`, `  ${pm.devCmd}`)
   return lines
 }
 

@@ -1,3 +1,5 @@
+import { chmodSync } from 'node:fs'
+import { packageName } from './identity.mjs'
 import { TEMPLATES } from './paths.mjs'
 import { copy, editFile, exists, join, read, readJSON, remove, write, writeJSON } from './util.mjs'
 
@@ -60,6 +62,18 @@ const empty = () => ({
   envLines: [],
   nativeBuilds: [],
 })
+
+export const isSqlDatabase = (database) => database === 'drizzle' || database === 'prisma'
+
+export const localDatabaseUrl = (projectName) =>
+  `postgres://postgres:postgres@localhost:5432/${packageName(projectName)}`
+
+export function writeDatabaseScript({ projectDir, envPath = '.env' }) {
+  const scriptPath = join(projectDir, 'start-database.sh')
+  copy(join(TEMPLATES, 'start-database.sh'), scriptPath)
+  editFile(scriptPath, (content) => content.replace('__ENV_FILE__', envPath))
+  chmodSync(scriptPath, 0o755)
+}
 
 export function applyDatabase({ projectDir, database, framework, auth, authKept }) {
   if (database === 'drizzle') return applyDrizzle(projectDir, authKept)
