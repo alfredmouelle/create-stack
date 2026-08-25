@@ -2022,7 +2022,17 @@ input:disabled {
   }
 
   .feature-title {
+    max-width: none;
     margin-top: 28px;
+  }
+
+  .feature-text {
+    max-width: none;
+  }
+
+  .features-heading .section-title,
+  .features-heading p {
+    max-width: none;
   }
 
   .footer-links {
