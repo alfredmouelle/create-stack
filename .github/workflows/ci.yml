@@ -64,21 +64,28 @@ jobs:
   smoke:
     name: smoke (${{ matrix.framework }})
     needs: changes
-    if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         framework: [tanstack, next]
     steps:
+      - name: Skip smoke tests when CLI is unchanged
+        if: needs.changes.outputs.cli != 'true'
+        run: echo "CLI changes not detected; smoke tests are not required."
       - uses: actions/checkout@v5
+        if: needs.changes.outputs.cli == 'true'
       - uses: pnpm/action-setup@v6
+        if: needs.changes.outputs.cli == 'true'
       - uses: actions/setup-node@v6
+        if: needs.changes.outputs.cli == 'true'
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        if: needs.changes.outputs.cli == 'true'
       - run: pnpm --filter @alfredmouelle/create-stack test:smoke
+        if: needs.changes.outputs.cli == 'true'
         env:
           SMOKE_FRAMEWORK: ${{ matrix.framework }}
 
