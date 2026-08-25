@@ -70,6 +70,7 @@ test('published package includes the local registry and its executable shadcn ru
   expect(contents.stdout).toContain('package/_stack/registry/index.json')
   expect(contents.stdout).toContain('package/templates/start-database.sh')
   for (const framework of ['next-base', 'tanstack-base']) {
+    expect(contents.stdout).toContain(`package/_stack/apps/${framework}/src/lib/site-config.ts`)
     for (const file of [
       'src/components/data-table.tsx',
       'src/components/infinite-data-table.tsx',

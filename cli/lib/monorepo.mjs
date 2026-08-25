@@ -89,14 +89,13 @@ const runAppScript = (pm, script) => {
   return `${pm.name} --dir apps/web run ${script}`
 }
 
-function rootReadme(name, pm, metadata, hasDatabase, hasDatabaseSchema) {
+function rootReadme(name, pm, database, hasDatabase, hasDatabaseSchema) {
   return renderProjectReadme({
     projectName: name,
     pm,
-    metadata,
     hasDatabase,
     hasDatabaseSchema,
-    database: metadata.database,
+    database,
     monorepo: true,
     appPath: 'apps/web',
   })
@@ -109,6 +108,7 @@ export function wrapMonorepo({
   framework,
   pm,
   tool,
+  database,
   metadata,
   hasDatabase = false,
   hasDatabaseSchema = false,
@@ -151,7 +151,7 @@ export function wrapMonorepo({
   write(join(rootDir, '.gitignore'), rootGitignore(spec.cacheDir))
   write(
     join(rootDir, 'README.md'),
-    rootReadme(projectName, pm, metadata, hasDatabase, hasDatabaseSchema),
+    rootReadme(projectName, pm, database, hasDatabase, hasDatabaseSchema),
   )
   write(join(rootDir, 'packages/.gitkeep'), '')
   remove(join(appDir, 'README.md'))

@@ -106,16 +106,7 @@ export function buildProject({
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
-  const metadata = creationMetadata({
-    framework,
-    database,
-    auth,
-    trpc,
-    mailerProvider,
-    capabilities,
-    monorepo,
-    pm,
-  })
+  const metadata = creationMetadata()
 
   stampIdentity(appDir, projectName, pm, {
     hasDatabase: isSqlDatabase(database),
@@ -135,6 +126,7 @@ export function buildProject({
       framework,
       pm,
       tool: monorepo,
+      database,
       hasDatabase: isSqlDatabase(database),
       hasDatabaseSchema,
       metadata,
