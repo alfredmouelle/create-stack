@@ -3,7 +3,7 @@ import { rewriteAlias } from './alias.mjs'
 import { applyAuth } from './auth.mjs'
 import { MANUAL_STEPS, vendorCapability } from './capabilities.mjs'
 import { writeCiWorkflow } from './ci.mjs'
-import { applyDatabase } from './database.mjs'
+import { applyDatabase, isSqlDatabase, localDatabaseUrl, writeDatabaseScript } from './database.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
 import { stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
@@ -12,6 +12,23 @@ import { detectPackageManager } from './package-manager.mjs'
 import { forkBase, makeStandalone } from './scaffold.mjs'
 import { stripUnselectedFeatures } from './strip.mjs'
 import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON } from './util.mjs'
+
+function createLocalEnv(database, auth, projectName) {
+  return {
+    ...(isSqlDatabase(database) ? { DATABASE_URL: localDatabaseUrl(projectName) } : {}),
+    ...(auth === 'better-auth'
+      ? { BETTER_AUTH_SECRET: randomBytes(32).toString('base64url') }
+      : {}),
+  }
+}
+
+function writeLocalDatabaseScript(projectDir, database, monorepo) {
+  if (!isSqlDatabase(database)) return
+  writeDatabaseScript({
+    projectDir,
+    envPath: monorepo ? 'apps/web/.env' : '.env',
+  })
+}
 
 export function buildProject({
   projectDir,
@@ -27,6 +44,7 @@ export function buildProject({
   pm = detectPackageManager(),
 }) {
   const authUsesDb = auth === 'better-auth'
+  const hasDatabaseSchema = database === 'prisma' || (database === 'drizzle' && authUsesDb)
   const keptMailer = mailerProvider !== 'none'
   const appDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
 
@@ -83,13 +101,15 @@ export function buildProject({
   }
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
-  const localEnv =
-    auth === 'better-auth' ? { BETTER_AUTH_SECRET: randomBytes(32).toString('base64url') } : {}
+  const localEnv = createLocalEnv(database, auth, projectName)
   writeEnv(appDir, envKeys, requiredEnvKeys, localEnv)
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
-  stampIdentity(appDir, projectName, pm)
+  stampIdentity(appDir, projectName, pm, {
+    hasDatabase: isSqlDatabase(database),
+    hasDatabaseSchema,
+  })
   writeCiWorkflow(projectDir, pm)
 
   rewriteAlias(appDir, alias)
@@ -102,8 +122,12 @@ export function buildProject({
       framework,
       pm,
       tool: monorepo,
+      hasDatabase: isSqlDatabase(database),
+      hasDatabaseSchema,
       appNativeBuilds: db.nativeBuilds,
     })
+
+  writeLocalDatabaseScript(monorepo ? projectDir : appDir, database, monorepo)
 
   return {
     manualSteps: Object.keys(capabilities).flatMap((cap) =>

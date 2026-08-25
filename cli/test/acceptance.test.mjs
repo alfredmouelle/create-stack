@@ -539,6 +539,62 @@ test('accepts the recommended stack with -y and prints its plan before mutation'
   expect(result.stdout).toContain('Import alias: @/')
 })
 
+test('prints local database commands in the completion recap', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: [
+      'project',
+      '--framework',
+      'next',
+      '--pm',
+      'pnpm',
+      '--database',
+      'prisma',
+      '--auth',
+      'none',
+      '--no-trpc',
+      '--mailer',
+      'none',
+      '--no-install',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('./start-database.sh  # start local PostgreSQL')
+  expect(result.stdout).toContain('pnpm db:push  # apply the database schema')
+})
+
+test('does not print db:push when Drizzle has no generated schema', () => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: [
+      'project',
+      '--framework',
+      'next',
+      '--pm',
+      'pnpm',
+      '--database',
+      'drizzle',
+      '--auth',
+      'none',
+      '--no-trpc',
+      '--mailer',
+      'none',
+      '--no-install',
+    ],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('./start-database.sh  # start local PostgreSQL')
+  expect(result.stdout).not.toContain('pnpm db:push  # apply the database schema')
+})
+
 test('accepts concise creation options with separated values', () => {
   const fixture = createAcceptanceFixture('standalone')
 
