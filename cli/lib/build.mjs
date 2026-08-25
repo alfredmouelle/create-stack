@@ -89,7 +89,7 @@ export function buildProject({
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
-  stampIdentity(appDir, projectName, framework, pm)
+  stampIdentity(appDir, projectName, pm)
   writeCiWorkflow(projectDir, pm)
 
   rewriteAlias(appDir, alias)

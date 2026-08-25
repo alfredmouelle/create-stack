@@ -1,6 +1,5 @@
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Mail } from 'lucide-react'
 import { useState } from 'react'
 import { TextField } from '~/components/form/text-field'
 import { Button } from '~/components/ui/button'
@@ -40,7 +39,10 @@ function ForgotPassword() {
     <AuthCard
       description="Enter your email to receive a reset link."
       footer={
-        <Link className="text-primary hover:text-primary/80 hover:underline" to="/auth/sign-in">
+        <Link
+          className="cursor-pointer text-primary hover:text-primary/80 hover:underline"
+          to="/auth/sign-in"
+        >
           Back to sign in
         </Link>
       }
@@ -66,7 +68,6 @@ function ForgotPassword() {
               <TextField
                 autoComplete="email"
                 field={field}
-                icon={<Mail />}
                 label="Email"
                 placeholder="you@example.com"
                 type="email"

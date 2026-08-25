@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { ThemeProvider } from '~/components/theme-provider'
+import { siteConfig } from '~/lib/site-config'
 import { TRPCReactProvider } from '~/trpc/react'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'App',
-  description: 'Next.js base.',
+  title: siteConfig.name,
+  description: siteConfig.description,
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32' },

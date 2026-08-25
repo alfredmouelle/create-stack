@@ -8,17 +8,12 @@ export const packageName = (target) =>
     .replace(/[^a-z0-9._-]+/g, '-')
     .replace(/^[._-]+|-+$/g, '') || 'app'
 
-const titleFiles = {
-  next: ['src/app/layout.tsx'],
-  tanstack: ['src/routes/__root.tsx'],
-}
-
-export function stampIdentity(projectDir, projectName, framework, pm) {
+export function stampIdentity(projectDir, projectName, pm) {
   const installCmd = `${pm?.name ?? 'npm'} install`
   const devCmd = pm?.devCmd ?? 'npm run dev'
-  for (const rel of titleFiles[framework === 'next' ? 'next' : 'tanstack']) {
-    editFile(join(projectDir, rel), (c) => c.replaceAll("title: 'App'", `title: '${projectName}'`))
-  }
+  editFile(join(projectDir, 'src/lib/site-config.ts'), (c) =>
+    c.replaceAll("name: 'App'", `name: '${projectName}'`),
+  )
   editFile(join(projectDir, 'public/manifest.json'), (c) =>
     c.replaceAll('"App"', `"${projectName}"`),
   )

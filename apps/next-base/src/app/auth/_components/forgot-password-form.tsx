@@ -1,7 +1,6 @@
 'use client'
 
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '~/components/ui/button'
@@ -13,7 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from '~/components/ui/form'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group'
+import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { type ForgotPasswordInput, ForgotPasswordSchema } from '~/features/auth/schemas'
@@ -60,19 +59,9 @@ export function ForgotPasswordForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <Mail />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    type="email"
-                    {...field}
-                  />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input autoComplete="email" placeholder="you@example.com" type="email" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

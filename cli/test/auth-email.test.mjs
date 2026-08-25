@@ -6,6 +6,7 @@ import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './ac
 const SURFACES = {
   next: {
     authLayout: 'src/app/auth/layout.tsx',
+    authBrand: 'src/features/auth/auth-brand.tsx',
     authCard: 'src/features/auth/auth-card.tsx',
     formAlert: 'src/features/auth/form-alert.tsx',
     screens: [
@@ -21,6 +22,7 @@ const SURFACES = {
   },
   tanstack: {
     authLayout: 'src/routes/auth.tsx',
+    authBrand: 'src/features/auth/auth-brand.tsx',
     authCard: 'src/features/auth/auth-card.tsx',
     formAlert: 'src/features/auth/form-alert.tsx',
     screens: [
@@ -65,7 +67,8 @@ test.each(Object.keys(SURFACES))(
 
     expect(result.exitStatus).toBe(0)
     expect(existsSync(join(fixture.app, surface.authLayout))).toBe(true)
-    expect(read(fixture.app, surface.authLayout)).toContain('create-stack')
+    expect(read(fixture.app, surface.authLayout)).toContain('AuthBrand')
+    expect(read(fixture.app, surface.authBrand)).toContain('siteConfig.name')
     expect(read(fixture.app, surface.authCard)).toContain('font-heading')
     expect(read(fixture.app, surface.formAlert)).toContain('bg-accent/60')
 

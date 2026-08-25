@@ -1,7 +1,6 @@
 'use client'
 
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { Lock, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -15,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from '~/components/ui/form'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group'
+import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { AuthDivider, GoogleButton } from '~/features/auth/google-button'
@@ -69,19 +68,9 @@ export function SignInForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <Mail />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    type="email"
-                    {...field}
-                  />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input autoComplete="email" placeholder="you@example.com" type="email" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -93,16 +82,11 @@ export function SignInForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <Lock />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput autoComplete="current-password" type="password" {...field} />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input autoComplete="current-password" type="password" {...field} />
+              </FormControl>
               <Link
-                className="justify-self-end text-muted-foreground text-xs hover:underline"
+                className="cursor-pointer justify-self-end text-muted-foreground text-xs hover:underline"
                 href="/auth/forgot-password"
               >
                 Forgot password?

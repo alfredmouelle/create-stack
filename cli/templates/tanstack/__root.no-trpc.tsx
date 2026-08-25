@@ -1,5 +1,6 @@
 import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router'
 import { lazy, Suspense } from 'react'
+import { siteConfig } from '~/lib/site-config'
 
 import appCss from '../styles.css?url'
 
@@ -18,11 +19,11 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        name: 'author',
-        content: 'Alfred MOUELLE',
+        name: 'description',
+        content: siteConfig.description,
       },
       {
-        title: 'App',
+        title: siteConfig.name,
       },
     ],
     links: [

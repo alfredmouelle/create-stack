@@ -15,7 +15,7 @@ export default async function ResetPasswordPage({
       description="Choose a new password for your account."
       footer={
         <Link
-          className="text-primary hover:text-primary/80 hover:underline"
+          className="cursor-pointer text-primary hover:text-primary/80 hover:underline"
           href="/auth/forgot-password"
         >
           Request a new link

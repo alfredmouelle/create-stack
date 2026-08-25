@@ -147,6 +147,7 @@ export function EmailButton({ href, children, variant = 'primary' }: EmailButton
   return (
     <Section style={{ margin: '28px 0 0' }}>
       <Link
+        className="cursor-pointer"
         href={href}
         style={{
           backgroundColor,
@@ -179,6 +180,7 @@ export function EmailFallback({
     <Section style={{ margin: '32px 0 0' }}>
       <Text style={{ color: colors.fgMuted, fontSize: 12, margin: '0 0 6px' }}>{label}</Text>
       <Link
+        className="cursor-pointer"
         href={url}
         style={{
           color: colors.fg,

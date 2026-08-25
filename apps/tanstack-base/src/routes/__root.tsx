@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstack/react-router'
 import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query'
 import { lazy, Suspense } from 'react'
+import { siteConfig } from '~/lib/site-config'
 import type { AppRouter } from '~/server/api/root'
 
 import appCss from '../styles.css?url'
@@ -26,7 +27,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'App',
+        title: siteConfig.name,
+      },
+      {
+        name: 'description',
+        content: siteConfig.description,
       },
     ],
     links: [
@@ -55,7 +60,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       <h1 className="font-bold text-4xl tracking-tight">404 - Not Found</h1>
       <p className="mt-2 text-muted-foreground">The page you are looking for does not exist.</p>
       <Link
-        className="mt-6 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
+        className="mt-6 cursor-pointer rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
         to="/"
       >
         Go back home

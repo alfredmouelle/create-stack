@@ -19,7 +19,7 @@ function InputGroup({ className, ...props }: ComponentProps<'div'>) {
 }
 
 const inputGroupAddonVariants = cva(
-  "flex h-auto cursor-text select-none items-center justify-center gap-2 py-2 font-medium text-muted-foreground text-sm group-data-[disabled=true]/input-group:opacity-50 [&>svg:not([class*='size-'])]:size-4",
+  "flex h-auto cursor-pointer select-none items-center justify-center gap-2 py-2 font-medium text-muted-foreground text-sm group-data-[disabled=true]/input-group:opacity-50 [&>svg:not([class*='size-'])]:size-4",
   {
     variants: {
       align: {
