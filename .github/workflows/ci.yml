@@ -27,6 +27,7 @@ jobs:
             # Keep this list aligned with deploy-marketing.yml.
             marketing:
               - 'marketing/**'
+              - 'cli/CHANGELOG.md'
               - 'packages/stack-config/**'
               - '.github/workflows/ci.yml'
               - '.github/workflows/deploy-marketing.yml'

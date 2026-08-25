@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - marketing/**
+      - cli/CHANGELOG.md
       - packages/stack-config/**
       - .github/workflows/deploy-marketing.yml
       - package.json
