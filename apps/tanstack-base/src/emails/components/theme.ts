@@ -13,6 +13,7 @@ export interface EmailTheme {
     fgFaint: string
     border: string
     borderSubtle: string
+    primary?: string
     destructive: string
     onAccent: string
   }
@@ -20,20 +21,21 @@ export interface EmailTheme {
 
 export const defaultTheme: EmailTheme = {
   brand: {
-    name: 'ACME',
-    footer: 'ACME · All rights reserved.',
+    name: 'create-stack',
+    footer: 'create-stack · made for the first useful commit.',
   },
-  fontFamily: "Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  fontFamily: "'Geist Variable', Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   colors: {
-    pageBg: '#f4f4f5',
-    cardBg: '#ffffff',
-    fg: '#18181b',
-    fgStrong: '#09090b',
-    fgMuted: '#71717a',
-    fgFaint: '#a1a1aa',
-    border: '#e4e4e7',
-    borderSubtle: '#f4f4f5',
-    destructive: '#dc2626',
+    pageBg: '#edf2ef',
+    cardBg: '#f9fbf9',
+    fg: '#14211f',
+    fgStrong: '#14211f',
+    fgMuted: '#53635e',
+    fgFaint: '#647470',
+    border: '#cbd8d3',
+    borderSubtle: '#e2ebe7',
+    primary: '#1858d1',
+    destructive: '#b42318',
     onAccent: '#ffffff',
   },
 }

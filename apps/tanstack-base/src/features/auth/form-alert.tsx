@@ -16,7 +16,7 @@ export function FormAlert({ variant = 'error', children }: FormAlertProps) {
         'flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-sm leading-relaxed',
         variant === 'error'
           ? 'border-destructive/20 bg-destructive/8 text-destructive'
-          : 'border-border bg-muted/60 text-foreground',
+          : 'border-accent bg-accent/60 text-accent-foreground',
       )}
       role="alert"
     >
