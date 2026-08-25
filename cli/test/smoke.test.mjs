@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, test } from 'vitest'
+import { assertBrandedSurface, customizeTheme } from './branded-surface.mjs'
 
 const testDirectory = dirname(fileURLToPath(import.meta.url))
 const cliRoot = resolve(testDirectory, '..')
@@ -180,10 +181,11 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
     for (const workflow of CREATION_WORKFLOWS) {
       test(
         `${framework}/${workflow.name}`,
-        () =>
-          verify(scaffold(framework, workflow.name, workflow.options).projectDir, {
-            build: framework === 'tanstack' && workflow.name === 'minimal',
-          }),
+        () => {
+          const { projectDir } = scaffold(framework, workflow.name, workflow.options)
+          if (workflow.name === 'minimal') assertBrandedSurface(projectDir, framework, expect)
+          verify(projectDir, { build: workflow.name === 'minimal' })
+        },
         TIMEOUT,
       )
     }
@@ -250,6 +252,10 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
         const { projectDir } = scaffold(framework, 'shadcn-compatibility', ['--minimal'])
         const configuration = SHADCN_CONFIGURATIONS[framework]
         configureShadcn(projectDir, { ...configuration, aliases: CUSTOM_ALIASES })
+        const buttonPath = join(projectDir, 'src/design/primitives/button.tsx')
+        const buttonBeforeThemeChange = readFileSync(buttonPath, 'utf8')
+        customizeTheme(projectDir, framework, expect)
+        expect(readFileSync(buttonPath, 'utf8')).toBe(buttonBeforeThemeChange)
 
         runCli(
           ['add', '--with', 'component=date-picker', '--with', 'component=data-table'],
@@ -280,6 +286,7 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
         expect(datePicker).toContain("from '~/design/primitives/button'")
         expect(datePicker).toContain("from '~/shared/date'")
         expect(datePicker).toContain("from '~/shared/utils'")
+        expect(datePicker).toContain('text-muted-foreground')
         expect(calendar).toContain(configuration.iconImport)
         expect(calendar).not.toContain('lucide-react')
         expect(popover).toContain(configuration.primitiveImport)
@@ -290,6 +297,9 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
         expect(filesNamed(join(projectDir, 'src'), 'button.tsx')).toHaveLength(1)
         expect(filesNamed(join(projectDir, 'src'), 'calendar.tsx')).toHaveLength(1)
         expect(filesNamed(join(projectDir, 'src'), 'popover.tsx')).toHaveLength(1)
+        expect(readFileSync(buttonPath, 'utf8')).toBe(buttonBeforeThemeChange)
+        expect(readFileSync(buttonPath, 'utf8')).toContain('bg-primary')
+        expect(readFileSync(buttonPath, 'utf8')).toContain('rounded-4xl')
         verify(projectDir)
       },
       TIMEOUT,
