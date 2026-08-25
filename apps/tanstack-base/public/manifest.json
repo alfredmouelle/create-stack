@@ -1,7 +1,7 @@
 {
   "short_name": "App",
   "name": "App",
-  "description": "A fully-wired app scaffolded with create-stack.",
+  "description": "A working application, wired around your choices.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -21,6 +21,6 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#0e1a28",
-  "background_color": "#ffffff"
+  "theme_color": "#edf2ef",
+  "background_color": "#edf2ef"
 }

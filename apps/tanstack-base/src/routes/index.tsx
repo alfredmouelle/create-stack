@@ -1,73 +1,86 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ThemeToggle } from '~/components/theme-toggle'
-import { Button } from '~/components/ui/button'
+import { siteConfig } from '~/lib/site-config'
 
 export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   return (
-    <main className="relative flex min-h-svh flex-col overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[460px] bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklch,var(--primary)_16%,transparent)_0%,transparent_100%)]" />
-      <header className="relative flex items-center justify-between px-6 py-5">
-        <span className="font-mono text-muted-foreground text-sm">create-stack</span>
-        <ThemeToggle />
+    <main className="min-h-svh bg-background">
+      <header className="border-border border-b">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+          <a
+            aria-label={`${siteConfig.name} home`}
+            className="flex cursor-pointer items-center gap-3"
+            href="/"
+          >
+            <img
+              alt=""
+              aria-hidden="true"
+              className="size-8 rounded-lg"
+              height="32"
+              src="/logo192.png"
+              width="32"
+            />
+            <span className="font-heading font-semibold tracking-tight">{siteConfig.name}</span>
+          </a>
+          <ThemeToggle />
+        </div>
       </header>
 
-      <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-        <h1 className="max-w-3xl text-balance font-semibold text-5xl tracking-tight sm:text-6xl">
-          Everything&rsquo;s wired.
-          <br />
-          Start building.
-        </h1>
-
-        <p className="mt-5 max-w-xl text-balance text-lg text-muted-foreground">
-          A real, fully-typed starter with the database, auth and API already in place. Edit{' '}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-            src/routes/index.tsx
-          </code>{' '}
-          to make it yours.
-        </p>
-
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button asChild size="lg">
-            <a href="https://create-stack.alfredmouelle.com" rel="noreferrer" target="_blank">
-              Documentation
-            </a>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <a
-              href="https://github.com/alfredmouelle/create-stack"
-              rel="noreferrer"
-              target="_blank"
-            >
-              GitHub
-            </a>
-          </Button>
-        </div>
-
-        <div className="mt-12 w-full max-w-xl overflow-hidden rounded-xl border border-border bg-background/70 text-left shadow-sm backdrop-blur">
-          <div className="flex items-center gap-1.5 border-border border-b bg-muted/50 px-4 py-2.5">
-            <span className="size-3 rounded-full bg-red-400/70" />
-            <span className="size-3 rounded-full bg-yellow-400/70" />
-            <span className="size-3 rounded-full bg-green-400/70" />
-            <span className="ml-2 font-mono text-muted-foreground text-xs">zsh</span>
-          </div>
-          <div className="space-y-1.5 p-4 font-mono text-sm leading-relaxed">
-            <p>
-              <span className="text-muted-foreground">$</span> create-stack my-app
+      <div className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-20">
+        <section className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:items-end">
+          <div>
+            <p className="font-mono text-primary text-xs uppercase tracking-[0.16em]">
+              Ready when you are
             </p>
-            <p className="text-muted-foreground">✓ forked base, stripped to selection, installed</p>
-            <p className="text-muted-foreground">✓ typecheck + biome clean</p>
-            <p>
-              <span className="text-primary">→</span> ready on http://localhost:3000
+            <h1 className="mt-4 max-w-3xl text-balance font-heading font-medium text-5xl tracking-[-0.05em] sm:text-7xl">
+              A clear place to start.
+            </h1>
+            <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground sm:text-xl">
+              Your application is ready for its first real feature. Replace this screen with the
+              part of your product you want to build next.
+            </p>
+            <p className="mt-6 max-w-xl text-muted-foreground text-sm leading-6">
+              Open{' '}
+              <code className="rounded-md bg-muted px-1.5 py-1 font-mono text-foreground text-xs">
+                src/routes/index.tsx
+              </code>{' '}
+              and make the first change.
             </p>
           </div>
-        </div>
+
+          <aside className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
+            <div className="flex items-center justify-between font-mono text-muted-foreground text-xs uppercase tracking-[0.14em]">
+              <span>Start here</span>
+              <span>01</span>
+            </div>
+            <h2 className="mt-10 font-heading font-medium text-2xl tracking-tight">
+              Make the first change.
+            </h2>
+            <p className="mt-3 text-muted-foreground text-sm leading-6">
+              Keep this page, replace it, or use it as a quick check that the app is running.
+            </p>
+            <div className="mt-8 flex items-center gap-3 border-border border-t pt-4">
+              <span className="size-2 rounded-full bg-primary" />
+              <code className="font-mono text-muted-foreground text-xs">localhost:3000</code>
+            </div>
+          </aside>
+        </section>
+
+        <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-border border-t pt-6 text-muted-foreground text-xs">
+          <span>Built with create-stack.</span>
+          <a
+            className="cursor-pointer font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary"
+            href="https://create-stack.alfredmouelle.com"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Read the docs <span aria-hidden="true">↗</span>
+          </a>
+        </footer>
       </div>
-
-      <footer className="relative px-6 py-5 text-center text-muted-foreground text-xs">
-        Scaffolded with create-stack
-      </footer>
     </main>
   )
 }

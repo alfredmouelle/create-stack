@@ -7,7 +7,7 @@ export default function ForgotPasswordPage() {
     <AuthCard
       description="Enter your email to receive a reset link."
       footer={
-        <Link className="text-foreground hover:underline" href="/auth/sign-in">
+        <Link className="cursor-pointer text-foreground hover:underline" href="/auth/sign-in">
           Back to sign in
         </Link>
       }

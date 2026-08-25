@@ -14,7 +14,10 @@ export default async function SignUpPage() {
       footer={
         <>
           Already have an account?{' '}
-          <Link className="ml-1 text-foreground hover:underline" href="/auth/sign-in">
+          <Link
+            className="ml-1 cursor-pointer text-foreground hover:underline"
+            href="/auth/sign-in"
+          >
             Sign in
           </Link>
         </>

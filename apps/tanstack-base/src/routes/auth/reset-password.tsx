@@ -1,6 +1,5 @@
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Lock } from 'lucide-react'
 import { useState } from 'react'
 import { TextField } from '~/components/form/text-field'
 import { Button } from '~/components/ui/button'
@@ -53,7 +52,7 @@ function ResetPassword() {
     <AuthCard
       description="Choose a new password for your account."
       footer={
-        <Link className="text-foreground hover:underline" to="/auth/forgot-password">
+        <Link className="cursor-pointer text-foreground hover:underline" to="/auth/forgot-password">
           Request a new link
         </Link>
       }
@@ -76,7 +75,6 @@ function ResetPassword() {
               <TextField
                 autoComplete="new-password"
                 field={field}
-                icon={<Lock />}
                 label="New password"
                 placeholder="At least 8 characters"
                 type="password"
@@ -89,7 +87,6 @@ function ResetPassword() {
               <TextField
                 autoComplete="new-password"
                 field={field}
-                icon={<Lock />}
                 label="Confirm password"
                 type="password"
               />

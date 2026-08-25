@@ -1,6 +1,5 @@
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Lock, Mail, User } from 'lucide-react'
 import { useState } from 'react'
 import { TextField } from '~/components/form/text-field'
 import { Button } from '~/components/ui/button'
@@ -48,7 +47,7 @@ function SignUp() {
       footer={
         <>
           Already have an account?{' '}
-          <Link className="ml-1 text-foreground hover:underline" to="/auth/sign-in">
+          <Link className="ml-1 cursor-pointer text-foreground hover:underline" to="/auth/sign-in">
             Sign in
           </Link>
         </>
@@ -69,13 +68,7 @@ function SignUp() {
 
         <form.Field name="name">
           {(field) => (
-            <TextField
-              autoComplete="name"
-              field={field}
-              icon={<User />}
-              label="Name"
-              placeholder="Your name"
-            />
+            <TextField autoComplete="name" field={field} label="Name" placeholder="Your name" />
           )}
         </form.Field>
 
@@ -84,7 +77,6 @@ function SignUp() {
             <TextField
               autoComplete="email"
               field={field}
-              icon={<Mail />}
               label="Email"
               placeholder="you@example.com"
               type="email"
@@ -97,7 +89,6 @@ function SignUp() {
             <TextField
               autoComplete="new-password"
               field={field}
-              icon={<Lock />}
               label="Password"
               placeholder="At least 8 characters"
               type="password"

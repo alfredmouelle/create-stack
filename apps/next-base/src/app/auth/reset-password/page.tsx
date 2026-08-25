@@ -14,7 +14,10 @@ export default async function ResetPasswordPage({
     <AuthCard
       description="Choose a new password for your account."
       footer={
-        <Link className="text-foreground hover:underline" href="/auth/forgot-password">
+        <Link
+          className="cursor-pointer text-foreground hover:underline"
+          href="/auth/forgot-password"
+        >
           Request a new link
         </Link>
       }

@@ -9,10 +9,8 @@ export function hasFieldError(field: AnyFieldApi): boolean {
 
 export function FieldError({ field }: { field: AnyFieldApi }) {
   const { isTouched, errors } = field.state.meta
-  if (!isTouched || errors.length === 0) return null
+  const message =
+    isTouched && errors.length > 0 ? errors.map(errorMessage).filter(Boolean).join(', ') : ''
 
-  const message = errors.map(errorMessage).filter(Boolean).join(', ')
-  if (!message) return null
-
-  return <p className="text-destructive text-xs">{message}</p>
+  return <p className="min-h-5 text-destructive text-xs">{message}</p>
 }

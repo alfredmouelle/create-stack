@@ -1,7 +1,6 @@
 'use client'
 
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -14,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '~/components/ui/form'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group'
+import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { type ResetPasswordInput, ResetPasswordSchema } from '~/features/auth/schemas'
@@ -54,19 +53,14 @@ export function ResetPasswordForm({ token }: { token?: string }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>New password</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <Lock />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters"
-                    type="password"
-                    {...field}
-                  />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input
+                  autoComplete="new-password"
+                  placeholder="At least 8 characters"
+                  type="password"
+                  {...field}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -78,14 +72,9 @@ export function ResetPasswordForm({ token }: { token?: string }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Confirm password</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <Lock />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput autoComplete="new-password" type="password" {...field} />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input autoComplete="new-password" type="password" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

@@ -1,7 +1,6 @@
 'use client'
 
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { Lock, Mail, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -14,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '~/components/ui/form'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group'
+import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { AuthDivider, GoogleButton } from '~/features/auth/google-button'
@@ -64,14 +63,9 @@ export function SignUpForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Name</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <User />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput autoComplete="name" placeholder="Your name" {...field} />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input autoComplete="name" placeholder="Your name" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -83,19 +77,9 @@ export function SignUpForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <Mail />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    type="email"
-                    {...field}
-                  />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input autoComplete="email" placeholder="you@example.com" type="email" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -107,19 +91,14 @@ export function SignUpForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
-              <InputGroup className="h-10">
-                <InputGroupAddon align="inline-start">
-                  <Lock />
-                </InputGroupAddon>
-                <FormControl>
-                  <InputGroupInput
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters"
-                    type="password"
-                    {...field}
-                  />
-                </FormControl>
-              </InputGroup>
+              <FormControl>
+                <Input
+                  autoComplete="new-password"
+                  placeholder="At least 8 characters"
+                  type="password"
+                  {...field}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

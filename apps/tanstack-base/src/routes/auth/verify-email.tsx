@@ -37,7 +37,7 @@ function VerifyEmail() {
         </>
       }
       footer={
-        <Link className="text-foreground hover:underline" to="/auth/sign-in">
+        <Link className="cursor-pointer text-foreground hover:underline" to="/auth/sign-in">
           Back to sign in
         </Link>
       }

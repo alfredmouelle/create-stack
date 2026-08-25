@@ -1,6 +1,5 @@
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Lock, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { TextField } from '~/components/form/text-field'
 import { Button } from '~/components/ui/button'
@@ -51,7 +50,7 @@ function SignIn() {
       footer={
         <>
           No account yet?{' '}
-          <Link className="ml-1 text-foreground hover:underline" to="/auth/sign-up">
+          <Link className="ml-1 cursor-pointer text-foreground hover:underline" to="/auth/sign-up">
             Create an account
           </Link>
         </>
@@ -75,7 +74,6 @@ function SignIn() {
             <TextField
               autoComplete="email"
               field={field}
-              icon={<Mail />}
               label="Email"
               placeholder="you@example.com"
               type="email"
@@ -89,12 +87,11 @@ function SignIn() {
               <TextField
                 autoComplete="current-password"
                 field={field}
-                icon={<Lock />}
                 label="Password"
                 type="password"
               />
               <Link
-                className="justify-self-end text-muted-foreground text-xs hover:underline"
+                className="cursor-pointer justify-self-end text-muted-foreground text-xs hover:underline"
                 to="/auth/forgot-password"
               >
                 Forgot password?
