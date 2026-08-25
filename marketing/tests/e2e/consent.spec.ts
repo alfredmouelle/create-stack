@@ -3,6 +3,35 @@ import { expect, test } from '@playwright/test'
 const consentKey = 'create-stack.analytics-consent'
 
 test.describe('analytics consent', () => {
+  test('does not flash the banner when consent was already chosen', async ({ page }) => {
+    await page.addInitScript((key) => {
+      window.localStorage.setItem(key, 'v1:rejected')
+
+      const state = window as Window & { __consentDialogMounts?: number }
+      state.__consentDialogMounts = 0
+      const includesDialog = (node: Node) =>
+        node instanceof Element &&
+        (node.getAttribute('role') === 'dialog' || node.querySelector('[role="dialog"]') !== null)
+
+      new MutationObserver((mutations) => {
+        if (mutations.some((mutation) => [...mutation.addedNodes].some(includesDialog))) {
+          state.__consentDialogMounts = (state.__consentDialogMounts ?? 0) + 1
+        }
+      }).observe(document, { childList: true, subtree: true })
+    }, consentKey)
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+    await expect(page.getByRole('dialog', { name: 'Analytics, on your terms.' })).not.toBeVisible()
+    await page.waitForLoadState('load')
+    await expect(page.getByRole('button', { name: 'Open privacy settings' })).toBeVisible()
+    expect(
+      await page.evaluate(
+        () => (window as Window & { __consentDialogMounts?: number }).__consentDialogMounts,
+      ),
+    ).toBe(0)
+  })
+
   test('keeps analytics off until the visitor makes a choice', async ({ page }) => {
     await page.goto('/')
 
