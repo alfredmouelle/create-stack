@@ -12,6 +12,8 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-25
+
 ### Added
 
 - SQL projects using Drizzle or Prisma now include `start-database.sh`, which starts a
