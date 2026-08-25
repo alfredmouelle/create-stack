@@ -9,11 +9,13 @@ import {
 
 export default function ConsentBanner() {
   const [consent, setConsent] = useState<AnalyticsConsent | null>(null)
+  const [hasResolvedConsent, setHasResolvedConsent] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   useEffect(() => {
     const storedConsent = getAnalyticsConsent()
     setConsent(storedConsent)
+    setHasResolvedConsent(true)
     if (storedConsent === 'accepted') void enableAnalytics()
   }, [])
 
@@ -25,6 +27,8 @@ export default function ConsentBanner() {
     if (nextConsent === 'accepted') void enableAnalytics()
     else disableAnalytics()
   }
+
+  if (!hasResolvedConsent) return null
 
   const isBannerVisible = consent === null || isSettingsOpen
 
