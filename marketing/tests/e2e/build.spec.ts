@@ -96,6 +96,20 @@ test.describe('stack configurator', () => {
     await expect(page.getByRole('status').first()).toHaveText('Command copied to your clipboard.')
   })
 
+  test('lets users select an import alias and includes it in the command', async ({ page }) => {
+    await page.goto('/build')
+
+    const alias = page.getByRole('radio', { name: /^@/ })
+    await expect(page.getByRole('radio', { name: /~ \(default\)/ })).toBeChecked()
+    await alias.check()
+    await expect(alias).toBeChecked()
+
+    await expect(page.getByRole('textbox', { name: 'Generated Create Stack command' })).toHaveValue(
+      'pnpm dlx @alfredmouelle/create-stack@latest my-app --alias @',
+    )
+    await expect(page).toHaveURL(/\/build\?v=1&name=my-app&pm=pnpm&alias=%40$/)
+  })
+
   test('blocks generation and explains explicit conflicts', async ({ page }) => {
     await page.goto('/build')
 

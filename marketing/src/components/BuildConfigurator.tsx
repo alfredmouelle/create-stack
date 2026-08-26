@@ -5,6 +5,7 @@ import {
   type BuildStateResult,
   CAPABILITY_CATALOG,
   defaultBuildState,
+  IMPORT_ALIASES,
   MONOREPOS,
   PACKAGE_MANAGERS,
   type ParsedBuildState,
@@ -449,6 +450,13 @@ function AdditionalPanel({ state, updateState }: { state: BuildState; updateStat
         </span>
       </summary>
       <div className="build-additional-body">
+        <ChoiceGroup
+          id="import-alias"
+          label="Import alias"
+          onChange={(value) => updateState({ alias: value as BuildState['alias'] })}
+          options={IMPORT_ALIASES}
+          selectedValue={state.alias ?? '~'}
+        />
         <fieldset className="build-choice-group">
           <legend>Monorepo</legend>
           <div className="build-choice-options build-choice-options-wide">

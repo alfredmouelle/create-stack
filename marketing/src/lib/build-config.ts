@@ -16,6 +16,13 @@ export const BUILD_SCHEMA_VERSION = '1'
 export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
 export type PackageManager = (typeof PACKAGE_MANAGERS)[number]
 
+export const IMPORT_ALIASES = [
+  { value: '~', label: '~ (default)', hint: '~/components/...' },
+  { value: '@', label: '@', hint: '@/components/...' },
+  { value: '#', label: '#', hint: '#/components/...' },
+] as const
+export type ImportAlias = (typeof IMPORT_ALIASES)[number]['value']
+
 export const MONOREPOS = [
   { value: 'turbo', label: 'Turborepo' },
   { value: 'nx', label: 'Nx' },
@@ -86,6 +93,7 @@ export interface BuildState {
   auth?: Auth
   trpc?: boolean
   mailer?: Mailer
+  alias?: ImportAlias
   monorepo?: Monorepo
   capabilities: CapabilitySelection
 }
@@ -144,6 +152,7 @@ function commandFor(state: BuildState, stackArgs: readonly string[]): string | n
   if (!state.projectName.trim()) return null
 
   const args = [...stackArgs]
+  if (state.alias && state.alias !== '~') args.push('--alias', state.alias)
   if (state.monorepo) args.push('--monorepo', state.monorepo)
 
   for (const capability of CAPABILITY_CATALOG) {
@@ -193,6 +202,7 @@ export function serializeBuildState(state: BuildState): string {
   if (state.auth) params.set('auth', state.auth)
   if (state.trpc !== undefined) params.set('trpc', state.trpc ? '1' : '0')
   if (state.mailer) params.set('mailer', state.mailer)
+  if (state.alias && state.alias !== '~') params.set('alias', state.alias)
   if (state.monorepo) params.set('mono', state.monorepo)
 
   for (const capability of CAPABILITY_CATALOG) {
@@ -232,6 +242,15 @@ function parseTrpc(params: URLSearchParams, state: BuildState): void {
   state.trpc = trpc === '1'
 }
 
+function parseAlias(params: URLSearchParams, state: BuildState): void {
+  const alias = params.get('alias')
+  if (alias === null) return
+  if (!IMPORT_ALIASES.some((option) => option.value === alias)) {
+    throw new Error(`Invalid import alias value "${alias}"`)
+  }
+  state.alias = alias as ImportAlias
+}
+
 function parseMonorepo(params: URLSearchParams, state: BuildState): void {
   const monorepo = params.get('mono')
   if (monorepo === null) return
@@ -249,6 +268,7 @@ function parseStateValues(params: URLSearchParams, state: BuildState): string | 
     setChoice(state, params, 'auth', AUTHS)
     setChoice(state, params, 'mailer', MAILERS)
     parseTrpc(params, state)
+    parseAlias(params, state)
     parseMonorepo(params, state)
     parseCapabilities(params, state)
   } catch (error) {
