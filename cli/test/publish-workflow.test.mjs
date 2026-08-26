@@ -14,6 +14,13 @@ test('publish workflow supports manual dispatch', () => {
   expect(workflow).toContain('workflow_dispatch:')
 })
 
+test('publish workflow only accepts release tags on main', () => {
+  expect(workflow).toContain('fetch-depth: 0')
+  expect(workflow).toContain('refs/tags/v*)')
+  expect(workflow).toContain('git fetch origin main --no-tags')
+  expect(workflow).toContain('git merge-base --is-ancestor "$GITHUB_SHA" origin/main')
+})
+
 test('publish job installs workspace dependencies before npm publish', () => {
   expect(publishJob).toBeDefined()
 
