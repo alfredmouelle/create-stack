@@ -5,7 +5,7 @@ import { expect, test } from 'vitest'
 
 const workflowPath = join(
   dirname(fileURLToPath(import.meta.url)),
-  '../../.github/workflows/publish.yml',
+  '../../.github/workflows/publish-cli.yml',
 )
 const workflow = readFileSync(workflowPath, 'utf8')
 const publishJob = workflow.split('\n  publish:\n')[1]
