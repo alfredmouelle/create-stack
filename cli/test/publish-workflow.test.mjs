@@ -10,6 +10,10 @@ const workflowPath = join(
 const workflow = readFileSync(workflowPath, 'utf8')
 const publishJob = workflow.split('\n  publish:\n')[1]
 
+test('publish workflow supports manual dispatch', () => {
+  expect(workflow).toContain('workflow_dispatch:')
+})
+
 test('publish job installs workspace dependencies before npm publish', () => {
   expect(publishJob).toBeDefined()
 
