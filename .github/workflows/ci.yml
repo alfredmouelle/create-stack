@@ -39,7 +39,7 @@ jobs:
               - 'apps/**'
               - 'packages/**'
               - '.github/workflows/ci.yml'
-              - '.github/workflows/publish-cli.yml'
+              - '.github/workflows/publish.yml'
               - 'package.json'
               - 'pnpm-workspace.yaml'
               - 'pnpm-lock.yaml'
