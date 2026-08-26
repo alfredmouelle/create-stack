@@ -41,6 +41,7 @@ describe.each(['next', 'tanstack'])('branded generated %s app', (framework) => {
       framework === 'next' ? 'src/app/page.tsx' : 'src/routes/index.tsx',
     )
     const config = read(fixture.app, 'src/lib/site-config.ts')
+    const favicon = read(fixture.app, 'public/favicon.svg')
     const manifest = JSON.parse(read(fixture.app, 'public/manifest.json'))
 
     expect(config).toContain("name: 'project'")
@@ -51,6 +52,7 @@ describe.each(['next', 'tanstack'])('branded generated %s app', (framework) => {
     expect(home).not.toContain('Everything&rsquo;s wired.')
     expect(home).not.toContain('create-stack my-app')
     expect(home).not.toContain('zsh')
+    expect(favicon).toContain('<title>Create Stack icon</title>')
 
     expect(manifest).toMatchObject({
       short_name: 'project',
