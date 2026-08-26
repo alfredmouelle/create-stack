@@ -12,6 +12,13 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-08-26
+
+### Fixed
+
+- Generated Next.js and TanStack Start projects now include accessible favicon titles,
+  so the initial verification passes.
+
 ## [0.13.0] - 2026-08-25
 
 ### Added
