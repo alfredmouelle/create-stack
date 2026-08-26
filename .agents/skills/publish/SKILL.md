@@ -8,9 +8,10 @@ description: >-
 
 # Publish guard for `@alfredmouelle/create-stack`
 
-A `vX.Y.Z` tag is the release boundary. The publish workflow reacts to that tag, so
-tagging publishes the package after CI. Inspect `.github/workflows/publish.yml` if that
-convention changes.
+A `vX.Y.Z` tag is the release boundary. The publish workflow reacts to that tag, then
+checks that the tagged commit is reachable from `main` before running CI and publishing.
+Keep the tag local until the release commit is merged. Manual dispatch must also target a
+`vX.Y.Z` tag. Inspect `.github/workflows/publish.yml` if this convention changes.
 
 The user's scope controls the mode:
 
@@ -173,31 +174,44 @@ Then create the lightweight tag at the release commit:
 git tag vx.y.z HEAD
 ```
 
+Keep the tag local while the release branch PR is open. A tag is a separate Git ref; it
+is not merged with the branch.
+
 If the target version, changelog section, or tag already exists, inspect it first. Treat
 an existing tag that points elsewhere as a conflict. Do not force-move it automatically.
 
 Completion criterion: the release commit is `HEAD`, it changes only the changelog and
 `cli/package.json`, the tag points to that commit, and the working tree is clean.
 
-## 7. Ask before pushing
+## 7. Merge before pushing the tag
 
-Stop after local preparation. Nothing is published until the user explicitly confirms a
-push. Show the exact commands:
+Stop after local preparation. Nothing is published until the user explicitly confirms the
+push. For a release branch PR, show these commands:
+
+```bash
+git push origin <release-branch>
+git fetch origin main
+git merge-base --is-ancestor vx.y.z origin/main
+git push origin vx.y.z
+```
+
+Explain that merging the PR does not push or merge the tag. The final tag push starts the
+publish workflow only after its commit is reachable from `main`. A tag pushed before the
+merge fails the guard; the merge does not retry that run.
+
+For a release prepared directly on `main`, push `main` first and push the tag only after
+that succeeds:
 
 ```bash
 git push origin main
 git push origin vx.y.z
 ```
 
-Explain that the first command publishes the release commit and the second pushes the tag
-that starts the publish workflow. If the user declines, keep the local commit and tag and
-do not push.
+If the user declines, keep the local commit and tag and do not push. Report the workflow
+run to monitor after the tag push.
 
-After explicit confirmation, push `main` first. Push the tag only if the branch push
-succeeds. Report the workflow run to monitor.
-
-Completion criterion: the user has either received the push commands, or the confirmed
-push completed in branch-then-tag order.
+Completion criterion: the user has received the branch-then-tag commands, or the confirmed
+tag push completed after the release commit was merged into `main`.
 
 ## Hard rules
 
