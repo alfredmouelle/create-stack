@@ -97,6 +97,7 @@ describe('build configurator state', () => {
       auth: 'clerk',
       trpc: false,
       mailer: 'ses',
+      alias: '#',
       monorepo: 'turbo',
       capabilities: {
         analytics: 'plausible',
@@ -108,7 +109,7 @@ describe('build configurator state', () => {
     const parsed = parseBuildState(encoded)
 
     expect(encoded).toBe(
-      '?v=1&name=my+shared+app&pm=bun&framework=next&database=prisma&auth=clerk&trpc=0&mailer=ses&mono=turbo&cap=storage%3Dgcs&cap=analytics%3Dplausible',
+      '?v=1&name=my+shared+app&pm=bun&framework=next&database=prisma&auth=clerk&trpc=0&mailer=ses&alias=%23&mono=turbo&cap=storage%3Dgcs&cap=analytics%3Dplausible',
     )
     expect(parsed).toEqual({ kind: 'current', state })
   })
