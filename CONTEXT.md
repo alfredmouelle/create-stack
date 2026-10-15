@@ -64,6 +64,14 @@ _Avoid_: Foundation, plugin
 A reusable interface element added to an existing application.
 _Avoid_: Capability, widget
 
+**Create Stack component**:
+A component exposed as an addition and designed by Create Stack, potentially composed from shadcn primitives.
+_Avoid_: shadcn component, primitive
+
+**shadcn primitive**:
+An interface building block owned by the official shadcn registry and used as a dependency of a Create Stack component.
+_Avoid_: Create Stack component, vendored primitive
+
 **Email UI**:
 Reusable React Email primitives and theming added to an existing application, independently of the capability used to send email.
 _Avoid_: Mailer
