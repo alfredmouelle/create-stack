@@ -844,10 +844,10 @@ test('minimal creation produces a frontend-only project and explains its exclusi
   expect(result.exitStatus).toBe(0)
   expect(result.requestedInput).toBe(false)
   expect(result.targetMutated).toBe(true)
-  expect(result.stdout).toContain('Database: (none) — minimal exclusion')
-  expect(result.stdout).toContain('Auth: (none) — minimal exclusion')
-  expect(result.stdout).toContain('tRPC: no — minimal exclusion')
-  expect(result.stdout).toContain('Mailer: (none) — minimal exclusion')
+  expect(result.stdout).toContain('Database: (none), minimal exclusion')
+  expect(result.stdout).toContain('Auth: (none), minimal exclusion')
+  expect(result.stdout).toContain('tRPC: no, minimal exclusion')
+  expect(result.stdout).toContain('Mailer: (none), minimal exclusion')
   expect(existsSync(`${fixture.project}/src/server/db`)).toBe(false)
   expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
   expect(existsSync(`${fixture.project}/src/server/api`)).toBe(false)
@@ -883,10 +883,10 @@ test('stack options enrich minimal creation and redundant exclusions remain vali
   })
 
   expect(result.exitStatus).toBe(0)
-  expect(result.stdout).toContain('Database: prisma — requested')
-  expect(result.stdout).toContain('Auth: (none) — requested exclusion')
-  expect(result.stdout).toContain('tRPC: yes — requested')
-  expect(result.stdout).toContain('Mailer: (none) — requested exclusion')
+  expect(result.stdout).toContain('Database: prisma, requested')
+  expect(result.stdout).toContain('Auth: (none), requested exclusion')
+  expect(result.stdout).toContain('tRPC: yes, requested')
+  expect(result.stdout).toContain('Mailer: (none), requested exclusion')
   expect(existsSync(`${fixture.project}/prisma/schema/schema.prisma`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
@@ -903,10 +903,10 @@ test('tRPC remains independent of data and authentication through the executable
   })
 
   expect(result.exitStatus).toBe(0)
-  expect(result.stdout).toContain('Database: (none) — minimal exclusion')
-  expect(result.stdout).toContain('Auth: (none) — minimal exclusion')
-  expect(result.stdout).toContain('tRPC: yes — requested')
-  expect(result.stdout).toContain('Mailer: (none) — minimal exclusion')
+  expect(result.stdout).toContain('Database: (none), minimal exclusion')
+  expect(result.stdout).toContain('Auth: (none), minimal exclusion')
+  expect(result.stdout).toContain('tRPC: yes, requested')
+  expect(result.stdout).toContain('Mailer: (none), minimal exclusion')
   expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/db`)).toBe(false)
   expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
@@ -980,30 +980,25 @@ test('renamed email kit reports its canonical addition before mutation', () => {
 test.each([
   {
     option: '--no-db',
-    plan: ['Database: (none) — requested exclusion', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none)'],
+    plan: ['Database: (none), requested exclusion', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none)'],
     present: ['src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
     absent: ['src/server/db', 'src/server/email'],
   },
   {
     option: '--no-auth',
-    plan: [
-      'Database: drizzle',
-      'Auth: (none) — requested exclusion',
-      'tRPC: yes',
-      'Mailer: (none)',
-    ],
+    plan: ['Database: drizzle', 'Auth: (none), requested exclusion', 'tRPC: yes', 'Mailer: (none)'],
     present: ['src/server/db', 'src/server/api/trpc.ts'],
     absent: ['src/server/better-auth', 'src/server/email'],
   },
   {
     option: '--no-mail',
-    plan: ['Database: drizzle', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none) — requested exclusion'],
+    plan: ['Database: drizzle', 'Auth: clerk', 'tRPC: yes', 'Mailer: (none), requested exclusion'],
     present: ['src/server/db', 'src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
     absent: ['src/server/better-auth', 'src/server/email'],
   },
   {
     option: '--auth=clerk',
-    plan: ['Database: drizzle', 'Auth: clerk — requested', 'tRPC: yes', 'Mailer: (none)'],
+    plan: ['Database: drizzle', 'Auth: clerk, requested', 'tRPC: yes', 'Mailer: (none)'],
     present: ['src/server/db', 'src/server/api/trpc.ts', 'src/routes/sign-in.$.tsx'],
     absent: ['src/server/better-auth', 'src/server/email'],
   },
@@ -1012,7 +1007,7 @@ test.each([
     plan: [
       'Database: drizzle',
       'Auth: better-auth',
-      'tRPC: no — requested exclusion',
+      'tRPC: no, requested exclusion',
       'Mailer: resend',
     ],
     present: ['src/server/db', 'src/server/better-auth', 'src/server/email'],
@@ -1044,10 +1039,10 @@ test('Better Auth completes omitted dependencies from a minimal project', () => 
   })
 
   expect(result.exitStatus).toBe(0)
-  expect(result.stdout).toContain('Auth: better-auth — requested')
-  expect(result.stdout).toContain('Database: drizzle — dependency completion for Better Auth')
-  expect(result.stdout).toContain('Mailer: resend — dependency completion for Better Auth')
-  expect(result.stdout).toContain('tRPC: no — minimal exclusion')
+  expect(result.stdout).toContain('Auth: better-auth, requested')
+  expect(result.stdout).toContain('Database: drizzle, dependency completion for Better Auth')
+  expect(result.stdout).toContain('Mailer: resend, dependency completion for Better Auth')
+  expect(result.stdout).toContain('tRPC: no, minimal exclusion')
   expect(existsSync(`${fixture.project}/src/server/db`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/email`)).toBe(true)
@@ -1057,12 +1052,12 @@ test('Better Auth completes omitted dependencies from a minimal project', () => 
 test.each([
   {
     args: ['--db=convex'],
-    mailer: 'Mailer: (none) — applicable recommendation',
+    mailer: 'Mailer: (none), applicable recommendation',
     hasMailer: false,
   },
   {
     args: ['--db=convex', '--mail=ses'],
-    mailer: 'Mailer: ses — requested',
+    mailer: 'Mailer: ses, requested',
     hasMailer: true,
   },
 ])(
@@ -1077,9 +1072,9 @@ test.each([
     })
 
     expect(result.exitStatus).toBe(0)
-    expect(result.stdout).toContain('Database: convex — requested')
-    expect(result.stdout).toContain('Auth: clerk — applicable recommendation')
-    expect(result.stdout).toContain('tRPC: no — applicable recommendation')
+    expect(result.stdout).toContain('Database: convex, requested')
+    expect(result.stdout).toContain('Auth: clerk, applicable recommendation')
+    expect(result.stdout).toContain('tRPC: no, applicable recommendation')
     expect(result.stdout).toContain(mailer)
     expect(existsSync(`${fixture.project}/convex/schema.ts`)).toBe(true)
     expect(existsSync(`${fixture.project}/src/routes/sign-in.$.tsx`)).toBe(true)
@@ -1626,7 +1621,7 @@ test('installs a mixed registry batch once with shared official primitives dedup
     expect(added.stdout).toContain('shadcn: calendar, popover, button, table, skeleton')
     expect(added.stdout.match(/shadcn:.*button/g)).toHaveLength(1)
     expect(readFileSync(fake.log, 'utf8').trim().split('\n')[0]).toBe(
-      'install -- @tanstack/react-table@^8.21.3 react-day-picker date-fns',
+      'install --no-audit --no-fund -- @tanstack/react-table@8.21.3 lucide-react@1.56.0 react-day-picker@10.0.2 date-fns@4.4.0',
     )
     expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(true)
     expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)
@@ -1849,8 +1844,8 @@ test('does not copy a fallback when the shadcn registry fails', async () => {
 })
 
 test.each([
-  ['missing', (path) => rmSync(path), 'npx shadcn@4.17.0 init'],
-  ['invalid', (path) => writeFileSync(path, '{}\n'), 'npx shadcn@4.17.0 init'],
+  ['missing', (path) => rmSync(path), 'npx shadcn@4.21.4 init'],
+  ['invalid', (path) => writeFileSync(path, '{}\n'), 'npx shadcn@4.21.4 init'],
 ])('rejects a %s components.json before mutation', (_case, change, command) => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)

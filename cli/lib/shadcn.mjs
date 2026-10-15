@@ -20,11 +20,11 @@ import { STACK_ROOT } from './paths.mjs'
 import { COMPONENT_CATALOG, generateRegistry } from './registry.mjs'
 import { exists, readJSON, run } from './util.mjs'
 
-export const SHADCN_VERSION = '4.17.0'
-
 const require = createRequire(import.meta.url)
 const SHADCN_ENTRY = require.resolve('shadcn')
 const MODULE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+
+export const SHADCN_VERSION = readJSON(join(MODULE_ROOT, 'package.json')).dependencies.shadcn
 const INIT_COMMANDS = {
   pnpm: 'pnpm dlx',
   npm: 'npx',

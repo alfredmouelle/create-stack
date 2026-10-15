@@ -1,6 +1,6 @@
 {
   "name": "@alfredmouelle/create-stack",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "type": "module",
   "description": "Framework-agnostic, deterministic installer that bootstraps a real, fully-wired app for your favorite framework (Next.js and TanStack Start today) and strips it to your selection.",
   "author": {
@@ -60,11 +60,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@clack/prompts": "^1.7.0",
-    "shadcn": "4.17.0"
+    "@clack/prompts": "1.8.1",
+    "shadcn": "4.21.4"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "vitest": "^4.1.10"
+    "@types/node": "24.19.2",
+    "vitest": "5.0.4"
   }
 }

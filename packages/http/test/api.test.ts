@@ -13,7 +13,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('apiFetch — request building', () => {
+describe('apiFetch: request building', () => {
   it('serializes query params, dropping null/undefined and expanding arrays', async () => {
     const fn = mockFetch(new Response('{}', { status: 200 }))
     await apiFetch('https://api.test/items', {
@@ -50,7 +50,7 @@ describe('apiFetch — request building', () => {
   })
 })
 
-describe('apiFetch — response handling', () => {
+describe('apiFetch: response handling', () => {
   it('parses a JSON response', async () => {
     mockFetch(
       new Response(JSON.stringify({ ok: true }), {

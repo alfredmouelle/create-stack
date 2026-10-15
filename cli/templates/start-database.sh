@@ -7,7 +7,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="${SCRIPT_DIR}/__ENV_FILE__"
+ENV_FILE="${1:-${SCRIPT_DIR}/__ENV_FILE__}"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Environment file not found: $ENV_FILE"
@@ -70,6 +70,7 @@ wait_for_database() {
 
   for ((attempt = 1; attempt <= 30; attempt++)); do
     if "$DOCKER_CMD" exec "$DB_CONTAINER_NAME" pg_isready \
+      --host=127.0.0.1 \
       --username="$DB_USER" \
       --dbname="$DB_NAME" >/dev/null 2>&1; then
       echo "Database container '$DB_CONTAINER_NAME' is ready"

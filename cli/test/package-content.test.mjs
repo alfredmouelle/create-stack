@@ -92,7 +92,7 @@ test('published package includes the local registry and its executable shadcn ru
   const packageJson = JSON.parse(
     spawnSync('tar', ['-xOf', archive, 'package/package.json'], { encoding: 'utf8' }).stdout,
   )
-  expect(packageJson.dependencies.shadcn).toBe('4.17.0')
+  expect(packageJson.dependencies.shadcn).toBe('4.21.4')
   expect({
     ...packageJson.dependencies,
     ...packageJson.optionalDependencies,
@@ -121,7 +121,7 @@ test('published package includes the local registry and its executable shadcn ru
   if (!runtimePackagePath) return
   const runtimePackageRoot = dirname(runtimePackagePath)
   const runtimePackage = JSON.parse(readFileSync(runtimePackagePath, 'utf8'))
-  expect(runtimePackage.version).toBe('4.17.0')
+  expect(runtimePackage.version).toBe('4.21.4')
   expect(runtimePackage.bin).toBe('./dist/index.js')
   const runtimePath = join(runtimePackageRoot, runtimePackage.bin)
   accessSync(runtimePath, constants.X_OK)
@@ -145,7 +145,7 @@ test('published package includes the local registry and its executable shadcn ru
   )
   expect(smoke.status, smoke.stderr).toBe(0)
   expect(smoke.stderr).toBe('')
-  expect(smoke.stdout).toContain('Database: (none) — minimal exclusion')
+  expect(smoke.stdout).toContain('Database: (none), minimal exclusion')
   expect(readFileSync(join(consumerRoot, 'packed-project/package.json'), 'utf8')).toContain(
     '"name": "packed-project"',
   )

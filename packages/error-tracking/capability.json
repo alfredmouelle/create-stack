@@ -15,7 +15,7 @@
     }
   },
   "versions": {
-    "@sentry/nextjs": "^10.59.0",
-    "@sentry/tanstackstart-react": "^10.59.0"
+    "@sentry/nextjs": "10.76.2",
+    "@sentry/tanstackstart-react": "10.76.2"
   }
 }

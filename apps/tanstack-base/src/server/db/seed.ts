@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker'
 import { config } from 'dotenv'
 
-config({ path: ['.env.local', '.env'] })
+config({ path: ['.env', '.env.local'], override: true })
 
 // Deterministic across runs.
 faker.seed(42)

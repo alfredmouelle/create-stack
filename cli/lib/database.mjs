@@ -15,7 +15,7 @@ export function resolveDatabase(value) {
   return value
 }
 
-const PRISMA_VERSION = '^7.4.0'
+const PRISMA_VERSION = '7.10.0'
 
 const DRIZZLE_ONLY_DEPS = ['drizzle-orm', 'drizzle-kit']
 const DRIZZLE_ALL_DEPS = [
@@ -49,9 +49,11 @@ const PRISMA_FILES = [
   'src/server/db/keyset.ts',
   'prisma/schema/schema.prisma',
   'prisma.config.ts',
+  'src/test/global-setup.ts',
+  'src/test/setup.ts',
 ]
 
-const CONVEX_VERSION = '^1.42.1'
+const CONVEX_VERSION = '1.46.0'
 
 const empty = () => ({
   removeDeps: [],
@@ -67,6 +69,9 @@ export const isSqlDatabase = (database) => database === 'drizzle' || database ==
 
 export const localDatabaseUrl = (projectName) =>
   `postgres://postgres:postgres@localhost:5432/${packageName(projectName)}`
+
+export const localTestDatabaseUrl = (projectName) =>
+  `postgres://postgres:postgres@localhost:5433/${packageName(projectName)}_test`
 
 export function writeDatabaseScript({ projectDir, envPath = '.env' }) {
   const scriptPath = join(projectDir, 'start-database.sh')

@@ -92,6 +92,23 @@ function assertAuth(dir, auth, deps, framework) {
   }
 }
 
+function assertTesting(dir, result, pkg) {
+  const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
+  const authTests = sqlDb && result.auth === 'better-auth' && result.trpc
+  expect(pkg.scripts.test, 'test script').toBe('vitest run')
+  expect(exists(`${dir}/vitest.config.mts`), 'vitest config').toBe(true)
+  expect(exists(`${dir}/src/test/global-setup.ts`), `test database setup=${sqlDb}`).toBe(sqlDb)
+  expect(exists(`${dir}/src/test/app.ts`), `auth test helpers=${authTests}`).toBe(authTests)
+  expect(exists(`${dir}/src/server/api/trpc.test.ts`), `trpc test=${authTests}`).toBe(authTests)
+  expect(exists(`${dir}/.env.test`), `test env=${sqlDb}`).toBe(sqlDb)
+  if (sqlDb) {
+    expect(read(`${dir}/.env.test`)).toMatch(/^DATABASE_URL=postgres:\/\/.+:5433\/.+_test$/m)
+    expect(read(`${dir}/src/test/global-setup.ts`)).toContain(
+      result.database === 'prisma' ? "'migrate', 'diff'" : 'pushSchema',
+    )
+  }
+}
+
 function assertDatabase(dir, database, deps, authKept, framework) {
   const hasSqlDb = database === 'drizzle' || database === 'prisma'
   expect(exists(`${dir}/src/server/db`), `db layer present=${hasSqlDb}`).toBe(hasSqlDb)
@@ -101,7 +118,7 @@ function assertDatabase(dir, database, deps, authKept, framework) {
 
   if (hasSqlDb) {
     const script = read(`${dir}/start-database.sh`)
-    expect(script).toContain(`ENV_FILE="\${SCRIPT_DIR}/.env"`)
+    expect(script).toContain(`ENV_FILE="\${1:-\${SCRIPT_DIR}/.env}"`)
     expect(script).toContain('docker.io/postgres:18-alpine')
     expect(() => accessSync(`${dir}/start-database.sh`, constants.X_OK)).not.toThrow()
   }
@@ -268,6 +285,7 @@ for (const framework of ['tanstack', 'next']) {
         assertOptionalComponentsAbsent(dir, deps)
         assertMailer(dir, result, deps)
         if (result.trpc) assertTrpcContext(dir, result.database, result.auth)
+        assertTesting(dir, result, pkg)
 
         const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
         expect(env.includes('DATABASE_URL')).toBe(sqlDb)
@@ -296,6 +314,10 @@ for (const framework of ['tanstack', 'next']) {
         expect(ci).toContain('pnpm install --frozen-lockfile')
         expect(ci).toContain('pnpm run typecheck')
         expect(ci).toContain('pnpm run check')
+        expect(ci).toContain('pnpm run test')
+        expect(ci).toContain('node-version-file: .nvmrc')
+        expect(ci).toContain('version: 11.1.3')
+        expect(ci).not.toContain('push:')
       })
     }
   })

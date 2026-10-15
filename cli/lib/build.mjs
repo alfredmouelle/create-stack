@@ -3,7 +3,13 @@ import { rewriteAlias } from './alias.mjs'
 import { applyAuth } from './auth.mjs'
 import { MANUAL_STEPS, vendorCapability } from './capabilities.mjs'
 import { writeCiWorkflow } from './ci.mjs'
-import { applyDatabase, isSqlDatabase, localDatabaseUrl, writeDatabaseScript } from './database.mjs'
+import {
+  applyDatabase,
+  isSqlDatabase,
+  localDatabaseUrl,
+  localTestDatabaseUrl,
+  writeDatabaseScript,
+} from './database.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
 import { creationMetadata, stampIdentity } from './identity.mjs'
 import { swapMailer } from './mailer.mjs'
@@ -11,6 +17,7 @@ import { wrapMonorepo } from './monorepo.mjs'
 import { detectPackageManager } from './package-manager.mjs'
 import { forkBase, makeStandalone } from './scaffold.mjs'
 import { stripUnselectedFeatures } from './strip.mjs'
+import { applyTesting } from './testing.mjs'
 import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON } from './util.mjs'
 
 function createLocalEnv(database, auth, projectName) {
@@ -20,6 +27,10 @@ function createLocalEnv(database, auth, projectName) {
       ? { BETTER_AUTH_SECRET: randomBytes(32).toString('base64url') }
       : {}),
   }
+}
+
+function createTestEnv(database, projectName) {
+  return isSqlDatabase(database) ? { DATABASE_URL: localTestDatabaseUrl(projectName) } : null
 }
 
 function writeLocalDatabaseScript(projectDir, database, monorepo) {
@@ -54,6 +65,7 @@ export function buildProject({
   const strip = stripUnselectedFeatures({ projectDir: appDir, framework, trpc, keptMailer })
   const authRes = applyAuth({ projectDir: appDir, framework, auth, trpcKept: trpc })
   const db = applyDatabase({ projectDir: appDir, database, framework, auth, authKept: authUsesDb })
+  applyTesting({ projectDir: appDir, sqlDatabase: isSqlDatabase(database), auth, trpc })
 
   const mailer = keptMailer
     ? swapMailer(appDir, mailerProvider)
@@ -102,7 +114,7 @@ export function buildProject({
   envKeys.push(...mailer.envKeys, ...capEnvKeys)
   requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
   const localEnv = createLocalEnv(database, auth, projectName)
-  writeEnv(appDir, envKeys, requiredEnvKeys, localEnv)
+  writeEnv(appDir, envKeys, requiredEnvKeys, localEnv, createTestEnv(database, projectName))
   const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
@@ -114,7 +126,7 @@ export function buildProject({
     database,
     metadata,
   })
-  writeCiWorkflow(projectDir, pm)
+  writeCiWorkflow(projectDir, pm, monorepo ? 'apps/web/.nvmrc' : '.nvmrc')
 
   rewriteAlias(appDir, alias)
 

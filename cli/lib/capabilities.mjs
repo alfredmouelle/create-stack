@@ -424,8 +424,8 @@ function resolveDeps(cap, names, manifest) {
   const out = {}
   for (const d of names) {
     if (d.startsWith('@alfredmouelle/')) continue
-    out[d] =
-      manifest?.versions?.[d] ?? pkg.dependencies?.[d] ?? pkg.peerDependencies?.[d] ?? 'latest'
+    out[d] = manifest?.versions?.[d] ?? pkg.dependencies?.[d] ?? pkg.peerDependencies?.[d]
+    if (!out[d]) throw new Error(`Undeclared version for ${d} in capability ${cap}`)
   }
   return out
 }

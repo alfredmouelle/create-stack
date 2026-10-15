@@ -106,7 +106,7 @@ export function detectFramework(pkg) {
   const deps = { ...pkg.dependencies, ...pkg.devDependencies }
   if (deps['@tanstack/react-start'] || deps['@tanstack/react-router']) return 'tanstack'
   if (deps.next) return 'next'
-  throw new Error('Could not detect framework — no `next` or `@tanstack/react-start` dependency')
+  throw new Error('Could not detect framework: no `next` or `@tanstack/react-start` dependency')
 }
 
 const currentMailerAdapter = (projectDir) => {

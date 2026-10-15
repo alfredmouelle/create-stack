@@ -128,7 +128,7 @@ describe('swap', () => {
     expect(exists(`${dir}/src/app/global-error.tsx`)).toBe(true)
     expect(read(`${dir}/src/instrumentation.ts`)).toContain('captureRequestError')
     expect(res.manualSteps.join(' ')).toMatch(/withSentryConfig/)
-    expect(res.addDeps['@sentry/nextjs']).toMatch(/^\^\d/)
+    expect(res.addDeps['@sentry/nextjs']).toMatch(/^\d+\.\d+\.\d+$/)
   })
 
   test('error-tracking wires TanStack differently', () => {
@@ -137,7 +137,7 @@ describe('swap', () => {
 
     expect(exists(`${dir}/instrument.server.mjs`)).toBe(true)
     expect(exists(`${dir}/src/instrumentation.ts`)).toBe(false)
-    expect(res.addDeps['@sentry/tanstackstart-react']).toMatch(/^\^\d/)
+    expect(res.addDeps['@sentry/tanstackstart-react']).toMatch(/^\d+\.\d+\.\d+$/)
     expect(res.manualSteps.length).toBeGreaterThan(0)
   })
 })

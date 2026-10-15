@@ -14,12 +14,12 @@
   },
   "dependencies": {
     "@alfredmouelle/http": "workspace:*",
-    "posthog-node": "^5.48.1"
+    "posthog-node": "5.56.0"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "tsdown": "^0.22.14",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "@types/node": "24.19.2",
+    "tsdown": "0.23.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.4"
   }
 }

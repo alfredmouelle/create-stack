@@ -29,22 +29,22 @@ describe('component registry generation', () => {
     const expected = {
       prompt: {
         registryDependencies: ['dialog', 'button', 'input', 'label'],
-        dependencies: ['react-call'],
+        dependencies: ['react-call@2.0.2'],
         root: { name: 'Prompt', module: 'components/ui/prompt' },
       },
       choice: {
         registryDependencies: ['dialog', 'button'],
-        dependencies: ['react-call'],
+        dependencies: ['react-call@2.0.2'],
         root: { name: 'Choice', module: 'components/ui/choice' },
       },
       'confirm-passphrase': {
         registryDependencies: ['dialog', 'button', 'input', 'label'],
-        dependencies: ['react-call'],
+        dependencies: ['react-call@2.0.2'],
         root: { name: 'ConfirmPassphrase', module: 'components/ui/confirm-passphrase' },
       },
       'confirm-otp': {
         registryDependencies: ['dialog', 'button', 'input-otp'],
-        dependencies: ['react-call'],
+        dependencies: ['react-call@2.0.2'],
         root: { name: 'ConfirmOtp', module: 'components/ui/confirm-otp' },
       },
     }
@@ -86,7 +86,11 @@ describe('component registry generation', () => {
     expect(registryItemSchema.safeParse(item).success).toBe(true)
     expect(item.name).toBe('date-picker')
     expect(item.registryDependencies).toEqual(['calendar', 'popover', 'button'])
-    expect(item.dependencies).toEqual(['react-day-picker', 'date-fns', 'lucide-react'])
+    expect(item.dependencies).toEqual([
+      'react-day-picker@10.0.2',
+      'date-fns@4.4.0',
+      'lucide-react@1.56.0',
+    ])
     expect(item.files.map((file) => file.path)).toEqual([
       'ui/date-picker.tsx',
       'ui/date-range-picker.tsx',
@@ -103,7 +107,7 @@ describe('component registry generation', () => {
       const callable = readJSON(join(destination, `${name}.json`))
       expect(registryItemSchema.safeParse(callable).success).toBe(true)
       expect(callable.registryDependencies).toEqual(['alert-dialog'])
-      expect(callable.dependencies).toEqual(['react-call'])
+      expect(callable.dependencies).toEqual(['react-call@2.0.2'])
       expect(callable.files.map((file) => file.path)).toEqual([`ui/${name}.tsx`])
       expect(result.metadata[name].root).toEqual({
         name: rootName,
@@ -132,7 +136,7 @@ describe('component registry generation', () => {
 
     expect(registryItemSchema.safeParse(item).success).toBe(true)
     expect(item.registryDependencies).toEqual(['table', 'skeleton', 'button'])
-    expect(item.dependencies).toEqual(['@tanstack/react-table@^8.21.3', 'lucide-react'])
+    expect(item.dependencies).toEqual(['@tanstack/react-table@8.21.3', 'lucide-react@1.56.0'])
     expect(item.files.map((file) => file.path)).toEqual([
       'components/data-table.tsx',
       'components/infinite-data-table.tsx',

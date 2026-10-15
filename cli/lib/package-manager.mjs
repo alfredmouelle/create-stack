@@ -34,6 +34,8 @@ const PACKAGE_MANAGERS = {
 
 export const PM_NAMES = ['pnpm', 'npm', 'yarn', 'bun']
 
+export const PM_VERSIONS = { pnpm: '11.1.3', npm: '11.0.0', yarn: '4.6.0', bun: '1.2.0' }
+
 export const resolvePackageManager = (name) => PACKAGE_MANAGERS[name] ?? PACKAGE_MANAGERS.npm
 
 export function resolveExplicitPackageManager(name) {
