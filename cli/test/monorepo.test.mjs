@@ -87,7 +87,7 @@ for (const framework of ['tanstack', 'next']) {
 
           expect(exists(`${dir}/start-database.sh`), 'root database script').toBe(true)
           expect(read(`${dir}/start-database.sh`)).toContain(
-            `ENV_FILE="\${SCRIPT_DIR}/apps/web/.env"`,
+            `ENV_FILE="\${1:-\${SCRIPT_DIR}/apps/web/.env}"`,
           )
           expect(() => accessSync(`${dir}/start-database.sh`, constants.X_OK)).not.toThrow()
           expect(rootPkg.scripts['db:push'], 'root db:push delegation').toBe(

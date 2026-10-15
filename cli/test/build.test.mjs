@@ -101,7 +101,7 @@ function assertDatabase(dir, database, deps, authKept, framework) {
 
   if (hasSqlDb) {
     const script = read(`${dir}/start-database.sh`)
-    expect(script).toContain(`ENV_FILE="\${SCRIPT_DIR}/.env"`)
+    expect(script).toContain(`ENV_FILE="\${1:-\${SCRIPT_DIR}/.env}"`)
     expect(script).toContain('docker.io/postgres:18-alpine')
     expect(() => accessSync(`${dir}/start-database.sh`, constants.X_OK)).not.toThrow()
   }

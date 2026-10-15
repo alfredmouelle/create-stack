@@ -7,7 +7,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="${SCRIPT_DIR}/__ENV_FILE__"
+ENV_FILE="${1:-${SCRIPT_DIR}/__ENV_FILE__}"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Environment file not found: $ENV_FILE"
