@@ -11,12 +11,13 @@ allowBuilds:
   '@sentry/cli': true
   workerd: true
   core-js: true
-minimumReleaseAgeExclude:
-  - posthog-js@1.418.11
 onlyBuiltDependencies:
   - esbuild
   - protobufjs
   - sharp
   - lightningcss
 overrides:
-  vite: "^8.0.16"
+  vite: 8.3.4
+  '@esbuild-kit/core-utils>esbuild': 0.25.12
+  '@react-email/ui>next': 16.4.0
+saveExact: true
