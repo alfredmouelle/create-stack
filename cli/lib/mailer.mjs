@@ -1,3 +1,4 @@
+import { stripJsExtensions } from './capabilities.mjs'
 import { STACK_ROOT } from './paths.mjs'
 import { copy, exists, join, readJSON, remove, write } from './util.mjs'
 
@@ -71,6 +72,7 @@ export function swapMailer(projectDir, provider) {
     join(STACK_ROOT, 'packages/mailer/src/adapters', `${provider}.ts`),
     join(projectDir, EMAIL_DIR, 'adapters', `${provider}.ts`),
   )
+  stripJsExtensions(join(projectDir, EMAIL_DIR, 'adapters'))
   write(join(projectDir, EMAIL_DIR, 'index.ts'), INDEX_TS(cfg))
 
   const mailerPkg = readJSON(join(STACK_ROOT, 'packages/mailer/package.json'))
@@ -95,6 +97,7 @@ export function vendorMailer(projectDir, framework, adapter, keep) {
     copy(join(MAILER_PKG, 'src/adapters', `${adapter}.ts`), join(dir, 'adapters', `${adapter}.ts`))
   if (!keep)
     for (const a of MAILER_ADAPTERS) if (a !== adapter) remove(join(dir, 'adapters', `${a}.ts`))
+  stripJsExtensions(join(dir, 'adapters'))
   write(join(dir, 'index.ts'), INDEX_TS(cfg))
 
   const mailerPkg = readJSON(join(MAILER_PKG, 'package.json'))

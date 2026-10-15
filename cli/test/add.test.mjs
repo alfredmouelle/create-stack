@@ -150,6 +150,7 @@ describe('mailer / lib targets', () => {
     expect(res.swappedFrom).toBe('resend')
     expect(exists(`${dir}/src/server/email/adapters/brevo.ts`)).toBe(true)
     expect(exists(`${dir}/src/server/email/adapters/resend.ts`)).toBe(false)
+    expect(read(`${dir}/src/server/email/adapters/brevo.ts`)).not.toMatch(/from '\.\.?\/.*\.js'/)
     expect('@getbrevo/brevo' in deps(dir)).toBe(true)
     expect('resend' in deps(dir)).toBe(false)
     expect(serverHas(dir, 'BREVO_API_KEY')).toBe(true)
@@ -161,6 +162,7 @@ describe('mailer / lib targets', () => {
 
     addCapability({ projectDir: dir, cap: 'mailer', adapter: 'ses' })
     expect(exists(`${dir}/src/server/email/index.ts`)).toBe(true)
+    expect(read(`${dir}/src/server/email/adapters/ses.ts`)).not.toMatch(/from '\.\.?\/.*\.js'/)
     expect('@aws-sdk/client-sesv2' in deps(dir)).toBe(true)
     expect(serverHas(dir, 'AWS_REGION')).toBe(true)
   })

@@ -191,6 +191,8 @@ function assertMailer(dir, result, deps) {
   expect(root, 'no required() guard in email root').not.toContain('function required')
   expect(root).toContain('export const mailer: Mailer')
   expect(root).not.toContain('sendEmail')
+  const adapter = read(`${dir}/src/server/email/adapters/${result.mailerProvider}.ts`)
+  expect(adapter, 'extensionless relative imports').not.toMatch(/from '\.\.?\/.*\.js'/)
   if (result.mailerProvider !== 'ses') expect(root).toContain('apiKey: env.')
 }
 

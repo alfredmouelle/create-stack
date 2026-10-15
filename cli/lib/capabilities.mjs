@@ -402,7 +402,7 @@ function rewriteImports(dir, from, to) {
 
 const JS_EXT = /(from\s+['"]\.\.?\/[^'"]*?)\.js(['"])/g
 
-function stripJsExtensions(dir) {
+export function stripJsExtensions(dir) {
   walkTs(dir, (p, src) => {
     const next = src.replace(JS_EXT, '$1$2')
     if (next !== src) write(p, next)
