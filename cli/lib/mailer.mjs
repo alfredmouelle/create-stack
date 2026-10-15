@@ -30,35 +30,26 @@ const FACTORY = {
   },
 }
 
-const INDEX_TS = (cfg) => `import type { ReactElement } from 'react'
-import { env } from '~/env'
+const INDEX_TS = (cfg) => `import { env } from '~/env'
 ${cfg.import}
 import { createMailer } from './factory'
 import type { MailAddress, Mailer } from './port'
 
 export type EmailRecipient = MailAddress
 
-let mailer: Mailer | null = null
-function getMailer(): Mailer {
-  if (!mailer) {
-    mailer = createMailer({
+let resolved: Mailer | null = null
+function resolveMailer(): Mailer {
+  if (!resolved) {
+    resolved = createMailer({
       from: env.EMAIL_FROM,
       adapter: ${cfg.adapter},
     })
   }
-  return mailer
+  return resolved
 }
 
-export async function sendEmail(params: {
-  to: EmailRecipient
-  subject: string
-  template: ReactElement
-}) {
-  return getMailer().send({
-    to: params.to,
-    subject: params.subject,
-    react: params.template,
-  })
+export const mailer: Mailer = {
+  send: (message) => resolveMailer().send(message),
 }
 `
 

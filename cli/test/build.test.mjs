@@ -94,12 +94,18 @@ function assertAuth(dir, auth, deps, framework) {
 
 function assertTesting(dir, result, pkg) {
   const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
-  const authTests = sqlDb && result.auth === 'better-auth' && result.trpc
+  const betterAuthTests = sqlDb && result.auth === 'better-auth'
+  const authTests = betterAuthTests && result.trpc
   expect(pkg.scripts.test, 'test script').toBe('vitest run')
   expect(exists(`${dir}/vitest.config.mts`), 'vitest config').toBe(true)
   expect(exists(`${dir}/src/test/global-setup.ts`), `test database setup=${sqlDb}`).toBe(sqlDb)
   expect(exists(`${dir}/src/test/app.ts`), `auth test helpers=${authTests}`).toBe(authTests)
   expect(exists(`${dir}/src/server/api/trpc.test.ts`), `trpc test=${authTests}`).toBe(authTests)
+  expect(exists(`${dir}/src/test/fakes.ts`), `test fakes=${betterAuthTests}`).toBe(betterAuthTests)
+  expect(
+    exists(`${dir}/src/server/better-auth/config.test.ts`),
+    `better-auth test=${betterAuthTests}`,
+  ).toBe(betterAuthTests)
   expect(exists(`${dir}/.env.test`), `test env=${sqlDb}`).toBe(sqlDb)
   if (sqlDb) {
     expect(read(`${dir}/.env.test`)).toMatch(/^DATABASE_URL=postgres:\/\/.+:5433\/.+_test$/m)
@@ -183,6 +189,8 @@ function assertMailer(dir, result, deps) {
   }
   const root = read(`${dir}/src/server/email/index.ts`)
   expect(root, 'no required() guard in email root').not.toContain('function required')
+  expect(root).toContain('export const mailer: Mailer')
+  expect(root).not.toContain('sendEmail')
   if (result.mailerProvider !== 'ses') expect(root).toContain('apiKey: env.')
 }
 
