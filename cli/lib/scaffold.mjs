@@ -10,6 +10,7 @@ const RSYNC_EXCLUDES = [
   '.tanstack',
   'dist',
   'src/routeTree.gen.ts',
+  'tsconfig.tsbuildinfo',
   '.env',
   '.env.local',
   'pnpm-lock.yaml',

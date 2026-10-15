@@ -16,6 +16,7 @@ const APP_EXCLUDES = new Set([
   '.tanstack',
   'dist',
   'routeTree.gen.ts',
+  'tsconfig.tsbuildinfo',
 ])
 const isEnvFile = (name) => name === '.env' || name.startsWith('.env.')
 

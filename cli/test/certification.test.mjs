@@ -202,6 +202,7 @@ function assetSignature(root) {
       } else if (
         entry.name !== '.gitignore' &&
         entry.name !== 'routeTree.gen.ts' &&
+        !entry.name.endsWith('.tsbuildinfo') &&
         !entry.name.startsWith('.env')
       ) {
         files.push(relativePath)
