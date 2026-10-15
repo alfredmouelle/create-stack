@@ -83,7 +83,8 @@ export function swapMailer(projectDir, provider) {
   write(join(projectDir, EMAIL_DIR, 'index.ts'), INDEX_TS(cfg))
 
   const mailerPkg = readJSON(join(STACK_ROOT, 'packages/mailer/package.json'))
-  const range = mailerPkg.dependencies?.[cfg.pkgDep] ?? 'latest'
+  const range = mailerPkg.dependencies?.[cfg.pkgDep]
+  if (!range) throw new Error(`Undeclared version for ${cfg.pkgDep} in the mailer package`)
   return {
     addDeps: { [cfg.pkgDep]: range },
     removeDeps: ['resend'],
@@ -106,7 +107,11 @@ export function vendorMailer(projectDir, framework, adapter, keep) {
   write(join(dir, 'index.ts'), INDEX_TS(cfg))
 
   const mailerPkg = readJSON(join(MAILER_PKG, 'package.json'))
-  const range = (d) => mailerPkg.dependencies?.[d] ?? mailerPkg.peerDependencies?.[d] ?? 'latest'
+  const range = (d) => {
+    const version = mailerPkg.dependencies?.[d] ?? mailerPkg.peerDependencies?.[d]
+    if (!version) throw new Error(`Undeclared version for ${d} in the mailer package`)
+    return version
+  }
   const addDeps = Object.fromEntries([cfg.pkgDep, 'react-email'].map((d) => [d, range(d)]))
   const removeDeps = keep
     ? []
