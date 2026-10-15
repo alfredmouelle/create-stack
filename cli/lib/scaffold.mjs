@@ -11,6 +11,7 @@ const RSYNC_EXCLUDES = [
   'dist',
   'src/routeTree.gen.ts',
   'tsconfig.tsbuildinfo',
+  'start-database.sh',
   '.env',
   '.env.local',
   'pnpm-lock.yaml',

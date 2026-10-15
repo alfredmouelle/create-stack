@@ -17,6 +17,7 @@ const APP_EXCLUDES = new Set([
   'dist',
   'routeTree.gen.ts',
   'tsconfig.tsbuildinfo',
+  'start-database.sh',
 ])
 const isEnvFile = (name) => name === '.env' || name.startsWith('.env.')
 

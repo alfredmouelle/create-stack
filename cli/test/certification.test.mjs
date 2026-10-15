@@ -203,6 +203,7 @@ function assetSignature(root) {
         entry.name !== '.gitignore' &&
         entry.name !== 'routeTree.gen.ts' &&
         !entry.name.endsWith('.tsbuildinfo') &&
+        entry.name !== 'start-database.sh' &&
         !entry.name.startsWith('.env')
       ) {
         files.push(relativePath)
