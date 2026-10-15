@@ -12,6 +12,28 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-15
+
+### Added
+
+- Better Auth projects build auth with `createAuth({ mailer })`, and the email module
+  exports a lazy `mailer` that needs no provider API key until the first send. Projects
+  with Better Auth and Drizzle or Prisma ship a `createInMemoryMailer()` test fake and a
+  sign-up integration test that asserts the verification email in its outbox.
+
+### Changed
+
+- The email module exports `mailer` in place of `sendEmail`. Call
+  `mailer.send({ to, subject, react })`.
+- The tRPC timing middleware adds its random delay only when `NODE_ENV` is
+  `development`, so procedure tests no longer wait on it.
+
+### Fixed
+
+- Next.js projects with the Brevo or SES mailer failed to build because the vendored
+  adapters imported `'../port.js'` and `'../address.js'`. Vendored adapters now use
+  extensionless imports.
+
 ## [0.14.0] - 2026-10-15
 
 ### Added
