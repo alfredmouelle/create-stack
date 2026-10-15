@@ -180,14 +180,14 @@ either TanStack `__root` or the Next.js root layout, so `.call()` works after in
 
 | Component | Create Stack files | Official shadcn primitives | Direct packages |
 | --- | --- | --- | --- |
-| `date-picker` | `ui/date-picker`, `ui/date-range-picker`, `lib/date` | calendar, popover, button | react-day-picker, date-fns, lucide-react |
-| `data-table` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | table, skeleton, button | @tanstack/react-table@^8.21.3, lucide-react |
-| `confirm` | `ui/confirm`, waits for a yes/no result | alert-dialog | react-call |
-| `alert` | `ui/alert`, waits for confirmation | alert-dialog | react-call |
-| `prompt` | `ui/prompt`, waits for text input | dialog | react-call |
-| `choice` | `ui/choice`, waits for a selection | dialog | react-call |
-| `confirm-passphrase` | `ui/confirm-passphrase`, checks an exact phrase | dialog | react-call |
-| `confirm-otp` | `ui/confirm-otp`, checks an OTP code | dialog, input-otp | react-call |
+| `date-picker` | `ui/date-picker`, `ui/date-range-picker`, `lib/date` | calendar, popover, button | react-day-picker@10.0.2, date-fns@4.4.0, lucide-react@1.56.0 |
+| `data-table` | `data-table`, `infinite-data-table`, `sortable-header`, `use-data-table` | table, skeleton, button | @tanstack/react-table@8.21.3, lucide-react@1.56.0 |
+| `confirm` | `ui/confirm`, waits for a yes/no result | alert-dialog | react-call@2.0.2 |
+| `alert` | `ui/alert`, waits for confirmation | alert-dialog | react-call@2.0.2 |
+| `prompt` | `ui/prompt`, waits for text input | dialog | react-call@2.0.2 |
+| `choice` | `ui/choice`, waits for a selection | dialog | react-call@2.0.2 |
+| `confirm-passphrase` | `ui/confirm-passphrase`, checks an exact phrase | dialog | react-call@2.0.2 |
+| `confirm-otp` | `ui/confirm-otp`, checks an OTP code | dialog, input-otp | react-call@2.0.2 |
 
 ```bash
 create-stack add                              # grouped capabilities + components picker

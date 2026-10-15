@@ -1626,7 +1626,7 @@ test('installs a mixed registry batch once with shared official primitives dedup
     expect(added.stdout).toContain('shadcn: calendar, popover, button, table, skeleton')
     expect(added.stdout.match(/shadcn:.*button/g)).toHaveLength(1)
     expect(readFileSync(fake.log, 'utf8').trim().split('\n')[0]).toBe(
-      'install -- @tanstack/react-table@^8.21.3 react-day-picker date-fns',
+      'install --no-audit --no-fund -- @tanstack/react-table@8.21.3 lucide-react@1.56.0 react-day-picker@10.0.2 date-fns@4.4.0',
     )
     expect(existsSync(`${fixture.app}/src/components/data-table.tsx`)).toBe(true)
     expect(existsSync(`${fixture.app}/src/components/ui/date-picker.tsx`)).toBe(true)

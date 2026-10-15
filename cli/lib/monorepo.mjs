@@ -3,7 +3,7 @@ import { TEMPLATES } from './paths.mjs'
 import { NATIVE_BUILD_DEPS } from './scaffold.mjs'
 import { copy, exists, join, readJSON, remove, write, writeJSON } from './util.mjs'
 
-const VERSIONS = { turbo: '^2.10.0', nx: '^23.0.0' }
+const VERSIONS = { turbo: '2.11.8', nx: '23.3.0' }
 
 const PM_VERSIONS = { pnpm: '11.1.3', npm: '11.0.0', yarn: '4.6.0', bun: '1.2.0' }
 

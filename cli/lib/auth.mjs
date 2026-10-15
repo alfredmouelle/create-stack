@@ -16,12 +16,12 @@ export function resolveAuth(value) {
 const CLERK = {
   tanstack: {
     pkg: '@clerk/tanstack-react-start',
-    range: '^1.4.0',
+    range: '1.7.1',
     publishableKey: 'VITE_CLERK_PUBLISHABLE_KEY',
   },
   next: {
     pkg: '@clerk/nextjs',
-    range: '^7.5.0',
+    range: '7.9.14',
     publishableKey: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
   },
 }

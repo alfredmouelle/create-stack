@@ -18,8 +18,8 @@ afterAll(() => {
 describe('package.json helpers', () => {
   test('pkgAddDeps adds into dependencies', () => {
     const pkg = {}
-    pkgAddDeps(pkg, { resend: '^4.0.0' })
-    expect(pkg.dependencies).toEqual({ resend: '^4.0.0' })
+    pkgAddDeps(pkg, { resend: '4.0.0' })
+    expect(pkg.dependencies).toEqual({ resend: '4.0.0' })
   })
   test('pkgRemoveDeps strips from both dep fields', () => {
     const pkg = { dependencies: { a: '1', b: '2' }, devDependencies: { a: '1', c: '3' } }

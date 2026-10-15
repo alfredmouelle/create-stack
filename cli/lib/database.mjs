@@ -15,7 +15,7 @@ export function resolveDatabase(value) {
   return value
 }
 
-const PRISMA_VERSION = '^7.4.0'
+const PRISMA_VERSION = '7.10.0'
 
 const DRIZZLE_ONLY_DEPS = ['drizzle-orm', 'drizzle-kit']
 const DRIZZLE_ALL_DEPS = [
@@ -51,7 +51,7 @@ const PRISMA_FILES = [
   'prisma.config.ts',
 ]
 
-const CONVEX_VERSION = '^1.42.1'
+const CONVEX_VERSION = '1.46.0'
 
 const empty = () => ({
   removeDeps: [],

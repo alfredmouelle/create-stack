@@ -162,7 +162,7 @@ export const COMPONENT_CATALOG = {
     sourceRoot: COMPONENT_SOURCE_ROOT,
     packageRoot: COMPONENT_PACKAGE_ROOT,
     registryDependencies: ['table', 'skeleton', 'button'],
-    dependencies: ['@tanstack/react-table@^8.21.3', 'lucide-react'],
+    dependencies: ['@tanstack/react-table', 'lucide-react'],
     files: [
       {
         source: 'components/data-table.tsx',
@@ -223,17 +223,14 @@ function readPackageDependencies(rootDir, packageRoot) {
   const packagePath = resolveInside(rootDir, join(packageRoot, 'package.json'), 'package root')
   if (!existsSync(packagePath)) throw new Error(`Missing package manifest: ${packagePath}`)
   const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'))
-  return new Set([
-    ...Object.keys(packageJson.dependencies ?? {}),
-    ...Object.keys(packageJson.devDependencies ?? {}),
-    ...Object.keys(packageJson.peerDependencies ?? {}),
-    ...Object.keys(packageJson.optionalDependencies ?? {}),
-  ])
-}
-
-function dependencyName(specifier) {
-  const at = specifier.startsWith('@') ? specifier.indexOf('@', 1) : specifier.indexOf('@')
-  return at === -1 ? specifier : specifier.slice(0, at)
+  return new Map(
+    Object.entries({
+      ...packageJson.optionalDependencies,
+      ...packageJson.peerDependencies,
+      ...packageJson.devDependencies,
+      ...packageJson.dependencies,
+    }),
+  )
 }
 
 function canonicalizeImports(content) {
@@ -290,11 +287,13 @@ function buildItem({ rootDir, name, entry }) {
 
   const sourceRoot = resolveInside(rootDir, entry.sourceRoot, `${name} source root`)
   const packageDependencies = readPackageDependencies(rootDir, entry.packageRoot)
-  for (const dependency of entry.dependencies) {
-    if (!packageDependencies.has(dependencyName(dependency))) {
+  const dependencies = entry.dependencies.map((dependency) => {
+    const version = packageDependencies.get(dependency)
+    if (!version) {
       throw new Error(`Unresolved declared dependency "${dependency}" in registry item "${name}"`)
     }
-  }
+    return `${dependency}@${version}`
+  })
 
   const destinations = new Set()
   const files = entry.files.map((file) => {
@@ -328,7 +327,7 @@ function buildItem({ rootDir, name, entry }) {
     type: entry.type,
     title: entry.title,
     description: entry.description,
-    dependencies: [...entry.dependencies],
+    dependencies,
     registryDependencies: [...entry.registryDependencies],
     files,
   }
