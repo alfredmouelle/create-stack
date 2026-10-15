@@ -1,37 +1,30 @@
+import { PM_VERSIONS } from './package-manager.mjs'
 import { join, write } from './util.mjs'
 
-const NODE_VERSION = 22
+const setupNode = (nvmrc, cache) => `      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ${nvmrc}${cache ? `\n          cache: ${cache}` : ''}`
 
 const SETUP = {
-  pnpm: `      - uses: pnpm/action-setup@v4
+  pnpm: (nvmrc) => `      - uses: pnpm/action-setup@v4
         with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${NODE_VERSION}
-          cache: pnpm
+          version: ${PM_VERSIONS.pnpm}
+${setupNode(nvmrc, 'pnpm')}
       - run: pnpm install --frozen-lockfile`,
-  npm: `      - uses: actions/setup-node@v4
-        with:
-          node-version: ${NODE_VERSION}
-          cache: npm
+  npm: (nvmrc) => `${setupNode(nvmrc, 'npm')}
       - run: npm ci`,
-  yarn: `      - uses: actions/setup-node@v4
-        with:
-          node-version: ${NODE_VERSION}
-          cache: yarn
+  yarn: (nvmrc) => `${setupNode(nvmrc, 'yarn')}
       - run: yarn install --frozen-lockfile`,
-  bun: `      - uses: oven-sh/setup-bun@v2
+  bun: (nvmrc) => `${setupNode(nvmrc)}
+      - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile`,
 }
 
-export function writeCiWorkflow(projectDir, pm) {
-  const setup = SETUP[pm.name] ?? SETUP.npm
+export function writeCiWorkflow(projectDir, pm, nvmrc = '.nvmrc') {
+  const setup = (SETUP[pm.name] ?? SETUP.npm)(nvmrc)
   const yaml = `name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 concurrency:
@@ -46,6 +39,7 @@ jobs:
 ${setup}
       - run: ${pm.name} run typecheck
       - run: ${pm.name} run check
+      - run: ${pm.name} run test
 `
   write(join(projectDir, '.github/workflows/ci.yml'), yaml)
 }

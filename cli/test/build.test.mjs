@@ -314,6 +314,10 @@ for (const framework of ['tanstack', 'next']) {
         expect(ci).toContain('pnpm install --frozen-lockfile')
         expect(ci).toContain('pnpm run typecheck')
         expect(ci).toContain('pnpm run check')
+        expect(ci).toContain('pnpm run test')
+        expect(ci).toContain('node-version-file: .nvmrc')
+        expect(ci).toContain('version: 11.1.3')
+        expect(ci).not.toContain('push:')
       })
     }
   })

@@ -98,6 +98,9 @@ for (const framework of ['tanstack', 'next']) {
           const ci = read(`${dir}/.github/workflows/ci.yml`)
           expect(ci).toContain(`${pm} run typecheck`)
           expect(ci).toContain(`${pm} run check`)
+          expect(ci).toContain(`${pm} run test`)
+          expect(ci).toContain('node-version-file: apps/web/.nvmrc')
+          expect(rootPkg.scripts.test, 'root test delegation').toBeDefined()
 
           if (pm === 'pnpm') {
             expect(exists(`${dir}/pnpm-workspace.yaml`), 'root pnpm-workspace').toBe(true)

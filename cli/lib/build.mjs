@@ -126,7 +126,7 @@ export function buildProject({
     database,
     metadata,
   })
-  writeCiWorkflow(projectDir, pm)
+  writeCiWorkflow(projectDir, pm, monorepo ? 'apps/web/.nvmrc' : '.nvmrc')
 
   rewriteAlias(appDir, alias)
 

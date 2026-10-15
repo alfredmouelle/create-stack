@@ -1,11 +1,10 @@
 import { renderProjectReadme } from './identity.mjs'
+import { PM_VERSIONS } from './package-manager.mjs'
 import { TEMPLATES } from './paths.mjs'
 import { NATIVE_BUILD_DEPS } from './scaffold.mjs'
 import { copy, exists, join, readJSON, remove, write, writeJSON } from './util.mjs'
 
 const VERSIONS = { turbo: '2.11.8', nx: '23.3.0' }
-
-const PM_VERSIONS = { pnpm: '11.1.3', npm: '11.0.0', yarn: '4.6.0', bun: '1.2.0' }
 
 const OUTPUTS = {
   next: ['.next/**', '!.next/cache/**'],
@@ -41,8 +40,8 @@ function turboConfig(rootDir, framework) {
       build: { dependsOn: ['^build'], outputs },
       typecheck: { dependsOn: ['^build'] },
       check: {},
-      test: { cache: false },
       'check:write': { cache: false },
+      test: { cache: false },
       dev: { cache: false, persistent: true },
     },
   })
