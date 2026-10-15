@@ -32,7 +32,8 @@ const copyApp = (from, to) =>
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })
 
-execFileSync('pnpm', ['--dir', ROOT, '--filter', '@alfredmouelle/stack-config', 'build'], {
+execFileSync('pnpm', ['--filter', '@alfredmouelle/stack-config', 'build'], {
+  cwd: ROOT,
   stdio: 'inherit',
 })
 cpSync(join(ROOT, 'packages/stack-config/dist/index.mjs'), join(OUT, 'stack-config/index.mjs'), {
