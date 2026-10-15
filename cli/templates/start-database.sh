@@ -70,6 +70,7 @@ wait_for_database() {
 
   for ((attempt = 1; attempt <= 30; attempt++)); do
     if "$DOCKER_CMD" exec "$DB_CONTAINER_NAME" pg_isready \
+      --host=127.0.0.1 \
       --username="$DB_USER" \
       --dbname="$DB_NAME" >/dev/null 2>&1; then
       echo "Database container '$DB_CONTAINER_NAME' is ready"
