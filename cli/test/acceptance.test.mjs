@@ -1849,8 +1849,8 @@ test('does not copy a fallback when the shadcn registry fails', async () => {
 })
 
 test.each([
-  ['missing', (path) => rmSync(path), 'npx shadcn@4.17.0 init'],
-  ['invalid', (path) => writeFileSync(path, '{}\n'), 'npx shadcn@4.17.0 init'],
+  ['missing', (path) => rmSync(path), 'npx shadcn@4.21.4 init'],
+  ['invalid', (path) => writeFileSync(path, '{}\n'), 'npx shadcn@4.21.4 init'],
 ])('rejects a %s components.json before mutation', (_case, change, command) => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next', pm: 'npm' }).exitStatus).toBe(0)
