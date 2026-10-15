@@ -45,7 +45,10 @@ export const auth = betterAuth({
   user: {
     additionalFields: {},
   },
-  trustedOrigins: [env.BETTER_AUTH_URL],
+  trustedOrigins: [
+    env.BETTER_AUTH_URL,
+    ...(env.NODE_ENV === 'development' ? ['http://localhost:*'] : []),
+  ],
   rateLimit: {
     enabled: env.NODE_ENV === 'production',
     window: 60,
