@@ -49,6 +49,8 @@ const PRISMA_FILES = [
   'src/server/db/keyset.ts',
   'prisma/schema/schema.prisma',
   'prisma.config.ts',
+  'src/test/global-setup.ts',
+  'src/test/setup.ts',
 ]
 
 const CONVEX_VERSION = '1.46.0'
@@ -67,6 +69,9 @@ export const isSqlDatabase = (database) => database === 'drizzle' || database ==
 
 export const localDatabaseUrl = (projectName) =>
   `postgres://postgres:postgres@localhost:5432/${packageName(projectName)}`
+
+export const localTestDatabaseUrl = (projectName) =>
+  `postgres://postgres:postgres@localhost:5433/${packageName(projectName)}_test`
 
 export function writeDatabaseScript({ projectDir, envPath = '.env' }) {
   const scriptPath = join(projectDir, 'start-database.sh')

@@ -14,6 +14,8 @@ const RSYNC_EXCLUDES = [
   'start-database.sh',
   '.env',
   '.env.local',
+  '.env.test',
+  '.env.test.local',
   'pnpm-lock.yaml',
   'package-lock.json',
   'yarn.lock',

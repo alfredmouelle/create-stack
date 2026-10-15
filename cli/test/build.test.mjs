@@ -92,6 +92,23 @@ function assertAuth(dir, auth, deps, framework) {
   }
 }
 
+function assertTesting(dir, result, pkg) {
+  const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
+  const authTests = sqlDb && result.auth === 'better-auth' && result.trpc
+  expect(pkg.scripts.test, 'test script').toBe('vitest run')
+  expect(exists(`${dir}/vitest.config.mts`), 'vitest config').toBe(true)
+  expect(exists(`${dir}/src/test/global-setup.ts`), `test database setup=${sqlDb}`).toBe(sqlDb)
+  expect(exists(`${dir}/src/test/app.ts`), `auth test helpers=${authTests}`).toBe(authTests)
+  expect(exists(`${dir}/src/server/api/trpc.test.ts`), `trpc test=${authTests}`).toBe(authTests)
+  expect(exists(`${dir}/.env.test`), `test env=${sqlDb}`).toBe(sqlDb)
+  if (sqlDb) {
+    expect(read(`${dir}/.env.test`)).toMatch(/^DATABASE_URL=postgres:\/\/.+:5433\/.+_test$/m)
+    expect(read(`${dir}/src/test/global-setup.ts`)).toContain(
+      result.database === 'prisma' ? "'migrate', 'diff'" : 'pushSchema',
+    )
+  }
+}
+
 function assertDatabase(dir, database, deps, authKept, framework) {
   const hasSqlDb = database === 'drizzle' || database === 'prisma'
   expect(exists(`${dir}/src/server/db`), `db layer present=${hasSqlDb}`).toBe(hasSqlDb)
@@ -268,6 +285,7 @@ for (const framework of ['tanstack', 'next']) {
         assertOptionalComponentsAbsent(dir, deps)
         assertMailer(dir, result, deps)
         if (result.trpc) assertTrpcContext(dir, result.database, result.auth)
+        assertTesting(dir, result, pkg)
 
         const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
         expect(env.includes('DATABASE_URL')).toBe(sqlDb)

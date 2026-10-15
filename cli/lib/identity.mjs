@@ -67,7 +67,9 @@ The generated script starts PostgreSQL through Docker or Podman. Run:
 
 \`\`\`bash
 ./${scriptPath}${dbPush}
-\`\`\``
+\`\`\`
+
+\`${packageCommand(pm, 'test')}\` starts a separate test database from \`.env.test\`, applies the schema and empties every table before each test. Override its URL in \`.env.test.local\`.`
 }
 
 function learnMoreSection() {

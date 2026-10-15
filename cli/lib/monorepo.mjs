@@ -12,7 +12,7 @@ const OUTPUTS = {
   tanstack: ['.output/**', '.nitro/**', 'dist/**'],
 }
 
-const SCRIPT_TARGETS = ['dev', 'build', 'typecheck', 'check', 'check:write']
+const SCRIPT_TARGETS = ['dev', 'build', 'typecheck', 'check', 'check:write', 'test']
 
 const wsGlobs = ['apps/*', 'packages/*']
 
@@ -41,6 +41,7 @@ function turboConfig(rootDir, framework) {
       build: { dependsOn: ['^build'], outputs },
       typecheck: { dependsOn: ['^build'] },
       check: {},
+      test: { cache: false },
       'check:write': { cache: false },
       dev: { cache: false, persistent: true },
     },

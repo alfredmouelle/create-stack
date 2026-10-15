@@ -68,7 +68,7 @@ const renderSchema = (key, required) => {
   return def ? `v.optional(${inner}, ${def})` : `v.optional(${inner})`
 }
 
-export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}) {
+export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}, testValues = null) {
   const required = new Set(requiredKeys)
   const seen = new Set()
   const ordered = keys.filter((k) => SCHEMAS[k] && !seen.has(k) && seen.add(k))
@@ -98,10 +98,16 @@ export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}) 
     join(projectDir, '.env'),
     render((k) => localValues[k] ?? placeholder(k)),
   )
+  if (testValues) {
+    write(
+      join(projectDir, '.env.test'),
+      render((k) => testValues[k] ?? placeholder(k)),
+    )
+  }
 }
 
 export function appendRawEnvLines(projectDir, lines) {
-  for (const file of ['.env.example', '.env']) {
+  for (const file of ['.env.example', '.env', '.env.test']) {
     const path = join(projectDir, file)
     if (!exists(path)) continue
     const cur = read(path)
@@ -131,7 +137,7 @@ export function appendEnv(projectDir, keys, requiredKeys = []) {
       .replace(/( {2}runtimeEnv: \{[\s\S]*?)(\n {2}\},)/, `$1\n${runtimeLines}$2`)
   })
 
-  for (const file of ['.env.example', '.env']) {
+  for (const file of ['.env.example', '.env', '.env.test']) {
     const path = join(projectDir, file)
     if (!exists(path)) continue
     const cur = read(path)
