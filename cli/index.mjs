@@ -46,7 +46,7 @@ const detectedPm = detectPackageManager()
 
 const VERSION = CLI_VERSION
 
-const HELP = `create-stack — fork a base app, strip it to your selection.
+const HELP = `create-stack: fork a base app, strip it to your selection.
 
 Usage:
   create-stack [project] [flags]          Scaffold a new project
@@ -80,7 +80,7 @@ Capability flags (omit to skip; pass with no value for the default adapter):
   --error-tracking [sentry]                     readable alias for --errors
   Adapters are listed in the interactive picker, or run \`add --help\`.`
 
-const ADD_HELP = `create-stack add — enrich an existing application.
+const ADD_HELP = `create-stack add: enrich an existing application.
 
 Usage:
   create-stack add <capability> [provider] [flags]
@@ -391,7 +391,7 @@ async function pickAdapters(caps) {
 }
 
 async function collectFromPrompts(argDir) {
-  p.intro('create-stack — fork a base app, strip it to your selection')
+  p.intro('create-stack: fork a base app, strip it to your selection')
 
   const name = cancelled(
     await p.text({
@@ -647,7 +647,7 @@ const formatCapability = ([capability, provider]) =>
 function creationPlanLines(a, pm) {
   const monoLabel = a.monorepo === 'nx' ? 'Nx' : a.monorepo === 'turborepo' ? 'Turborepo' : null
   const capabilities = Object.entries(a.capabilities ?? {}).map(formatCapability)
-  const reason = (axis) => (a.selectionReasons?.[axis] ? ` — ${a.selectionReasons[axis]}` : '')
+  const reason = (axis) => (a.selectionReasons?.[axis] ? `, ${a.selectionReasons[axis]}` : '')
   return [
     `Target: ${a.argDir ?? a.projectName}`,
     `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
@@ -658,7 +658,7 @@ function creationPlanLines(a, pm) {
     `Auth: ${orNone(a.auth)}${reason('auth')}`,
     `tRPC: ${a.trpc ? 'yes' : 'no'}${reason('trpc')}`,
     `Mailer: ${orNone(a.mailerProvider)}${reason('mailer')}`,
-    `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ' — requested' : ''}`,
+    `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ', requested' : ''}`,
     `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
     `Initialize Git: ${a.doGit === false ? 'no' : 'yes (outside an existing repository)'}`,
   ]
@@ -712,7 +712,7 @@ function resolveComponentAddition(name) {
     )
   }
   if (!COMPONENT_NAMES.includes(name)) {
-    throw new Error(`Unknown component: ${name} — pick one of ${COMPONENT_NAMES.join(', ')}`)
+    throw new Error(`Unknown component: ${name}. Pick one of ${COMPONENT_NAMES.join(', ')}`)
   }
   return { type: 'component', name }
 }
@@ -727,7 +727,7 @@ function resolveCapabilityAddition(requestedKind, requestedProvider) {
       )
     }
     throw new Error(
-      `Unknown addition: ${requestedKind} — pick one of ${ADDABLE.join(', ')}, component`,
+      `Unknown addition: ${requestedKind}. Pick one of ${ADDABLE.join(', ')}, component`,
     )
   }
   return {

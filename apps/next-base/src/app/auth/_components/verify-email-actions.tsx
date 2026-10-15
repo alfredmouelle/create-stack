@@ -20,7 +20,7 @@ export function VerifyEmailActions({ email }: { email?: string }) {
     <div className="grid gap-4">
       {status === 'sent' ? (
         <FormAlert variant="success">
-          Request sent. If your address isn't confirmed yet, you'll get an email — check your spam
+          Request sent. If your address isn't confirmed yet, you'll get an email. Check your spam
           folder.
         </FormAlert>
       ) : null}

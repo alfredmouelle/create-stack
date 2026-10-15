@@ -145,7 +145,7 @@ test('published package includes the local registry and its executable shadcn ru
   )
   expect(smoke.status, smoke.stderr).toBe(0)
   expect(smoke.stderr).toBe('')
-  expect(smoke.stdout).toContain('Database: (none) — minimal exclusion')
+  expect(smoke.stdout).toContain('Database: (none), minimal exclusion')
   expect(readFileSync(join(consumerRoot, 'packed-project/package.json'), 'utf8')).toContain(
     '"name": "packed-project"',
   )

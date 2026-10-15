@@ -1,4 +1,4 @@
-# create-stack demo — record with: vhs demo.tape  (run from cli/docs/)
+# create-stack demo: record with: vhs demo.tape  (run from cli/docs/)
 # Needs `create-stack` on PATH:  pnpm add -g @alfredmouelle/create-stack
 # vhs: https://github.com/charmbracelet/vhs
 
@@ -23,11 +23,11 @@ Sleep 600ms
 Enter
 Sleep 3s
 
-# 2. swap the cache adapter behind the same port — one command
+# 2. swap the cache adapter behind the same port, in one command
 Type "cd my-app && create-stack add cache upstash --no-install"
 Sleep 600ms
 Enter
 Sleep 3s
 
-Type "#  redis → upstash — swapped, deps + env updated, zero refactor"
+Type "#  redis → upstash: swapped, deps + env updated, zero refactor"
 Sleep 2500ms

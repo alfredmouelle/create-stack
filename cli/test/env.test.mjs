@@ -75,7 +75,7 @@ describe('appendEnv', () => {
     expect(envTs(dir)).toContain('S3_BUCKET: v.pipe(v.string(), v.minLength(1)),')
   })
 
-  test('is idempotent — re-appending does not duplicate', () => {
+  test('is idempotent: re-appending does not duplicate', () => {
     const dir = fixture()
     writeEnv(dir, ['DATABASE_URL'], ['DATABASE_URL'])
     appendEnv(dir, ['REDIS_URL'], [])
