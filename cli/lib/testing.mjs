@@ -3,6 +3,10 @@ import { copy, join, remove } from './util.mjs'
 
 export function applyTesting({ projectDir, sqlDatabase, auth, trpc }) {
   const src = (p) => join(projectDir, 'src', p)
+  if (!sqlDatabase || auth !== 'better-auth') {
+    remove(src('test/fakes.ts'))
+    remove(src('server/better-auth/config.test.ts'))
+  }
   if (!sqlDatabase) {
     remove(src('test'))
     remove(src('server/api/trpc.test.ts'))

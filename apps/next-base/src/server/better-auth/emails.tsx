@@ -1,25 +1,28 @@
 import { ResetPasswordEmail } from '~/emails/reset-password'
 import { VerifyEmail } from '~/emails/verify-email'
-import { type EmailRecipient, sendEmail } from '~/server/email'
+import type { EmailRecipient } from '~/server/email'
+import type { Mailer } from '~/server/email/port'
 
 export const sendVerificationEmail = async (params: {
+  mailer: Mailer
   to: EmailRecipient
   url: string
 }): Promise<void> => {
-  await sendEmail({
+  await params.mailer.send({
     to: params.to,
     subject: 'Confirm your email address',
-    template: <VerifyEmail name={params.to.name} url={params.url} />,
+    react: <VerifyEmail name={params.to.name} url={params.url} />,
   })
 }
 
 export const sendPasswordResetEmail = async (params: {
+  mailer: Mailer
   to: EmailRecipient
   url: string
 }): Promise<void> => {
-  await sendEmail({
+  await params.mailer.send({
     to: params.to,
     subject: 'Reset your password',
-    template: <ResetPasswordEmail name={params.to.name} url={params.url} />,
+    react: <ResetPasswordEmail name={params.to.name} url={params.url} />,
   })
 }

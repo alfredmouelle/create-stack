@@ -1,3 +1,4 @@
+import { stripJsExtensions } from './capabilities.mjs'
 import { STACK_ROOT } from './paths.mjs'
 import { copy, exists, join, readJSON, remove, write } from './util.mjs'
 
@@ -30,35 +31,26 @@ const FACTORY = {
   },
 }
 
-const INDEX_TS = (cfg) => `import type { ReactElement } from 'react'
-import { env } from '~/env'
+const INDEX_TS = (cfg) => `import { env } from '~/env'
 ${cfg.import}
 import { createMailer } from './factory'
 import type { MailAddress, Mailer } from './port'
 
 export type EmailRecipient = MailAddress
 
-let mailer: Mailer | null = null
-function getMailer(): Mailer {
-  if (!mailer) {
-    mailer = createMailer({
+let resolved: Mailer | null = null
+function resolveMailer(): Mailer {
+  if (!resolved) {
+    resolved = createMailer({
       from: env.EMAIL_FROM,
       adapter: ${cfg.adapter},
     })
   }
-  return mailer
+  return resolved
 }
 
-export async function sendEmail(params: {
-  to: EmailRecipient
-  subject: string
-  template: ReactElement
-}) {
-  return getMailer().send({
-    to: params.to,
-    subject: params.subject,
-    react: params.template,
-  })
+export const mailer: Mailer = {
+  send: (message) => resolveMailer().send(message),
 }
 `
 
@@ -80,6 +72,7 @@ export function swapMailer(projectDir, provider) {
     join(STACK_ROOT, 'packages/mailer/src/adapters', `${provider}.ts`),
     join(projectDir, EMAIL_DIR, 'adapters', `${provider}.ts`),
   )
+  stripJsExtensions(join(projectDir, EMAIL_DIR, 'adapters'))
   write(join(projectDir, EMAIL_DIR, 'index.ts'), INDEX_TS(cfg))
 
   const mailerPkg = readJSON(join(STACK_ROOT, 'packages/mailer/package.json'))
@@ -104,6 +97,7 @@ export function vendorMailer(projectDir, framework, adapter, keep) {
     copy(join(MAILER_PKG, 'src/adapters', `${adapter}.ts`), join(dir, 'adapters', `${adapter}.ts`))
   if (!keep)
     for (const a of MAILER_ADAPTERS) if (a !== adapter) remove(join(dir, 'adapters', `${a}.ts`))
+  stripJsExtensions(join(dir, 'adapters'))
   write(join(dir, 'index.ts'), INDEX_TS(cfg))
 
   const mailerPkg = readJSON(join(MAILER_PKG, 'package.json'))

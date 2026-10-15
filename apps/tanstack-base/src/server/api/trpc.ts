@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { flatten, ValiError } from 'valibot'
+import { env } from '~/env'
 import { auth } from '~/server/better-auth'
 import { db } from '~/server/db'
 
@@ -26,19 +27,19 @@ export const createCallerFactory = t.createCallerFactory
 
 export const createTRPCRouter = t.router
 
-const isTest = process.env.VITEST === 'true'
+const isDevelopment = env.NODE_ENV === 'development'
 
 const timingMiddleware = t.middleware(async ({ next, path }) => {
   const start = Date.now()
 
-  if (t._config.isDev && !isTest) {
+  if (isDevelopment) {
     const waitMs = Math.floor(Math.random() * 400) + 100
     await new Promise((resolve) => setTimeout(resolve, waitMs))
   }
 
   const result = await next()
 
-  if (t._config.isDev && !isTest) {
+  if (isDevelopment) {
     // biome-ignore lint/suspicious/noConsole: dev timing instrumentation
     console.log(`[TRPC] ${path} took ${Date.now() - start}ms to execute`)
   }

@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react'
 import { env } from '~/env'
 import { resendAdapter } from './adapters/resend'
 import { createMailer } from './factory'
@@ -11,25 +10,17 @@ function required(value: string | undefined, name: string): string {
   return value
 }
 
-let mailer: Mailer | null = null
-function getMailer(): Mailer {
-  if (!mailer) {
-    mailer = createMailer({
+let resolved: Mailer | null = null
+function resolveMailer(): Mailer {
+  if (!resolved) {
+    resolved = createMailer({
       from: env.EMAIL_FROM,
       adapter: resendAdapter({ apiKey: required(env.RESEND_API_KEY, 'RESEND_API_KEY') }),
     })
   }
-  return mailer
+  return resolved
 }
 
-export async function sendEmail(params: {
-  to: EmailRecipient
-  subject: string
-  template: ReactElement
-}) {
-  return getMailer().send({
-    to: params.to,
-    subject: params.subject,
-    react: params.template,
-  })
+export const mailer: Mailer = {
+  send: (message) => resolveMailer().send(message),
 }
