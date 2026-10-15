@@ -12,6 +12,37 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-15
+
+### Added
+
+- Generated projects with Drizzle or Prisma now ship a Vitest setup backed by a real
+  PostgreSQL test database. `test` starts it from `.env.test` (override the URL in
+  `.env.test.local`), applies the schema, and empties every table before each test.
+  Better Auth projects with tRPC also get `signIn()` and `visitor()` helpers and a first
+  integration test for `protectedProcedure`.
+- `start-database.sh` accepts an env file argument, for example
+  `./start-database.sh .env.test`.
+
+### Changed
+
+- Every dependency in generated projects is pinned to an exact version, including the
+  packages added for Clerk, Prisma, Convex, Sentry, Turborepo, Nx, and registry components.
+  Next.js is updated to 16.4.0, and all base app dependencies move to their latest releases.
+- The generated CI workflow runs on pull requests with pnpm 11.1.3 and the Node version from
+  `.nvmrc`, then runs typecheck, check, and test. Monorepos get a delegated `test` script.
+- Plan output now reads `Database: prisma, requested` instead of using a dash.
+
+### Fixed
+
+- Next.js is patched against the advisories fixed in 16.3.8, including the React Email
+  preview server.
+- Database scripts and seeds let `.env.local` override `.env`.
+- Better Auth trusts any localhost origin in development, so the dev server works on any port.
+- The local database readiness check probes PostgreSQL over TCP.
+- `shadcn init` hints use the shadcn version bundled with the CLI.
+- Local `tsconfig.tsbuildinfo` files no longer leak into forked apps.
+
 ## [0.13.1] - 2026-08-26
 
 ### Fixed
