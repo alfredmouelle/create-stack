@@ -15,7 +15,7 @@ export function resolveDatabase(value) {
   return value
 }
 
-const PRISMA_VERSION = '7.10.0'
+export const PRISMA_VERSION = '7.10.0'
 
 const DRIZZLE_ONLY_DEPS = ['drizzle-orm', 'drizzle-kit']
 const DRIZZLE_ALL_DEPS = [
@@ -53,7 +53,7 @@ const PRISMA_FILES = [
   'src/test/setup.ts',
 ]
 
-const CONVEX_VERSION = '1.46.0'
+export const CONVEX_VERSION = '1.46.0'
 
 const empty = () => ({
   removeDeps: [],
@@ -182,6 +182,11 @@ function allowPrismaBuilds(projectDir) {
     }
     writeJSON(pkgPath, pkg)
   }
+}
+
+export function configurePrismaRuntime(projectDir) {
+  gitignoreGenerated(projectDir)
+  allowPrismaBuilds(projectDir)
 }
 
 const CONVEX_URL_ENV = { tanstack: 'VITE_CONVEX_URL', next: 'NEXT_PUBLIC_CONVEX_URL' }

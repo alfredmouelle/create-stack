@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import type { Framework } from '../../../packages/stack-config/src/index.ts'
 import type { AssemblyRequest, AssemblyResult } from '../framework-module.ts'
 
-export const assembleWithLegacyBuild =
+export const assembleProject =
   (framework: Framework) =>
   async (request: AssemblyRequest): Promise<AssemblyResult> => {
     const [{ buildProject }, { packageName }] = await Promise.all([

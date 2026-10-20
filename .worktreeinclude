@@ -1,0 +1,4 @@
+apps/next-base/.env.local
+apps/next-base/.env.test.local
+apps/tanstack-base/.env.local
+apps/tanstack-base/.env.test.local

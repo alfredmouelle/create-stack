@@ -1,5 +1,6 @@
 import type { Auth, Database, Framework, Mailer } from '../../packages/stack-config/src/index.ts'
 import type { QualityProfileException } from './quality-profile.ts'
+import type { ReferenceApplication } from './reference-application.ts'
 
 export type PackageManager = {
   readonly name: string
@@ -55,4 +56,5 @@ export type FrameworkModule = {
   readonly monorepoOutputs: readonly string[]
   readonly packagedAssets: readonly string[]
   readonly qualityProfileExceptions: readonly QualityProfileException[]
+  readonly referenceApplication?: ReferenceApplication
 }

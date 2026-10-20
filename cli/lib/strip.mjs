@@ -6,27 +6,11 @@ const tpl = (rel) => join(TEMPLATES, rel)
 
 const ALWAYS_KEEP = new Set(['valibot'])
 
-const TANSTACK_TRPC_DEPS = [
-  '@tanstack/query-core',
-  '@tanstack/react-query',
-  '@tanstack/react-query-devtools',
-  '@tanstack/react-router-ssr-query',
-  'superjson',
-]
-
-const stripTrpc = (src, next, keptDeps, removeDeps) => {
+const stripTrpc = (src) => {
   remove(src('trpc'))
   remove(src('server/api'))
-  if (next) {
-    remove(src('app/api/trpc'))
-    copy(tpl('next/layout.no-trpc.tsx'), src('app/layout.tsx'))
-    return
-  }
-  remove(src('routes/api.trpc.$.tsx'))
-  copy(tpl('tanstack/router.no-trpc.tsx'), src('router.tsx'))
-  copy(tpl('tanstack/__root.no-trpc.tsx'), src('routes/__root.tsx'))
-  copy(tpl('tanstack/devtools.no-trpc.tsx'), src('components/devtools.tsx'))
-  for (const d of TANSTACK_TRPC_DEPS) if (!keptDeps.has(d)) removeDeps.add(d)
+  remove(src('app/api/trpc'))
+  copy(tpl('next/layout.no-trpc.tsx'), src('app/layout.tsx'))
 }
 
 const stripMailer = (src, removeDeps, removeScripts) => {
@@ -37,9 +21,7 @@ const stripMailer = (src, removeDeps, removeScripts) => {
 }
 
 export function stripUnselectedFeatures({ projectDir, framework, trpc, keptMailer }) {
-  const next = framework === 'next'
   const src = (p) => join(projectDir, 'src', p)
-  const keptDeps = new Set(trpc ? trpcDeps(framework) : [])
   const removeDeps = new Set()
   const removeScripts = new Set()
 
@@ -47,7 +29,7 @@ export function stripUnselectedFeatures({ projectDir, framework, trpc, keptMaile
     for (const dependency of trpcDeps(framework)) {
       if (!ALWAYS_KEEP.has(dependency)) removeDeps.add(dependency)
     }
-    stripTrpc(src, next, keptDeps, removeDeps)
+    stripTrpc(src)
   }
 
   if (!keptMailer) stripMailer(src, removeDeps, removeScripts)

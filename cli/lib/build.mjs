@@ -1,24 +1,19 @@
 import { randomBytes } from 'node:crypto'
 import { rewriteAlias } from './alias.mjs'
-import { applyAuth } from './auth.mjs'
 import { MANUAL_STEPS, vendorCapability } from './capabilities.mjs'
 import { writeCiWorkflow } from './ci.mjs'
 import {
-  applyDatabase,
   isSqlDatabase,
   localDatabaseUrl,
   localTestDatabaseUrl,
   writeDatabaseScript,
 } from './database.mjs'
+import { assembleFrameworkParts } from './engine.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
 import { creationMetadata, stampIdentity } from './identity.mjs'
-import { swapMailer } from './mailer.mjs'
 import { wrapMonorepo } from './monorepo.mjs'
 import { detectPackageManager } from './package-manager.mjs'
-import { forkBase, makeStandalone } from './scaffold.mjs'
-import { stripUnselectedFeatures } from './strip.mjs'
-import { applyTesting } from './testing.mjs'
-import { join, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts, readJSON, writeJSON } from './util.mjs'
+import { join, pkgAddDeps, readJSON, writeJSON } from './util.mjs'
 
 function createLocalEnv(database, auth, projectName) {
   return {
@@ -59,17 +54,16 @@ export function buildProject({
   const keptMailer = mailerProvider !== 'none'
   const appDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
 
-  forkBase(framework, appDir)
-  makeStandalone(appDir, monorepo ? 'web' : projectName, framework, pm, { monorepo: !!monorepo })
-
-  const strip = stripUnselectedFeatures({ projectDir: appDir, framework, trpc, keptMailer })
-  const authRes = applyAuth({ projectDir: appDir, framework, auth, trpcKept: trpc })
-  const db = applyDatabase({ projectDir: appDir, database, framework, auth, authKept: authUsesDb })
-  applyTesting({ projectDir: appDir, sqlDatabase: isSqlDatabase(database), auth, trpc })
-
-  const mailer = keptMailer
-    ? swapMailer(appDir, mailerProvider)
-    : { addDeps: {}, removeDeps: [], envKeys: [], requiredEnvKeys: [] }
+  const initialized = assembleFrameworkParts(framework, {
+    applicationDir: appDir,
+    projectName: monorepo ? 'web' : projectName,
+    database,
+    auth,
+    trpc,
+    mailer: mailerProvider,
+    monorepo,
+    packageManager: pm,
+  })
 
   const capAddDeps = {}
   const capEnvKeys = []
@@ -84,38 +78,14 @@ export function buildProject({
   const pkgPath = join(appDir, 'package.json')
   const pkg = readJSON(pkgPath)
   pkg.description = `${projectName}: a fully-wired app scaffolded with create-stack.`
-  pkgRemoveDeps(pkg, [
-    ...strip.removeDeps,
-    ...mailer.removeDeps,
-    ...db.removeDeps,
-    ...authRes.removeDeps,
-  ])
-  pkgRemoveScripts(pkg, [...strip.removeScripts, ...db.removeScripts])
-  pkgAddDeps(pkg, { ...mailer.addDeps, ...capAddDeps, ...db.addDeps, ...authRes.addDeps })
-  pkgAddDeps(pkg, db.addDevDeps, 'devDependencies')
-  if (Object.keys(db.setScripts).length) pkg.scripts = { ...pkg.scripts, ...db.setScripts }
+  pkgAddDeps(pkg, capAddDeps)
   writeJSON(pkgPath, pkg)
 
-  const envKeys = []
-  const requiredEnvKeys = []
-  if (database !== 'none' && database !== 'convex') {
-    envKeys.push('DATABASE_URL')
-    requiredEnvKeys.push('DATABASE_URL')
-  }
-  if (auth === 'better-auth') {
-    envKeys.push(
-      'BETTER_AUTH_URL',
-      'BETTER_AUTH_SECRET',
-      'BETTER_AUTH_GOOGLE_CLIENT_ID',
-      'BETTER_AUTH_GOOGLE_CLIENT_SECRET',
-    )
-    requiredEnvKeys.push('BETTER_AUTH_URL', 'BETTER_AUTH_SECRET')
-  }
-  envKeys.push(...mailer.envKeys, ...capEnvKeys)
-  requiredEnvKeys.push(...mailer.requiredEnvKeys, ...capRequiredEnvKeys)
+  const envKeys = [...initialized.envKeys, ...capEnvKeys]
+  const requiredEnvKeys = [...initialized.requiredEnvKeys, ...capRequiredEnvKeys]
   const localEnv = createLocalEnv(database, auth, projectName)
   writeEnv(appDir, envKeys, requiredEnvKeys, localEnv, createTestEnv(database, projectName))
-  const rawEnvLines = [...authRes.envLines, ...(db.envLines ?? [])]
+  const rawEnvLines = initialized.envLines
   if (rawEnvLines.length) appendRawEnvLines(appDir, rawEnvLines)
 
   const metadata = creationMetadata()
@@ -142,7 +112,7 @@ export function buildProject({
       hasDatabase: isSqlDatabase(database),
       hasDatabaseSchema,
       metadata,
-      appNativeBuilds: db.nativeBuilds,
+      appNativeBuilds: initialized.nativeBuilds,
     })
 
   writeLocalDatabaseScript(monorepo ? projectDir : appDir, database, monorepo)

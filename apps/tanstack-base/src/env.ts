@@ -16,7 +16,7 @@ export const env = createEnv({
     BETTER_AUTH_GOOGLE_CLIENT_ID: v.optional(v.pipe(v.string(), v.minLength(1))),
     BETTER_AUTH_GOOGLE_CLIENT_SECRET: v.optional(v.pipe(v.string(), v.minLength(1))),
     EMAIL_FROM: v.optional(v.pipe(v.string(), v.email()), 'no-reply@example.com'),
-    RESEND_API_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
+    RESEND_API_KEY: v.pipe(v.string(), v.minLength(1)),
   },
 
   runtimeEnv: {

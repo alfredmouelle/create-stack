@@ -1,0 +1,49 @@
+import { __TRPC_EXPORTS__ } from '@trpc/server'
+import superjson from 'superjson'
+import { flatten, ValiError } from 'valibot'
+import { env } from '~/env'
+__AUTH_IMPORT____DATABASE_IMPORT__
+export const createTRPCContext = async (opts: { headers: Headers }) => {
+__CONTEXT__
+}
+
+const t = initTRPC.context<typeof createTRPCContext>().create({
+  transformer: superjson,
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        validationError: error.cause instanceof ValiError ? flatten(error.cause.issues) : null,
+      },
+    }
+  },
+})
+
+export const createCallerFactory = t.createCallerFactory
+
+export const createTRPCRouter = t.router
+
+const isDevelopment = env.NODE_ENV === 'development'
+
+const timingMiddleware = t.middleware(async ({ next, path }) => {
+  const start = Date.now()
+
+  if (isDevelopment) {
+    const waitMs = Math.floor(Math.random() * 400) + 100
+    await new Promise((resolve) => setTimeout(resolve, waitMs))
+  }
+
+  const result = await next()
+
+  if (isDevelopment) {
+    // biome-ignore lint/suspicious/noConsole: dev timing instrumentation
+    console.log(`[TRPC] ${path} took ${Date.now() - start}ms to execute`)
+  }
+
+  return result
+})
+
+export const publicProcedure = t.procedure.use(timingMiddleware)
+
+__PROTECTED_PROCEDURE__

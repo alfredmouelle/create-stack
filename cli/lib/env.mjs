@@ -68,7 +68,7 @@ const renderSchema = (key, required) => {
   return def ? `v.optional(${inner}, ${def})` : `v.optional(${inner})`
 }
 
-export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}, testValues = null) {
+function environmentFields(keys, requiredKeys) {
   const required = new Set(requiredKeys)
   const seen = new Set()
   const ordered = keys.filter((k) => SCHEMAS[k] && !seen.has(k) && seen.add(k))
@@ -81,15 +81,37 @@ export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}, 
     ...ordered.map((k) => indent(`${k}: process.env.${k},`)),
   ].join('\n')
 
-  editFile(join(projectDir, 'src/env.ts'), (src) => {
-    const serverBlock = serverBody ? `  server: {\n${serverBody}\n  },` : '  server: {},'
-    let out = src.replace(/ {2}server: \{[\s\S]*?\n {2}\},/, serverBlock)
-    out = out.replace(
-      / {2}runtimeEnv: \{[\s\S]*?\n {2}\},/,
-      `  runtimeEnv: {\n${runtimeBody}\n  },`,
-    )
-    return out
-  })
+  return { required, ordered, serverBody, runtimeBody }
+}
+
+export function renderEnvironment(keys, requiredKeys = []) {
+  const { serverBody, runtimeBody } = environmentFields(keys, requiredKeys)
+  return `import { createEnv } from '@t3-oss/env-core'
+import * as v from 'valibot'
+
+export const requiredInProduction = <T extends v.GenericSchema>(schema: T) =>
+  process.env.NODE_ENV === 'production' ? schema : v.optional(schema)
+
+export const env = createEnv({
+  shared: {
+    NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'development'),
+  },
+
+${serverBody ? `  server: {\n${serverBody}\n  },` : '  server: {},'}
+
+  runtimeEnv: {
+${runtimeBody}
+  },
+
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  emptyStringAsUndefined: true,
+})
+`
+}
+
+export function writeEnv(projectDir, keys, requiredKeys = [], localValues = {}, testValues = null) {
+  const { required, ordered } = environmentFields(keys, requiredKeys)
+  write(join(projectDir, 'src/env.ts'), renderEnvironment(keys, requiredKeys))
 
   const placeholder = (k) => PLACEHOLDERS[k] ?? (required.has(k) ? 'changeme' : '')
   const render = (pick) => `${ordered.map((k) => `${k}=${pick(k)}`).join('\n')}\n`
