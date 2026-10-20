@@ -1,3 +1,9 @@
+import {
+  FRAMEWORK_SUPPORT,
+  FRAMEWORKS,
+  type Framework,
+  RECOMMENDED_FRAMEWORK,
+} from '@alfredmouelle/stack-config'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { captureCommandCopied, captureShareLinkCopied } from '../lib/analytics'
 import {
@@ -71,10 +77,16 @@ function ChoiceGroup({
   )
 }
 
-const frameworkOptions: readonly ChoiceOption[] = [
-  { value: 'tanstack', label: 'TanStack Start', hint: 'recommended' },
-  { value: 'next', label: 'Next.js', hint: 'App Router' },
-]
+const frameworkHints: Partial<Record<Framework, string>> = {
+  [RECOMMENDED_FRAMEWORK]: 'recommended',
+  next: 'App Router',
+}
+
+const frameworkOptions: readonly ChoiceOption[] = FRAMEWORKS.map((framework) => {
+  const { label, maturity } = FRAMEWORK_SUPPORT[framework]
+  const hint = maturity === 'preview' ? 'preview' : frameworkHints[framework]
+  return hint ? { value: framework, label, hint } : { value: framework, label }
+})
 
 const databaseOptions: readonly ChoiceOption[] = [
   { value: 'drizzle', label: 'Drizzle', hint: 'Postgres ORM' },

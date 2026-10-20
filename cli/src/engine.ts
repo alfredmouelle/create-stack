@@ -3,7 +3,11 @@ import { existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { canonicalCapabilityName } from '#lib/capabilities.mjs'
-import type { Framework, StackAxis } from '../../packages/stack-config/src/index.ts'
+import {
+  FRAMEWORK_SUPPORT,
+  type Framework,
+  type StackAxis,
+} from '../../packages/stack-config/src/index.ts'
 import type {
   AssemblyRequest,
   CapabilitySelection,
@@ -94,7 +98,7 @@ function creationPlanLines(plan: CreationPlan): string[] {
     plan.selectionReasons[axis] ? `, ${plan.selectionReasons[axis]}` : ''
   return [
     `Target: ${plan.target}`,
-    `Framework: ${plan.module.label}`,
+    `Framework: ${FRAMEWORK_SUPPORT[plan.framework].label}`,
     `Monorepo: ${plan.monorepo ? MONOREPO_LABELS[plan.monorepo] : '(none)'}`,
     `Package manager: ${plan.packageManager.name}`,
     `Import alias: ${plan.alias}/`,
@@ -123,7 +127,7 @@ function localDatabaseSummaryLines(plan: CreationPlan): string[] {
 function summaryLines(plan: CreationPlan): string[] {
   const { packageManager } = plan
   const lines = [
-    `Framework: ${plan.module.label}`,
+    `Framework: ${FRAMEWORK_SUPPORT[plan.framework].label}`,
     `Monorepo: ${plan.monorepo ? `${MONOREPO_LABELS[plan.monorepo]} (app in apps/web)` : '(none)'}`,
     `Package manager: ${packageManager.name}`,
     `Import alias: ${plan.alias}/`,

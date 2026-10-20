@@ -1,5 +1,29 @@
 import { describe, expect, test } from 'vitest'
-import { resolveStackConfiguration, stackConfigurationCliArgs } from '../src/index.js'
+import {
+  FRAMEWORK_SUPPORT,
+  type FrameworkSupport,
+  resolveStackConfiguration,
+  stackConfigurationCliArgs,
+} from '../src/index.js'
+
+const prismaOnlyNext = {
+  label: 'Next.js',
+  maturity: 'preview',
+  supports: {
+    database: ['prisma', 'none'],
+    auth: ['better-auth', 'clerk', 'none'],
+    trpc: [false],
+    mailer: ['brevo', 'none'],
+  },
+  recommendations: {
+    database: ['prisma'],
+    auth: ['better-auth', 'clerk'],
+    trpc: false,
+    mailer: ['brevo'],
+  },
+} satisfies FrameworkSupport
+
+const frameworkSupport = { ...FRAMEWORK_SUPPORT, next: prismaOnlyNext }
 
 describe('resolveStackConfiguration', () => {
   test('resolves the recommended stack', () => {
@@ -226,5 +250,99 @@ describe('resolveStackConfiguration', () => {
     expect(() => stackConfigurationCliArgs({ database: 'convex', trpc: true })).toThrow(
       'Convex cannot be combined with tRPC',
     )
+  })
+
+  test('reports an explicit choice the selected framework does not support', () => {
+    const result = resolveStackConfiguration(
+      { framework: 'next', database: 'drizzle', auth: 'clerk', trpc: true },
+      frameworkSupport,
+    )
+
+    expect(result.conflicts).toEqual([
+      {
+        axes: ['framework', 'database'],
+        message: 'Next.js does not support database "drizzle"; choose prisma or none',
+      },
+      {
+        axes: ['framework', 'trpc'],
+        message: 'Next.js does not support tRPC; use --no-trpc',
+      },
+    ])
+    expect(result.cliArgs).toEqual([])
+  })
+
+  test('takes recommendations from the selected framework', () => {
+    const result = resolveStackConfiguration({ framework: 'next' }, frameworkSupport)
+
+    expect(result.configuration).toEqual({
+      framework: 'next',
+      database: 'prisma',
+      auth: 'better-auth',
+      trpc: false,
+      mailer: 'brevo',
+      minimal: false,
+    })
+    expect(result.conflicts).toEqual([])
+    expect(result.reasons).toEqual([
+      { axis: 'framework', kind: 'explicit', message: 'requested', value: 'next' },
+      {
+        axis: 'database',
+        kind: 'recommended',
+        message: 'applicable recommendation',
+        value: 'prisma',
+      },
+      {
+        axis: 'auth',
+        kind: 'recommended',
+        message: 'applicable recommendation',
+        value: 'better-auth',
+      },
+      { axis: 'trpc', kind: 'recommended', message: 'applicable recommendation', value: false },
+      { axis: 'mailer', kind: 'recommended', message: 'applicable recommendation', value: 'brevo' },
+    ])
+  })
+
+  test('completes dependencies and falls back with the selected framework preferences', () => {
+    const completed = resolveStackConfiguration(
+      { framework: 'next', minimal: true, auth: 'better-auth' },
+      frameworkSupport,
+    )
+
+    expect(completed.configuration).toMatchObject({ database: 'prisma', mailer: 'brevo' })
+    expect(completed.reasons).toEqual(
+      expect.arrayContaining([
+        {
+          axis: 'database',
+          kind: 'dependency',
+          message: 'dependency completion for Better Auth',
+          value: 'prisma',
+        },
+        {
+          axis: 'mailer',
+          kind: 'dependency',
+          message: 'dependency completion for Better Auth',
+          value: 'brevo',
+        },
+      ]),
+    )
+
+    const withoutDatabase = resolveStackConfiguration(
+      { framework: 'next', database: 'none' },
+      frameworkSupport,
+    )
+    expect(withoutDatabase.configuration).toMatchObject({ auth: 'clerk', mailer: 'none' })
+  })
+
+  test('declares Next.js and TanStack Start as stable frameworks', () => {
+    expect(
+      Object.entries(FRAMEWORK_SUPPORT).map(([id, { label, maturity }]) => ({
+        id,
+        label,
+        maturity,
+      })),
+    ).toEqual([
+      { id: 'tanstack', label: 'TanStack Start', maturity: 'stable' },
+      { id: 'next', label: 'Next.js', maturity: 'stable' },
+    ])
   })
 })

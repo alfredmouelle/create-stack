@@ -30,15 +30,8 @@ describe('framework registry', () => {
     expect(frameworkModules.map((module) => module.id).sort()).toEqual([...FRAMEWORKS].sort())
   })
 
-  test('identifies each registered framework', () => {
-    expect(frameworkModules.map(({ id, label, maturity }) => ({ id, label, maturity }))).toEqual([
-      { id: 'tanstack', label: 'TanStack Start', maturity: 'stable' },
-      { id: 'next', label: 'Next.js', maturity: 'stable' },
-    ])
-  })
-
   test('looks a module up by framework id', () => {
-    expect(getFrameworkModule('next').label).toBe('Next.js')
+    expect(getFrameworkModule('next').id).toBe('next')
     expect(() => getFrameworkModule('remix')).toThrow('Unknown framework: remix')
   })
 
