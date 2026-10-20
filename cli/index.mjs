@@ -62,7 +62,7 @@ Run a command with no args for an interactive picker; pass a selection flag
 See \`add --help\` for its options.
 
 Scaffold flags:
-  -f, --framework [${FRAMEWORKS.join('|')}]   Base app to fork (bare/default = ${RECOMMENDED_FRAMEWORK})
+  -f, --framework [${FRAMEWORKS.join('|')}]   Framework (bare/default = ${RECOMMENDED_FRAMEWORK})
   --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)

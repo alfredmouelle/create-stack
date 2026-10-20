@@ -1,9 +1,11 @@
 import { declaresDependency } from '../javascript/package-manifest.ts'
-import type { JavaScriptFrameworkModule } from '../javascript/project-parts.ts'
+import {
+  assembleReferenceParts,
+  type JavaScriptFrameworkModule,
+} from '../javascript/project-parts.ts'
 import { packageScriptGate } from '../javascript/verification-gate.ts'
 import { assembleProject } from './project-assembly.ts'
 import { tanstackAdditions } from './tanstack-additions.ts'
-import { assembleTanstackParts } from './tanstack-assembly.ts'
 import { tanstackReference } from './tanstack-parts.ts'
 
 export const tanstackModule: JavaScriptFrameworkModule = {
@@ -11,7 +13,7 @@ export const tanstackModule: JavaScriptFrameworkModule = {
   detect: (applicationDir) =>
     declaresDependency(applicationDir, ['@tanstack/react-start', '@tanstack/react-router']),
   assemble: assembleProject('tanstack'),
-  assembleParts: assembleTanstackParts,
+  assembleParts: assembleReferenceParts(tanstackReference),
   additions: tanstackAdditions,
   gate: packageScriptGate,
   monorepoOutputs: ['.output/**', '.nitro/**', 'dist/**'],

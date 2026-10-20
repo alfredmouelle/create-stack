@@ -17,8 +17,11 @@ import {
   resolveStackConfiguration,
 } from '../../packages/stack-config/src/index.ts'
 import { frameworkModules } from '../src/framework-registry.ts'
-import { tanstackModule } from '../src/frameworks/tanstack.ts'
-import { assembleReference, type StackSelection } from '../src/reference-application.ts'
+import {
+  type ApplicationPart,
+  assembleReference,
+  type StackSelection,
+} from '../src/reference-application.ts'
 
 const roots: string[] = []
 const packageManager = {
@@ -111,27 +114,6 @@ afterAll(() => {
   for (const root of roots) rmSync(root, { recursive: true, force: true })
 })
 
-test('assembles a minimal application without deleting files in unselected parts', async () => {
-  const projectDir = directory()
-  const notes = join(projectDir, 'src/server/db/notes.json')
-  mkdirSync(join(projectDir, 'src/server/db'), { recursive: true })
-  writeFileSync(notes, '{"name":"Customer directory"}\n')
-
-  await tanstackModule.assemble({
-    projectDir,
-    database: 'none',
-    auth: 'none',
-    trpc: false,
-    mailer: 'none',
-    capabilities: {},
-    alias: '~',
-    monorepo: false,
-    packageManager,
-  })
-
-  expect(readFileSync(notes, 'utf8')).toBe('{"name":"Customer directory"}\n')
-})
-
 for (const module of frameworkModules) {
   const reference = module.referenceApplication
   if (!reference) continue
@@ -152,6 +134,27 @@ for (const module of frameworkModules) {
   }
 
   describe(`${module.id} reference conformance`, () => {
+    test('assembles a minimal application without deleting files in unselected parts', async () => {
+      const projectDir = directory()
+      const notes = join(projectDir, 'src/server/db/notes.json')
+      mkdirSync(join(projectDir, 'src/server/db'), { recursive: true })
+      writeFileSync(notes, '{"name":"Customer directory"}\n')
+
+      await module.assemble({
+        projectDir,
+        database: 'none',
+        auth: 'none',
+        trpc: false,
+        mailer: 'none',
+        capabilities: {},
+        alias: '~',
+        monorepo: false,
+        packageManager,
+      })
+
+      expect(readFileSync(notes, 'utf8')).toBe('{"name":"Customer directory"}\n')
+    })
+
     test('every reference application file has exactly one owning part', () => {
       const tracked = execFileSync('git', ['ls-files', '-z', '--', '.'], {
         cwd: reference.root,
@@ -173,17 +176,18 @@ for (const module of frameworkModules) {
       const destination = directory()
       assembleReference(reference, selection, destination)
 
-      for (const path of [
-        'src/routes/__root.tsx',
-        'src/router.tsx',
-        'src/components/devtools.tsx',
-        'src/server/api/trpc.ts',
-        'src/env.ts',
-        'src/server/email/index.ts',
-        'src/server/better-auth/config.ts',
-        'src/server/db/schemas/index.ts',
-        'package.json',
-      ]) {
+      const selected = reference.parts.filter((part) => part.selected(selection))
+      const renderedPaths = selected.flatMap((part) =>
+        part.files.flatMap((file) =>
+          file.referencePath &&
+          typeof file.source === 'function' &&
+          file.source(selection, selected) !== null
+            ? [file.referencePath]
+            : [],
+        ),
+      )
+      expect(renderedPaths).toEqual(expect.arrayContaining(['src/env.ts', 'package.json']))
+      for (const path of renderedPaths) {
         expect(readFileSync(join(destination, path), 'utf8'), path).toBe(
           readFileSync(join(reference.root, path), 'utf8'),
         )
@@ -216,21 +220,26 @@ for (const module of frameworkModules) {
         expect(readFileSync(join(projectDir, 'src/env.ts'), 'utf8')).toContain(
           'runtimeEnv: {\n    NODE_ENV: process.env.NODE_ENV,',
         )
-        const sql = selection.database === 'drizzle' || selection.database === 'prisma'
-        for (const [path, selected] of [
-          ['src/server/better-auth', selection.auth === 'better-auth'],
-          ['src/routes/sign-in.$.tsx', selection.auth === 'clerk'],
-          ['src/server/db', sql],
-          ['convex', selection.database === 'convex'],
-          ['src/trpc', selection.trpc],
-          ['src/server/email', selection.mailer !== 'none'],
-          ['src/server/better-auth/config.test.ts', sql && selection.auth === 'better-auth'],
-          [
-            'src/server/api/trpc.test.ts',
-            sql && selection.auth === 'better-auth' && selection.trpc,
-          ],
-        ] as const) {
-          expect(existsSync(join(projectDir, path)), path).toBe(selected)
+        const selected = reference.parts.filter((part) => part.selected(selection))
+        const writtenPaths = (parts: readonly ApplicationPart[]) =>
+          parts.flatMap((part) =>
+            part.files.flatMap((file) =>
+              file.source === null ||
+              (typeof file.source === 'function' && file.source(selection, selected) === null)
+                ? []
+                : [file.path],
+            ),
+          )
+        const selectedPaths = new Set(
+          selected.flatMap((part) => part.files.map((file) => file.path)),
+        )
+        for (const path of writtenPaths(selected)) {
+          expect(existsSync(join(projectDir, path)), path).toBe(true)
+        }
+        for (const path of writtenPaths(
+          reference.parts.filter((part) => !selected.includes(part)),
+        )) {
+          if (!selectedPaths.has(path)) expect(existsSync(join(projectDir, path)), path).toBe(false)
         }
       },
     )
