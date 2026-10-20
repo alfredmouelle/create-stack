@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -26,6 +27,14 @@ const manifest = (fields: Record<string, unknown>) =>
   JSON.stringify({ name: 'storefront', ...fields })
 
 describe('framework registry', () => {
+  test('supplies the CI smoke matrix as JSON from the registry', () => {
+    const result = spawnSync(process.execPath, ['scripts/list-frameworks.ts'], {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    })
+    expect(result.status, result.stderr).toBe(0)
+    expect(JSON.parse(result.stdout)).toEqual(frameworkModules.map(({ id }) => id))
+  })
   test('registers exactly one module per framework declared in stack-config', () => {
     expect(frameworkModules.map((module) => module.id).sort()).toEqual([...FRAMEWORKS].sort())
   })

@@ -8,11 +8,12 @@ const source = resolve(here, '../src/index.ts')
 const engine = await import(pathToFileURL(existsSync(bundled) ? bundled : source).href)
 
 export const {
-  assembleFrameworkParts,
   createProject,
+  detectAlias,
   detectFrameworkModule,
   frameworkModules,
   getFrameworkModule,
+  rewriteAlias,
   runVerificationGate,
   validateAdditions,
   wireCapabilityAddition,

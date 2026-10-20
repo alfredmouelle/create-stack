@@ -81,6 +81,7 @@ export type FrameworkModule = {
   readonly gate: (packageManager: PackageManager) => VerificationGate
   readonly monorepoOutputs: readonly string[]
   readonly packagedAssets: readonly string[]
+  readonly assetExcludes: readonly string[]
   readonly qualityProfileExceptions: readonly QualityProfileException[]
   readonly referenceApplication?: ReferenceApplication
 }

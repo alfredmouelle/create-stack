@@ -1,32 +1,30 @@
 import { execFileSync } from 'node:child_process'
 import { cpSync, mkdirSync, rmSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { basename, dirname, join, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { generateRegistry } from '../lib/registry.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(process.env.CREATE_STACK_BUNDLE_ROOT || resolve(here, '..', '..'))
 const OUT = resolve(process.env.CREATE_STACK_BUNDLE_OUT || resolve(here, '..', '_stack'))
+const { frameworkAssetExcludes, frameworkModules }: typeof import('../src/framework-registry.ts') =
+  await import(pathToFileURL(join(ROOT, 'cli/src/framework-registry.ts')).href)
 
 const APP_EXCLUDES = new Set([
   'node_modules',
-  '.next',
-  '.output',
-  '.nitro',
-  '.tanstack',
   'dist',
-  'routeTree.gen.ts',
-  'tsconfig.tsbuildinfo',
+  '.turbo',
   'start-database.sh',
+  ...frameworkModules.flatMap(frameworkAssetExcludes),
 ])
-const isEnvFile = (name) => name === '.env' || name.startsWith('.env.')
+const isEnvFile = (name: string): boolean => name === '.env' || name.startsWith('.env.')
 
-const copyApp = (from, to) =>
+const copyApp = (from: string, to: string): void =>
   cpSync(from, to, {
     recursive: true,
     filter: (src) => {
-      const base = src.split('/').pop()
-      return !APP_EXCLUDES.has(base) && !isEnvFile(base)
+      const base = basename(src)
+      return !APP_EXCLUDES.has(base) && !base.endsWith('.tsbuildinfo') && !isEnvFile(base)
     },
   })
 
@@ -47,8 +45,8 @@ execFileSync(
   { cwd: ROOT, stdio: 'inherit' },
 )
 
-for (const base of ['next-base', 'tanstack-base']) {
-  copyApp(join(ROOT, 'apps', base), join(OUT, 'apps', base))
+for (const asset of new Set(frameworkModules.flatMap(({ packagedAssets }) => packagedAssets))) {
+  copyApp(join(ROOT, asset), join(OUT, asset))
 }
 
 cpSync(join(ROOT, 'packages/mailer/capability.json'), join(OUT, 'packages/mailer/capability.json'))

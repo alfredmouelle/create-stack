@@ -10,8 +10,8 @@ const OLD_SPECIFIER = /['"`]~\//
 
 for (const framework of ['tanstack', 'next']) {
   describe(framework, () => {
-    test('a custom alias rewrites source + configs, leaving no ~/', () => {
-      const { dir } = build({ name: 'aliased', framework, alias: '@' })
+    test('a custom alias rewrites source + configs, leaving no ~/', async () => {
+      const { dir } = await build({ name: 'aliased', framework, alias: '@' })
 
       expect(detectAlias(dir)).toBe('@')
       const components = readJSON(`${dir}/components.json`)
@@ -27,8 +27,8 @@ for (const framework of ['tanstack', 'next']) {
       }
     })
 
-    test('a custom alias leaves declared build output untouched', () => {
-      const { dir } = build({ name: 'built', framework })
+    test('a custom alias leaves declared build output untouched', async () => {
+      const { dir } = await build({ name: 'built', framework })
       const outputs = { tanstack: '.output/server', next: '.next/server' }[framework]
       const chunk = join(dir, outputs, 'chunk.js')
       mkdirSync(join(dir, outputs), { recursive: true })
@@ -39,14 +39,14 @@ for (const framework of ['tanstack', 'next']) {
       expect(read(chunk)).toBe("import { env } from '~/env'\n")
     })
 
-    test('the default ~ alias is a no-op', () => {
-      const { dir } = build({ name: 'plain', framework })
+    test('the default ~ alias is a no-op', async () => {
+      const { dir } = await build({ name: 'plain', framework })
       expect(detectAlias(dir)).toBe('~')
       expect(rewriteAlias(dir, '~')).toBe(0)
     })
 
-    test('add vendors against the project alias, not ~/', () => {
-      const { dir } = build({
+    test('add vendors against the project alias, not ~/', async () => {
+      const { dir } = await build({
         name: 'add-aliased',
         framework,
         alias: '@',

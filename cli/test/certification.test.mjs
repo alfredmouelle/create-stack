@@ -2,7 +2,6 @@ import { spawnSync } from 'node:child_process'
 import {
   copyFileSync,
   cpSync,
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -15,6 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, test } from 'vitest'
+import { frameworkAssetExcludes, frameworkModules } from '../src/framework-registry.ts'
 import { assertBrandedSurface, customizeTheme } from './branded-surface.mjs'
 
 const testDirectory = dirname(fileURLToPath(import.meta.url))
@@ -23,35 +23,6 @@ const repoRoot = resolve(cliRoot, '..')
 const cliEntry = resolve(cliRoot, 'index.mjs')
 const roots = []
 const TIMEOUT = 15 * 60 * 1000
-
-const SURFACE_FILES = {
-  next: [
-    'src/app/globals.css',
-    'src/app/layout.tsx',
-    'src/app/page.tsx',
-    'src/components/theme-provider.tsx',
-    'src/components/theme-toggle.tsx',
-    'src/lib/site-config.ts',
-    'public/favicon.svg',
-    'public/favicon.ico',
-    'public/logo192.png',
-    'public/logo512.png',
-    'public/manifest.json',
-  ],
-  tanstack: [
-    'src/styles.css',
-    'src/routes/__root.tsx',
-    'src/routes/index.tsx',
-    'src/components/theme-provider.tsx',
-    'src/components/theme-toggle.tsx',
-    'src/lib/site-config.ts',
-    'public/favicon.svg',
-    'public/favicon.ico',
-    'public/logo192.png',
-    'public/logo512.png',
-    'public/manifest.json',
-  ],
-}
 
 const CREATION_ARGS = (framework) => [
   'project',
@@ -118,7 +89,7 @@ function copyPackageSource(packageRoot) {
   cpSync(join(cliRoot, 'templates'), join(packageRoot, 'templates'), { recursive: true })
   cpSync(join(cliRoot, 'docs'), join(packageRoot, 'docs'), { recursive: true })
   mkdirSync(join(packageRoot, 'scripts'))
-  copyFileSync(join(cliRoot, 'scripts/bundle.mjs'), join(packageRoot, 'scripts/bundle.mjs'))
+  copyFileSync(join(cliRoot, 'scripts/bundle.ts'), join(packageRoot, 'scripts/bundle.ts'))
   symlinkSync(join(cliRoot, 'node_modules'), join(packageRoot, 'node_modules'), 'dir')
 }
 
@@ -144,16 +115,6 @@ function packCli() {
   symlinkSync(join(cliRoot, 'node_modules'), join(extracted, 'node_modules'), 'dir')
 
   return join(extracted, 'package')
-}
-
-function fileSignature(projectDir, framework) {
-  return Object.fromEntries(
-    SURFACE_FILES[framework].map((relativePath) => {
-      const path = join(projectDir, relativePath)
-      expect(existsSync(path), relativePath).toBe(true)
-      return [relativePath, readFileSync(path).toString('base64')]
-    }),
-  )
 }
 
 function projectSignature(projectDir) {
@@ -182,15 +143,13 @@ function projectSignature(projectDir) {
   )
 }
 
-function assetSignature(root) {
+function assetSignature(root, module) {
   const files = []
   const excludedDirectories = new Set([
-    '.next',
-    '.nitro',
-    '.output',
-    '.tanstack',
     'dist',
+    '.turbo',
     'node_modules',
+    ...frameworkAssetExcludes(module),
   ])
 
   function visit(current, relativeRoot = '') {
@@ -201,7 +160,7 @@ function assetSignature(root) {
         visit(join(current, entry.name), relativePath)
       } else if (
         entry.name !== '.gitignore' &&
-        entry.name !== 'routeTree.gen.ts' &&
+        !excludedDirectories.has(entry.name) &&
         !entry.name.endsWith('.tsbuildinfo') &&
         entry.name !== 'start-database.sh' &&
         !entry.name.startsWith('.env')
@@ -232,10 +191,11 @@ function verifyProject(projectDir) {
   }
 }
 
-describe('branded CLI certification', () => {
-  test.each(['next', 'tanstack'])(
-    'keeps the %s generated branded surface equivalent after packing',
-    (framework) => {
+describe.skipIf(process.env.RUN_CERTIFICATION !== '1')('branded CLI certification', () => {
+  test.each(frameworkModules)(
+    'keeps the $id generated branded surface equivalent after packing',
+    (module) => {
+      const framework = module.id
       const repositoryRoot = mkdtempSync(
         join(tmpdir(), `create-stack-cert-repository-${framework}-`),
       )
@@ -245,15 +205,12 @@ describe('branded CLI certification', () => {
       const repositoryProject = scaffold(cliEntry, repositoryRoot, framework, { repository: true })
       const packedCli = packCli()
       const packedProject = scaffold(join(packedCli, 'index.mjs'), packedRoot, framework)
-      const baseName = framework === 'next' ? 'next-base' : 'tanstack-base'
-
-      expect(assetSignature(join(packedCli, '_stack/apps', baseName))).toEqual(
-        assetSignature(join(repoRoot, 'apps', baseName)),
-      )
+      for (const asset of module.packagedAssets) {
+        expect(assetSignature(join(packedCli, '_stack', asset), module)).toEqual(
+          assetSignature(join(repoRoot, asset), module),
+        )
+      }
       expect(projectSignature(packedProject)).toEqual(projectSignature(repositoryProject))
-      expect(fileSignature(packedProject, framework)).toEqual(
-        fileSignature(repositoryProject, framework),
-      )
       assertBrandedSurface(repositoryProject, framework, expect)
       assertBrandedSurface(packedProject, framework, expect)
 

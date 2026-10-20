@@ -4,6 +4,35 @@ import type { StackSelection } from '../reference-application.ts'
 const template = (name: string, fields: Readonly<Record<string, string>>): string =>
   fillTemplate(`tanstack/assembly/${name}.txt`, fields)
 
+export function renderRouter({ trpc }: StackSelection): string {
+  return template('router', {
+    SSR_IMPORT: trpc
+      ? "import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'\n"
+      : '',
+    TRPC_IMPORTS: trpc
+      ? "import { createQueryClient } from './trpc/query-client'\nimport { createServerHelpers, TRPCReactProvider } from './trpc/react'\n"
+      : '',
+    QUERY_CONTEXT: trpc
+      ? '  const queryClient = createQueryClient()\n  const trpc = createServerHelpers(queryClient)\n\n'
+      : '',
+    ROUTER_CONTEXT: trpc ? '    context: { queryClient, trpc },\n' : '',
+    PRELOAD_STALE_TIME: trpc ? '    defaultPreloadStaleTime: 0,\n' : '',
+    WRAP: trpc
+      ? '      <ThemeProvider defaultTheme="system">\n        <TRPCReactProvider queryClient={queryClient}>{props.children}</TRPCReactProvider>\n      </ThemeProvider>'
+      : '      <ThemeProvider defaultTheme="system">{props.children}</ThemeProvider>',
+    SSR_INTEGRATION: trpc
+      ? '  setupRouterSsrQueryIntegration({\n    router,\n    queryClient,\n    wrapQueryClient: false,\n  })\n\n'
+      : '',
+  })
+}
+
+export function renderDevtools({ trpc }: StackSelection): string {
+  return template('devtools', {
+    QUERY_IMPORT: trpc ? "import TanStackQueryDevtools from '~/trpc/devtools'\n" : '',
+    QUERY_PLUGIN: trpc ? '        TanStackQueryDevtools,\n' : '',
+  })
+}
+
 export function renderRoot(selection: StackSelection): string {
   const clerk = selection.auth === 'clerk'
   const convex = selection.database === 'convex'

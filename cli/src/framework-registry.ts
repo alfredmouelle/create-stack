@@ -1,21 +1,16 @@
 import type { FrameworkModule } from './framework-module.ts'
 import { nextModule } from './frameworks/next.ts'
 import { tanstackModule } from './frameworks/tanstack.ts'
-import type {
-  JavaScriptAssemblyRequest,
-  JavaScriptAssemblyResult,
-} from './javascript/project-parts.ts'
 
-const javascriptModules = [tanstackModule, nextModule]
-export const frameworkModules: readonly FrameworkModule[] = javascriptModules
+export const frameworkModules: readonly FrameworkModule[] = [tanstackModule, nextModule]
 
-export function assembleFrameworkParts(
-  id: string,
-  request: JavaScriptAssemblyRequest,
-): JavaScriptAssemblyResult {
-  const module = javascriptModules.find((candidate) => candidate.id === id)
-  if (!module) throw new Error(`Unknown framework: ${id}`)
-  return module.assembleParts(request)
+export function frameworkAssetExcludes(module: FrameworkModule): string[] {
+  return [
+    ...module.assetExcludes,
+    ...module.monorepoOutputs
+      .filter((output) => !output.startsWith('!'))
+      .map((output) => output.split('/')[0] ?? output),
+  ]
 }
 
 export function getFrameworkModule(id: string): FrameworkModule {

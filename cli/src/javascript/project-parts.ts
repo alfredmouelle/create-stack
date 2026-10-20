@@ -1,6 +1,6 @@
 import { configurePrismaRuntime } from '#lib/database.mjs'
 import { makeStandalone } from '#lib/scaffold.mjs'
-import type { FrameworkModule, Monorepo, PackageManager } from '../framework-module.ts'
+import type { Monorepo, PackageManager } from '../framework-module.ts'
 import {
   assembleReference,
   type ReferenceApplication,
@@ -19,10 +19,6 @@ export type JavaScriptAssemblyResult = {
   readonly requiredEnvKeys: readonly string[]
   readonly envLines: readonly string[]
   readonly nativeBuilds: readonly string[]
-}
-
-export type JavaScriptFrameworkModule = FrameworkModule & {
-  readonly assembleParts: (request: JavaScriptAssemblyRequest) => JavaScriptAssemblyResult
 }
 
 export const assembleReferenceParts =
