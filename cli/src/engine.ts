@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { canonicalCapabilityName } from '#lib/capabilities.mjs'
 import {
@@ -17,6 +17,7 @@ import type {
   VerificationGate,
 } from './framework-module.ts'
 import { getFrameworkModule } from './framework-registry.ts'
+import { applyQualityProfile } from './quality-profile.ts'
 
 export type CreationRequest = Omit<AssemblyRequest, 'projectDir'> & {
   readonly cwd: string
@@ -166,9 +167,7 @@ function initGitRepository(projectDir: string): boolean {
     return false
   }
   if (!runGit(['-C', projectDir, 'init', '-q'])) return false
-  if (existsSync(join(projectDir, '.githooks'))) {
-    runGit(['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
-  }
+  runGit(['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
   p.log.step('git repository initialized')
   return true
 }
@@ -196,6 +195,13 @@ export async function createProject(request: CreationRequest): Promise<void> {
   spinner.start('Forking + stripping the base app')
   const { cwd, target, name, framework, selectionReasons, install, git, module, ...assembly } = plan
   const assembled = await module.assemble(assembly)
+  applyQualityProfile(
+    {
+      label: FRAMEWORK_SUPPORT[framework].label,
+      qualityProfileExceptions: module.qualityProfileExceptions,
+    },
+    { projectDir: assembly.projectDir, applicationDir: assembled.applicationDir },
+  )
   spinner.stop('Project scaffolded')
 
   const initializedGit = git && initGitRepository(assembly.projectDir)

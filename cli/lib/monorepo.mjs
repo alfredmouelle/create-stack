@@ -3,7 +3,7 @@ import { renderProjectReadme } from './identity.mjs'
 import { PM_VERSIONS } from './package-manager.mjs'
 import { TEMPLATES } from './paths.mjs'
 import { NATIVE_BUILD_DEPS } from './scaffold.mjs'
-import { copy, exists, join, readJSON, remove, write, writeJSON } from './util.mjs'
+import { copy, join, readJSON, remove, write, writeJSON } from './util.mjs'
 
 const VERSIONS = { turbo: '2.11.8', nx: '23.3.0' }
 
@@ -24,9 +24,6 @@ dist
 *.local
 .env
 `
-
-const PREPARE =
-  '[ "$(git rev-parse --show-toplevel 2>/dev/null)" = "$(pwd -P)" ] && git config core.hooksPath .githooks || true'
 
 function turboConfig(rootDir, framework) {
   const outputs = getFrameworkModule(framework).monorepoOutputs
@@ -128,7 +125,7 @@ export function wrapMonorepo({
     version: '0.1.0',
     private: true,
     packageManager: `${pm?.name ?? 'pnpm'}@${PM_VERSIONS[pm?.name] ?? PM_VERSIONS.pnpm}`,
-    scripts: { ...spec.scripts, ...databaseScripts, prepare: PREPARE },
+    scripts: { ...spec.scripts, ...databaseScripts },
     devDependencies: {
       [spec.dep[0]]: spec.dep[1],
       ...(biomeVersion ? { '@biomejs/biome': biomeVersion } : {}),
@@ -151,10 +148,4 @@ export function wrapMonorepo({
   )
   write(join(rootDir, 'packages/.gitkeep'), '')
   remove(join(appDir, 'README.md'))
-
-  const appHooks = join(appDir, '.githooks')
-  if (exists(appHooks)) {
-    copy(appHooks, join(rootDir, '.githooks'))
-    remove(appHooks)
-  }
 }

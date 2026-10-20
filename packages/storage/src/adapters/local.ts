@@ -4,7 +4,7 @@ import { type PutOptions, type SignedUrlOptions, StorageError, type StoragePort 
 
 export interface LocalAdapterOptions {
   baseDir: string
-  publicBaseUrl?: string
+  publicBaseUrl?: string | undefined
 }
 
 function isNotFound(error: unknown): boolean {

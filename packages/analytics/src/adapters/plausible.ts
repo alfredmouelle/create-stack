@@ -6,19 +6,19 @@ const DEFAULT_USER_AGENT = '@alfredmouelle/analytics (+https://plausible.io)'
 
 export interface PlausibleAdapterOptions {
   domain: string
-  apiHost?: string
-  defaultUrl?: string
-  userAgent?: string
-  fetchImpl?: typeof globalThis.fetch
-  onError?: (error: unknown) => void
+  apiHost?: string | undefined
+  defaultUrl?: string | undefined
+  userAgent?: string | undefined
+  fetchImpl?: typeof globalThis.fetch | undefined
+  onError?: ((error: unknown) => void) | undefined
 }
 
 interface PlausibleEventPayload {
   name: string
   domain: string
   url: string
-  referrer?: string
-  props?: Record<string, unknown>
+  referrer?: string | undefined
+  props?: Record<string, unknown> | undefined
 }
 
 export function plausibleAdapter(options: PlausibleAdapterOptions): AnalyticsPort {

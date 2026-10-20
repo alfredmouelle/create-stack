@@ -17,17 +17,19 @@ interface ResendSendPayload {
   subject: string
   html: string
   text: string
-  replyTo?: string
-  cc?: string[]
-  bcc?: string[]
-  headers?: Record<string, string>
-  tags?: { name: string; value: string }[]
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[]
+  replyTo?: string | undefined
+  cc?: string[] | undefined
+  bcc?: string[] | undefined
+  headers?: Record<string, string> | undefined
+  tags?: { name: string; value: string }[] | undefined
+  attachments?:
+    | { filename: string; content: Buffer | string; contentType?: string | undefined }[]
+    | undefined
 }
 
 export interface ResendAdapterOptions {
   apiKey: string
-  client?: ResendClient
+  client?: ResendClient | undefined
 }
 
 function toAttachmentContent(content: Uint8Array | string): Buffer | string {

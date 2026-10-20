@@ -5,7 +5,7 @@ import { createEmailTheme, type EmailTheme, type EmailThemeOverride } from './th
 export interface EmailLayoutProps {
   preview: string
   children: React.ReactNode
-  theme?: EmailTheme | EmailThemeOverride
+  theme?: EmailTheme | EmailThemeOverride | undefined
   year?: number
 }
 

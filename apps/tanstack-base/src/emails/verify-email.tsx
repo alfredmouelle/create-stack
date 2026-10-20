@@ -6,7 +6,7 @@ import {
   EmailLayout,
 } from '~/emails/components'
 
-export function VerifyEmail({ name, url }: { name?: string; url: string }) {
+export function VerifyEmail({ name, url }: { name?: string | undefined; url: string }) {
   return (
     <EmailLayout preview="Confirm your email address to activate your account.">
       <EmailHeading kicker="Confirmation">Confirm your address.</EmailHeading>

@@ -63,9 +63,14 @@ function assertCreationMetadata(pkg, readme) {
   }
 }
 
-function assertTrpc(dir, trpc, deps) {
+function assertTrpc(dir, trpc, deps, framework) {
   expect(exists(`${dir}/${TRPC_DIR}`), `trpc dir present=${trpc}`).toBe(trpc)
   expect(TRPC_DEP in deps, `trpc dep present=${trpc}`).toBe(trpc)
+  if (framework === 'tanstack') {
+    expect(deps['@tanstack/query-core'], 'query-core pinned with react-query').toBe(
+      deps['@tanstack/react-query'],
+    )
+  }
   if (!trpc) expect(filesImporting(dir, TRPC_IMPORTS), 'dangling trpc imports').toEqual([])
 }
 
@@ -289,7 +294,7 @@ for (const framework of ['tanstack', 'next']) {
         const readme = read(`${dir}/README.md`)
         assertCreationMetadata(pkg, readme)
 
-        assertTrpc(dir, result.trpc, deps)
+        assertTrpc(dir, result.trpc, deps, framework)
         assertAuth(dir, result.auth, deps, framework)
         assertDatabase(dir, result.database, deps, result.auth === 'better-auth', framework)
         assertOptionalComponentsAbsent(dir, deps)

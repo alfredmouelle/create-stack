@@ -1,4 +1,5 @@
 import type { Auth, Database, Framework, Mailer } from '../../packages/stack-config/src/index.ts'
+import type { QualityProfileException } from './quality-profile.ts'
 
 export type PackageManager = {
   readonly name: string
@@ -37,16 +38,12 @@ export type AssemblyRequest = {
 }
 
 export type AssemblyResult = {
+  readonly applicationDir: string
   readonly manualSteps: readonly string[]
 }
 
 export type AdditionWiring = {
   readonly componentRoot: string
-}
-
-export type QualityProfileException = {
-  readonly option: string
-  readonly reason: string
 }
 
 export type FrameworkModule = {

@@ -206,7 +206,7 @@ import { env } from '~/env'
 // fan-out and typed events are all available, nothing is hidden behind a port.
 export const jobs = new Inngest({
   id: '${slug(projectName)}',
-  eventKey: env.INNGEST_EVENT_KEY,
+  ...(env.INNGEST_EVENT_KEY !== undefined && { eventKey: env.INNGEST_EVENT_KEY }),
   isDev: env.NODE_ENV === 'development',
 })
 `

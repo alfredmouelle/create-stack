@@ -2,7 +2,7 @@ import { Storage } from '@google-cloud/storage'
 import { type PutOptions, type SignedUrlOptions, StorageError, type StoragePort } from '../port.js'
 
 export interface GcsFileLike {
-  save(data: Buffer | string, options?: { contentType?: string }): Promise<void>
+  save(data: Buffer | string, options?: { contentType?: string | undefined }): Promise<void>
   download(): Promise<[Buffer]>
   delete(): Promise<unknown>
   exists(): Promise<[boolean]>
@@ -10,7 +10,7 @@ export interface GcsFileLike {
     version: 'v4'
     action: 'read' | 'write'
     expires: number
-    contentType?: string
+    contentType?: string | undefined
   }): Promise<[string]>
 }
 
@@ -24,8 +24,8 @@ export interface GcsStorageLike {
 
 export interface GcsAdapterOptions {
   bucket: string
-  projectId?: string
-  client?: GcsStorageLike
+  projectId?: string | undefined
+  client?: GcsStorageLike | undefined
 }
 
 const DEFAULT_EXPIRES_IN = 900
@@ -39,7 +39,10 @@ export function gcsAdapter(options: GcsAdapterOptions): StoragePort {
   if (!options.bucket) throw new StorageError('bucket is required', { adapter: 'gcs' })
 
   const client: GcsStorageLike =
-    options.client ?? (new Storage({ projectId: options.projectId }) as unknown as GcsStorageLike)
+    options.client ??
+    (new Storage({
+      ...(options.projectId !== undefined && { projectId: options.projectId }),
+    }) as unknown as GcsStorageLike)
 
   const bucket = client.bucket(options.bucket)
 

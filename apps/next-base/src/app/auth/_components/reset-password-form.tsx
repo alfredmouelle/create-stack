@@ -19,7 +19,7 @@ import { FormAlert } from '~/features/auth/form-alert'
 import { type ResetPasswordInput, ResetPasswordSchema } from '~/features/auth/schemas'
 import { authClient } from '~/server/better-auth/client'
 
-export function ResetPasswordForm({ token }: { token?: string }) {
+export function ResetPasswordForm({ token }: { token?: string | undefined }) {
   const router = useRouter()
   const [formError, setFormError] = useState<string | null>(null)
   const form = useForm<ResetPasswordInput>({

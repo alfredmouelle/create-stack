@@ -6,13 +6,13 @@ export type JobsHandler = (request: Request) => Promise<Response>
 export interface JobsHandlerOptions {
   client: Inngest.Like
   functions: readonly InngestFunction.Like[]
-  servePath?: string
+  servePath?: string | undefined
 }
 
 export function jobsHandler(options: JobsHandlerOptions): JobsHandler {
   return serve({
     client: options.client,
     functions: options.functions,
-    servePath: options.servePath,
+    ...(options.servePath !== undefined && { servePath: options.servePath }),
   })
 }

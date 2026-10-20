@@ -10,11 +10,10 @@ function handler({ request }: { request: Request }) {
     router: appRouter,
     endpoint: '/api/trpc',
     createContext: () => createTRPCContext({ headers: request.headers }),
-    onError: import.meta.env.DEV
-      ? ({ path, error }) => {
-          console.error(`❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`)
-        }
-      : undefined,
+    onError: ({ path, error }) => {
+      if (!import.meta.env.DEV) return
+      console.error(`❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`)
+    },
   })
 }
 

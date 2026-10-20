@@ -6,7 +6,7 @@ import { Spinner } from '~/components/ui/spinner'
 import { FormAlert } from '~/features/auth/form-alert'
 import { authClient } from '~/server/better-auth/client'
 
-export function VerifyEmailActions({ email }: { email?: string }) {
+export function VerifyEmailActions({ email }: { email?: string | undefined }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   const resend = async () => {

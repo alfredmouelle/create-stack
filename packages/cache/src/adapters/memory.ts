@@ -3,11 +3,11 @@ import { wrapValue } from '../wrap.js'
 
 interface Entry {
   value: unknown
-  expiresAt?: number
+  expiresAt?: number | undefined
 }
 
 export interface MemoryAdapterOptions {
-  store?: Map<string, Entry>
+  store?: Map<string, Entry> | undefined
 }
 
 export function memoryAdapter(options: MemoryAdapterOptions = {}): CachePort {

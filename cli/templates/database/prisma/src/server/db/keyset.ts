@@ -34,6 +34,7 @@ export const takePage = <T>({
   }
 
   const items = rows.slice(0, limit)
-  const last = items[items.length - 1]
+  const last = items.at(-1)
+  if (last === undefined) return { items, nextCursor: null }
   return { items, nextCursor: encodeCursor(getSortValue(last), getId(last)) }
 }

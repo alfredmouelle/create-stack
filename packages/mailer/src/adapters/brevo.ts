@@ -4,7 +4,7 @@ import { type MailerAdapter, MailerError, type RenderedMessage } from '../port.j
 
 interface BrevoContact {
   email: string
-  name?: string
+  name?: string | undefined
 }
 
 interface BrevoSendRequest {
@@ -13,12 +13,12 @@ interface BrevoSendRequest {
   subject: string
   htmlContent: string
   textContent: string
-  replyTo?: BrevoContact
-  cc?: BrevoContact[]
-  bcc?: BrevoContact[]
-  headers?: Record<string, unknown>
-  tags?: string[]
-  attachment?: { name: string; content: string }[]
+  replyTo?: BrevoContact | undefined
+  cc?: BrevoContact[] | undefined
+  bcc?: BrevoContact[] | undefined
+  headers?: Record<string, unknown> | undefined
+  tags?: string[] | undefined
+  attachment?: { name: string; content: string }[] | undefined
 }
 
 interface BrevoSendResponse {
@@ -34,7 +34,7 @@ export interface BrevoClientLike {
 
 export interface BrevoAdapterOptions {
   apiKey: string
-  client?: BrevoClientLike
+  client?: BrevoClientLike | undefined
 }
 
 function toContact(address: MailAddress): BrevoContact {

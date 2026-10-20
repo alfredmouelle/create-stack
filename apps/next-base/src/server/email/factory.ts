@@ -21,7 +21,7 @@ export const renderEmail: EmailRenderer = async (react) => {
 export interface CreateMailerOptions {
   adapter: MailerAdapter
   from: MailRecipient
-  render?: EmailRenderer
+  render?: EmailRenderer | undefined
 }
 
 export function createMailer(options: CreateMailerOptions): Mailer {

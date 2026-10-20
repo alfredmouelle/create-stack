@@ -12,6 +12,24 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+### Changed
+
+- Every generated project enables the same strict TypeScript options, whatever its
+  framework: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `noImplicitOverride`, `noUnusedLocals`, `noUnusedParameters`,
+  `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules`, and
+  `noUncheckedSideEffectImports`. Generated code and capabilities pass them without casts.
+- Monorepo projects receive their VS Code and Zed settings at the workspace root, next
+  to the Biome configuration and Git hooks.
+- `add component date-picker` passes the calendar's optional `locale` only when it is
+  set, so the shadcn calendar typechecks under `exactOptionalPropertyTypes`.
+
+### Fixed
+
+- TanStack Start projects with Clerk and tRPC typecheck again: they pin
+  `@tanstack/query-core` with React Query, so the router's SSR query integration and
+  React Query share one `QueryClient` type.
+
 ## [0.15.0] - 2026-10-15
 
 ### Added

@@ -181,6 +181,21 @@ function officialTarget(projectDir, config, name) {
   return join(resolveAliasTarget(projectDir, alias), `${name}.tsx`)
 }
 
+const CALENDAR_DAY_BUTTON_LOCALE = '<CalendarDayButton locale={locale} {...props} />'
+const CALENDAR_DAY_BUTTON_OPTIONAL_LOCALE =
+  '<CalendarDayButton {...(locale && { locale })} {...props} />'
+
+function passOptionalCalendarLocale(projectDir, config) {
+  const path = officialTarget(projectDir, config, 'calendar')
+  if (!pathExists(path)) return
+  const source = readFileSync(path, 'utf8')
+  if (!source.includes(CALENDAR_DAY_BUTTON_LOCALE)) return
+  writeFileSync(
+    path,
+    source.replaceAll(CALENDAR_DAY_BUTTON_LOCALE, CALENDAR_DAY_BUTTON_OPTIONAL_LOCALE),
+  )
+}
+
 function applyRscDirective(item, config) {
   if (config.rsc) return item
 
@@ -461,6 +476,7 @@ export function installRegistryComponents({ projectDir, config, components, forc
       )
     }
 
+    passOptionalCalendarLocale(projectDir, config)
     succeeded = true
     return new Map(
       items.map(({ name, before }) => [

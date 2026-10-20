@@ -10,10 +10,10 @@ export interface UpstashLike {
 }
 
 export interface UpstashAdapterOptions {
-  client?: UpstashLike
-  url?: string
-  token?: string
-  keyPrefix?: string
+  client?: UpstashLike | undefined
+  url?: string | undefined
+  token?: string | undefined
+  keyPrefix?: string | undefined
 }
 
 export function upstashAdapter(options: UpstashAdapterOptions = {}): CachePort {

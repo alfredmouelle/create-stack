@@ -6,3 +6,4 @@ export {
   frameworkModules,
   getFrameworkModule,
 } from './framework-registry.ts'
+export type { QualityProfileException, QualityProfileOption } from './quality-profile.ts'

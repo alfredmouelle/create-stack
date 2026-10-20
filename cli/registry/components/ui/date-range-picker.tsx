@@ -103,7 +103,7 @@ export function DateRangePicker({
         <Calendar
           autoFocus
           captionLayout="dropdown"
-          defaultMonth={draft?.from}
+          {...(draft?.from && { defaultMonth: draft.from })}
           endMonth={new Date(new Date().getFullYear() + 1, 11)}
           mode="range"
           numberOfMonths={numberOfMonths}

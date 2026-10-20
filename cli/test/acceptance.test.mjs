@@ -75,6 +75,20 @@ exit 0
   }
 }
 
+const CALENDAR_SOURCE = `export function Calendar({ locale, ...props }) {
+  return (
+    <DayPicker
+      components={{
+        DayButton: ({ ...props }) => (
+          <CalendarDayButton locale={locale} {...props} />
+        ),
+      }}
+      {...props}
+    />
+  )
+}
+`
+
 function startRegistry({ status = 200 } = {}) {
   const items = new Map(
     [
@@ -100,7 +114,10 @@ function startRegistry({ status = 200 } = {}) {
           {
             path: `ui/${name}.tsx`,
             type: 'registry:ui',
-            content: `export function ${name[0].toUpperCase()}${name.slice(1)}() { return null }\n`,
+            content:
+              name === 'calendar'
+                ? CALENDAR_SOURCE
+                : `export function ${name[0].toUpperCase()}${name.slice(1)}() { return null }\n`,
           },
         ],
       },
@@ -1689,6 +1706,9 @@ test('adds date-picker through the packaged shadcn runtime and local item', asyn
     expect(existsSync(`${fixture.app}/src/components/ui/date-range-picker.tsx`)).toBe(true)
     expect(existsSync(`${fixture.app}/src/lib/date.ts`)).toBe(true)
     expect(existsSync(`${fixture.app}/src/components/ui/calendar.tsx`)).toBe(true)
+    const calendar = readFileSync(`${fixture.app}/src/components/ui/calendar.tsx`, 'utf8')
+    expect(calendar).toContain('<CalendarDayButton {...(locale && { locale })} {...props} />')
+    expect(calendar).not.toContain('locale={locale}')
     expect(existsSync(`${fixture.app}/src/components/ui/popover.tsx`)).toBe(true)
     expect(readFileSync(`${fixture.app}/src/components/ui/date-picker.tsx`, 'utf8')).toContain(
       "'use client'",
