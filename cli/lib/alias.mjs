@@ -1,4 +1,5 @@
 import { readdirSync } from 'node:fs'
+import { frameworkModules } from './engine.mjs'
 import { editFile, exists, join, read } from './util.mjs'
 
 const REWRITE_EXTS = new Set([
@@ -15,11 +16,13 @@ const REWRITE_EXTS = new Set([
 const SKIP_DIRS = new Set([
   'node_modules',
   '.git',
-  '.next',
-  '.output',
-  '.nitro',
   '.tanstack',
   'dist',
+  ...frameworkModules.flatMap(({ monorepoOutputs }) =>
+    monorepoOutputs
+      .filter((output) => !output.startsWith('!'))
+      .map((output) => output.split('/')[0]),
+  ),
 ])
 
 const ALIAS_SPECIFIER = /(['"`])~\//g
