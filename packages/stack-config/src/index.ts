@@ -155,7 +155,9 @@ function findUnsupportedChoices(
   })
 }
 
-type StackSelection = Partial<Pick<StackConfiguration, 'database' | 'auth' | 'trpc' | 'mailer'>>
+type StackSelection = {
+  readonly [Axis in 'database' | 'auth' | 'trpc' | 'mailer']?: StackConfiguration[Axis] | undefined
+}
 
 type CompatibilityRule = {
   readonly axes: readonly [StackAxis, StackAxis]

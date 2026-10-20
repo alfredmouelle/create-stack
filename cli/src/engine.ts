@@ -195,10 +195,13 @@ export async function createProject(request: CreationRequest): Promise<void> {
   spinner.start('Forking + stripping the base app')
   const { cwd, target, name, framework, selectionReasons, install, git, module, ...assembly } = plan
   const assembled = await module.assemble(assembly)
-  applyQualityProfile(module, {
-    projectDir: assembly.projectDir,
-    applicationDir: assembled.applicationDir,
-  })
+  applyQualityProfile(
+    {
+      label: FRAMEWORK_SUPPORT[framework].label,
+      qualityProfileExceptions: module.qualityProfileExceptions,
+    },
+    { projectDir: assembly.projectDir, applicationDir: assembled.applicationDir },
+  )
   spinner.stop('Project scaffolded')
 
   const initializedGit = git && initGitRepository(assembly.projectDir)
