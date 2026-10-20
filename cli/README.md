@@ -78,6 +78,8 @@ the installed version.
 | `--no-auth` | - | - | Explicitly exclude authentication. |
 | `--no-mail` | - | - | Explicitly exclude transactional email. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
+| `--formatter` | `biome` \| `prettier` | `biome` | Required formatter axis. A bare flag selects the recommendation. |
+| `--linter` | `biome` \| `oxlint` | `biome` | Required linter axis. A bare flag selects the recommendation. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `r2` | Object storage (omit to skip). |
 | `--cache` | `redis` \| `upstash` \| `memory` | `upstash` | Key/value cache (omit to skip). |
 | `--jobs` | `inngest` | `inngest` | Background jobs (omit to skip; bare selects Inngest). |

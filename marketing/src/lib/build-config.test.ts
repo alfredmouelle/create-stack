@@ -18,6 +18,8 @@ describe('build configurator state', () => {
       auth: 'better-auth',
       trpc: true,
       mailer: 'resend',
+      formatter: 'biome',
+      linter: 'biome',
       minimal: false,
     })
     expect(result.conflicts).toEqual([])

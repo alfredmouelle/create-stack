@@ -8,6 +8,8 @@ const BOOLEAN_LONG_OPTIONS = new Set([
   'no-db',
   'no-auth',
   'no-mail',
+  'no-formatter',
+  'no-linter',
   'no-install',
   'no-git',
   'keep',

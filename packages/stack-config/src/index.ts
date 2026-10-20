@@ -10,7 +10,20 @@ export type Auth = (typeof AUTHS)[number]
 export const MAILERS = ['resend', 'brevo', 'ses', 'none'] as const
 export type Mailer = (typeof MAILERS)[number]
 
-export type StackAxis = 'framework' | 'database' | 'auth' | 'trpc' | 'mailer'
+export const FORMATTERS = ['biome', 'prettier'] as const
+export type Formatter = (typeof FORMATTERS)[number]
+
+export const LINTERS = ['biome', 'oxlint'] as const
+export type Linter = (typeof LINTERS)[number]
+
+export type StackAxis =
+  | 'framework'
+  | 'database'
+  | 'auth'
+  | 'trpc'
+  | 'mailer'
+  | 'formatter'
+  | 'linter'
 
 export type FrameworkMaturity = 'stable' | 'preview'
 
@@ -22,12 +35,16 @@ export type FrameworkSupport = {
     readonly auth: readonly Auth[]
     readonly trpc: readonly boolean[]
     readonly mailer: readonly Mailer[]
+    readonly formatter: readonly Formatter[]
+    readonly linter: readonly Linter[]
   }
   readonly recommendations: {
     readonly database: readonly Database[]
     readonly auth: readonly Auth[]
     readonly trpc: boolean
     readonly mailer: readonly Mailer[]
+    readonly formatter: Formatter
+    readonly linter: Linter
   }
 }
 
@@ -39,12 +56,16 @@ const FULL_STACK_SUPPORT = {
     auth: AUTHS,
     trpc: [true, false],
     mailer: MAILERS,
+    formatter: FORMATTERS,
+    linter: LINTERS,
   },
   recommendations: {
     database: ['drizzle'],
     auth: ['better-auth', 'clerk'],
     trpc: true,
     mailer: ['resend'],
+    formatter: 'biome',
+    linter: 'biome',
   },
 } satisfies Pick<FrameworkSupport, 'supports' | 'recommendations'>
 
@@ -57,7 +78,7 @@ export const RECOMMENDED_FRAMEWORK: Framework = 'tanstack'
 
 export type ResolutionReasonKind = 'explicit' | 'recommended' | 'dependency' | 'minimal'
 
-export type StackChoiceValue = Framework | Database | Auth | Mailer | boolean
+export type StackChoiceValue = Framework | Database | Auth | Mailer | Formatter | Linter | boolean
 
 export interface StackConfigurationInput {
   framework?: Framework
@@ -65,6 +86,8 @@ export interface StackConfigurationInput {
   auth?: Auth
   trpc?: boolean
   mailer?: Mailer
+  formatter?: Formatter
+  linter?: Linter
   minimal?: boolean
 }
 
@@ -74,6 +97,8 @@ export interface StackConfiguration {
   auth: Auth
   trpc: boolean
   mailer: Mailer
+  formatter: Formatter
+  linter: Linter
   minimal: boolean
 }
 
@@ -96,16 +121,25 @@ export interface StackConfigurationResult {
   cliArgs: readonly string[]
 }
 
-function assertChoice(
+function assertChoice<Value extends string>(
   value: unknown,
   name: string,
-  choices: readonly string[],
-): string | undefined {
+  choices: readonly Value[],
+): Value | undefined {
   if (value === undefined) return undefined
-  if (typeof value !== 'string' || !choices.includes(value)) {
+  if (name === 'formatter' && value === 'oxfmt') {
+    throw new Error('oxfmt is not supported until its 1.0 release; choose biome or prettier')
+  }
+  if (name === 'linter' && value === 'eslint') {
+    throw new Error(
+      'ESLint is not supported until typescript-eslint supports TypeScript 7; choose biome or oxlint',
+    )
+  }
+  const choice = choices.find((choice) => choice === value)
+  if (choice === undefined) {
     throw new Error(`Invalid ${name}: ${JSON.stringify(value)} (expected ${choices.join(', ')})`)
   }
-  return value
+  return choice
 }
 
 function validateBoolean(value: boolean | undefined, name: string): void {
@@ -114,13 +148,19 @@ function validateBoolean(value: boolean | undefined, name: string): void {
   }
 }
 
-function explicitChoices(input: StackConfigurationInput) {
+type ExplicitChoices = {
+  readonly [Axis in StackAxis]: StackConfiguration[Axis] | undefined
+}
+
+function explicitChoices(input: StackConfigurationInput): ExplicitChoices {
   return {
-    framework: assertChoice(input.framework, 'framework', FRAMEWORKS) as Framework | undefined,
-    database: assertChoice(input.database, 'database', DATABASES) as Database | undefined,
-    auth: assertChoice(input.auth, 'auth', AUTHS) as Auth | undefined,
+    framework: assertChoice(input.framework, 'framework', FRAMEWORKS),
+    database: assertChoice(input.database, 'database', DATABASES),
+    auth: assertChoice(input.auth, 'auth', AUTHS),
     trpc: input.trpc,
-    mailer: assertChoice(input.mailer, 'mailer', MAILERS) as Mailer | undefined,
+    mailer: assertChoice(input.mailer, 'mailer', MAILERS),
+    formatter: assertChoice(input.formatter, 'formatter', FORMATTERS),
+    linter: assertChoice(input.linter, 'linter', LINTERS),
   }
 }
 
@@ -144,7 +184,7 @@ function findUnsupportedChoices(
   choices: ReturnType<typeof explicitChoices>,
   framework: FrameworkSupport,
 ): ChoiceConflict[] {
-  const axes = ['database', 'auth', 'trpc', 'mailer'] as const
+  const axes = ['database', 'auth', 'trpc', 'mailer', 'formatter', 'linter'] as const
   return axes.flatMap((axis) => {
     const value = choices[axis]
     const supported: readonly StackChoiceValue[] = framework.supports[axis]
@@ -246,6 +286,8 @@ function resolveConfiguration(
     auth,
     trpc,
     mailer,
+    formatter: choices.formatter ?? recommendations.formatter,
+    linter: choices.linter ?? recommendations.linter,
     minimal,
   }
 }
@@ -318,6 +360,15 @@ function createReasons(
   addReason(reasons, 'auth', choices.auth, configuration.auth, minimal, recommendationMessage)
   addReason(reasons, 'trpc', choices.trpc, configuration.trpc, minimal, recommendationMessage)
   addReason(reasons, 'mailer', choices.mailer, configuration.mailer, minimal, recommendationMessage)
+  addReason(
+    reasons,
+    'formatter',
+    choices.formatter,
+    configuration.formatter,
+    false,
+    recommendationMessage,
+  )
+  addReason(reasons, 'linter', choices.linter, configuration.linter, false, recommendationMessage)
   return reasons
 }
 
@@ -350,6 +401,8 @@ function cliArgsFor(input: StackConfigurationInput): readonly string[] {
   if (input.auth !== undefined) args.push('--auth', input.auth)
   if (input.trpc !== undefined) args.push(input.trpc ? '--trpc' : '--no-trpc')
   if (input.mailer !== undefined) args.push('--mailer', input.mailer)
+  if (input.formatter !== undefined) args.push('--formatter', input.formatter)
+  if (input.linter !== undefined) args.push('--linter', input.linter)
   return args
 }
 
