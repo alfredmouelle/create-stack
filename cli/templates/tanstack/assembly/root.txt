@@ -1,14 +1,14 @@
-import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router'
-import { lazy, Suspense } from 'react'
+__PROVIDER_IMPORTS____QUERY_IMPORT__import { __ROOT_FACTORY__, HeadContent, Link, Scripts } from '@tanstack/react-router'
+__TRPC_IMPORT__import { lazy, Suspense } from 'react'
 import { siteConfig } from '~/lib/site-config'
-
+__APP_ROUTER_IMPORT__
 import appCss from '../styles.css?url'
 
 const Devtools = import.meta.env.DEV ? lazy(() => import('~/components/devtools')) : () => null
 
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m));}catch(e){}})();`
 
-export const Route = createRootRoute({
+__ROUTER_CONTEXT__export const Route = __CREATE_ROOT__({
   head: () => ({
     meta: [
       {
@@ -19,11 +19,11 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        name: 'description',
-        content: siteConfig.description,
+        title: siteConfig.name,
       },
       {
-        title: siteConfig.name,
+        name: 'description',
+        content: siteConfig.description,
       },
     ],
     links: [
@@ -52,7 +52,7 @@ export const Route = createRootRoute({
       <h1 className="font-bold text-4xl tracking-tight">404 - Not Found</h1>
       <p className="mt-2 text-muted-foreground">The page you are looking for does not exist.</p>
       <Link
-        className="mt-6 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
+        className="mt-6 cursor-pointer rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
         to="/"
       >
         Go back home
@@ -64,19 +64,19 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+__CLERK_OPEN__    <html lang="en" suppressHydrationWarning>
       <head>
         {/** biome-ignore lint/security/noDangerouslySetInnerHtml: anti-FOUC theme script */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <HeadContent />
       </head>
       <body>
-        {children}
+        __CHILDREN__
         <Suspense fallback={null}>
           <Devtools />
         </Suspense>
         <Scripts />
       </body>
-    </html>
+    </html>__CLERK_CLOSE__
   )
 }

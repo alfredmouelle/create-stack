@@ -225,7 +225,10 @@ function assetSignature(root) {
 function verifyProject(projectDir) {
   for (const script of ['typecheck', 'check', 'build']) {
     const result = runCommand('pnpm', ['run', script], projectDir)
-    expect(result.status, `${script}: ${result.stderr || result.stdout}`).toBe(0)
+    expect(
+      result.status,
+      `${script}: ${[result.stdout, result.stderr].filter(Boolean).join('\n')}`,
+    ).toBe(0)
   }
 }
 

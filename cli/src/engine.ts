@@ -192,7 +192,7 @@ export async function createProject(request: CreationRequest): Promise<void> {
   p.note(creationPlanLines(plan).join('\n'), 'Creation plan')
 
   const spinner = p.spinner()
-  spinner.start('Forking + stripping the base app')
+  spinner.start('Assembling the selected stack parts')
   const { cwd, target, name, framework, selectionReasons, install, git, module, ...assembly } = plan
   const assembled = await module.assemble(assembly)
   applyQualityProfile(

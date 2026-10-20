@@ -13,7 +13,7 @@ export function resolveAuth(value) {
   return value
 }
 
-const CLERK = {
+export const CLERK = {
   tanstack: {
     pkg: '@clerk/tanstack-react-start',
     range: '1.7.1',
