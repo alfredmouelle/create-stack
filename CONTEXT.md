@@ -21,7 +21,7 @@ The compatible recommendations used for stack parts that the user did not choose
 _Avoid_: Silent normalization, fallback configuration
 
 **Minimal project**:
-A frontend-only starting configuration without a backend, authentication, transactional email, or optional capabilities. Individual parts can subsequently be added to it.
+The smallest runnable configuration of the selected framework, without any optional stack part. For a UI framework it is frontend-only; individual parts can subsequently be added to it.
 _Avoid_: Vitrine, empty foundation, bare project
 
 **Stack option**:
@@ -33,8 +33,32 @@ An independently selectable concern in a stack configuration. tRPC is an API axi
 _Avoid_: Foundation, preset field
 
 **Choice conflict**:
-Two explicit choices that cannot coexist or that select the same stack axis more than once. Conflicts are reported before project generation and are never resolved by precedence.
+Two explicit choices that cannot coexist, that select the same stack axis more than once, or an explicit choice the selected framework does not support. Conflicts are reported before project generation and are never resolved by precedence.
 _Avoid_: Last option wins, normalization
+
+**Framework**:
+The stack axis that determines what kind of application is generated and which runtime, conventions, and native tooling it uses. Next.js, TanStack Start, Remix, RasenganJS, Vue, and NestJS are frameworks; a framework need not render UI.
+_Avoid_: Target, base, template
+
+**Framework support**:
+The declared set of stack options and additions a framework implements, with that framework's own recommendations. Anything outside it is unsupported for that framework rather than silently replaced.
+_Avoid_: Parity, compatibility matrix
+
+**Framework module**:
+The single unit holding everything create-stack knows about one framework: its generated files, integration wiring, framework support, application detection, and verification commands.
+_Avoid_: Adapter, target, plugin
+
+**Reference application**:
+A runnable, tested application for one framework that contains every stack part that framework supports in its recommended form. Generated projects are assembled from the parts of it that the configuration selects, never by deleting unselected ones.
+_Avoid_: Base app, template, starter
+
+**Quality profile**:
+The strict type-checking, formatting, linting, and Git hook baseline every generated project receives. A framework or quality tool may tighten it, never relax it.
+_Avoid_: Lint config, presets
+
+**Verification gate**:
+The fixed sequence of format, typecheck, and lint steps, each supplied by the framework, that must all succeed after installation before the generated project receives its automatic first commit.
+_Avoid_: Checks, CI, pre-commit
 
 **Operational option**:
 A choice that changes how a project operation runs without changing the resulting stack, such as installation, package-manager selection, import aliasing, or Git initialization.
