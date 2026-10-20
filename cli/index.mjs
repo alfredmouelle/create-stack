@@ -8,6 +8,7 @@ import {
   addableChoices,
   addCapability,
   currentTargetAdapter,
+  requireFrameworkModule,
   resolveAdditionKind,
   resolveTargetAdapter,
   targetDir,
@@ -22,7 +23,7 @@ import {
   resolveCreationProvider,
 } from './lib/capabilities.mjs'
 import { resolveDatabase } from './lib/database.mjs'
-import { createProject, detectFrameworkModule, runVerificationGate } from './lib/engine.mjs'
+import { createProject, runVerificationGate, validateAdditions } from './lib/engine.mjs'
 import {
   detectPackageManager,
   detectProjectPackageManager,
@@ -803,6 +804,8 @@ async function runAdd(args) {
     : detectProjectPackageManager(projectRoot, detectedPm)
 
   const selections = await resolveAddSelections(args)
+  const module = requireFrameworkModule(projectDir)
+  validateAdditions(module, selections)
   const keepFiles = !!args.flags['keep-files']
   const force = !!args.flags.force
   const components = selections.filter((selection) => selection.type === 'component')
@@ -848,7 +851,7 @@ async function runAdd(args) {
     addSelection({ selection, projectDir, keepFiles, registryResults }),
   )
   if (!args.flags['no-install']) {
-    runVerificationGate(detectFrameworkModule(projectDir).gate(pm), {
+    runVerificationGate(module.gate(pm), {
       cwd: projectDir,
       packageManager: pm,
       requireSuccess: false,

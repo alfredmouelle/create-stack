@@ -5,17 +5,5 @@
   "description": "Error tracking on Sentry, wired the way Sentry documents it. The framework integration is the product: server-component errors, source maps and auto-instrumentation are unreachable from a captureException wrapper.",
   "provider": "sentry",
   "env": ["SENTRY_DSN", "SENTRY_ENVIRONMENT"],
-  "files": ["src/options.ts", "src/index.ts"],
-  "frameworks": {
-    "next": {
-      "deps": ["@sentry/nextjs"]
-    },
-    "tanstack": {
-      "deps": ["@sentry/tanstackstart-react"]
-    }
-  },
-  "versions": {
-    "@sentry/nextjs": "10.76.2",
-    "@sentry/tanstackstart-react": "10.76.2"
-  }
+  "files": ["src/options.ts", "src/index.ts"]
 }

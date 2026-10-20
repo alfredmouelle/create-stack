@@ -479,6 +479,61 @@ test('applies --keep-files to a provider change in a mixed batch', () => {
   expect(existsSync(`${fixture.app}/src/server/storage/adapters/r2.ts`)).toBe(true)
 })
 
+test('a TanStack provider change preserves files outside the former provider part', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+  expect(
+    runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'cache', 'redis', '--no-install'],
+    }).exitStatus,
+  ).toBe(0)
+  const customFiles = {
+    'src/server/cache/workspace-key.ts':
+      "export const workspaceKey = (workspaceId: string) => 'workspace:' + workspaceId\n",
+    'src/server/cache/adapters/workspace.ts': "export const workspaceCachePrefix = 'workspace'\n",
+  }
+  for (const [path, content] of Object.entries(customFiles))
+    writeFileSync(`${fixture.app}/${path}`, content)
+
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', 'cache', 'upstash', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(0)
+  expect(result.stdout).toContain('Provider change: cache (redis → upstash)')
+  expect(existsSync(`${fixture.app}/src/server/cache/adapters/redis.ts`)).toBe(false)
+  expect(existsSync(`${fixture.app}/src/server/cache/adapters/upstash.ts`)).toBe(true)
+  const { dependencies } = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(dependencies.ioredis).toBeUndefined()
+  expect(dependencies['@upstash/redis']).toMatch(/^\d+\.\d+\.\d+$/)
+  for (const [path, content] of Object.entries(customFiles)) {
+    expect(existsSync(`${fixture.app}/${path}`), path).toBe(true)
+    expect(readFileSync(`${fixture.app}/${path}`, 'utf8')).toBe(content)
+  }
+})
+
+test('TanStack mail provider changes restore a previously removed provider', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  expect(createProject(fixture, { framework: 'tanstack' }).exitStatus).toBe(0)
+  for (const provider of ['resend', 'brevo', 'resend']) {
+    const result = runCli({
+      cwd: fixture.app,
+      target: fixture.app,
+      args: ['add', 'mail', provider, '--no-install'],
+    })
+    expect(result.exitStatus).toBe(0)
+    expect(existsSync(`${fixture.app}/src/server/email/adapters/${provider}.ts`)).toBe(true)
+  }
+  expect(existsSync(`${fixture.app}/src/server/email/adapters/brevo.ts`)).toBe(false)
+  const { dependencies } = JSON.parse(readFileSync(`${fixture.app}/package.json`, 'utf8'))
+  expect(dependencies.resend).toMatch(/^\d+\.\d+\.\d+$/)
+  expect(dependencies['@getbrevo/brevo']).toBeUndefined()
+})
+
 test.each([
   ['installation', 'install'],
   ['verification', 'run check:write'],

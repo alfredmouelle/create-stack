@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto'
 import { rewriteAlias } from './alias.mjs'
-import { MANUAL_STEPS, vendorCapability } from './capabilities.mjs'
 import { writeCiWorkflow } from './ci.mjs'
 import {
   isSqlDatabase,
@@ -8,7 +7,7 @@ import {
   localTestDatabaseUrl,
   writeDatabaseScript,
 } from './database.mjs'
-import { assembleFrameworkParts } from './engine.mjs'
+import { assembleFrameworkParts, getFrameworkModule, wireCapabilityAddition } from './engine.mjs'
 import { appendRawEnvLines, writeEnv } from './env.mjs'
 import { creationMetadata, stampIdentity } from './identity.mjs'
 import { wrapMonorepo } from './monorepo.mjs'
@@ -68,11 +67,20 @@ export function buildProject({
   const capAddDeps = {}
   const capEnvKeys = []
   const capRequiredEnvKeys = []
+  const manualSteps = []
+  const module = getFrameworkModule(framework)
   for (const [cap, adapter] of Object.entries(capabilities)) {
-    const r = vendorCapability({ projectDir: appDir, framework, projectName, cap, adapter })
+    const r = wireCapabilityAddition(module, {
+      projectDir: appDir,
+      projectName,
+      cap,
+      adapter,
+      keep: false,
+    })
     Object.assign(capAddDeps, r.addDeps)
     capEnvKeys.push(...r.envKeys)
     capRequiredEnvKeys.push(...r.requiredEnvKeys)
+    manualSteps.push(...r.manualSteps.map((step) => `${cap}: ${step}`))
   }
 
   const pkgPath = join(appDir, 'package.json')
@@ -118,9 +126,7 @@ export function buildProject({
   writeLocalDatabaseScript(monorepo ? projectDir : appDir, database, monorepo)
 
   return {
-    manualSteps: Object.keys(capabilities).flatMap((cap) =>
-      (MANUAL_STEPS[cap]?.[framework] ?? []).map((step) => `${cap}: ${step}`),
-    ),
+    manualSteps,
     trpc,
     database,
     auth,

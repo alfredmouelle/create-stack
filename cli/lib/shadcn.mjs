@@ -318,7 +318,9 @@ function mountRoot(projectDir, config, name) {
   const root = registryComponents[name].root
   if (!root) return { mounted: null, rootName: null, manualSteps: [] }
 
-  const rootPath = join(projectDir, requireFrameworkModule(projectDir).additions.componentRoot)
+  const componentRoot = requireFrameworkModule(projectDir).additions.componentRoot
+  if (componentRoot === null) throw new Error('This framework does not support component additions')
+  const rootPath = join(projectDir, componentRoot)
   const importStatement = `import { ${root.name} } from '${rootModuleSpecifier(config, root.module)}'`
   const jsx = `<${root.name} />`
 
