@@ -186,8 +186,8 @@ const COMPATIBILITY_RULES: readonly CompatibilityRule[] = [
   },
 ]
 
-const isCompatible = (selection: StackSelection): boolean =>
-  COMPATIBILITY_RULES.every((rule) => !rule.violatedBy(selection))
+const fitsAxis = (axis: StackAxis, selection: StackSelection): boolean =>
+  COMPATIBILITY_RULES.every((rule) => !rule.axes.includes(axis) || !rule.violatedBy(selection))
 
 function findConflicts(
   choices: ReturnType<typeof explicitChoices>,
@@ -221,22 +221,22 @@ function resolveConfiguration(
   const database =
     choices.database ??
     choose(recommendations.database, 'none', minimal, (database) =>
-      isCompatible({ ...choices, database }),
+      fitsAxis('database', { ...choices, database }),
     )
   const auth =
     choices.auth ??
     choose(recommendations.auth, 'none', minimal, (auth) =>
-      isCompatible({ ...choices, database, auth }),
+      fitsAxis('auth', { ...choices, database, auth }),
     )
   const trpc =
     choices.trpc ??
     choose(recommendations.trpc ? [true] : [], false, minimal, (trpc) =>
-      isCompatible({ ...choices, database, auth, trpc }),
+      fitsAxis('trpc', { ...choices, database, auth, trpc }),
     )
   const mailer =
     choices.mailer ??
     choose(recommendations.mailer, 'none', true, (mailer) =>
-      isCompatible({ ...choices, database, auth, trpc, mailer }),
+      fitsAxis('mailer', { ...choices, database, auth, trpc, mailer }),
     )
   return {
     framework: choices.framework ?? RECOMMENDED_FRAMEWORK,

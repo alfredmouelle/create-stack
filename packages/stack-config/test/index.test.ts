@@ -219,6 +219,16 @@ describe('resolveStackConfiguration', () => {
     expect(result.cliArgs).toEqual([])
   })
 
+  test('resolves omitted choices independently of conflicts between other choices', () => {
+    const result = resolveStackConfiguration({
+      database: 'convex',
+      auth: 'better-auth',
+      trpc: true,
+    })
+
+    expect(result.configuration.mailer).toBe('resend')
+  })
+
   test('orders explicit CLI arguments independently of input property order', () => {
     const result = resolveStackConfiguration({
       mailer: 'ses',
