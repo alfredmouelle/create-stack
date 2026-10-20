@@ -10,8 +10,8 @@ import { ResetPasswordSchema } from '~/features/auth/schemas'
 import { authClient } from '~/server/better-auth/client'
 
 interface ResetPasswordSearch {
-  token?: string
-  error?: string
+  token?: string | undefined
+  error?: string | undefined
 }
 
 export const Route = createFileRoute('/auth/reset-password')({

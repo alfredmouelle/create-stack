@@ -11,9 +11,9 @@ export interface PinoLike {
 }
 
 export interface PinoAdapterOptions {
-  level?: LogLevel
-  bindings?: LogFields
-  client?: PinoLike
+  level?: LogLevel | undefined
+  bindings?: LogFields | undefined
+  client?: PinoLike | undefined
 }
 
 function wrap(client: PinoLike): Logger {

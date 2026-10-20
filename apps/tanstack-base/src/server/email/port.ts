@@ -2,7 +2,7 @@ import type { ReactElement } from 'react'
 
 export interface MailAddress {
   email: string
-  name?: string
+  name?: string | undefined
 }
 
 export type MailRecipient = string | MailAddress
@@ -40,12 +40,12 @@ export interface RenderedMessage {
   subject: string
   html: string
   text: string
-  replyTo?: MailAddress
-  cc?: MailAddress[]
-  bcc?: MailAddress[]
-  headers?: Record<string, string>
-  tags?: Record<string, string>
-  attachments?: MailAttachment[]
+  replyTo?: MailAddress | undefined
+  cc?: MailAddress[] | undefined
+  bcc?: MailAddress[] | undefined
+  headers?: Record<string, string> | undefined
+  tags?: Record<string, string> | undefined
+  attachments?: MailAttachment[] | undefined
 }
 
 export interface MailerAdapter {

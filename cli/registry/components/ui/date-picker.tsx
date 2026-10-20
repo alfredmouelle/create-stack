@@ -71,7 +71,7 @@ export function DatePicker({
         <Calendar
           autoFocus
           captionLayout="dropdown"
-          defaultMonth={date}
+          {...(date && { defaultMonth: date })}
           endMonth={new Date(new Date().getFullYear() + 1, 11)}
           mode="single"
           onSelect={(selected) => {

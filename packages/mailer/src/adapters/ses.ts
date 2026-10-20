@@ -9,36 +9,43 @@ export interface SesClientLike {
 
 interface SesSendEmailInput {
   FromEmailAddress: string
-  Destination: { ToAddresses: string[]; CcAddresses?: string[]; BccAddresses?: string[] }
+  Destination: {
+    ToAddresses: string[]
+    CcAddresses?: string[] | undefined
+    BccAddresses?: string[] | undefined
+  }
   Content: {
     Simple: {
       Subject: { Data: string }
       Body: { Html: { Data: string }; Text: { Data: string } }
-      Headers?: { Name: string; Value: string }[]
+      Headers?: { Name: string; Value: string }[] | undefined
     }
   }
-  ReplyToAddresses?: string[]
-  EmailTags?: { Name: string; Value: string }[]
-  ConfigurationSetName?: string
+  ReplyToAddresses?: string[] | undefined
+  EmailTags?: { Name: string; Value: string }[] | undefined
+  ConfigurationSetName?: string | undefined
 }
 
 export interface SesAdapterOptions {
-  region?: string
-  accessKeyId?: string
-  secretAccessKey?: string
-  configurationSetName?: string
-  client?: SesClientLike
+  region?: string | undefined
+  accessKeyId?: string | undefined
+  secretAccessKey?: string | undefined
+  configurationSetName?: string | undefined
+  client?: SesClientLike | undefined
 }
 
 export function sesAdapter(options: SesAdapterOptions = {}): MailerAdapter {
   const client: SesClientLike =
     options.client ??
     (new SESv2Client({
-      region: options.region,
-      credentials:
-        options.accessKeyId && options.secretAccessKey
-          ? { accessKeyId: options.accessKeyId, secretAccessKey: options.secretAccessKey }
-          : undefined,
+      ...(options.region !== undefined && { region: options.region }),
+      ...(options.accessKeyId &&
+        options.secretAccessKey && {
+          credentials: {
+            accessKeyId: options.accessKeyId,
+            secretAccessKey: options.secretAccessKey,
+          },
+        }),
     }) as unknown as SesClientLike)
 
   return {

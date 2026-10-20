@@ -7,7 +7,7 @@ import { FormAlert } from '~/features/auth/form-alert'
 import { authClient } from '~/server/better-auth/client'
 
 interface VerifyEmailSearch {
-  email?: string
+  email?: string | undefined
 }
 
 export const Route = createFileRoute('/auth/verify-email')({

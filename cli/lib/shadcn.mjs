@@ -181,6 +181,25 @@ function officialTarget(projectDir, config, name) {
   return join(resolveAliasTarget(projectDir, alias), `${name}.tsx`)
 }
 
+const QUALITY_PROFILE_FIXES = {
+  calendar: [
+    [
+      '<CalendarDayButton locale={locale} {...props} />',
+      '<CalendarDayButton {...(locale && { locale })} {...props} />',
+    ],
+  ],
+}
+
+function applyQualityProfileFixes(projectDir, config) {
+  for (const [primitive, fixes] of Object.entries(QUALITY_PROFILE_FIXES)) {
+    const path = officialTarget(projectDir, config, primitive)
+    if (!pathExists(path)) continue
+    const source = readFileSync(path, 'utf8')
+    const fixed = fixes.reduce((content, [from, to]) => content.replaceAll(from, to), source)
+    if (fixed !== source) writeFileSync(path, fixed)
+  }
+}
+
 function applyRscDirective(item, config) {
   if (config.rsc) return item
 
@@ -461,6 +480,7 @@ export function installRegistryComponents({ projectDir, config, components, forc
       )
     }
 
+    applyQualityProfileFixes(projectDir, config)
     succeeded = true
     return new Map(
       items.map(({ name, before }) => [

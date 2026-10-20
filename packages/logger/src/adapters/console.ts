@@ -1,8 +1,8 @@
 import type { LogFields, Logger, LogLevel } from '../port.js'
 
 export interface ConsoleAdapterOptions {
-  level?: LogLevel
-  bindings?: LogFields
+  level?: LogLevel | undefined
+  bindings?: LogFields | undefined
 }
 
 const ORDER: Record<LogLevel, number> = {

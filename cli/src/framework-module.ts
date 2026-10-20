@@ -1,4 +1,5 @@
 import type { Auth, Database, Framework, Mailer } from '../../packages/stack-config/src/index.ts'
+import type { QualityProfileOption } from './quality-profile.ts'
 
 export type FrameworkMaturity = 'stable' | 'preview'
 
@@ -39,6 +40,7 @@ export type AssemblyRequest = {
 }
 
 export type AssemblyResult = {
+  readonly applicationDir: string
   readonly manualSteps: readonly string[]
 }
 
@@ -47,7 +49,7 @@ export type AdditionWiring = {
 }
 
 export type QualityProfileException = {
-  readonly option: string
+  readonly option: QualityProfileOption
   readonly reason: string
 }
 

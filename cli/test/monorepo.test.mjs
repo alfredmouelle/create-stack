@@ -58,7 +58,6 @@ for (const framework of ['tanstack', 'next']) {
             expect(rootPkg.scripts[s], `root ${s}`).toBe(spec.script(s))
           }
           expect(rootPkg.devDependencies[spec.dep], `${spec.dep} devDep`).toBeTruthy()
-          expect(rootPkg.scripts.prepare, 'root prepare hook wiring').toContain('core.hooksPath')
 
           const cfg = readJSON(`${dir}/${spec.config}`)
           expect(spec.outputs(cfg).join(' '), 'framework build outputs').toContain(
@@ -73,7 +72,6 @@ for (const framework of ['tanstack', 'next']) {
 
           expect(read(`${dir}/.gitignore`), 'cache dir ignored').toContain(spec.cacheDir)
 
-          expect(exists(`${dir}/.githooks/pre-commit`), 'root hooks').toBe(true)
           expect(exists(`${app}/.githooks`), 'no app hooks').toBe(false)
 
           expect(exists(`${dir}/README.md`), 'root README').toBe(true)

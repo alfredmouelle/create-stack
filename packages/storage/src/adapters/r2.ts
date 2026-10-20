@@ -23,11 +23,11 @@ export type R2Presigner = (
 export interface R2AdapterOptions {
   bucket: string
   accountId: string
-  jurisdiction?: R2Jurisdiction
-  accessKeyId?: string
-  secretAccessKey?: string
-  client?: R2ClientLike
-  presign?: R2Presigner
+  jurisdiction?: R2Jurisdiction | undefined
+  accessKeyId?: string | undefined
+  secretAccessKey?: string | undefined
+  client?: R2ClientLike | undefined
+  presign?: R2Presigner | undefined
 }
 
 const DEFAULT_EXPIRES_IN = 900
@@ -60,10 +60,13 @@ export function r2Adapter(options: R2AdapterOptions): StoragePort {
       region: 'auto',
       endpoint: r2Endpoint(options.accountId, options.jurisdiction),
       requestChecksumCalculation: 'WHEN_REQUIRED',
-      credentials:
-        options.accessKeyId && options.secretAccessKey
-          ? { accessKeyId: options.accessKeyId, secretAccessKey: options.secretAccessKey }
-          : undefined,
+      ...(options.accessKeyId &&
+        options.secretAccessKey && {
+          credentials: {
+            accessKeyId: options.accessKeyId,
+            secretAccessKey: options.secretAccessKey,
+          },
+        }),
     }) as unknown as R2ClientLike)
 
   const presign: R2Presigner = options.presign ?? (getSignedUrl as unknown as R2Presigner)

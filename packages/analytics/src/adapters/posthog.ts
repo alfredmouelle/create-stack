@@ -10,15 +10,17 @@ export interface PostHogLike {
 
 export interface PostHogAdapterOptions {
   apiKey: string
-  host?: string
-  client?: PostHogLike
+  host?: string | undefined
+  client?: PostHogLike | undefined
 }
 
 export function posthogAdapter(options: PostHogAdapterOptions): AnalyticsPort {
   if (!options.apiKey) throw new Error('posthogAdapter: apiKey is required')
   const client: PostHogLike =
     options.client ??
-    (new PostHog(options.apiKey, { host: options.host }) as unknown as PostHogLike)
+    (new PostHog(options.apiKey, {
+      ...(options.host !== undefined && { host: options.host }),
+    }) as unknown as PostHogLike)
 
   return {
     name: 'posthog',

@@ -1,11 +1,11 @@
 export interface PutOptions {
-  contentType?: string
+  contentType?: string | undefined
 }
 
 export interface SignedUrlOptions {
   operation: 'get' | 'put'
-  expiresInSeconds?: number
-  contentType?: string
+  expiresInSeconds?: number | undefined
+  contentType?: string | undefined
 }
 
 export interface StoragePort {

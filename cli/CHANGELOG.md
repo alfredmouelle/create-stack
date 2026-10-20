@@ -12,6 +12,16 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+### Changed
+
+- Every generated project enables the same strict TypeScript options, whatever its
+  framework: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `noImplicitOverride`, `noUnusedLocals`, `noUnusedParameters`,
+  `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules`, and
+  `noUncheckedSideEffectImports`. Generated code and capabilities pass them without casts.
+- Monorepo projects receive their VS Code and Zed settings at the workspace root, next
+  to the Biome configuration and Git hooks.
+
 ## [0.15.0] - 2026-10-15
 
 ### Added

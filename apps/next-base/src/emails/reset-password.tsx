@@ -6,7 +6,7 @@ import {
   EmailLayout,
 } from '~/emails/components'
 
-export function ResetPasswordEmail({ name, url }: { name?: string; url: string }) {
+export function ResetPasswordEmail({ name, url }: { name?: string | undefined; url: string }) {
   return (
     <EmailLayout preview="Reset your password.">
       <EmailHeading kicker="Security">Reset your password.</EmailHeading>

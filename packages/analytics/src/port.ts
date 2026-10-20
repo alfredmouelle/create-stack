@@ -1,12 +1,12 @@
 export interface CaptureEvent {
   event: string
   distinctId: string
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown> | undefined
 }
 
 export interface IdentifyParams {
   distinctId: string
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown> | undefined
 }
 
 export interface AnalyticsPort {

@@ -7,18 +7,18 @@ export type QueryValue = string | number | boolean | null | undefined
 export type QueryParams = Record<string, QueryValue | QueryValue[]> | URLSearchParams
 
 export interface ApiFetchOptions {
-  method?: ApiFetchMethod
-  baseUrl?: string
-  query?: QueryParams
+  method?: ApiFetchMethod | undefined
+  baseUrl?: string | undefined
+  query?: QueryParams | undefined
   body?: unknown
-  headers?: HeadersInit
-  signal?: AbortSignal
-  timeoutMs?: number
-  parseAs?: ApiParseMode
-  credentials?: RequestCredentials
-  cache?: RequestCache
-  init?: RequestInit
-  fetchImpl?: typeof globalThis.fetch
+  headers?: HeadersInit | undefined
+  signal?: AbortSignal | undefined
+  timeoutMs?: number | undefined
+  parseAs?: ApiParseMode | undefined
+  credentials?: RequestCredentials | undefined
+  cache?: RequestCache | undefined
+  init?: RequestInit | undefined
+  fetchImpl?: typeof globalThis.fetch | undefined
 }
 
 export class ApiFetchError extends Error {
@@ -27,7 +27,7 @@ export class ApiFetchError extends Error {
   readonly url: string
   readonly method: string
   readonly body: unknown
-  readonly response?: Response
+  readonly response?: Response | undefined
 
   constructor(
     message: string,
@@ -37,7 +37,7 @@ export class ApiFetchError extends Error {
       url: string
       method: string
       body?: unknown
-      response?: Response
+      response?: Response | undefined
       cause?: unknown
     },
   ) {
@@ -328,9 +328,10 @@ export async function apiFetch<T = unknown>(
   const requestInit: RequestInit = { ...init }
   requestInit.method = method
   requestInit.headers = requestHeaders
-  requestInit.signal = resolveSignal(userSignal, timeoutMs)
+  const requestSignal = resolveSignal(userSignal, timeoutMs)
+  if (requestSignal) requestInit.signal = requestSignal
   if (method === 'GET' || method === 'HEAD') {
-    requestInit.body = undefined
+    delete requestInit.body
   } else if (requestBody !== undefined) {
     requestInit.body = requestBody
   }

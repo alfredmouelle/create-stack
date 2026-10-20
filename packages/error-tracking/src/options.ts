@@ -1,9 +1,9 @@
 export interface SentryOptionsInput {
   dsn: string | undefined
-  environment?: string
-  nodeEnv?: string
-  tracesSampleRate?: number
-  enableLogs?: boolean
+  environment?: string | undefined
+  nodeEnv?: string | undefined
+  tracesSampleRate?: number | undefined
+  enableLogs?: boolean | undefined
 }
 
 export interface SentryOptions {

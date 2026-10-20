@@ -10,9 +10,9 @@ export interface RedisLike {
 }
 
 export interface RedisAdapterOptions {
-  client?: RedisLike
-  url?: string
-  keyPrefix?: string
+  client?: RedisLike | undefined
+  url?: string | undefined
+  keyPrefix?: string | undefined
 }
 
 export function redisAdapter(options: RedisAdapterOptions = {}): CachePort {

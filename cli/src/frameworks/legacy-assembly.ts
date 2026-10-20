@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import type { Framework } from '../../../packages/stack-config/src/index.ts'
 import type { AssemblyRequest, AssemblyResult } from '../framework-module.ts'
 
@@ -21,5 +22,10 @@ export const assembleWithLegacyBuild =
       monorepo: request.monorepo,
       pm: request.packageManager,
     })
-    return { manualSteps: built.manualSteps }
+    return {
+      applicationDir: request.monorepo
+        ? join(request.projectDir, 'apps', 'web')
+        : request.projectDir,
+      manualSteps: built.manualSteps,
+    }
   }

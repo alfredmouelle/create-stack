@@ -21,11 +21,11 @@ export type S3Presigner = (
 export interface S3AdapterOptions {
   bucket: string
   region: string
-  accessKeyId?: string
-  secretAccessKey?: string
-  endpoint?: string
-  client?: S3ClientLike
-  presign?: S3Presigner
+  accessKeyId?: string | undefined
+  secretAccessKey?: string | undefined
+  endpoint?: string | undefined
+  client?: S3ClientLike | undefined
+  presign?: S3Presigner | undefined
 }
 
 const DEFAULT_EXPIRES_IN = 900
@@ -53,11 +53,14 @@ export function s3Adapter(options: S3AdapterOptions): StoragePort {
     options.client ??
     (new S3Client({
       region: options.region,
-      endpoint: options.endpoint,
-      credentials:
-        options.accessKeyId && options.secretAccessKey
-          ? { accessKeyId: options.accessKeyId, secretAccessKey: options.secretAccessKey }
-          : undefined,
+      ...(options.endpoint !== undefined && { endpoint: options.endpoint }),
+      ...(options.accessKeyId &&
+        options.secretAccessKey && {
+          credentials: {
+            accessKeyId: options.accessKeyId,
+            secretAccessKey: options.secretAccessKey,
+          },
+        }),
     }) as unknown as S3ClientLike)
 
   const presign: S3Presigner = options.presign ?? (getSignedUrl as unknown as S3Presigner)
