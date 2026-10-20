@@ -3,45 +3,31 @@ import { existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { canonicalCapabilityName } from '#lib/capabilities.mjs'
+import type { Framework, StackAxis } from '../../packages/stack-config/src/index.ts'
 import type {
-  Auth,
-  Database,
-  Framework,
-  Mailer,
-  StackAxis,
-} from '../../packages/stack-config/src/index.ts'
-import type {
+  AssemblyRequest,
   CapabilitySelection,
   Command,
   FrameworkModule,
-  Monorepo,
   PackageManager,
   VerificationGate,
 } from './framework-module.ts'
 import { getFrameworkModule } from './framework-registry.ts'
 
-export type CreationRequest = {
+export type CreationRequest = Omit<AssemblyRequest, 'projectDir'> & {
   readonly cwd: string
   readonly target: string
   readonly name: string
   readonly framework: Framework
-  readonly database: Database
-  readonly auth: Auth
-  readonly trpc: boolean
-  readonly mailer: Mailer
   readonly selectionReasons: Readonly<Partial<Record<StackAxis, string>>>
-  readonly capabilities: CapabilitySelection
-  readonly monorepo: Monorepo
-  readonly alias: string
-  readonly packageManager: PackageManager
   readonly install: boolean
   readonly git: boolean
 }
 
-type CreationPlan = CreationRequest & {
-  readonly projectDir: string
-  readonly module: FrameworkModule
-}
+type CreationPlan = AssemblyRequest &
+  CreationRequest & {
+    readonly module: FrameworkModule
+  }
 
 export type GateOptions = {
   readonly cwd: string
@@ -53,10 +39,13 @@ const VERIFICATION_FAILED = 'Verification failed; the initial commit was skipped
 
 const MONOREPO_LABELS = { turborepo: 'Turborepo', nx: 'Nx' } as const
 
-const runCommand = ({ command, args }: Command, cwd: string, stdio: 'inherit' | 'ignore') =>
-  spawnSync(command, args, { cwd, stdio }).status === 0
+const runCommand = (
+  { command, args }: Command,
+  cwd: string,
+  stdio: 'inherit' | 'ignore',
+): boolean => spawnSync(command, args, { cwd, stdio }).status === 0
 
-const git = (args: readonly string[], stdio: 'inherit' | 'ignore' = 'inherit') =>
+const runGit = (args: readonly string[], stdio: 'inherit' | 'ignore' = 'inherit'): boolean =>
   spawnSync('git', args, { stdio }).status === 0
 
 export function runVerificationGate(
@@ -81,7 +70,7 @@ export function runVerificationGate(
   else p.log.warn('verify reported issues (see output above)')
 }
 
-const isDirEmpty = (directory: string) =>
+const isDirEmpty = (directory: string): boolean =>
   !existsSync(directory) || readdirSync(directory).length === 0
 
 function resolveCreationPlan(request: CreationRequest): CreationPlan {
@@ -90,9 +79,9 @@ function resolveCreationPlan(request: CreationRequest): CreationPlan {
   return { ...request, projectDir, module: getFrameworkModule(request.framework) }
 }
 
-const orNone = (value: string) => (value && value !== 'none' ? value : '(none)')
+const orNone = (value: string): string => (value && value !== 'none' ? value : '(none)')
 
-const capabilityLines = (capabilities: CapabilitySelection) =>
+const capabilityLines = (capabilities: CapabilitySelection): string[] =>
   Object.entries(capabilities).map(([capability, provider]) =>
     provider
       ? `${canonicalCapabilityName(capability)} (${provider})`
@@ -172,18 +161,21 @@ function initGitRepository(projectDir: string): boolean {
     p.log.step('existing git repository detected (initialization skipped)')
     return false
   }
-  if (!git(['-C', projectDir, 'init', '-q'])) return false
+  if (!runGit(['-C', projectDir, 'init', '-q'])) return false
   if (existsSync(join(projectDir, '.githooks'))) {
-    git(['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
+    runGit(['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
   }
   p.log.step('git repository initialized')
   return true
 }
 
 function commitInitialBaseline(projectDir: string): void {
-  git(['-C', projectDir, 'add', '-A'])
+  runGit(['-C', projectDir, 'add', '-A'])
   const message = 'chore: initial commit from create-stack'
-  const committed = git(['-C', projectDir, 'commit', '--no-verify', '-q', '-m', message], 'ignore')
+  const committed = runGit(
+    ['-C', projectDir, 'commit', '--no-verify', '-q', '-m', message],
+    'ignore',
+  )
   p.log.step(
     committed
       ? 'initial commit created'
@@ -198,33 +190,24 @@ export async function createProject(request: CreationRequest): Promise<void> {
 
   const spinner = p.spinner()
   spinner.start('Forking + stripping the base app')
-  const assembled = await plan.module.assemble({
-    projectDir: plan.projectDir,
-    database: plan.database,
-    auth: plan.auth,
-    trpc: plan.trpc,
-    mailer: plan.mailer,
-    capabilities: plan.capabilities,
-    alias: plan.alias,
-    monorepo: plan.monorepo,
-    packageManager: plan.packageManager,
-  })
+  const { cwd, target, name, framework, selectionReasons, install, git, module, ...assembly } = plan
+  const assembled = await module.assemble(assembly)
   spinner.stop('Project scaffolded')
 
-  const initializedGit = plan.git && initGitRepository(plan.projectDir)
+  const initializedGit = git && initGitRepository(assembly.projectDir)
 
-  if (plan.install) {
-    runVerificationGate(plan.module.gate(plan.packageManager), {
-      cwd: plan.projectDir,
-      packageManager: plan.packageManager,
+  if (install) {
+    runVerificationGate(module.gate(assembly.packageManager), {
+      cwd: assembly.projectDir,
+      packageManager: assembly.packageManager,
       requireSuccess: true,
     })
-    if (initializedGit) commitInitialBaseline(plan.projectDir)
+    if (initializedGit) commitInitialBaseline(assembly.projectDir)
   } else {
     p.log.warn('Installation and verification skipped; no automatic commit was created')
   }
 
   p.note(summaryLines(plan).join('\n'), 'Done')
   if (assembled.manualSteps.length) p.note(assembled.manualSteps.join('\n'), 'Finish by hand')
-  p.outro(`Created ${plan.name}`)
+  p.outro(`Created ${name}`)
 }

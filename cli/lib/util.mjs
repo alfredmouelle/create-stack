@@ -54,11 +54,6 @@ export const run = (cmd, args, opts = {}) => {
   return res.status === 0
 }
 
-export const runCapture = (cmd, args, opts = {}) => {
-  const res = spawnSync(cmd, args, { encoding: 'utf8', ...opts })
-  return res.status === 0 ? (res.stdout || '').trim() : ''
-}
-
 export { join }
 
 export const pkgRemoveDeps = (pkg, names) => {

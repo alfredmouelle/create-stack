@@ -103,7 +103,7 @@ function resolveMailProvider(value) {
   return value
 }
 
-export function detectFramework(projectDir) {
+export function requireFrameworkModule(projectDir) {
   const module = detectFrameworkModule(projectDir)
   if (module) return module
   const frameworks = frameworkModules.map(({ label }) => label).join(', ')
@@ -142,7 +142,7 @@ function vendor({ projectDir, framework, projectName, cap, adapter, keep }) {
 export function addCapability({ projectDir, cap, adapter, keep }) {
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
-  const framework = detectFramework(projectDir).id
+  const framework = requireFrameworkModule(projectDir).id
   const projectName = pkg.name ?? 'app'
   const alias = detectAlias(projectDir)
 

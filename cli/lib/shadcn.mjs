@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { rawConfigSchema } from 'shadcn/schema'
-import { detectFramework } from './add.mjs'
+import { requireFrameworkModule } from './add.mjs'
 import { detectEffectivePackageManager } from './package-manager.mjs'
 import { STACK_ROOT } from './paths.mjs'
 import { COMPONENT_CATALOG, generateRegistry } from './registry.mjs'
@@ -303,7 +303,7 @@ function mountRoot(projectDir, config, name) {
   const root = registryComponents[name].root
   if (!root) return { mounted: null, rootName: null, manualSteps: [] }
 
-  const rootPath = join(projectDir, detectFramework(projectDir).additions.componentRoot)
+  const rootPath = join(projectDir, requireFrameworkModule(projectDir).additions.componentRoot)
   const importStatement = `import { ${root.name} } from '${rootModuleSpecifier(config, root.module)}'`
   const jsx = `<${root.name} />`
 
