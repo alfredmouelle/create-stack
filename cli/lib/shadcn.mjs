@@ -31,10 +31,6 @@ const INIT_COMMANDS = {
   yarn: 'yarn dlx',
   bun: 'bunx',
 }
-const ROOT_FILES = {
-  next: 'src/app/layout.tsx',
-  tanstack: 'src/routes/__root.tsx',
-}
 
 const registryComponents = Object.fromEntries(
   Object.entries(COMPONENT_CATALOG).map(([name, entry]) => [name, entry]),
@@ -307,9 +303,7 @@ function mountRoot(projectDir, config, name) {
   const root = registryComponents[name].root
   if (!root) return { mounted: null, rootName: null, manualSteps: [] }
 
-  const pkg = readJSON(join(projectDir, 'package.json'))
-  const framework = detectFramework(pkg)
-  const rootPath = join(projectDir, ROOT_FILES[framework])
+  const rootPath = join(projectDir, detectFramework(projectDir).additions.componentRoot)
   const importStatement = `import { ${root.name} } from '${rootModuleSpecifier(config, root.module)}'`
   const jsx = `<${root.name} />`
 

@@ -420,6 +420,25 @@ test('a verified installation creates the generated baseline commit', () => {
   ).toBe('chore: initial commit from create-stack\n')
 })
 
+test('add rejects an application that no registered framework recognizes', () => {
+  const fixture = createAcceptanceFixture('standalone')
+  mkdirSync(fixture.project)
+  writeFileSync(
+    `${fixture.project}/package.json`,
+    '{"name":"billing-api","dependencies":{"express":"5.1.0"}}\n',
+  )
+
+  const result = runCli({
+    cwd: fixture.project,
+    target: fixture.project,
+    args: ['add', 'logger', '--no-install'],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.stdout).toContain('No compatible application found')
+  expect(result.targetMutated).toBe(false)
+})
+
 test('applies --keep-files to a provider change in a mixed batch', () => {
   const fixture = createAcceptanceFixture('standalone')
   expect(createProject(fixture, { framework: 'next' }).exitStatus).toBe(0)

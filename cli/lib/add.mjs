@@ -13,6 +13,7 @@ import {
   vendorCapability,
   vendorPackageSrc,
 } from './capabilities.mjs'
+import { detectFrameworkModule, frameworkModules } from './engine.mjs'
 import { appendEnv } from './env.mjs'
 import { vendorMailer } from './mailer.mjs'
 import { exists, join, pkgAddDeps, pkgRemoveDeps, read, readJSON, writeJSON } from './util.mjs'
@@ -102,11 +103,11 @@ function resolveMailProvider(value) {
   return value
 }
 
-export function detectFramework(pkg) {
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-  if (deps['@tanstack/react-start'] || deps['@tanstack/react-router']) return 'tanstack'
-  if (deps.next) return 'next'
-  throw new Error('Could not detect framework: no `next` or `@tanstack/react-start` dependency')
+export function detectFramework(projectDir) {
+  const module = detectFrameworkModule(projectDir)
+  if (module) return module
+  const frameworks = frameworkModules.map(({ label }) => label).join(', ')
+  throw new Error(`Could not detect a registered framework (${frameworks}) in ${projectDir}`)
 }
 
 const currentMailerAdapter = (projectDir) => {
@@ -141,7 +142,7 @@ function vendor({ projectDir, framework, projectName, cap, adapter, keep }) {
 export function addCapability({ projectDir, cap, adapter, keep }) {
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
-  const framework = detectFramework(pkg)
+  const framework = detectFramework(projectDir).id
   const projectName = pkg.name ?? 'app'
   const alias = detectAlias(projectDir)
 
