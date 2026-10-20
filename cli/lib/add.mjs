@@ -16,6 +16,7 @@ import {
 import { detectFrameworkModule, frameworkModules } from './engine.mjs'
 import { appendEnv } from './env.mjs'
 import { vendorMailer } from './mailer.mjs'
+import { FRAMEWORK_SUPPORT } from './stack-config.mjs'
 import { exists, join, pkgAddDeps, pkgRemoveDeps, read, readJSON, writeJSON } from './util.mjs'
 
 const MAILER_ADAPTERS = ['resend', 'brevo', 'ses']
@@ -106,7 +107,7 @@ function resolveMailProvider(value) {
 export function requireFrameworkModule(projectDir) {
   const module = detectFrameworkModule(projectDir)
   if (module) return module
-  const frameworks = frameworkModules.map(({ label }) => label).join(', ')
+  const frameworks = frameworkModules.map(({ id }) => FRAMEWORK_SUPPORT[id].label).join(', ')
   throw new Error(`Could not detect a registered framework (${frameworks}) in ${projectDir}`)
 }
 

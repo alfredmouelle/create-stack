@@ -1,7 +1,5 @@
 import type { Auth, Database, Framework, Mailer } from '../../packages/stack-config/src/index.ts'
 
-export type FrameworkMaturity = 'stable' | 'preview'
-
 export type PackageManager = {
   readonly name: string
   readonly exec: string
@@ -53,8 +51,6 @@ export type QualityProfileException = {
 
 export type FrameworkModule = {
   readonly id: Framework
-  readonly label: string
-  readonly maturity: FrameworkMaturity
   readonly detect: (applicationDir: string) => boolean
   readonly assemble: (request: AssemblyRequest) => Promise<AssemblyResult>
   readonly additions: AdditionWiring
