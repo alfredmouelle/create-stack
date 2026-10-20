@@ -28,15 +28,6 @@ export const copy = (from, to) => {
   cpSync(from, to, { recursive: true })
 }
 
-export const copyTree = (from, to, excludeBasenames = []) => {
-  const skip = new Set(excludeBasenames)
-  mkdirSync(to, { recursive: true })
-  cpSync(from, to, {
-    recursive: true,
-    filter: (src) => !skip.has(src.slice(src.lastIndexOf('/') + 1)),
-  })
-}
-
 export const editFile = (p, fn) => {
   if (!existsSync(p)) return false
   const next = fn(read(p))
@@ -61,11 +52,6 @@ export const pkgRemoveDeps = (pkg, names) => {
     if (!pkg[field]) continue
     for (const name of names) delete pkg[field][name]
   }
-}
-
-export const pkgRemoveScripts = (pkg, names) => {
-  if (!pkg.scripts) return
-  for (const name of names) delete pkg.scripts[name]
 }
 
 export const pkgAddDeps = (pkg, deps, field = 'dependencies') => {

@@ -54,38 +54,6 @@ export const mailer: Mailer = {
 }
 `
 
-export function swapMailer(projectDir, provider) {
-  if (provider === 'resend') {
-    write(join(projectDir, EMAIL_DIR, 'index.ts'), INDEX_TS(FACTORY.resend))
-    return {
-      addDeps: {},
-      removeDeps: [],
-      envKeys: ['EMAIL_FROM', 'RESEND_API_KEY'],
-      requiredEnvKeys: ['RESEND_API_KEY'],
-    }
-  }
-  const cfg = FACTORY[provider]
-  if (!cfg) throw new Error(`Unknown mailer provider: ${provider}`)
-
-  remove(join(projectDir, EMAIL_DIR, 'adapters/resend.ts'))
-  copy(
-    join(STACK_ROOT, 'packages/mailer/src/adapters', `${provider}.ts`),
-    join(projectDir, EMAIL_DIR, 'adapters', `${provider}.ts`),
-  )
-  stripJsExtensions(join(projectDir, EMAIL_DIR, 'adapters'))
-  write(join(projectDir, EMAIL_DIR, 'index.ts'), INDEX_TS(cfg))
-
-  const mailerPkg = readJSON(join(STACK_ROOT, 'packages/mailer/package.json'))
-  const range = mailerPkg.dependencies?.[cfg.pkgDep]
-  if (!range) throw new Error(`Undeclared version for ${cfg.pkgDep} in the mailer package`)
-  return {
-    addDeps: { [cfg.pkgDep]: range },
-    removeDeps: ['resend'],
-    envKeys: cfg.envKeys,
-    requiredEnvKeys: cfg.requiredEnvKeys,
-  }
-}
-
 export function currentMailerAdapter(projectDir) {
   const index = join(projectDir, EMAIL_DIR, 'index.ts')
   return exists(index) ? (read(index).match(/\.\/adapters\/([\w-]+)['"]/)?.[1] ?? null) : null

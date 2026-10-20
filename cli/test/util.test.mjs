@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
 import { packageName } from '../lib/identity.mjs'
-import { copyTree, isDirEmpty, pkgAddDeps, pkgRemoveDeps, pkgRemoveScripts } from '../lib/util.mjs'
+import { isDirEmpty, pkgAddDeps, pkgRemoveDeps } from '../lib/util.mjs'
 
 const tmps = []
 const mkTmp = () => {
@@ -26,11 +26,6 @@ describe('package.json helpers', () => {
     pkgRemoveDeps(pkg, ['a'])
     expect(pkg.dependencies).toEqual({ b: '2' })
     expect(pkg.devDependencies).toEqual({ c: '3' })
-  })
-  test('pkgRemoveScripts deletes named scripts', () => {
-    const pkg = { scripts: { build: 'x', 'db:seed': 'y' } }
-    pkgRemoveScripts(pkg, ['db:seed'])
-    expect(pkg.scripts).toEqual({ build: 'x' })
   })
 })
 
@@ -68,21 +63,5 @@ describe('isDirEmpty', () => {
     const d = mkTmp()
     writeFileSync(join(d, 'x.txt'), 'hi')
     expect(isDirEmpty(d)).toBe(false)
-  })
-})
-
-describe('copyTree', () => {
-  test('copies a tree but skips excluded basenames', () => {
-    const src = mkTmp()
-    writeFileSync(join(src, 'keep.ts'), '1')
-    const nm = join(src, 'node_modules')
-    mkdirSync(nm, { recursive: true })
-    writeFileSync(join(nm, 'junk.js'), '2')
-
-    const dest = join(mkTmp(), 'out')
-    copyTree(src, dest, ['node_modules'])
-    const top = readdirSync(dest)
-    expect(top).toContain('keep.ts')
-    expect(top).not.toContain('node_modules')
   })
 })
