@@ -1,8 +1,8 @@
-import { __TRPC_EXPORTS__ } from '@trpc/server'
+__CLERK_IMPORT__import { __TRPC_EXPORTS__ } from '@trpc/server'
 import superjson from 'superjson'
 import { flatten, ValiError } from 'valibot'
 import { env } from '~/env'
-__AUTH_IMPORT____DATABASE_IMPORT__
+__BETTER_AUTH_IMPORT____DATABASE_IMPORT__
 export const createTRPCContext = async (opts: { headers: Headers }) => {
 __CONTEXT__
 }
@@ -45,5 +45,4 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 })
 
 export const publicProcedure = t.procedure.use(timingMiddleware)
-
 __PROTECTED_PROCEDURE__

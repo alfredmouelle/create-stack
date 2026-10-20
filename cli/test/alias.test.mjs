@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
 import { detectAlias, rewriteAlias } from '../lib/alias.mjs'
 import { addCapability, build, cleanup, read, readJSON, srcFiles } from './helpers.mjs'
@@ -23,6 +25,18 @@ for (const framework of ['tanstack', 'next']) {
       for (const rel of [...srcs, 'tsconfig.json', 'components.json']) {
         expect(OLD_SPECIFIER.test(read(`${dir}/${rel}`)), `stray ~/ in ${rel}`).toBe(false)
       }
+    })
+
+    test('a custom alias leaves declared build output untouched', () => {
+      const { dir } = build({ name: 'built', framework })
+      const outputs = { tanstack: '.output/server', next: '.next/server' }[framework]
+      const chunk = join(dir, outputs, 'chunk.js')
+      mkdirSync(join(dir, outputs), { recursive: true })
+      writeFileSync(chunk, "import { env } from '~/env'\n")
+
+      rewriteAlias(dir, '@')
+
+      expect(read(chunk)).toBe("import { env } from '~/env'\n")
     })
 
     test('the default ~ alias is a no-op', () => {
