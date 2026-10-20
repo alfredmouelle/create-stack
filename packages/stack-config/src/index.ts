@@ -204,12 +204,12 @@ function findConflicts(
 
 function choose<Value>(
   preferences: readonly Value[],
-  exclusion: Value,
-  recommend: boolean,
+  fallback: Value,
+  preferFallback: boolean,
   fits: (value: Value) => boolean,
 ): Value {
-  if (!recommend && fits(exclusion)) return exclusion
-  return preferences.find(fits) ?? exclusion
+  if (preferFallback && fits(fallback)) return fallback
+  return preferences.find(fits) ?? fallback
 }
 
 function resolveConfiguration(
@@ -218,25 +218,24 @@ function resolveConfiguration(
   minimal: boolean,
 ): StackConfiguration {
   const { recommendations } = framework
-  const recommend = !minimal
   const database =
     choices.database ??
-    choose(recommendations.database, 'none', recommend, (database) =>
+    choose(recommendations.database, 'none', minimal, (database) =>
       isCompatible({ ...choices, database }),
     )
   const auth =
     choices.auth ??
-    choose(recommendations.auth, 'none', recommend, (auth) =>
+    choose(recommendations.auth, 'none', minimal, (auth) =>
       isCompatible({ ...choices, database, auth }),
     )
   const trpc =
     choices.trpc ??
-    choose(recommendations.trpc ? [true] : [], false, recommend, (trpc) =>
+    choose(recommendations.trpc ? [true] : [], false, minimal, (trpc) =>
       isCompatible({ ...choices, database, auth, trpc }),
     )
   const mailer =
     choices.mailer ??
-    choose(recommendations.mailer, 'none', false, (mailer) =>
+    choose(recommendations.mailer, 'none', true, (mailer) =>
       isCompatible({ ...choices, database, auth, trpc, mailer }),
     )
   return {

@@ -6,7 +6,7 @@ import {
   stackConfigurationCliArgs,
 } from '../src/index.js'
 
-const prismaOnlyNext = {
+const restrictedNext = {
   label: 'Next.js',
   maturity: 'preview',
   supports: {
@@ -23,7 +23,7 @@ const prismaOnlyNext = {
   },
 } satisfies FrameworkSupport
 
-const frameworkSupport = { ...FRAMEWORK_SUPPORT, next: prismaOnlyNext }
+const frameworkSupport = { ...FRAMEWORK_SUPPORT, next: restrictedNext }
 
 describe('resolveStackConfiguration', () => {
   test('resolves the recommended stack', () => {
@@ -332,6 +332,16 @@ describe('resolveStackConfiguration', () => {
     )
     expect(withoutDatabase.configuration).toMatchObject({ auth: 'clerk', mailer: 'none' })
   })
+
+  test.each(Object.entries(FRAMEWORK_SUPPORT))(
+    '%s recommends only values it supports',
+    (_framework, { supports, recommendations }) => {
+      expect(supports.database).toEqual(expect.arrayContaining([...recommendations.database]))
+      expect(supports.auth).toEqual(expect.arrayContaining([...recommendations.auth]))
+      expect(supports.trpc).toContain(recommendations.trpc)
+      expect(supports.mailer).toEqual(expect.arrayContaining([...recommendations.mailer]))
+    },
+  )
 
   test('declares Next.js and TanStack Start as stable frameworks', () => {
     expect(

@@ -83,8 +83,8 @@ const frameworkHints: Partial<Record<Framework, string>> = {
 }
 
 const frameworkOptions: readonly ChoiceOption[] = FRAMEWORKS.map((framework) => {
-  const { label, maturity } = FRAMEWORK_SUPPORT[framework]
-  const hint = maturity === 'preview' ? 'preview' : frameworkHints[framework]
+  const { label } = FRAMEWORK_SUPPORT[framework]
+  const hint = frameworkHints[framework]
   return hint ? { value: framework, label, hint } : { value: framework, label }
 })
 
