@@ -1,7 +1,6 @@
 import { cpSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { TEMPLATES } from '#lib/paths.mjs'
-import type { FrameworkModule } from './framework-module.ts'
 
 export const QUALITY_PROFILE_OPTIONS = [
   'strict',
@@ -17,6 +16,28 @@ export const QUALITY_PROFILE_OPTIONS = [
 ] as const
 
 export type QualityProfileOption = (typeof QUALITY_PROFILE_OPTIONS)[number]
+
+export type QualityProfileException = {
+  readonly option: QualityProfileOption
+  readonly reason: string
+}
+
+export type ProfiledFramework = {
+  readonly label: string
+  readonly qualityProfileExceptions: readonly QualityProfileException[]
+}
+
+const STRICT_MEMBER_OPTIONS = [
+  'alwaysStrict',
+  'noImplicitAny',
+  'noImplicitThis',
+  'strictBindCallApply',
+  'strictBuiltinIteratorReturn',
+  'strictFunctionTypes',
+  'strictNullChecks',
+  'strictPropertyInitialization',
+  'useUnknownInCatchVariables',
+] as const
 
 export type QualityProfileTarget = {
   readonly projectDir: string
@@ -42,20 +63,26 @@ function readJsonObject(path: string): JsonObject {
 const writeJsonObject = (path: string, value: JsonObject): void =>
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`)
 
-function applyCompilerOptions(
-  module: Pick<FrameworkModule, 'label' | 'qualityProfileExceptions'>,
-  applicationDir: string,
-): void {
+function assertStrictMembers(framework: ProfiledFramework, compilerOptions: JsonObject): void {
+  const relaxed = STRICT_MEMBER_OPTIONS.find((option) => compilerOptions[option] === false)
+  if (relaxed === undefined) return
+  throw new Error(
+    `${framework.label} relaxes the quality profile option strict through ${relaxed} without a declared exception`,
+  )
+}
+
+function applyCompilerOptions(framework: ProfiledFramework, applicationDir: string): void {
   const path = join(applicationDir, 'tsconfig.json')
   const tsconfig = readJsonObject(path)
   const compilerOptions = isJsonObject(tsconfig.compilerOptions) ? tsconfig.compilerOptions : {}
-  const excepted = new Set(module.qualityProfileExceptions.map(({ option }) => option))
+  const excepted = new Set(framework.qualityProfileExceptions.map(({ option }) => option))
+  if (!excepted.has('strict')) assertStrictMembers(framework, compilerOptions)
   let changed = false
   for (const option of QUALITY_PROFILE_OPTIONS) {
     if (excepted.has(option) || compilerOptions[option] === true) continue
     if (compilerOptions[option] !== undefined) {
       throw new Error(
-        `${module.label} relaxes the quality profile option ${option} without a declared exception`,
+        `${framework.label} relaxes the quality profile option ${option} without a declared exception`,
       )
     }
     compilerOptions[option] = true
@@ -72,10 +99,10 @@ function prepareHooks(projectDir: string): void {
 }
 
 export function applyQualityProfile(
-  module: Pick<FrameworkModule, 'label' | 'qualityProfileExceptions'>,
+  framework: ProfiledFramework,
   { projectDir, applicationDir }: QualityProfileTarget,
 ): void {
-  applyCompilerOptions(module, applicationDir)
+  applyCompilerOptions(framework, applicationDir)
   for (const file of PROFILE_FILES) {
     cpSync(join(TEMPLATES, 'quality-profile', file), join(projectDir, file), { recursive: true })
   }

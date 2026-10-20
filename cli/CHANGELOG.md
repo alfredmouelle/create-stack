@@ -21,6 +21,8 @@ refactors, and documentation-only changes wait for the next release that adds pr
   `noUncheckedSideEffectImports`. Generated code and capabilities pass them without casts.
 - Monorepo projects receive their VS Code and Zed settings at the workspace root, next
   to the Biome configuration and Git hooks.
+- `add component date-picker` passes the calendar's optional `locale` only when it is
+  set, so the shadcn calendar typechecks under `exactOptionalPropertyTypes`.
 
 ## [0.15.0] - 2026-10-15
 

@@ -11,8 +11,11 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
 import type { FrameworkModule, Monorepo } from '../src/framework-module.ts'
+import type { QualityProfileException } from '../src/quality-profile.ts'
 
-process.env.CREATE_STACK_STACK_ROOT = resolve(import.meta.dirname, '..', '..')
+const REPO_ROOT = resolve(import.meta.dirname, '..', '..')
+
+process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 
 const { createProject } = await import('../src/engine.ts')
 const { applyQualityProfile, QUALITY_PROFILE_OPTIONS } = await import('../src/quality-profile.ts')
@@ -30,8 +33,21 @@ const temporaryRoot = (): string => {
   return root
 }
 
-const readJson = (path: string): Record<string, Record<string, unknown>> =>
-  JSON.parse(readFileSync(path, 'utf8'))
+type JsonObject = Record<string, unknown>
+
+const isJsonObject = (value: unknown): value is JsonObject =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+function readJson(path: string): JsonObject {
+  const value: unknown = JSON.parse(readFileSync(path, 'utf8'))
+  if (!isJsonObject(value)) throw new Error(`Expected a JSON object in ${path}`)
+  return value
+}
+
+function readField(path: string, field: string): JsonObject {
+  const value = readJson(path)[field]
+  return isJsonObject(value) ? value : {}
+}
 
 const packageManager = {
   name: 'pnpm',
@@ -41,13 +57,13 @@ const packageManager = {
   devCmd: 'pnpm dev',
 }
 
-async function generate(module: FrameworkModule, monorepo: Monorepo): Promise<string> {
+async function generate(frameworkModule: FrameworkModule, monorepo: Monorepo): Promise<string> {
   const cwd = temporaryRoot()
   await createProject({
     cwd,
     target: 'storefront',
     name: 'storefront',
-    framework: module.id,
+    framework: frameworkModule.id,
     database: 'drizzle',
     auth: 'better-auth',
     trpc: true,
@@ -69,49 +85,57 @@ const enabledProfile = Object.fromEntries(QUALITY_PROFILE_OPTIONS.map((option) =
 
 const shapes: readonly Monorepo[] = [false, 'turborepo', 'nx']
 
-describe.each(frameworkModules.map((module) => [module.id, module] as const))(
-  '%s quality profile',
-  (_id, module) => {
-    const excepted = new Set<string>(module.qualityProfileExceptions.map(({ option }) => option))
+describe.each(
+  frameworkModules.map((frameworkModule) => [frameworkModule.id, frameworkModule] as const),
+)('%s quality profile', (_id, frameworkModule) => {
+  const excepted = new Set<string>(
+    frameworkModule.qualityProfileExceptions.map(({ option }) => option),
+  )
 
-    test.each(shapes)(
-      'applies every profile option, hook, and editor setting (monorepo: %s)',
-      async (monorepo) => {
-        const projectDir = await generate(module, monorepo)
-        const applicationDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
-
-        const { compilerOptions } = readJson(join(applicationDir, 'tsconfig.json'))
-        for (const option of PROFILE_OPTIONS.filter((name) => !excepted.has(name))) {
-          expect(compilerOptions?.[option], option).toBe(true)
-        }
-        expect(compilerOptions?.jsx, 'framework options are kept').toBe('react-jsx')
-
-        for (const hook of ['pre-commit', 'pre-push']) {
-          expect(() =>
-            accessSync(join(projectDir, '.githooks', hook), constants.X_OK),
-          ).not.toThrow()
-        }
-        expect(readJson(join(projectDir, 'package.json')).scripts?.prepare).toContain(
-          'git config core.hooksPath .githooks',
-        )
-        expect(existsSync(join(projectDir, '.vscode', 'settings.json'))).toBe(true)
-        expect(existsSync(join(projectDir, '.zed', 'settings.json'))).toBe(true)
-
-        if (monorepo) {
-          expect(existsSync(join(applicationDir, '.githooks')), 'no application hooks').toBe(false)
-          expect(readJson(join(applicationDir, 'package.json')).scripts?.prepare).toBeUndefined()
-        }
-      },
-    )
-
-    test('declares every quality profile exception with its reason', () => {
-      for (const { option, reason } of module.qualityProfileExceptions) {
-        expect(PROFILE_OPTIONS).toContain(option)
-        expect(reason.trim()).not.toBe('')
+  test('ships reference applications that enable the full profile', () => {
+    for (const asset of frameworkModule.packagedAssets) {
+      const compilerOptions = readField(join(REPO_ROOT, asset, 'tsconfig.json'), 'compilerOptions')
+      for (const option of PROFILE_OPTIONS.filter((name) => !excepted.has(name))) {
+        expect(compilerOptions[option], `${asset} ${option}`).toBe(true)
       }
-    })
-  },
-)
+    }
+  })
+
+  test.each(shapes)(
+    'applies every profile option, hook, and editor setting (monorepo: %s)',
+    async (monorepo) => {
+      const projectDir = await generate(frameworkModule, monorepo)
+      const applicationDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
+
+      const compilerOptions = readField(join(applicationDir, 'tsconfig.json'), 'compilerOptions')
+      for (const option of PROFILE_OPTIONS.filter((name) => !excepted.has(name))) {
+        expect(compilerOptions[option], option).toBe(true)
+      }
+      expect(compilerOptions.jsx, 'framework options are kept').toBe('react-jsx')
+
+      for (const hook of ['pre-commit', 'pre-push']) {
+        expect(() => accessSync(join(projectDir, '.githooks', hook), constants.X_OK)).not.toThrow()
+      }
+      expect(readField(join(projectDir, 'package.json'), 'scripts').prepare).toContain(
+        'git config core.hooksPath .githooks',
+      )
+      expect(existsSync(join(projectDir, '.vscode', 'settings.json'))).toBe(true)
+      expect(existsSync(join(projectDir, '.zed', 'settings.json'))).toBe(true)
+
+      if (monorepo) {
+        expect(existsSync(join(applicationDir, '.githooks')), 'no application hooks').toBe(false)
+        expect(readField(join(applicationDir, 'package.json'), 'scripts').prepare).toBeUndefined()
+      }
+    },
+  )
+
+  test('declares every quality profile exception with its reason', () => {
+    for (const { option, reason } of frameworkModule.qualityProfileExceptions) {
+      expect(PROFILE_OPTIONS).toContain(option)
+      expect(reason.trim()).not.toBe('')
+    }
+  })
+})
 
 describe('applyQualityProfile', () => {
   function application(compilerOptions: Record<string, unknown>) {
@@ -121,7 +145,7 @@ describe('applyQualityProfile', () => {
     return projectDir
   }
 
-  const module = (exceptions: FrameworkModule['qualityProfileExceptions'] = []) => ({
+  const framework = (exceptions: readonly QualityProfileException[] = []) => ({
     label: 'Storefront Framework',
     qualityProfileExceptions: exceptions,
   })
@@ -129,9 +153,9 @@ describe('applyQualityProfile', () => {
   test('adds the profile options a framework leaves out and keeps its own options', () => {
     const projectDir = application({ jsx: 'react-jsx', strict: true })
 
-    applyQualityProfile(module(), { projectDir, applicationDir: projectDir })
+    applyQualityProfile(framework(), { projectDir, applicationDir: projectDir })
 
-    expect(readJson(join(projectDir, 'tsconfig.json')).compilerOptions).toEqual({
+    expect(readField(join(projectDir, 'tsconfig.json'), 'compilerOptions')).toEqual({
       jsx: 'react-jsx',
       ...enabledProfile,
     })
@@ -140,8 +164,20 @@ describe('applyQualityProfile', () => {
   test('rejects a framework that relaxes a profile option without a declared exception', () => {
     const projectDir = application({ exactOptionalPropertyTypes: false })
 
-    expect(() => applyQualityProfile(module(), { projectDir, applicationDir: projectDir })).toThrow(
+    expect(() =>
+      applyQualityProfile(framework(), { projectDir, applicationDir: projectDir }),
+    ).toThrow(
       'Storefront Framework relaxes the quality profile option exactOptionalPropertyTypes without a declared exception',
+    )
+  })
+
+  test('rejects a framework that relaxes strict through one of its member options', () => {
+    const projectDir = application({ strict: true, strictNullChecks: false })
+
+    expect(() =>
+      applyQualityProfile(framework(), { projectDir, applicationDir: projectDir }),
+    ).toThrow(
+      'Storefront Framework relaxes the quality profile option strict through strictNullChecks without a declared exception',
     )
   })
 
@@ -149,13 +185,13 @@ describe('applyQualityProfile', () => {
     const projectDir = application({ verbatimModuleSyntax: false })
 
     applyQualityProfile(
-      module([
+      framework([
         { option: 'verbatimModuleSyntax', reason: 'The framework compiler emits CommonJS.' },
       ]),
       { projectDir, applicationDir: projectDir },
     )
 
-    expect(readJson(join(projectDir, 'tsconfig.json')).compilerOptions).toEqual({
+    expect(readField(join(projectDir, 'tsconfig.json'), 'compilerOptions')).toEqual({
       ...enabledProfile,
       verbatimModuleSyntax: false,
     })
