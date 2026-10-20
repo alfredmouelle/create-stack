@@ -8,7 +8,10 @@ import type { Mailer } from '~/server/email/port'
 import { sendPasswordResetEmail, sendVerificationEmail } from './emails'
 
 const socialProviders =
-  env.BETTER_AUTH_GOOGLE_CLIENT_ID && env.BETTER_AUTH_GOOGLE_CLIENT_SECRET
+  env.BETTER_AUTH_GOOGLE_CLIENT_ID !== undefined &&
+  env.BETTER_AUTH_GOOGLE_CLIENT_ID !== '' &&
+  env.BETTER_AUTH_GOOGLE_CLIENT_SECRET !== undefined &&
+  env.BETTER_AUTH_GOOGLE_CLIENT_SECRET !== ''
     ? {
         google: {
           clientId: env.BETTER_AUTH_GOOGLE_CLIENT_ID,
@@ -17,7 +20,7 @@ const socialProviders =
       }
     : undefined
 
-export function createAuth({ mailer }: { mailer: Mailer }) {
+export function createAuth({ mailer }: { readonly mailer: Mailer }) {
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: 'pg',

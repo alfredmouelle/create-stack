@@ -28,7 +28,7 @@
 
 Choose a framework, then select a database, tRPC, auth, mailer, and optional capabilities.
 create-stack forks a base app, removes the pieces you did not select, writes the project
-identity and `.env`, installs dependencies, and runs typecheck and Biome. With Git enabled,
+identity and `.env`, installs dependencies, and runs the selected formatter, typecheck, and linter. With Git enabled,
 it creates the initial commit after those checks pass.
 The supported frameworks are **Next.js App Router** and **TanStack Start**.
 
@@ -126,10 +126,25 @@ Depending on your selections, the generated project can include:
 - tRPC v11 with SSR/RSC integration and a health router.
 - better-auth with email and password, verification, Google OAuth, and auth pages. Clerk provides hosted auth, middleware, sign-in and sign-up pages. Auth is optional.
 - Resend, Brevo, or SES behind one mailer interface with React Email templates.
-- Tailwind v4, shadcn, Geist, a theme toggle, strict Biome, typed `env.ts`, a Dockerfile, Git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
+- Tailwind v4, shadcn, Geist, a theme toggle, strict quality tooling, typed `env.ts`, a Dockerfile, Git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
 
 The CLI removes files, dependencies, env keys, and wiring for choices you leave out. It then
-runs typecheck and Biome in the generated project.
+runs the selected formatter, typecheck, and linter in the generated project.
+
+Biome is recommended for both formatting and linting. `--formatter=prettier` ships
+single quotes, no semicolons, trailing commas, width 100, and two-space indentation,
+plus import and Tailwind class sorting. `--linter=oxlint` ships type-aware linting
+with correctness, suspicious, pedantic, and performance categories as errors.
+Its readonly-parameter rule preserves inferred callback types and permits external
+library handles. The JSX runtime supplies React imports; functions allow up to
+100 nonblank, noncomment lines, including JSX.
+
+`check:write` fixes formatting and lint issues; `check` verifies both tools.
+The pre-commit hook applies the selected tools to staged files. It rejects files
+with both staged and unstaged changes before modifying them; stage or stash the
+remaining changes, then retry. In monorepos, tool configurations and dependencies
+live at the project root.
+When Prettier is selected, its plugin owns Tailwind sorting and Biome's overlapping class-sorting rule is disabled.
 
 ## Capabilities
 

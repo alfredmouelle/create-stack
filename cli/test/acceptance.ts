@@ -1,6 +1,14 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { lstatSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, rmSync } from 'node:fs'
+import {
+  lstatSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  type Stats,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -8,21 +16,31 @@ import { fileURLToPath } from 'node:url'
 const acceptanceTestDirectory = dirname(fileURLToPath(import.meta.url))
 const cliRoot = resolve(acceptanceTestDirectory, '..')
 const repoRoot = resolve(cliRoot, '..')
-const packageJson = JSON.parse(readFileSync(join(cliRoot, 'package.json'), 'utf8'))
+const packageJson: unknown = JSON.parse(readFileSync(join(cliRoot, 'package.json'), 'utf8'))
+if (
+  typeof packageJson !== 'object' ||
+  packageJson === null ||
+  !('bin' in packageJson) ||
+  typeof packageJson.bin !== 'object' ||
+  packageJson.bin === null ||
+  !('create-stack' in packageJson.bin) ||
+  typeof packageJson.bin['create-stack'] !== 'string'
+)
+  throw new Error('Missing executable CLI entry')
 const cliEntry = resolve(cliRoot, packageJson.bin['create-stack'])
-const fixtureRoots = []
+const fixtureRoots: string[] = []
 
-const hash = (path) => createHash('sha256').update(readFileSync(path)).digest('hex')
+const hash = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
-function snapshot(path) {
-  const entries = []
+function snapshot(path: string): string {
+  const entries: string[] = []
 
-  function visit(current, relative) {
-    let stat
+  function visit(current: string, relative: string): void {
+    let stat: Stats
     try {
       stat = lstatSync(current)
     } catch (error) {
-      if (error?.code === 'ENOENT') return
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return
       throw error
     }
 
@@ -43,7 +61,12 @@ function snapshot(path) {
   return entries.join('\n')
 }
 
-export function createAcceptanceFixture(shape) {
+export function createAcceptanceFixture(shape: 'standalone' | 'monorepo'): {
+  shape: 'standalone' | 'monorepo'
+  root: string
+  project: string
+  app: string
+} {
   if (shape !== 'standalone' && shape !== 'monorepo') throw new Error(`Unknown shape: ${shape}`)
   const root = mkdtempSync(join(tmpdir(), `create-stack-acceptance-${shape}-`))
   fixtureRoots.push(root)
@@ -56,11 +79,32 @@ export function createAcceptanceFixture(shape) {
   }
 }
 
-export function cleanupAcceptanceFixtures() {
+export function cleanupAcceptanceFixtures(): void {
   for (const root of fixtureRoots.splice(0)) rmSync(root, { recursive: true, force: true })
 }
 
-export function runCli({ args = [], cwd, env = {}, input, target, timeout = 10_000 }) {
+export function runCli({
+  args = [],
+  cwd,
+  env = {},
+  input,
+  target,
+  timeout = 10_000,
+}: {
+  readonly args?: readonly string[]
+  readonly cwd: string
+  readonly env?: NodeJS.ProcessEnv
+  readonly input?: string
+  readonly target: string
+  readonly timeout?: number
+}): {
+  exitStatus: number | null
+  stdout: string
+  stderr: string
+  requestedInput: boolean
+  targetMutated: boolean
+  signal: NodeJS.Signals | null
+} {
   const before = snapshot(target)
   const result = spawnSync(process.execPath, [cliEntry, ...args], {
     cwd,

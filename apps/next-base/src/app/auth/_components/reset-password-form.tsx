@@ -19,7 +19,7 @@ import { FormAlert } from '~/features/auth/form-alert'
 import { type ResetPasswordInput, ResetPasswordSchema } from '~/features/auth/schemas'
 import { authClient } from '~/server/better-auth/client'
 
-export function ResetPasswordForm({ token }: { token?: string | undefined }) {
+export function ResetPasswordForm({ token }: { readonly token?: string | undefined }) {
   const router = useRouter()
   const [formError, setFormError] = useState<string | null>(null)
   const form = useForm<ResetPasswordInput>({
@@ -28,7 +28,7 @@ export function ResetPasswordForm({ token }: { token?: string | undefined }) {
   })
 
   const onSubmit = form.handleSubmit(async (values) => {
-    if (!token) return
+    if (token === undefined || token === '') return
     setFormError(null)
     const { error } = await authClient.resetPassword({ newPassword: values.password, token })
     if (error) {
@@ -38,14 +38,19 @@ export function ResetPasswordForm({ token }: { token?: string | undefined }) {
     router.push('/auth/sign-in')
   })
 
-  if (!token) {
+  if (token === undefined || token === '') {
     return <FormAlert>This reset link is invalid or expired. Please request a new one.</FormAlert>
   }
 
   return (
     <Form {...form}>
-      <form className="grid gap-4" onSubmit={onSubmit}>
-        {formError ? <FormAlert>{formError}</FormAlert> : null}
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          void onSubmit(event)
+        }}
+      >
+        {formError !== null && formError !== '' ? <FormAlert>{formError}</FormAlert> : null}
 
         <FormField
           control={form.control}

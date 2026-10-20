@@ -4,9 +4,9 @@ import type { EmailRecipient } from '~/server/email'
 import type { Mailer } from '~/server/email/port'
 
 export const sendVerificationEmail = async (params: {
-  mailer: Mailer
-  to: EmailRecipient
-  url: string
+  readonly mailer: Mailer
+  readonly to: EmailRecipient
+  readonly url: string
 }): Promise<void> => {
   await params.mailer.send({
     to: params.to,
@@ -16,9 +16,9 @@ export const sendVerificationEmail = async (params: {
 }
 
 export const sendPasswordResetEmail = async (params: {
-  mailer: Mailer
-  to: EmailRecipient
-  url: string
+  readonly mailer: Mailer
+  readonly to: EmailRecipient
+  readonly url: string
 }): Promise<void> => {
   await params.mailer.send({
     to: params.to,

@@ -1,8 +1,7 @@
-import type { AnyFieldApi } from '@tanstack/react-form'
 import type { ChangeEvent, ComponentProps } from 'react'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
-import { FieldError, hasFieldError } from './field-error'
+import { FieldError, type FieldErrorState, hasFieldError } from './field-error'
 
 type NativeInputProps = Pick<
   ComponentProps<'input'>,
@@ -10,9 +9,14 @@ type NativeInputProps = Pick<
 >
 
 interface TextFieldProps extends NativeInputProps {
-  field: AnyFieldApi
-  label: string
-  description?: string
+  readonly field: FieldErrorState & {
+    readonly name: string
+    readonly state: { readonly value: unknown }
+    readonly handleBlur: () => void
+    readonly handleChange: (value: string) => void
+  }
+  readonly label: string
+  readonly description?: string
 }
 
 export function TextField({ field, label, description, ...inputProps }: TextFieldProps) {
@@ -21,8 +25,10 @@ export function TextField({ field, label, description, ...inputProps }: TextFiel
     id: field.name,
     name: field.name,
     onBlur: field.handleBlur,
-    onChange: (e: ChangeEvent<HTMLInputElement>) => field.handleChange(e.target.value),
-    value: String(field.state.value ?? ''),
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      field.handleChange(e.target.value)
+    },
+    value: typeof field.state.value === 'string' ? field.state.value : '',
     ...inputProps,
   }
 
@@ -31,7 +37,9 @@ export function TextField({ field, label, description, ...inputProps }: TextFiel
       <Label htmlFor={field.name}>{label}</Label>
       <Input className="h-10" {...shared} />
       <FieldError field={field} />
-      {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
+      {description !== undefined && description !== '' ? (
+        <p className="text-muted-foreground text-xs">{description}</p>
+      ) : null}
     </div>
   )
 }

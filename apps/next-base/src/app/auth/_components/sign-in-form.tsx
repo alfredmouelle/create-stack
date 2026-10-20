@@ -56,11 +56,16 @@ export function SignInForm() {
 
   return (
     <Form {...form}>
-      <form className="grid gap-4" onSubmit={onSubmit}>
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          void onSubmit(event)
+        }}
+      >
         <GoogleButton label="Continue with Google" />
         <AuthDivider />
 
-        {formError ? <FormAlert>{formError}</FormAlert> : null}
+        {formError !== null && formError !== '' ? <FormAlert>{formError}</FormAlert> : null}
 
         <FormField
           control={form.control}

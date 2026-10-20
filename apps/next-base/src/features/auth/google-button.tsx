@@ -32,19 +32,22 @@ export function GoogleButton({
   label,
   callbackURL = '/',
 }: {
-  label: string
-  callbackURL?: string
+  readonly label: string
+  readonly callbackURL?: string
 }) {
   const [loading, setLoading] = useState(false)
+  const signIn = async () => {
+    setLoading(true)
+    await authClient.signIn.social({ provider: 'google', callbackURL })
+    setLoading(false)
+  }
 
   return (
     <Button
       className="w-full cursor-pointer"
       disabled={loading}
-      onClick={async () => {
-        setLoading(true)
-        await authClient.signIn.social({ provider: 'google', callbackURL })
-        setLoading(false)
+      onClick={() => {
+        void signIn()
       }}
       type="button"
       variant="outline"

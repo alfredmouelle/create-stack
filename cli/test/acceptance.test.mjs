@@ -10,7 +10,7 @@ import {
 } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
-import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
+import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.ts'
 
 test.afterAll(cleanupAcceptanceFixtures)
 

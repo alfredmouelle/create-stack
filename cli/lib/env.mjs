@@ -103,7 +103,7 @@ ${serverBody ? `  server: {\n${serverBody}\n  },` : '  server: {},'}
 ${runtimeBody}
   },
 
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
   emptyStringAsUndefined: true,
 })
 `

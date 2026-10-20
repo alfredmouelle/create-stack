@@ -1,17 +1,10 @@
-import {
-  accessSync,
-  constants,
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { accessSync, constants, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
 import type { FrameworkModule, Monorepo } from '../src/framework-module.ts'
 import type { QualityProfileException } from '../src/quality-profile.ts'
+import { readField } from './json.ts'
 
 const REPO_ROOT = resolve(import.meta.dirname, '..', '..')
 
@@ -31,22 +24,6 @@ const temporaryRoot = (): string => {
   const root = mkdtempSync(join(tmpdir(), 'create-stack-quality-'))
   roots.push(root)
   return root
-}
-
-type JsonObject = Record<string, unknown>
-
-const isJsonObject = (value: unknown): value is JsonObject =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-function readJson(path: string): JsonObject {
-  const value: unknown = JSON.parse(readFileSync(path, 'utf8'))
-  if (!isJsonObject(value)) throw new Error(`Expected a JSON object in ${path}`)
-  return value
-}
-
-function readField(path: string, field: string): JsonObject {
-  const value = readJson(path)[field]
-  return isJsonObject(value) ? value : {}
 }
 
 const packageManager = {

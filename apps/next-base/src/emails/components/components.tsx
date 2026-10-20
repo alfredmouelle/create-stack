@@ -1,28 +1,22 @@
 'use client'
 
+import { useState } from 'react'
 import { Body, Container, Head, Html, Link, Preview, Section, Text } from 'react-email'
 import { EmailThemeProvider, useEmailTheme } from './context'
 import { createEmailTheme, type EmailTheme, type EmailThemeOverride } from './theme'
 
 export interface EmailLayoutProps {
-  preview: string
-  children: React.ReactNode
-  theme?: EmailTheme | EmailThemeOverride
-  year?: number
-}
-
-function resolveTheme(theme: EmailLayoutProps['theme']): EmailTheme {
-  if (!theme) return createEmailTheme()
-  if ('colors' in theme && 'brand' in theme && 'fontFamily' in theme) {
-    return theme as EmailTheme
-  }
-  return createEmailTheme(theme as EmailThemeOverride)
+  readonly preview: string
+  readonly children: React.ReactNode
+  readonly theme?: EmailTheme | EmailThemeOverride
+  readonly year?: number
 }
 
 export function EmailLayout({ preview, children, theme, year }: EmailLayoutProps) {
-  const resolved = resolveTheme(theme)
+  const resolved = createEmailTheme(theme)
   const { colors, brand, fontFamily } = resolved
-  const footerYear = year ?? new Date().getFullYear()
+  const [currentYear] = useState(() => new Date().getFullYear())
+  const footerYear = year ?? currentYear
 
   return (
     <EmailThemeProvider theme={resolved}>
@@ -73,15 +67,15 @@ export function EmailLayout({ preview, children, theme, year }: EmailLayoutProps
 }
 
 export interface EmailHeadingProps {
-  children: React.ReactNode
-  kicker?: string
+  readonly children: React.ReactNode
+  readonly kicker?: string
 }
 
 export function EmailHeading({ children, kicker }: EmailHeadingProps) {
   const { colors } = useEmailTheme()
   return (
     <>
-      {kicker && (
+      {kicker !== undefined && kicker !== '' && (
         <Text
           style={{
             color: colors.fgMuted,
@@ -112,10 +106,10 @@ export function EmailHeading({ children, kicker }: EmailHeadingProps) {
 }
 
 export interface EmailBodyTextProps {
-  children: React.ReactNode
-  muted?: boolean
-  size?: 'sm' | 'base'
-  style?: React.CSSProperties
+  readonly children: React.ReactNode
+  readonly muted?: boolean
+  readonly size?: 'sm' | 'base'
+  readonly style?: React.CSSProperties
 }
 
 export function EmailBodyText({ children, muted, size = 'base', style }: EmailBodyTextProps) {
@@ -123,7 +117,7 @@ export function EmailBodyText({ children, muted, size = 'base', style }: EmailBo
   return (
     <Text
       style={{
-        color: muted ? colors.fgMuted : colors.fg,
+        color: muted === true ? colors.fgMuted : colors.fg,
         fontSize: size === 'sm' ? 14 : 15,
         lineHeight: size === 'sm' ? '22px' : '24px',
         margin: '14px 0 0',
@@ -136,9 +130,9 @@ export function EmailBodyText({ children, muted, size = 'base', style }: EmailBo
 }
 
 export interface EmailButtonProps {
-  href: string
-  children: React.ReactNode
-  variant?: 'primary' | 'destructive'
+  readonly href: string
+  readonly children: React.ReactNode
+  readonly variant?: 'primary' | 'destructive'
 }
 
 export function EmailButton({ href, children, variant = 'primary' }: EmailButtonProps) {
@@ -169,8 +163,8 @@ export function EmailButton({ href, children, variant = 'primary' }: EmailButton
 }
 
 export interface EmailFallbackProps {
-  url: string
-  label?: string
+  readonly url: string
+  readonly label?: string
 }
 
 export function EmailFallback({

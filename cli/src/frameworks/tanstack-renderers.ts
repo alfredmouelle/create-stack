@@ -29,7 +29,7 @@ export function renderRoot(selection: StackSelection): string {
       : '',
     APP_ROUTER_IMPORT: selection.trpc ? "import type { AppRouter } from '~/server/api/root'\n" : '',
     ROUTER_CONTEXT: selection.trpc
-      ? 'interface RouterContext {\n  queryClient: QueryClient\n  trpc: TRPCOptionsProxy<AppRouter>\n}\n\n'
+      ? 'interface RouterContext {\n  readonly queryClient: QueryClient\n  readonly trpc: TRPCOptionsProxy<AppRouter>\n}\n\n'
       : '',
     CREATE_ROOT: selection.trpc ? 'createRootRouteWithContext<RouterContext>()' : 'createRootRoute',
     CLERK_OPEN: clerk ? '    <ClerkProvider>\n' : '',

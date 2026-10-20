@@ -10,8 +10,8 @@ export function visitor(): Context {
 }
 
 export async function signIn(
-  user: { email?: string; name?: string } = {},
-): Promise<{ user: Session['user']; context: Context }> {
+  user: { readonly email?: string; readonly name?: string } = {},
+): Promise<{ readonly user: Session['user']; readonly context: Context }> {
   const context = await auth.$context
   const created = await context.internalAdapter.createUser(
     {

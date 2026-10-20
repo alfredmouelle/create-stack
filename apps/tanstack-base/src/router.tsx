@@ -17,7 +17,7 @@ export function getRouter() {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
 
-    Wrap: (props: { children: ReactNode }) => (
+    Wrap: (props: { readonly children: ReactNode }) => (
       <ThemeProvider defaultTheme="system">
         <TRPCReactProvider queryClient={queryClient}>{props.children}</TRPCReactProvider>
       </ThemeProvider>
@@ -35,6 +35,6 @@ export function getRouter() {
 
 declare module '@tanstack/react-router' {
   interface Register {
-    router: ReturnType<typeof getRouter>
+    readonly router: ReturnType<typeof getRouter>
   }
 }

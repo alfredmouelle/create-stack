@@ -1,0 +1,17 @@
+**/node_modules
+**/public
+**/dist
+**/.next
+**/.output
+**/.nitro
+**/.turbo
+**/.nx
+**/coverage
+**/routeTree.gen.ts
+**/generated
+**/_generated
+**/components/ui
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+bun.lock

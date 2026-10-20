@@ -36,7 +36,10 @@ export function createServerHelpers(queryClient: QueryClient) {
   })
 }
 
-export function TRPCReactProvider(props: { children: ReactNode; queryClient: QueryClient }) {
+export function TRPCReactProvider(props: {
+  readonly children: ReactNode
+  readonly queryClient: QueryClient
+}) {
   return (
     <QueryClientProvider client={props.queryClient}>
       <TRPCProvider queryClient={props.queryClient} trpcClient={trpcClient}>

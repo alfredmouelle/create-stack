@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
-import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
+import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.ts'
 
 const THEME_FILES = {
   next: 'src/app/globals.css',

@@ -12,8 +12,8 @@ const Devtools = import.meta.env.DEV ? lazy(() => import('~/components/devtools'
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m));}catch(e){}})();`
 
 interface RouterContext {
-  queryClient: QueryClient
-  trpc: TRPCOptionsProxy<AppRouter>
+  readonly queryClient: QueryClient
+  readonly trpc: TRPCOptionsProxy<AppRouter>
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -70,7 +70,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   shellComponent: RootDocument,
 })
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { readonly children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

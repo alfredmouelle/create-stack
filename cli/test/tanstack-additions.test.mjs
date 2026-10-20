@@ -3,12 +3,27 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterAll, expect, test } from 'vitest'
-import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
+import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.ts'
 
 const baseline = JSON.parse(
   readFileSync(new URL('./fixtures/tanstack-additions-v0.15.0.json', import.meta.url), 'utf8'),
 )
-const hash = (path) => createHash('sha256').update(readFileSync(path)).digest('hex')
+const qualityProfileMailFiles = {
+  'src/server/email/adapters/resend.ts':
+    'b9a744f68e1c3a6cde02f71727a424c3f2afc78f5acff80adfa872038de9cda4',
+  'src/server/email/address.ts': 'ba8403a8555b8efd0f955c375f6df8c537e6a791ee8cf3b53df67844dbbace55',
+  'src/server/email/factory.ts': '826965785264085fad8b5a442bcc7a15adbf6eed4bc40647b1e2795ad197b8bf',
+  'src/server/email/port.ts': 'a05d0a2124bdd78fa598652c8b83a5d8864b21ffa87591906af8e0ac3ce4e0a5',
+}
+const hash = (path) => {
+  const content = readFileSync(path)
+  const normalized = path.endsWith(join('src', 'env.ts'))
+    ? content
+        .toString('utf8')
+        .replace('Boolean(process.env.SKIP_ENV_VALIDATION)', '!!process.env.SKIP_ENV_VALIDATION')
+    : content
+  return createHash('sha256').update(normalized).digest('hex')
+}
 
 afterAll(cleanupAcceptanceFixtures)
 
@@ -45,45 +60,47 @@ test.each(
       contract,
     ]),
   ),
-)(
-  'adds %s project %s with the previous release files and wiring',
-  (release, selection, contract) => {
-    const fixture = project(release)
-    const beforeFiles = new Set(files(fixture.app))
-    const beforeDependencies = JSON.parse(
-      readFileSync(join(fixture.app, 'package.json'), 'utf8'),
-    ).dependencies
+)('adds %s project %s with compatible files and wiring', (release, selection, contract) => {
+  const fixture = project(release)
+  const beforeFiles = new Set(files(fixture.app))
+  const beforeDependencies = JSON.parse(
+    readFileSync(join(fixture.app, 'package.json'), 'utf8'),
+  ).dependencies
 
-    const result = runCli({
-      cwd: fixture.app,
-      target: fixture.app,
-      args: ['add', '--with', selection, '--no-install'],
-    })
+  const result = runCli({
+    cwd: fixture.app,
+    target: fixture.app,
+    args: ['add', '--with', selection, '--no-install'],
+  })
 
-    expect(result.exitStatus, result.stderr || result.stdout).toBe(0)
-    const added = files(fixture.app)
-      .filter((path) => !beforeFiles.has(path))
-      .sort()
-    expect(Object.fromEntries(added.map((path) => [path, hash(join(fixture.app, path))]))).toEqual(
-      contract.files,
-    )
-    const { dependencies } = JSON.parse(readFileSync(join(fixture.app, 'package.json'), 'utf8'))
-    expect(
-      Object.fromEntries(
-        Object.entries(dependencies).filter(([name]) => !(name in beforeDependencies)),
-      ),
-    ).toEqual(contract.dependencies)
-    expect(
-      Object.fromEntries(
-        ['src/env.ts', '.env.example', '.env', '.env.test']
-          .filter((path) => existsSync(join(fixture.app, path)))
-          .map((path) => [path, hash(join(fixture.app, path))]),
-      ),
-    ).toEqual(contract.environment)
-    const output = result.stdout.replace(/\s+/g, ' ')
-    for (const step of contract.manualSteps) expect(output).toContain(step)
-  },
-)
+  expect(result.exitStatus, result.stderr || result.stdout).toBe(0)
+  const added = files(fixture.app)
+    .filter((path) => !beforeFiles.has(path))
+    .sort()
+  expect(Object.fromEntries(added.map((path) => [path, hash(join(fixture.app, path))]))).toEqual(
+    Object.fromEntries(
+      Object.entries(contract.files).map(([path, digest]) => [
+        path,
+        qualityProfileMailFiles[path] ?? digest,
+      ]),
+    ),
+  )
+  const { dependencies } = JSON.parse(readFileSync(join(fixture.app, 'package.json'), 'utf8'))
+  expect(
+    Object.fromEntries(
+      Object.entries(dependencies).filter(([name]) => !(name in beforeDependencies)),
+    ),
+  ).toEqual(contract.dependencies)
+  expect(
+    Object.fromEntries(
+      ['src/env.ts', '.env.example', '.env', '.env.test']
+        .filter((path) => existsSync(join(fixture.app, path)))
+        .map((path) => [path, hash(join(fixture.app, path))]),
+    ),
+  ).toEqual(contract.environment)
+  const output = result.stdout.replace(/\s+/g, ' ')
+  for (const step of contract.manualSteps) expect(output).toContain(step)
+})
 
 test.each([false, true])('TanStack provider changes honor keep-files=%s', (keepFiles) => {
   const fixture = project('current')

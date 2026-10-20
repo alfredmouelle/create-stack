@@ -5,7 +5,7 @@ import { VerifyEmailActions } from '../_components/verify-email-actions'
 export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>
+  readonly searchParams: Promise<{ readonly email?: string }>
 }) {
   const { email } = await searchParams
 
@@ -13,7 +13,8 @@ export default async function VerifyEmailPage({
     <AuthCard
       description={
         <>
-          A confirmation link was sent{email ? ` to ${email}` : ''}. Click it to activate your
+          A confirmation link was sent
+          {email !== undefined && email !== '' ? ` to ${email}` : ''}. Click it to activate your
           account.
         </>
       }

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
-import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
+import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.ts'
 
 afterAll(cleanupAcceptanceFixtures)
 

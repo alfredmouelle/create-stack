@@ -7,12 +7,10 @@ export type EmailRecipient = MailAddress
 
 let resolved: Mailer | null = null
 function resolveMailer(): Mailer {
-  if (!resolved) {
-    resolved = createMailer({
-      from: env.EMAIL_FROM,
-      adapter: __ADAPTER__,
-    })
-  }
+  resolved ??= createMailer({
+    from: env.EMAIL_FROM,
+    adapter: __ADAPTER__,
+  })
   return resolved
 }
 

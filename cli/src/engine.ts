@@ -70,12 +70,12 @@ export function runVerificationGate(
   }
   const formatted = runCommand(gate.format, cwd, 'ignore')
   if (!formatted && requireSuccess) throw new Error(VERIFICATION_FAILED)
-  p.log.step('Verifying (typecheck + biome)')
+  p.log.step('Verifying (typecheck + selected quality tools)')
   const typechecked = runCommand(gate.typecheck, cwd, 'inherit')
   const linted = runCommand(gate.lint, cwd, 'inherit')
   const verified = typechecked && linted
   if (!verified && requireSuccess) throw new Error(VERIFICATION_FAILED)
-  if (verified) p.log.success('typecheck + biome clean')
+  if (verified) p.log.success('typecheck + selected quality tools clean')
   else p.log.warn('verify reported issues (see output above)')
 }
 
@@ -221,6 +221,7 @@ export async function createProject(request: CreationRequest): Promise<void> {
       qualityProfileExceptions: module.qualityProfileExceptions,
     },
     { projectDir: assembly.projectDir, applicationDir: assembled.applicationDir },
+    { formatter, linter, alias: assembly.alias },
   )
   spinner.stop('Project scaffolded')
 

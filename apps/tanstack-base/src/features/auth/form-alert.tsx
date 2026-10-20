@@ -3,8 +3,8 @@ import type { ReactNode } from 'react'
 import { cn } from '~/lib/utils'
 
 interface FormAlertProps {
-  variant?: 'error' | 'success'
-  children: ReactNode
+  readonly variant?: 'error' | 'success'
+  readonly children: ReactNode
 }
 
 export function FormAlert({ variant = 'error', children }: FormAlertProps) {

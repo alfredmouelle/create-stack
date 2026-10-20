@@ -1,0 +1,107 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "react",
+    "jsx-a11y",
+    "vitest"
+  ],
+  "options": {
+    "typeAware": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "error",
+    "perf": "error"
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "eslint/max-lines-per-function": [
+      "error",
+      {
+        "max": 100,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "typescript/prefer-readonly-parameter-types": [
+      "error",
+      {
+        "ignoreInferredTypes": true,
+        "treatMethodsAsReadonly": true,
+        "allow": [
+          {
+            "from": "lib",
+            "name": [
+              "Headers",
+              "Request",
+              "Uint8Array"
+            ]
+          },
+          {
+            "from": "package",
+            "package": "@types/react",
+            "name": [
+              "ReactNode",
+              "ReactElement",
+              "CSSProperties",
+              "ChangeEvent"
+            ]
+          },
+          {
+            "from": "package",
+            "package": "clsx",
+            "name": "ClassValue"
+          },
+          {
+            "from": "package",
+            "package": "drizzle-orm",
+            "name": "Column"
+          },
+          {
+            "from": "package",
+            "package": "vitest",
+            "name": "TestProject"
+          },
+          {
+            "from": "package",
+            "package": "next",
+            "name": "NextRequest"
+          },
+          {
+            "from": "package",
+            "package": "next-themes",
+            "name": "ThemeProviderProps"
+          },
+          {
+            "from": "package",
+            "package": "@tanstack/react-query",
+            "name": "QueryClient"
+          },
+          {
+            "from": "package",
+            "package": "resend",
+            "name": "CreateEmailOptions"
+          }
+        ]
+      }
+    ]
+  },
+  "ignorePatterns": [
+    "**/public/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/.output/**",
+    "**/.nitro/**",
+    "**/.turbo/**",
+    "**/.nx/**",
+    "**/coverage/**",
+    "**/routeTree.gen.ts",
+    "**/generated/**",
+    "**/_generated/**",
+    "**/components/ui/**"
+  ]
+}
