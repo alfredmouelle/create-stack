@@ -7,6 +7,7 @@ const tpl = (rel) => join(TEMPLATES, rel)
 const ALWAYS_KEEP = new Set(['valibot'])
 
 const TANSTACK_TRPC_DEPS = [
+  '@tanstack/query-core',
   '@tanstack/react-query',
   '@tanstack/react-query-devtools',
   '@tanstack/react-router-ssr-query',
