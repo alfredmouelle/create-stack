@@ -4,8 +4,10 @@ import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { canonicalCapabilityName } from '#lib/capabilities.mjs'
 import {
+  type Formatter,
   FRAMEWORK_SUPPORT,
   type Framework,
+  type Linter,
   type StackAxis,
 } from '../../packages/stack-config/src/index.ts'
 import type {
@@ -24,6 +26,8 @@ export type CreationRequest = Omit<AssemblyRequest, 'projectDir'> & {
   readonly target: string
   readonly name: string
   readonly framework: Framework
+  readonly formatter: Formatter
+  readonly linter: Linter
   readonly selectionReasons: Readonly<Partial<Record<StackAxis, string>>>
   readonly install: boolean
   readonly git: boolean
@@ -107,6 +111,8 @@ function creationPlanLines(plan: CreationPlan): string[] {
     `Auth: ${orNone(plan.auth)}${reason('auth')}`,
     `tRPC: ${plan.trpc ? 'yes' : 'no'}${reason('trpc')}`,
     `Mailer: ${orNone(plan.mailer)}${reason('mailer')}`,
+    `Formatter: ${plan.formatter}${reason('formatter')}`,
+    `Linter: ${plan.linter}${reason('linter')}`,
     `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ', requested' : ''}`,
     `Install and verify: ${plan.install ? 'yes' : 'no'}`,
     `Initialize Git: ${plan.git ? 'yes (outside an existing repository)' : 'no'}`,
@@ -136,6 +142,8 @@ function summaryLines(plan: CreationPlan): string[] {
     `Auth: ${orNone(plan.auth)}`,
     `tRPC: ${plan.trpc ? 'yes' : 'no'}`,
     `Mailer: ${orNone(plan.mailer)}`,
+    `Formatter: ${plan.formatter}`,
+    `Linter: ${plan.linter}`,
     `Capabilities: ${capabilityLines(plan.capabilities).join(', ') || '(none)'}`,
     '',
     'Add more tools later: create-stack add <capability>.',
@@ -193,7 +201,19 @@ export async function createProject(request: CreationRequest): Promise<void> {
 
   const spinner = p.spinner()
   spinner.start('Assembling the selected stack parts')
-  const { cwd, target, name, framework, selectionReasons, install, git, module, ...assembly } = plan
+  const {
+    cwd,
+    target,
+    name,
+    framework,
+    formatter,
+    linter,
+    selectionReasons,
+    install,
+    git,
+    module,
+    ...assembly
+  } = plan
   const assembled = await module.assemble(assembly)
   applyQualityProfile(
     {

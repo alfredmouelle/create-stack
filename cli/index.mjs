@@ -69,6 +69,8 @@ Scaffold flags:
   --db, --database [drizzle|prisma|convex|none] ORM the app ships (bare/default = drizzle)
   --auth <better-auth|clerk|none>  Auth provider (default better-auth)
   --mail, --mailer [resend|brevo|ses|none] Mail provider (bare/default = resend)
+  --formatter [biome|prettier]       Formatter (bare/default = biome, required)
+  --linter [biome|oxlint]            Linter (bare/default = biome, required)
   --minimal                        Start with a frontend-only project
   --trpc / --no-trpc               Include or explicitly exclude tRPC
   --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
@@ -123,6 +125,10 @@ const CREATION_OPTIONS = [
   'auth',
   'mail',
   'mailer',
+  'formatter',
+  'linter',
+  'no-formatter',
+  'no-linter',
   'mono',
   'monorepo',
   'pm',
@@ -152,6 +158,8 @@ const BOOLEAN_CREATION_OPTIONS = new Set([
   'no-mail',
   'no-install',
   'no-git',
+  'no-formatter',
+  'no-linter',
 ])
 
 function editDistance(left, right) {
@@ -192,6 +200,8 @@ const CREATION_AXES = {
   Database: ['db', 'database', 'no-db'],
   Auth: ['auth', 'no-auth'],
   Mail: ['mail', 'mailer', 'no-mail'],
+  Formatter: ['formatter', 'no-formatter'],
+  Linter: ['linter', 'no-linter'],
   tRPC: ['trpc', 'no-trpc'],
   Monorepo: ['mono', 'monorepo'],
   'Package manager': ['pm', 'package-manager'],
@@ -233,6 +243,13 @@ function validateCreationInvocation(args) {
     if (count > 1) throw new Error(`${axis} was specified more than once`)
   }
 
+  if (has(args.flags, 'no-formatter')) {
+    throw new Error('Formatter cannot be excluded; choose biome or prettier')
+  }
+  if (has(args.flags, 'no-linter')) {
+    throw new Error('Linter cannot be excluded; choose biome or oxlint')
+  }
+
   const yes = args.flags.y || args.flags.yes
   if (!yes) return
   if ('minimal' in args.flags) throw new Error('--yes cannot be combined with --minimal')
@@ -244,6 +261,8 @@ function validateCreationInvocation(args) {
     'auth',
     'mail',
     'mailer',
+    'formatter',
+    'linter',
     'mono',
     'monorepo',
     'trpc',
@@ -325,6 +344,8 @@ function collectFromFlags(args) {
     database: stack.database,
     auth: stack.auth,
     mailerProvider: stack.mailerProvider,
+    formatter: stack.formatter,
+    linter: stack.linter,
     selectionReasons: stack.selectionReasons,
     capabilities,
     monorepo,
@@ -355,13 +376,20 @@ function explicitTrpcChoice(flags) {
   if (has(flags, 'no-trpc')) return false
 }
 
-const explicitCreationChoices = (flags) => ({
-  framework: has(flags, 'f') || has(flags, 'framework') ? resolveFrameworkFlag(flags) : undefined,
-  database: explicitDatabaseChoice(flags),
-  auth: explicitAuthChoice(flags),
-  mailer: explicitMailerChoice(flags),
-  trpc: explicitTrpcChoice(flags),
-})
+function explicitCreationChoices(flags) {
+  const framework =
+    has(flags, 'f') || has(flags, 'framework') ? resolveFrameworkFlag(flags) : undefined
+  const { recommendations } = FRAMEWORK_SUPPORT[framework ?? RECOMMENDED_FRAMEWORK]
+  return {
+    framework,
+    database: explicitDatabaseChoice(flags),
+    auth: explicitAuthChoice(flags),
+    mailer: explicitMailerChoice(flags),
+    trpc: explicitTrpcChoice(flags),
+    formatter: flags.formatter === true ? recommendations.formatter : flags.formatter,
+    linter: flags.linter === true ? recommendations.linter : flags.linter,
+  }
+}
 
 function creationConfigurationInput(flags) {
   return {
@@ -521,6 +549,30 @@ async function collectFromPrompts(argDir) {
     }),
   )
 
+  const { supports, recommendations } = FRAMEWORK_SUPPORT[framework]
+  const formatter = cancelled(
+    await p.select({
+      message: 'Formatter',
+      initialValue: recommendations.formatter,
+      options: supports.formatter.map((value) => ({
+        value,
+        label: value === 'biome' ? 'Biome' : 'Prettier',
+        hint: value === recommendations.formatter ? 'recommended' : undefined,
+      })),
+    }),
+  )
+  const linter = cancelled(
+    await p.select({
+      message: 'Linter',
+      initialValue: recommendations.linter,
+      options: supports.linter.map((value) => ({
+        value,
+        label: value === 'biome' ? 'Biome' : 'Oxlint',
+        hint: value === recommendations.linter ? 'recommended' : undefined,
+      })),
+    }),
+  )
+
   const capPicked = cancelled(
     await p.multiselect({
       message: 'Capabilities (space to toggle)',
@@ -542,6 +594,8 @@ async function collectFromPrompts(argDir) {
     auth,
     trpc: wantsTrpc,
     mailer,
+    formatter,
+    linter,
   })
   return {
     argDir,
@@ -553,6 +607,8 @@ async function collectFromPrompts(argDir) {
     auth: stack.auth,
     trpc: stack.trpc,
     mailerProvider: stack.mailerProvider,
+    formatter: stack.formatter,
+    linter: stack.linter,
     selectionReasons: stack.selectionReasons,
     capabilities,
     monorepo,
@@ -571,6 +627,8 @@ async function execute(a) {
     auth: a.auth,
     trpc: a.trpc,
     mailer: a.mailerProvider,
+    formatter: a.formatter,
+    linter: a.linter,
     selectionReasons: a.selectionReasons,
     capabilities: a.capabilities,
     monorepo: a.monorepo,
@@ -915,31 +973,7 @@ async function main() {
   validateCreationInvocation(args)
 
   const nonInteractive =
-    args.flags.yes ||
-    args.flags.y ||
-    [
-      'framework',
-      'f',
-      'minimal',
-      'db',
-      'database',
-      'auth',
-      'mail',
-      'trpc',
-      'no-trpc',
-      'no-db',
-      'no-auth',
-      'no-mail',
-      'mailer',
-      'mono',
-      'monorepo',
-      'pm',
-      'package-manager',
-      'alias',
-      'no-install',
-      'no-git',
-      ...Object.keys(CREATION_CAPABILITY_OPTIONS),
-    ].some((k) => k in args.flags)
+    args.flags.yes || args.flags.y || CREATION_OPTIONS.some((k) => k in args.flags)
 
   const answers = nonInteractive ? collectFromFlags(args) : await collectFromPrompts(args._[0])
 

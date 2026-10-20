@@ -14,18 +14,78 @@ const restrictedNext = {
     auth: ['better-auth', 'clerk', 'none'],
     trpc: [false],
     mailer: ['brevo', 'none'],
+    formatter: ['prettier'],
+    linter: ['oxlint'],
   },
   recommendations: {
     database: ['prisma'],
     auth: ['better-auth', 'clerk'],
     trpc: false,
     mailer: ['brevo'],
+    formatter: 'prettier',
+    linter: 'oxlint',
   },
 } satisfies FrameworkSupport
 
 const frameworkSupport = { ...FRAMEWORK_SUPPORT, next: restrictedNext }
 
 describe('resolveStackConfiguration', () => {
+  test.each([
+    { formatter: 'biome', linter: 'biome' },
+    { formatter: 'biome', linter: 'oxlint' },
+    { formatter: 'prettier', linter: 'biome' },
+    { formatter: 'prettier', linter: 'oxlint' },
+  ] as const)('preserves explicit $formatter formatting and $linter linting', (input) => {
+    const result = resolveStackConfiguration(input)
+
+    expect(result.configuration).toMatchObject(input)
+    expect(result.conflicts).toEqual([])
+    expect(result.reasons).toEqual(
+      expect.arrayContaining([
+        { axis: 'formatter', kind: 'explicit', message: 'requested', value: input.formatter },
+        { axis: 'linter', kind: 'explicit', message: 'requested', value: input.linter },
+      ]),
+    )
+    expect(result.cliArgs).toEqual(['--formatter', input.formatter, '--linter', input.linter])
+  })
+
+  test('recommends Biome formatting and linting, including for a minimal project', () => {
+    for (const input of [{}, { minimal: true }]) {
+      const result = resolveStackConfiguration(input)
+
+      expect(result.configuration).toMatchObject({ formatter: 'biome', linter: 'biome' })
+      expect(result.reasons).toEqual(
+        expect.arrayContaining([
+          {
+            axis: 'formatter',
+            kind: 'recommended',
+            message: input.minimal ? 'applicable recommendation' : 'recommended stack',
+            value: 'biome',
+          },
+          {
+            axis: 'linter',
+            kind: 'recommended',
+            message: input.minimal ? 'applicable recommendation' : 'recommended stack',
+            value: 'biome',
+          },
+        ]),
+      )
+    }
+  })
+
+  test.each([
+    [{ formatter: 'oxfmt' }, 'oxfmt is not supported until its 1.0 release'],
+    [{ linter: 'eslint' }, 'ESLint is not supported until typescript-eslint supports TypeScript 7'],
+    [{ formatter: 'none' }, 'Invalid formatter'],
+    [{ linter: 'none' }, 'Invalid linter'],
+    [{ formatter: false }, 'Invalid formatter'],
+    [{ linter: false }, 'Invalid linter'],
+    [{ formatter: 'biome,prettier' }, 'Invalid formatter'],
+    [{ linter: 'biome,oxlint' }, 'Invalid linter'],
+  ])('rejects unsupported or excluded quality tools %j', (input, diagnostic) => {
+    expect(() => Reflect.apply(resolveStackConfiguration, undefined, [input])).toThrow(diagnostic)
+  })
+
   test('resolves the recommended stack', () => {
     const result = resolveStackConfiguration()
 
@@ -35,6 +95,8 @@ describe('resolveStackConfiguration', () => {
       auth: 'better-auth',
       trpc: true,
       mailer: 'resend',
+      formatter: 'biome',
+      linter: 'biome',
       minimal: false,
     })
     expect(result.conflicts).toEqual([])
@@ -49,6 +111,8 @@ describe('resolveStackConfiguration', () => {
       },
       { axis: 'trpc', kind: 'recommended', message: 'recommended stack', value: true },
       { axis: 'mailer', kind: 'recommended', message: 'recommended stack', value: 'resend' },
+      { axis: 'formatter', kind: 'recommended', message: 'recommended stack', value: 'biome' },
+      { axis: 'linter', kind: 'recommended', message: 'recommended stack', value: 'biome' },
     ])
   })
 
@@ -61,6 +125,8 @@ describe('resolveStackConfiguration', () => {
       auth: 'clerk',
       trpc: false,
       mailer: 'none',
+      formatter: 'biome',
+      linter: 'biome',
       minimal: false,
     })
     expect(result.reasons).toEqual([
@@ -74,6 +140,13 @@ describe('resolveStackConfiguration', () => {
       { axis: 'auth', kind: 'recommended', message: 'applicable recommendation', value: 'clerk' },
       { axis: 'trpc', kind: 'recommended', message: 'applicable recommendation', value: false },
       { axis: 'mailer', kind: 'recommended', message: 'applicable recommendation', value: 'none' },
+      {
+        axis: 'formatter',
+        kind: 'recommended',
+        message: 'applicable recommendation',
+        value: 'biome',
+      },
+      { axis: 'linter', kind: 'recommended', message: 'applicable recommendation', value: 'biome' },
     ])
   })
 
@@ -86,6 +159,8 @@ describe('resolveStackConfiguration', () => {
       auth: 'better-auth',
       trpc: true,
       mailer: 'resend',
+      formatter: 'biome',
+      linter: 'biome',
       minimal: false,
     })
     expect(result.reasons).toEqual(
@@ -124,6 +199,8 @@ describe('resolveStackConfiguration', () => {
       auth: 'better-auth',
       trpc: false,
       mailer: 'resend',
+      formatter: 'biome',
+      linter: 'biome',
       minimal: true,
     })
     expect(result.reasons).toEqual(
@@ -153,6 +230,8 @@ describe('resolveStackConfiguration', () => {
       auth: 'none',
       trpc: false,
       mailer: 'none',
+      formatter: 'biome',
+      linter: 'biome',
       minimal: true,
     })
     expect(result.reasons).toEqual([
@@ -166,6 +245,13 @@ describe('resolveStackConfiguration', () => {
       { axis: 'auth', kind: 'minimal', message: 'minimal exclusion', value: 'none' },
       { axis: 'trpc', kind: 'minimal', message: 'minimal exclusion', value: false },
       { axis: 'mailer', kind: 'minimal', message: 'minimal exclusion', value: 'none' },
+      {
+        axis: 'formatter',
+        kind: 'recommended',
+        message: 'applicable recommendation',
+        value: 'biome',
+      },
+      { axis: 'linter', kind: 'recommended', message: 'applicable recommendation', value: 'biome' },
     ])
     expect(result.cliArgs).toEqual(['--minimal'])
   })
@@ -281,6 +367,26 @@ describe('resolveStackConfiguration', () => {
     expect(result.cliArgs).toEqual([])
   })
 
+  test('reports quality tools outside framework support as choice conflicts', () => {
+    const result = resolveStackConfiguration(
+      { framework: 'next', formatter: 'biome', linter: 'biome' },
+      frameworkSupport,
+    )
+
+    expect(result.conflicts).toEqual([
+      {
+        axes: ['framework', 'formatter'],
+        message: 'Next.js does not support formatter "biome"; choose prettier',
+      },
+      {
+        axes: ['framework', 'linter'],
+        message: 'Next.js does not support linter "biome"; choose oxlint',
+      },
+    ])
+    expect(result.configuration).toMatchObject({ formatter: 'biome', linter: 'biome' })
+    expect(result.cliArgs).toEqual([])
+  })
+
   test('takes recommendations from the selected framework', () => {
     const result = resolveStackConfiguration({ framework: 'next' }, frameworkSupport)
 
@@ -290,6 +396,8 @@ describe('resolveStackConfiguration', () => {
       auth: 'better-auth',
       trpc: false,
       mailer: 'brevo',
+      formatter: 'prettier',
+      linter: 'oxlint',
       minimal: false,
     })
     expect(result.conflicts).toEqual([])
@@ -309,6 +417,18 @@ describe('resolveStackConfiguration', () => {
       },
       { axis: 'trpc', kind: 'recommended', message: 'applicable recommendation', value: false },
       { axis: 'mailer', kind: 'recommended', message: 'applicable recommendation', value: 'brevo' },
+      {
+        axis: 'formatter',
+        kind: 'recommended',
+        message: 'applicable recommendation',
+        value: 'prettier',
+      },
+      {
+        axis: 'linter',
+        kind: 'recommended',
+        message: 'applicable recommendation',
+        value: 'oxlint',
+      },
     ])
   })
 
@@ -350,6 +470,8 @@ describe('resolveStackConfiguration', () => {
       expect(supports.auth).toEqual(expect.arrayContaining([...recommendations.auth]))
       expect(supports.trpc).toContain(recommendations.trpc)
       expect(supports.mailer).toEqual(expect.arrayContaining([...recommendations.mailer]))
+      expect(supports.formatter).toContain(recommendations.formatter)
+      expect(supports.linter).toContain(recommendations.linter)
     },
   )
 

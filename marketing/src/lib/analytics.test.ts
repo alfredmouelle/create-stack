@@ -66,6 +66,8 @@ describe('command copied properties', () => {
       auth: 'better-auth',
       trpc: true,
       mailer: 'resend',
+      formatter: 'biome',
+      linter: 'biome',
       minimal: false,
     }
 

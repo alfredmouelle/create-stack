@@ -68,6 +68,8 @@ async function generate(frameworkModule: FrameworkModule, monorepo: Monorepo): P
     auth: 'better-auth',
     trpc: true,
     mailer: 'resend',
+    formatter: 'biome',
+    linter: 'biome',
     selectionReasons: {},
     capabilities: {},
     monorepo,

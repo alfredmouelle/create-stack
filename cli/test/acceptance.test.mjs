@@ -8,6 +8,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
 import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.mjs'
 
@@ -627,6 +628,8 @@ test('accepts the recommended stack with -y and prints its plan before mutation'
   expect(result.stdout).toContain('Database: drizzle')
   expect(result.stdout).toContain('Auth: better-auth')
   expect(result.stdout).toContain('Mailer: resend')
+  expect(result.stdout).toContain('Formatter: biome, recommended stack')
+  expect(result.stdout).toContain('Linter: biome, recommended stack')
   expect(result.stdout).toContain('Import alias: @/')
 })
 
@@ -784,6 +787,135 @@ test('bare selectors choose their recommended creation values', () => {
   expect(result.stdout).toContain('Mailer: resend')
   expect(result.stdout).toContain('Monorepo: Turborepo')
 })
+
+test.each([
+  { flags: ['--formatter', '--linter'], formatter: 'biome', linter: 'biome' },
+  { flags: ['--formatter=biome', '--linter=biome'], formatter: 'biome', linter: 'biome' },
+  {
+    flags: ['--formatter', 'prettier', '--linter', 'oxlint'],
+    formatter: 'prettier',
+    linter: 'oxlint',
+  },
+  { flags: ['--formatter=prettier', '--linter=biome'], formatter: 'prettier', linter: 'biome' },
+  { flags: ['--formatter=biome', '--linter=oxlint'], formatter: 'biome', linter: 'oxlint' },
+])(
+  'selects quality tools with $flags and reports them in the plan and recap',
+  ({ flags, formatter, linter }) => {
+    const fixture = createAcceptanceFixture('standalone')
+
+    const result = runCli({
+      cwd: fixture.root,
+      target: fixture.project,
+      args: ['project', ...flags, '--no-install', '--no-git'],
+    })
+
+    expect(result.exitStatus).toBe(0)
+    expect(result.stderr).toBe('')
+    expect(result.requestedInput).toBe(false)
+    expect(result.targetMutated).toBe(true)
+    const plan = result.stdout.slice(0, result.stdout.indexOf('Project scaffolded'))
+    const recap = result.stdout.slice(result.stdout.indexOf('Project scaffolded'))
+    expect(plan).toContain(`Formatter: ${formatter}, requested`)
+    expect(plan).toContain(`Linter: ${linter}, requested`)
+    expect(recap).toContain(`Formatter: ${formatter}`)
+    expect(recap).toContain(`Linter: ${linter}`)
+  },
+)
+
+test.each([
+  [['--formatter=oxfmt'], 'oxfmt is not supported until its 1.0 release'],
+  [['--linter=eslint'], 'ESLint is not supported until typescript-eslint supports TypeScript 7'],
+  [['--no-formatter'], 'Formatter cannot be excluded; choose biome or prettier'],
+  [['--no-linter'], 'Linter cannot be excluded; choose biome or oxlint'],
+  [['--formatter=none'], 'Invalid formatter'],
+  [['--linter=none'], 'Invalid linter'],
+  [['--formatter='], 'Invalid formatter'],
+  [['--linter=false'], 'Invalid linter'],
+  [['--formatter=biome,prettier'], 'Invalid formatter'],
+  [['--linter=biome,oxlint'], 'Invalid linter'],
+  [['--formatter=biome', '--formatter=biome'], 'Formatter was specified more than once'],
+  [['--formatter=biome', '--formatter=prettier'], 'Formatter was specified more than once'],
+  [['--formatter', '--formatter=prettier'], 'Formatter was specified more than once'],
+  [['--formatter=biome', '--no-formatter'], 'Formatter was specified more than once'],
+  [['--linter=biome', '--linter=biome'], 'Linter was specified more than once'],
+  [['--linter=biome', '--linter=oxlint'], 'Linter was specified more than once'],
+  [['--linter', '--linter=oxlint'], 'Linter was specified more than once'],
+  [['--linter=biome', '--no-linter'], 'Linter was specified more than once'],
+  [['--yes', '--formatter'], '--yes cannot be combined with stack options'],
+  [['--yes', '--linter=oxlint'], '--yes cannot be combined with stack options'],
+])('rejects quality tool selection %j before mutation', (flags, diagnostic) => {
+  const fixture = createAcceptanceFixture('standalone')
+
+  const result = runCli({
+    cwd: fixture.root,
+    target: fixture.project,
+    args: ['project', ...flags],
+  })
+
+  expect(result.exitStatus).toBe(1)
+  expect(result.requestedInput).toBe(false)
+  expect(result.targetMutated).toBe(false)
+  expect(result.stdout).toContain(diagnostic)
+})
+
+test('interactive creation offers both quality tool choices', async () => {
+  const fixture = createAcceptanceFixture('standalone')
+  const answers = [
+    ['Project name', '\r'],
+    ['Framework', '\r'],
+    ['Monorepo', '\r'],
+    ['Import alias', '\r'],
+    ['Package manager', '\r'],
+    ['Database', '\u001b[B\u001b[B\u001b[B\r'],
+    ['Auth', '\u001b[B\r'],
+    ['Include tRPC?', '\u001b[C\r'],
+    ['Mailer provider', '\r'],
+    ['Formatter', '\u001b[B\r'],
+    ['Linter', '\u001b[B\r'],
+    ['Capabilities (space to toggle)', '\r'],
+    ['Install dependencies and verify now?', '\u001b[C\r'],
+  ]
+  const child = spawn(
+    process.execPath,
+    [fileURLToPath(new URL('../index.mjs', import.meta.url)), 'project'],
+    {
+      cwd: fixture.root,
+      env: {
+        ...process.env,
+        CREATE_STACK_STACK_ROOT: fileURLToPath(new URL('../../', import.meta.url)),
+        NO_COLOR: '1',
+        npm_config_user_agent: 'pnpm/11.1.3',
+      },
+      timeout: 10_000,
+    },
+  )
+  let stdout = ''
+  let stderr = ''
+  let answered = 0
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk.toString()
+    const answer = answers[answered]
+    if (answer && stdout.includes(answer[0])) {
+      answered++
+      child.stdin.write(answer[1])
+    }
+  })
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk.toString()
+  })
+  const exitStatus = await new Promise((resolve, reject) => {
+    child.on('error', reject)
+    child.on('close', resolve)
+  })
+
+  expect(exitStatus, stdout + stderr).toBe(0)
+  expect(answered).toBe(answers.length)
+  expect(stdout).toContain('Biome (recommended)')
+  expect(stdout).toContain('Prettier')
+  expect(stdout).toContain('Oxlint')
+  expect(stdout).toContain('Formatter: prettier, requested')
+  expect(stdout).toContain('Linter: oxlint, requested')
+}, 15_000)
 
 test('bare capability selectors generate recommended providers and a canonical plan', () => {
   const fixture = createAcceptanceFixture('standalone')
@@ -978,6 +1110,8 @@ test('stack options enrich minimal creation and redundant exclusions remain vali
   expect(result.stdout).toContain('Auth: (none), requested exclusion')
   expect(result.stdout).toContain('tRPC: yes, requested')
   expect(result.stdout).toContain('Mailer: (none), requested exclusion')
+  expect(result.stdout).toContain('Formatter: biome, applicable recommendation')
+  expect(result.stdout).toContain('Linter: biome, applicable recommendation')
   expect(existsSync(`${fixture.project}/prisma/schema/schema.prisma`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/api/trpc.ts`)).toBe(true)
   expect(existsSync(`${fixture.project}/src/server/better-auth`)).toBe(false)
