@@ -1,3 +1,4 @@
+import { getFrameworkModule } from './engine.mjs'
 import { renderProjectReadme } from './identity.mjs'
 import { PM_VERSIONS } from './package-manager.mjs'
 import { TEMPLATES } from './paths.mjs'
@@ -5,11 +6,6 @@ import { NATIVE_BUILD_DEPS } from './scaffold.mjs'
 import { copy, exists, join, readJSON, remove, write, writeJSON } from './util.mjs'
 
 const VERSIONS = { turbo: '2.11.8', nx: '23.3.0' }
-
-const OUTPUTS = {
-  next: ['.next/**', '!.next/cache/**'],
-  tanstack: ['.output/**', '.nitro/**', 'dist/**'],
-}
 
 const SCRIPT_TARGETS = ['dev', 'build', 'typecheck', 'check', 'check:write', 'test']
 
@@ -33,7 +29,7 @@ const PREPARE =
   '[ "$(git rev-parse --show-toplevel 2>/dev/null)" = "$(pwd -P)" ] && git config core.hooksPath .githooks || true'
 
 function turboConfig(rootDir, framework) {
-  const outputs = OUTPUTS[framework] ?? []
+  const outputs = getFrameworkModule(framework).monorepoOutputs
   writeJSON(join(rootDir, 'turbo.json'), {
     $schema: 'https://turbo.build/schema.json',
     tasks: {
@@ -48,7 +44,7 @@ function turboConfig(rootDir, framework) {
 }
 
 function nxConfig(rootDir, framework) {
-  const outputs = (OUTPUTS[framework] ?? []).map((o) =>
+  const outputs = getFrameworkModule(framework).monorepoOutputs.map((o) =>
     o.startsWith('!') ? `!{projectRoot}/${o.slice(1)}` : `{projectRoot}/${o}`,
   )
   writeJSON(join(rootDir, 'nx.json'), {

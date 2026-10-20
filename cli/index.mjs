@@ -14,7 +14,6 @@ import {
 } from './lib/add.mjs'
 import { isValidAlias, normalizeAlias, parseArgs, resolveMonorepo } from './lib/args.mjs'
 import { resolveAuth } from './lib/auth.mjs'
-import { buildProject } from './lib/build.mjs'
 import {
   CAPABILITIES,
   canonicalCapabilityName,
@@ -23,7 +22,12 @@ import {
   resolveCreationProvider,
 } from './lib/capabilities.mjs'
 import { resolveDatabase } from './lib/database.mjs'
-import { packageName } from './lib/identity.mjs'
+import {
+  createProject,
+  detectFrameworkModule,
+  frameworkModules,
+  runVerificationGate,
+} from './lib/engine.mjs'
 import {
   detectPackageManager,
   detectProjectPackageManager,
@@ -39,12 +43,15 @@ import {
 import { COMPONENT_CATALOG, COMPONENT_NAMES } from './lib/registry.mjs'
 import { installRegistryComponents, preflightRegistryComponents } from './lib/shadcn.mjs'
 import { resolveCreationConfiguration } from './lib/stack-config.mjs'
-import { exists, isDirEmpty, join, run, runCapture } from './lib/util.mjs'
 import { CLI_VERSION } from './lib/version.mjs'
 
 const detectedPm = detectPackageManager()
 
 const VERSION = CLI_VERSION
+
+const FRAMEWORK_IDS = frameworkModules.map((module) => module.id)
+
+const RECOMMENDED_FRAMEWORK = resolveCreationConfiguration().framework
 
 const HELP = `create-stack: fork a base app, strip it to your selection.
 
@@ -58,7 +65,7 @@ Run a command with no args for an interactive picker; pass a selection flag
 See \`add --help\` for its options.
 
 Scaffold flags:
-  -f, --framework [tanstack|next]   Base app to fork (bare/default = tanstack)
+  -f, --framework [${FRAMEWORK_IDS.join('|')}]   Base app to fork (bare/default = ${RECOMMENDED_FRAMEWORK})
   --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
@@ -276,9 +283,10 @@ function collectCapabilityFlags(flags) {
 
 function resolveFrameworkFlag(flags) {
   const value = flags.f ?? flags.framework
-  if (value === true || value == null) return 'tanstack'
-  if (['tanstack', 'next'].includes(value)) return value
-  throw new Error(`Invalid framework: ${JSON.stringify(value)} (expected tanstack or next)`)
+  if (value === true || value == null) return RECOMMENDED_FRAMEWORK
+  if (FRAMEWORK_IDS.includes(value)) return value
+  const expected = new Intl.ListFormat('en', { type: 'disjunction' }).format(FRAMEWORK_IDS)
+  throw new Error(`Invalid framework: ${JSON.stringify(value)} (expected ${expected})`)
 }
 
 function resolvePackageManagerFlag(flags) {
@@ -406,10 +414,8 @@ async function collectFromPrompts(argDir) {
   const framework = cancelled(
     await p.select({
       message: 'Framework',
-      options: [
-        { value: 'tanstack', label: 'TanStack Start' },
-        { value: 'next', label: 'Next.js (App Router)' },
-      ],
+      initialValue: RECOMMENDED_FRAMEWORK,
+      options: frameworkModules.map(({ id, label }) => ({ value: id, label })),
     }),
   )
 
@@ -558,151 +564,24 @@ async function collectFromPrompts(argDir) {
   }
 }
 
-const pmRun = (pm, script, projectDir, opts = {}) =>
-  run(pm.exec, pm.runArgs(script), { cwd: projectDir, ...opts })
-
-function installAndVerify(projectDir, pm, { requireSuccess = false } = {}) {
-  p.log.step(`${pm.name} install`)
-  const installed = run(pm.exec, pm.installArgs, { cwd: projectDir })
-  if (!installed && requireSuccess) {
-    throw new Error(`${pm.name} install failed; verification and the initial commit were skipped`)
-  }
-  const formatted = pmRun(pm, 'check:write', projectDir, { stdio: 'ignore' })
-  if (!formatted && requireSuccess) {
-    throw new Error('Verification failed; the initial commit was skipped')
-  }
-  p.log.step('Verifying (typecheck + biome)')
-  const tc = pmRun(pm, 'typecheck', projectDir)
-  const lint = pmRun(pm, 'check', projectDir)
-  if ((!tc || !lint) && requireSuccess) {
-    throw new Error('Verification failed; the initial commit was skipped')
-  }
-  p.log[tc && lint ? 'success' : 'warn'](
-    tc && lint ? 'typecheck + biome clean' : 'verify reported issues (see output above)',
-  )
-}
-
-function initGitRepo(projectDir) {
-  if (runCapture('git', ['-C', projectDir, 'rev-parse', '--show-toplevel'])) {
-    p.log.step('existing git repository detected (initialization skipped)')
-    return false
-  }
-  if (!run('git', ['-C', projectDir, 'init', '-q'])) return false
-  if (exists(join(projectDir, '.githooks'))) {
-    run('git', ['-C', projectDir, 'config', 'core.hooksPath', '.githooks'])
-  }
-  p.log.step('git repository initialized')
-  return true
-}
-
-function commitInitialBaseline(projectDir) {
-  run('git', ['-C', projectDir, 'add', '-A'])
-  const msg = 'chore: initial commit from create-stack'
-  const committed = run('git', ['-C', projectDir, 'commit', '--no-verify', '-q', '-m', msg], {
-    stdio: 'ignore',
+async function execute(a) {
+  await createProject({
+    cwd: process.cwd(),
+    target: a.argDir ?? a.projectName,
+    name: a.projectName,
+    framework: a.framework,
+    database: a.database,
+    auth: a.auth,
+    trpc: a.trpc,
+    mailer: a.mailerProvider,
+    selectionReasons: a.selectionReasons,
+    capabilities: a.capabilities,
+    monorepo: a.monorepo,
+    alias: a.alias,
+    packageManager: a.pm,
+    install: a.doInstall,
+    git: a.doGit,
   })
-  p.log.step(
-    committed
-      ? 'initial commit created'
-      : 'set git user.name/email, then commit the generated baseline',
-  )
-}
-
-function execute(a) {
-  const projectDir = resolve(process.cwd(), a.argDir ?? a.projectName)
-  if (!isDirEmpty(projectDir)) {
-    p.cancel(`Target directory is not empty: ${projectDir}`)
-    process.exit(1)
-  }
-  const pm = a.pm ?? detectedPm
-
-  p.note(creationPlanLines(a, pm).join('\n'), 'Creation plan')
-
-  const s = p.spinner()
-  s.start('Forking + stripping the base app')
-  const built = buildProject({ ...a, projectDir, projectName: packageName(projectDir), pm })
-  s.stop('Project scaffolded')
-
-  const initializedGit = a.doGit === false ? false : initGitRepo(projectDir)
-
-  if (a.doInstall) {
-    installAndVerify(projectDir, pm, { requireSuccess: true })
-    if (initializedGit) commitInitialBaseline(projectDir)
-  } else {
-    p.log.warn('Installation and verification skipped; no automatic commit was created')
-  }
-
-  p.note(summaryLines(a, pm).join('\n'), 'Done')
-  if (built.manualSteps?.length) p.note(built.manualSteps.join('\n'), 'Finish by hand')
-  p.outro(`Created ${a.projectName}`)
-}
-
-const orNone = (v) => (v && v !== 'none' ? v : '(none)')
-
-const formatCapability = ([capability, provider]) =>
-  provider
-    ? `${canonicalCapabilityName(capability)} (${provider})`
-    : canonicalCapabilityName(capability)
-
-function creationPlanLines(a, pm) {
-  const monoLabel = a.monorepo === 'nx' ? 'Nx' : a.monorepo === 'turborepo' ? 'Turborepo' : null
-  const capabilities = Object.entries(a.capabilities ?? {}).map(formatCapability)
-  const reason = (axis) => (a.selectionReasons?.[axis] ? `, ${a.selectionReasons[axis]}` : '')
-  return [
-    `Target: ${a.argDir ?? a.projectName}`,
-    `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
-    `Monorepo: ${monoLabel ?? '(none)'}`,
-    `Package manager: ${pm.name}`,
-    `Import alias: ${a.alias ?? '~'}/`,
-    `Database: ${orNone(a.database)}${reason('database')}`,
-    `Auth: ${orNone(a.auth)}${reason('auth')}`,
-    `tRPC: ${a.trpc ? 'yes' : 'no'}${reason('trpc')}`,
-    `Mailer: ${orNone(a.mailerProvider)}${reason('mailer')}`,
-    `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ', requested' : ''}`,
-    `Install and verify: ${a.doInstall ? 'yes' : 'no'}`,
-    `Initialize Git: ${a.doGit === false ? 'no' : 'yes (outside an existing repository)'}`,
-  ]
-}
-
-function localDatabaseSummaryLines(database, auth, pm) {
-  if (database !== 'drizzle' && database !== 'prisma') return []
-  const lines = ['  ./start-database.sh  # start local PostgreSQL']
-  const hasSchema = database === 'prisma' || auth === 'better-auth'
-  if (hasSchema) {
-    const dbPushCmd = pm.name === 'npm' ? 'npm run db:push' : `${pm.name} db:push`
-    lines.push(`  ${dbPushCmd}  # apply the database schema`)
-  }
-  return lines
-}
-
-function summaryLines(a, pm) {
-  const capEntries = Object.entries(a.capabilities ?? {})
-  const appRel = a.monorepo ? 'apps/web/' : ''
-  const monoLabel = a.monorepo === 'nx' ? 'Nx' : a.monorepo === 'turborepo' ? 'Turborepo' : null
-  const lines = [
-    `Framework: ${a.framework === 'next' ? 'Next.js' : 'TanStack Start'}`,
-    `Monorepo: ${monoLabel ? `${monoLabel} (app in apps/web)` : '(none)'}`,
-    `Package manager: ${pm.name}`,
-    `Import alias: ${a.alias ?? '~'}/`,
-    `Database: ${orNone(a.database)}`,
-    `Auth: ${orNone(a.auth)}`,
-    `tRPC: ${a.trpc ? 'yes' : 'no'}`,
-    `Mailer: ${orNone(a.mailerProvider)}`,
-    `Capabilities: ${capEntries.map(formatCapability).join(', ') || '(none)'}`,
-    '',
-    'Add more tools later: create-stack add <capability>.',
-    '',
-    'Next:',
-    `  cd ${a.argDir ?? a.projectName}`,
-  ]
-  if (!a.doInstall) lines.push(`  ${pm.name} install`)
-  if (a.database === 'convex') {
-    const prefix = a.monorepo ? 'cd apps/web && ' : ''
-    lines.push(`  ${prefix}${pm.name} run convex  # provisions a deployment + sets CONVEX_URL`)
-  }
-  lines.push(...localDatabaseSummaryLines(a.database, a.auth, pm))
-  lines.push(`  # edit ${appRel}.env (generated with local defaults)`, `  ${pm.devCmd}`)
-  return lines
 }
 
 function resolveComponentAddition(name) {
@@ -972,7 +851,13 @@ async function runAdd(args) {
   const added = selections.map((selection) =>
     addSelection({ selection, projectDir, keepFiles, registryResults }),
   )
-  if (!args.flags['no-install']) installAndVerify(projectDir, pm)
+  if (!args.flags['no-install']) {
+    runVerificationGate(detectFrameworkModule(projectDir).gate(pm), {
+      cwd: projectDir,
+      packageManager: pm,
+      requireSuccess: false,
+    })
+  }
 
   p.note(
     added
@@ -1059,7 +944,7 @@ async function main() {
 
   const answers = nonInteractive ? collectFromFlags(args) : await collectFromPrompts(args._[0])
 
-  execute(answers)
+  await execute(answers)
 }
 
 main().catch((err) => {

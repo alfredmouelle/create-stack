@@ -1,20 +1,11 @@
 import { readdirSync, realpathSync } from 'node:fs'
 import { isAbsolute, relative, resolve } from 'node:path'
-import { detectFramework } from './add.mjs'
-import { exists, join, readJSON } from './util.mjs'
+import { detectFrameworkModule } from './engine.mjs'
+import { join } from './util.mjs'
 
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules'])
 
-const isCompatibleApplication = (directory) => {
-  const manifest = join(directory, 'package.json')
-  if (!exists(manifest)) return false
-  try {
-    detectFramework(readJSON(manifest))
-    return true
-  } catch {
-    return false
-  }
-}
+const isCompatibleApplication = (directory) => detectFrameworkModule(directory) !== undefined
 
 export function findCompatibleApplications(projectRoot) {
   const applications = []

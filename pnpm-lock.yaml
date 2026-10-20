@@ -340,6 +340,12 @@ importers:
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
+      tsdown:
+        specifier: 0.23.1
+        version: 0.23.1(@volar/typescript@2.4.28)(tsx@4.23.15)(typescript@7.0.2)
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
       vitest:
         specifier: 5.0.4
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2(@noble/hashes@2.4.0))(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))

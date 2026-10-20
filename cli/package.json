@@ -37,6 +37,9 @@
   "bin": {
     "create-stack": "./index.mjs"
   },
+  "imports": {
+    "#lib/*": "./lib/*"
+  },
   "engines": {
     "node": ">=24.19.0"
   },
@@ -54,7 +57,8 @@
     "prepack": "node scripts/bundle.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:smoke": "RUN_SMOKE=1 vitest run test/smoke.test.mjs"
+    "test:smoke": "RUN_SMOKE=1 vitest run test/smoke.test.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "publishConfig": {
     "access": "public"
@@ -65,6 +69,8 @@
   },
   "devDependencies": {
     "@types/node": "24.19.2",
+    "tsdown": "0.23.1",
+    "typescript": "7.0.2",
     "vitest": "5.0.4"
   }
 }

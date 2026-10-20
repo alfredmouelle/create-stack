@@ -41,6 +41,12 @@ cpSync(join(ROOT, 'packages/stack-config/dist/index.mjs'), join(OUT, 'stack-conf
   recursive: true,
 })
 
+execFileSync(
+  'pnpm',
+  ['--filter', '@alfredmouelle/create-stack', 'exec', 'tsdown', '--out-dir', join(OUT, 'engine')],
+  { cwd: ROOT, stdio: 'inherit' },
+)
+
 for (const base of ['next-base', 'tanstack-base']) {
   copyApp(join(ROOT, 'apps', base), join(OUT, 'apps', base))
 }
