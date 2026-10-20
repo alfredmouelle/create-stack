@@ -1,11 +1,9 @@
 import { stripJsExtensions } from './capabilities.mjs'
 import { STACK_ROOT } from './paths.mjs'
-import { copy, exists, join, readJSON, remove, write } from './util.mjs'
+import { copy, exists, join, read, readJSON, remove, write } from './util.mjs'
 
 const EMAIL_DIR = 'src/server/email'
 const MAILER_PKG = join(STACK_ROOT, 'packages/mailer')
-const MAILER_ADAPTERS = ['resend', 'brevo', 'ses']
-const baseEmailDir = (framework) => join(STACK_ROOT, 'apps', `${framework}-base`, EMAIL_DIR)
 
 const FACTORY = {
   resend: {
@@ -30,6 +28,8 @@ const FACTORY = {
     pkgDep: '@aws-sdk/client-sesv2',
   },
 }
+
+export const MAILER_ADAPTERS = Object.keys(FACTORY)
 
 const INDEX_TS = (cfg) => `import { env } from '~/env'
 ${cfg.import}
@@ -86,15 +86,27 @@ export function swapMailer(projectDir, provider) {
   }
 }
 
-export function vendorMailer(projectDir, framework, adapter, keep) {
+export function currentMailerAdapter(projectDir) {
+  const index = join(projectDir, EMAIL_DIR, 'index.ts')
+  return exists(index) ? (read(index).match(/\.\/adapters\/([\w-]+)['"]/)?.[1] ?? null) : null
+}
+
+export function vendorMailer(projectDir, mailerSource, adapter, keep) {
   const cfg = FACTORY[adapter]
   if (!cfg)
     throw new Error(`Unknown mailer adapter: ${adapter} (have ${MAILER_ADAPTERS.join(', ')})`)
   const dir = join(projectDir, EMAIL_DIR)
+  const previousProviders = MAILER_ADAPTERS.filter(
+    (provider) => provider !== adapter && exists(join(dir, 'adapters', `${provider}.ts`)),
+  )
 
-  if (!exists(join(dir, 'index.ts'))) copy(baseEmailDir(framework), dir)
-  if (adapter !== 'resend')
-    copy(join(MAILER_PKG, 'src/adapters', `${adapter}.ts`), join(dir, 'adapters', `${adapter}.ts`))
+  if (!exists(join(dir, 'index.ts'))) copy(mailerSource, dir)
+  copy(
+    adapter === 'resend'
+      ? join(mailerSource, 'adapters/resend.ts')
+      : join(MAILER_PKG, 'src/adapters', `${adapter}.ts`),
+    join(dir, 'adapters', `${adapter}.ts`),
+  )
   if (!keep)
     for (const a of MAILER_ADAPTERS) if (a !== adapter) remove(join(dir, 'adapters', `${a}.ts`))
   stripJsExtensions(join(dir, 'adapters'))
@@ -107,8 +119,6 @@ export function vendorMailer(projectDir, framework, adapter, keep) {
     return version
   }
   const addDeps = Object.fromEntries([cfg.pkgDep, 'react-email'].map((d) => [d, range(d)]))
-  const removeDeps = keep
-    ? []
-    : MAILER_ADAPTERS.filter((a) => a !== adapter).map((a) => FACTORY[a].pkgDep)
+  const removeDeps = keep ? [] : previousProviders.map((provider) => FACTORY[provider].pkgDep)
   return { addDeps, removeDeps, envKeys: cfg.envKeys, requiredEnvKeys: cfg.requiredEnvKeys }
 }

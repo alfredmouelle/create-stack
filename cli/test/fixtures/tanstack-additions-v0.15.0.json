@@ -1,0 +1,340 @@
+{
+  "release": "0.15.0",
+  "legacyProject": {
+    "package.json": "{\n  \"name\": \"project\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite dev --port 3000\",\n    \"prepare\": \"[ \\\"$(git rev-parse --show-toplevel 2>/dev/null)\\\" = \\\"$(pwd -P)\\\" ] && git config core.hooksPath .githooks || true\",\n    \"generate-routes\": \"tsr generate\",\n    \"build\": \"vite build\",\n    \"preview\": \"vite preview\",\n    \"test\": \"vitest run\",\n    \"typecheck\": \"tsr generate && tsc --noEmit\",\n    \"check\": \"biome check .\",\n    \"check:unsafe\": \"biome check --write --unsafe .\",\n    \"check:write\": \"biome check --write .\"\n  },\n  \"dependencies\": {\n    \"@fontsource-variable/bricolage-grotesque\": \"5.3.0\",\n    \"@fontsource-variable/geist\": \"5.3.0\",\n    \"@t3-oss/env-core\": \"0.13.11\",\n    \"@tailwindcss/vite\": \"4.3.3\",\n    \"@tanstack/react-devtools\": \"0.10.13\",\n    \"@tanstack/react-form\": \"1.33.5\",\n    \"@tanstack/react-router\": \"1.170.44\",\n    \"@tanstack/react-router-devtools\": \"1.167.2\",\n    \"@tanstack/react-start\": \"1.169.1\",\n    \"@tanstack/router-plugin\": \"1.168.45\",\n    \"class-variance-authority\": \"0.7.1\",\n    \"clsx\": \"2.1.1\",\n    \"lucide-react\": \"1.56.0\",\n    \"nitro\": \"3.0.260903-beta\",\n    \"radix-ui\": \"1.8.1\",\n    \"react\": \"19.3.0\",\n    \"react-dom\": \"19.3.0\",\n    \"tailwind-merge\": \"3.7.0\",\n    \"tailwindcss\": \"4.3.3\",\n    \"valibot\": \"1.5.0\"\n  },\n  \"devDependencies\": {\n    \"@biomejs/biome\": \"2.5.15\",\n    \"@tailwindcss/typography\": \"0.5.20\",\n    \"@tanstack/devtools-vite\": \"0.8.5\",\n    \"@tanstack/router-cli\": \"1.167.43\",\n    \"@testing-library/dom\": \"10.4.2\",\n    \"@testing-library/react\": \"16.3.3\",\n    \"@total-typescript/ts-reset\": \"0.6.1\",\n    \"@types/node\": \"24.19.2\",\n    \"@types/react\": \"19.3.0\",\n    \"@types/react-dom\": \"19.3.0\",\n    \"@vitejs/plugin-react\": \"6.1.2\",\n    \"jsdom\": \"30.1.2\",\n    \"tw-animate-css\": \"1.4.0\",\n    \"typescript\": \"7.0.2\",\n    \"vite\": \"8.3.4\",\n    \"vitest\": \"5.0.4\"\n  },\n  \"private\": true,\n  \"description\": \"project: a fully-wired app scaffolded with create-stack.\",\n  \"createStackMetadata\": {\n    \"initVersion\": \"0.15.0\"\n  }\n}\n",
+    "components.json": "{\n  \"$schema\": \"https://ui.shadcn.com/schema.json\",\n  \"style\": \"radix-luma\",\n  \"rsc\": false,\n  \"tsx\": true,\n  \"tailwind\": {\n    \"config\": \"\",\n    \"css\": \"src/styles.css\",\n    \"baseColor\": \"neutral\",\n    \"cssVariables\": true,\n    \"prefix\": \"\"\n  },\n  \"aliases\": {\n    \"components\": \"~/components\",\n    \"utils\": \"~/lib/utils\",\n    \"ui\": \"~/components/ui\",\n    \"lib\": \"~/lib\",\n    \"hooks\": \"~/hooks\"\n  },\n  \"iconLibrary\": \"lucide\",\n  \"rtl\": false,\n  \"menuColor\": \"default-translucent\",\n  \"menuAccent\": \"subtle\",\n  \"registries\": {}\n}\n",
+    "tsconfig.json": "{\n  \"include\": [\"**/*.ts\", \"**/*.tsx\"],\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"jsx\": \"react-jsx\",\n    \"module\": \"ESNext\",\n    \"paths\": {\n      \"~/*\": [\"./src/*\"]\n    },\n    \"lib\": [\"ES2022\", \"DOM\", \"DOM.Iterable\"],\n    \"types\": [\"vite/client\"],\n    \"moduleResolution\": \"bundler\",\n    \"allowImportingTsExtensions\": true,\n    \"verbatimModuleSyntax\": true,\n    \"noEmit\": true,\n\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"noUnusedLocals\": true,\n    \"noUnusedParameters\": true,\n    \"noFallthroughCasesInSwitch\": true,\n    \"noUncheckedSideEffectImports\": true\n  }\n}\n",
+    "src/env.ts": "import { createEnv } from '@t3-oss/env-core'\nimport * as v from 'valibot'\n\nexport const requiredInProduction = <T extends v.GenericSchema>(schema: T) =>\n  process.env.NODE_ENV === 'production' ? schema : v.optional(schema)\n\nexport const env = createEnv({\n  shared: {\n    NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'development'),\n  },\n\n  server: {},\n\n  runtimeEnv: {\n    NODE_ENV: process.env.NODE_ENV,\n  },\n\n  skipValidation: !!process.env.SKIP_ENV_VALIDATION,\n  emptyStringAsUndefined: true,\n})\n",
+    ".env": "\n",
+    ".env.example": "\n",
+    "src/routes/__root.tsx": "import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router'\nimport { lazy, Suspense } from 'react'\nimport { siteConfig } from '~/lib/site-config'\n\nimport appCss from '../styles.css?url'\n\nconst Devtools = import.meta.env.DEV ? lazy(() => import('~/components/devtools')) : () => null\n\nconst themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',t==='dark'||(t==='system'&&m));}catch(e){}})();`\n\nexport const Route = createRootRoute({\n  head: () => ({\n    meta: [\n      {\n        charSet: 'utf-8',\n      },\n      {\n        name: 'viewport',\n        content: 'width=device-width, initial-scale=1',\n      },\n      {\n        name: 'description',\n        content: siteConfig.description,\n      },\n      {\n        title: siteConfig.name,\n      },\n    ],\n    links: [\n      {\n        rel: 'stylesheet',\n        href: appCss,\n      },\n      {\n        rel: 'icon',\n        href: '/favicon.ico',\n        sizes: '32x32',\n      },\n      {\n        rel: 'icon',\n        href: '/favicon.svg',\n        type: 'image/svg+xml',\n      },\n      {\n        rel: 'manifest',\n        href: '/manifest.json',\n      },\n    ],\n  }),\n  notFoundComponent: () => (\n    <div className=\"flex min-h-svh flex-col items-center justify-center p-6 text-center\">\n      <h1 className=\"font-bold text-4xl tracking-tight\">404 - Not Found</h1>\n      <p className=\"mt-2 text-muted-foreground\">The page you are looking for does not exist.</p>\n      <Link\n        className=\"mt-6 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90\"\n        to=\"/\"\n      >\n        Go back home\n      </Link>\n    </div>\n  ),\n  shellComponent: RootDocument,\n})\n\nfunction RootDocument({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang=\"en\" suppressHydrationWarning>\n      <head>\n        {/** biome-ignore lint/security/noDangerouslySetInnerHtml: anti-FOUC theme script */}\n        <script dangerouslySetInnerHTML={{ __html: themeScript }} />\n        <HeadContent />\n      </head>\n      <body>\n        {children}\n        <Suspense fallback={null}>\n          <Devtools />\n        </Suspense>\n        <Scripts />\n      </body>\n    </html>\n  )\n}\n",
+    "src/styles.css": "@import \"tailwindcss\";\n@import \"tw-animate-css\";\n@import \"@fontsource-variable/bricolage-grotesque\";\n@import \"@fontsource-variable/geist\";\n\n@custom-variant dark (&:is(.dark *));\n\n:root {\n  --background: #edf2ef;\n  --foreground: #14211f;\n  --card: #f9fbf9;\n  --card-foreground: #14211f;\n  --popover: #f9fbf9;\n  --popover-foreground: #14211f;\n  --primary: #1858d1;\n  --primary-foreground: #fff;\n  --secondary: #dbe7ff;\n  --secondary-foreground: #14211f;\n  --muted: #e2ebe7;\n  --muted-foreground: #53635e;\n  --accent: #ffe2d1;\n  --accent-foreground: #7f3418;\n  --destructive: #b42318;\n  --destructive-foreground: #fff;\n  --border: #cbd8d3;\n  --input: #cbd8d3;\n  --ring: #e86d32;\n  --chart-1: #1858d1;\n  --chart-2: #2f8f75;\n  --chart-3: #e86d32;\n  --chart-4: #b8871f;\n  --chart-5: #9157c4;\n  --radius: 0.5rem;\n  --sidebar: #f9fbf9;\n  --sidebar-foreground: #14211f;\n  --sidebar-primary: #1858d1;\n  --sidebar-primary-foreground: #fff;\n  --sidebar-accent: #ffe2d1;\n  --sidebar-accent-foreground: #7f3418;\n  --sidebar-border: #cbd8d3;\n  --sidebar-ring: #e86d32;\n}\n\n.dark {\n  --background: #0e1a28;\n  --foreground: #dce9f4;\n  --card: #142436;\n  --card-foreground: #dce9f4;\n  --popover: #142436;\n  --popover-foreground: #dce9f4;\n  --primary: #66a2ff;\n  --primary-foreground: #0e1a28;\n  --secondary: #1d3042;\n  --secondary-foreground: #dce9f4;\n  --muted: #1d3042;\n  --muted-foreground: #8ea4b8;\n  --accent: #4b2a1d;\n  --accent-foreground: #ffb185;\n  --destructive: #f87171;\n  --destructive-foreground: #2b0d0a;\n  --border: #2d455c;\n  --input: #2d455c;\n  --ring: #ffb185;\n  --chart-1: #66a2ff;\n  --chart-2: #69c3a4;\n  --chart-3: #ffb185;\n  --chart-4: #f2c66d;\n  --chart-5: #c29dff;\n  --sidebar: #142436;\n  --sidebar-foreground: #dce9f4;\n  --sidebar-primary: #66a2ff;\n  --sidebar-primary-foreground: #0e1a28;\n  --sidebar-accent: #4b2a1d;\n  --sidebar-accent-foreground: #ffb185;\n  --sidebar-border: #2d455c;\n  --sidebar-ring: #ffb185;\n}\n\n@theme inline {\n  --font-sans: \"Geist Variable\", Geist, sans-serif;\n  --font-heading: \"Bricolage Grotesque Variable\", \"Bricolage Grotesque\", var(--font-sans);\n  --color-background: var(--background);\n  --color-foreground: var(--foreground);\n  --color-card: var(--card);\n  --color-card-foreground: var(--card-foreground);\n  --color-popover: var(--popover);\n  --color-popover-foreground: var(--popover-foreground);\n  --color-primary: var(--primary);\n  --color-primary-foreground: var(--primary-foreground);\n  --color-secondary: var(--secondary);\n  --color-secondary-foreground: var(--secondary-foreground);\n  --color-muted: var(--muted);\n  --color-muted-foreground: var(--muted-foreground);\n  --color-accent: var(--accent);\n  --color-accent-foreground: var(--accent-foreground);\n  --color-destructive: var(--destructive);\n  --color-destructive-foreground: var(--destructive-foreground);\n  --color-border: var(--border);\n  --color-input: var(--input);\n  --color-ring: var(--ring);\n  --color-chart-1: var(--chart-1);\n  --color-chart-2: var(--chart-2);\n  --color-chart-3: var(--chart-3);\n  --color-chart-4: var(--chart-4);\n  --color-chart-5: var(--chart-5);\n  --color-sidebar: var(--sidebar);\n  --color-sidebar-foreground: var(--sidebar-foreground);\n  --color-sidebar-primary: var(--sidebar-primary);\n  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);\n  --color-sidebar-accent: var(--sidebar-accent);\n  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);\n  --color-sidebar-border: var(--sidebar-border);\n  --color-sidebar-ring: var(--sidebar-ring);\n  --radius-sm: calc(var(--radius) - 2px);\n  --radius-md: calc(var(--radius) - 1px);\n  --radius-lg: var(--radius);\n  --radius-xl: calc(var(--radius) + 1px);\n  --radius-2xl: calc(var(--radius) + 2px);\n  --radius-3xl: calc(var(--radius) + 3px);\n  --radius-4xl: calc(var(--radius) + 4px);\n}\n\n@layer base {\n  * {\n    @apply border-border outline-ring/50;\n  }\n  body {\n    @apply bg-background text-foreground;\n  }\n  html {\n    @apply font-sans;\n  }\n}\n\n@layer utilities {\n  .scrollbar {\n    scrollbar-width: thin;\n    scrollbar-color: var(--border) transparent;\n  }\n  .scrollbar::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n  }\n  .scrollbar::-webkit-scrollbar-track {\n    background: transparent;\n  }\n  .scrollbar::-webkit-scrollbar-thumb {\n    background-color: var(--border);\n    border-radius: var(--radius-3xl);\n  }\n  .scrollbar:hover::-webkit-scrollbar-thumb {\n    background-color: var(--muted-foreground);\n  }\n\n  .scrollbar-padded-x::-webkit-scrollbar {\n    width: 16px;\n  }\n  .scrollbar-padded-x::-webkit-scrollbar-thumb {\n    border-left: 4px solid transparent;\n    border-right: 4px solid transparent;\n    background-clip: padding-box;\n  }\n\n  .scrollbar-padded-y::-webkit-scrollbar {\n    height: 16px;\n  }\n  .scrollbar-padded-y::-webkit-scrollbar-thumb {\n    border-top: 4px solid transparent;\n    border-bottom: 4px solid transparent;\n    background-clip: padding-box;\n  }\n}\n",
+    "src/lib/utils.ts": "import { type ClassValue, clsx } from 'clsx'\nimport { twMerge } from 'tailwind-merge'\n\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs))\n}\n"
+  },
+  "additions": {
+    "storage=s3": {
+      "files": {
+        "src/server/storage/adapters/s3.ts": "9ffd90fc8eb7084c530ebd7e212a2e6196b5c8e4afcb6bc5e821288fd2a0b30e",
+        "src/server/storage/index.ts": "4ab6427bb441a7a378277d8440ab32fb2a7b29c872ebeebeca3484d32f8de0ba",
+        "src/server/storage/port.ts": "cd8e6c1c2a94b57036d09a67d56b90087095d44f5795d87ba3bbbeb4cee65a6c"
+      },
+      "dependencies": {
+        "@aws-sdk/client-s3": "3.1151.0",
+        "@aws-sdk/s3-request-presigner": "3.1151.0"
+      },
+      "environment": {
+        "src/env.ts": "692c7755cf247f786afdc015c61cb396032203db7dfc30954ce3697eaa790424",
+        ".env.example": "ee63851915ebf295e6c4fc77eabaae188aeaf35523b6c6a1f299a3b1e9cf4821",
+        ".env": "ee63851915ebf295e6c4fc77eabaae188aeaf35523b6c6a1f299a3b1e9cf4821"
+      },
+      "manualSteps": []
+    },
+    "storage=r2": {
+      "files": {
+        "src/server/storage/adapters/r2.ts": "2c4c27dd02b7465da9839a852a4e2ad3569f1b498d7495b15b40d7f09b67efed",
+        "src/server/storage/index.ts": "3068730b5984652eb500251a717464e720223208dfe92b4fa5633d1b5ce6d041",
+        "src/server/storage/port.ts": "cd8e6c1c2a94b57036d09a67d56b90087095d44f5795d87ba3bbbeb4cee65a6c"
+      },
+      "dependencies": {
+        "@aws-sdk/client-s3": "3.1151.0",
+        "@aws-sdk/s3-request-presigner": "3.1151.0"
+      },
+      "environment": {
+        "src/env.ts": "aaac5e76979e2b8da07431ccbffc16fc5ffe03264a117d9d6f9bf21172a5c7d1",
+        ".env.example": "4f3c341251d959bb0d960a7ea10f358e9626757b30a4bd17e5a5369441a34997",
+        ".env": "4f3c341251d959bb0d960a7ea10f358e9626757b30a4bd17e5a5369441a34997"
+      },
+      "manualSteps": []
+    },
+    "storage=gcs": {
+      "files": {
+        "src/server/storage/adapters/gcs.ts": "375e1ab739a96a33421ac2020a970f5557a6deade09fe7e650c2479a1e89d541",
+        "src/server/storage/index.ts": "4c1a931160161dd8d75163b21b6f037bdb69c8edfd43c1564c2ef9b7bf22d18f",
+        "src/server/storage/port.ts": "cd8e6c1c2a94b57036d09a67d56b90087095d44f5795d87ba3bbbeb4cee65a6c"
+      },
+      "dependencies": {
+        "@google-cloud/storage": "8.4.0"
+      },
+      "environment": {
+        "src/env.ts": "9f58ff58d2faca1976702e7738e0a505ffab958505bed265954860ba50840424",
+        ".env.example": "2e98c5ebdeae30468ec4ce6344a0646805dcd5f065c10547b595aaff49d8b8cb",
+        ".env": "2e98c5ebdeae30468ec4ce6344a0646805dcd5f065c10547b595aaff49d8b8cb"
+      },
+      "manualSteps": []
+    },
+    "storage=local": {
+      "files": {
+        "src/server/storage/adapters/local.ts": "73ae1e4a6409133ddf1d0bea8526aa25c68569aad16703ead3a9049be1e3a594",
+        "src/server/storage/index.ts": "ae7f8228cdde90cf64ca02e3ed4150c4f47d402140bed5d50a3465ff16348cfe",
+        "src/server/storage/port.ts": "cd8e6c1c2a94b57036d09a67d56b90087095d44f5795d87ba3bbbeb4cee65a6c"
+      },
+      "dependencies": {},
+      "environment": {
+        "src/env.ts": "bfba156f378a93f9fdc5fdcd7771d6b170b846f52940f8aff9d30679d7cc6838",
+        ".env.example": "d75ae60fb9b56b092b436f86a2e9891ac108ea3370218b3bb27f1b4463bf8e00",
+        ".env": "d75ae60fb9b56b092b436f86a2e9891ac108ea3370218b3bb27f1b4463bf8e00"
+      },
+      "manualSteps": []
+    },
+    "cache=redis": {
+      "files": {
+        "src/server/cache/adapters/redis.ts": "fb2ef158a69249ae9b3670ed60ab7ebb127ce7f3482632ce087704b42aabf55a",
+        "src/server/cache/index.ts": "6c40c96e0490e61504521a1458dd82f9fa0f56fc7305b85211f2a625e21a1050",
+        "src/server/cache/port.ts": "99c0a3b89fa8e79fb94494f2b7aa8cdef73d3bcc4c7593cff00531031b8b4318",
+        "src/server/cache/wrap.ts": "56caacece849fda7c1ddc12be24635b095ed79cd1bec2a81df79b0e92190155f"
+      },
+      "dependencies": {
+        "ioredis": "6.0.0"
+      },
+      "environment": {
+        "src/env.ts": "e481d3b75c139b35be751452040a923bace7f872c8492e45fd0e66e2045de143",
+        ".env.example": "15b50f2ddff57e7d912801e5f7ffb6cdfa47d7c8200816e1bbdd210e348d1422",
+        ".env": "15b50f2ddff57e7d912801e5f7ffb6cdfa47d7c8200816e1bbdd210e348d1422"
+      },
+      "manualSteps": []
+    },
+    "cache=upstash": {
+      "files": {
+        "src/server/cache/adapters/upstash.ts": "2cbba370a3f6439348e48d3e9f9c0b9c043e3d444d343fb6ce076b79520fd11d",
+        "src/server/cache/index.ts": "dbbee7b517a82e556ae03eb37cf31e5e2eab8c827d7eedb7185af99fa035c795",
+        "src/server/cache/port.ts": "99c0a3b89fa8e79fb94494f2b7aa8cdef73d3bcc4c7593cff00531031b8b4318",
+        "src/server/cache/wrap.ts": "56caacece849fda7c1ddc12be24635b095ed79cd1bec2a81df79b0e92190155f"
+      },
+      "dependencies": {
+        "@upstash/redis": "1.39.0"
+      },
+      "environment": {
+        "src/env.ts": "2409ff0c21e32bd16c2b359d1a8eab38cecd3d91ff30d87192289ddb8ed58fb2",
+        ".env.example": "d5d19cca3cbabe1b9d82e599b5ca8a71492a6593087eb5bb6a54330d663d6add",
+        ".env": "d5d19cca3cbabe1b9d82e599b5ca8a71492a6593087eb5bb6a54330d663d6add"
+      },
+      "manualSteps": []
+    },
+    "cache=memory": {
+      "files": {
+        "src/server/cache/adapters/memory.ts": "d28d2d9783121b33415c16cf412cbc85e45c7497834acc2a163309de871d8272",
+        "src/server/cache/index.ts": "eff1b8e123370d8bbb9d6f8fc4edadbabbc353a19fe6ed79884a83a200396149",
+        "src/server/cache/port.ts": "99c0a3b89fa8e79fb94494f2b7aa8cdef73d3bcc4c7593cff00531031b8b4318",
+        "src/server/cache/wrap.ts": "56caacece849fda7c1ddc12be24635b095ed79cd1bec2a81df79b0e92190155f"
+      },
+      "dependencies": {},
+      "environment": {
+        "src/env.ts": "d9d7254e0b1807670b70ca8bf0c476c50bcced5de0b47306c3f09fa44e5af68f",
+        ".env.example": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        ".env": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "manualSteps": []
+    },
+    "logger=pino": {
+      "files": {
+        "src/server/logger/adapters/pino.ts": "ec6aa1113d75b4849ffa9484fae4d5c9ba6c84d1de56afb9b1970ff70bcbeebe",
+        "src/server/logger/index.ts": "2ece1fbc0992865e23f6bc44d09b5f43704c086443abcdcd61a0449ce3634baf",
+        "src/server/logger/port.ts": "80627bbf6c361fd37ebaf3f7d476e1539d08cc6709bf049500ce78716c994e90"
+      },
+      "dependencies": {
+        "pino": "10.4.0"
+      },
+      "environment": {
+        "src/env.ts": "d9d7254e0b1807670b70ca8bf0c476c50bcced5de0b47306c3f09fa44e5af68f",
+        ".env.example": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        ".env": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "manualSteps": []
+    },
+    "logger=console": {
+      "files": {
+        "src/server/logger/adapters/console.ts": "18067fc9abc796e2307df2c74cbc94aaab340f070f803e94e380af8ca9a3c1a6",
+        "src/server/logger/index.ts": "aa15e62f6e7667977604b2d4835a363b2f3cc199124283e6e1ecee834e4eb195",
+        "src/server/logger/port.ts": "80627bbf6c361fd37ebaf3f7d476e1539d08cc6709bf049500ce78716c994e90"
+      },
+      "dependencies": {},
+      "environment": {
+        "src/env.ts": "d9d7254e0b1807670b70ca8bf0c476c50bcced5de0b47306c3f09fa44e5af68f",
+        ".env.example": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        ".env": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "manualSteps": []
+    },
+    "analytics=posthog": {
+      "files": {
+        "src/server/analytics/adapters/posthog.ts": "9df6a47f279ea86a397b39720ab18e0bcecce2f328e402065dc2c7f5092785c0",
+        "src/server/analytics/index.ts": "72d52d8d6663cb3ff4fe8441612ff06d5ef7e06faa7257c5455087c4b2a8f696",
+        "src/server/analytics/port.ts": "caca820ae81c783583eed6c10179e48c20d9362dd12c2f314359d72fd6478b9d"
+      },
+      "dependencies": {
+        "posthog-node": "5.56.0"
+      },
+      "environment": {
+        "src/env.ts": "1309785e293e6dc49add770142c44ecabca484b5dedd2fe556622ddd8486839e",
+        ".env.example": "62caf52c799c34a66f5b51e1e89871a0040e8a9ddcd3c1eee7873febb43a66cf",
+        ".env": "62caf52c799c34a66f5b51e1e89871a0040e8a9ddcd3c1eee7873febb43a66cf"
+      },
+      "manualSteps": []
+    },
+    "analytics=plausible": {
+      "files": {
+        "src/lib/http/api.ts": "c75e41eb96a6fbfe16e8bc37e68ddd8cad10e346bc387612296e502b494be4d2",
+        "src/lib/http/index.ts": "bd66d07e50a2a6676289532ab00c3c1df271ef9563329dbf091c78f01d206a84",
+        "src/lib/http/responses.ts": "e16918300a927aff1825b8fc46ad9574bca77fa94cb81ee605d84a5745e123d3",
+        "src/lib/http/types.ts": "ec30ce7023321094c8c4c5bdd07318cf489f8b53de4fd2d43681c1471895a684",
+        "src/server/analytics/adapters/plausible.ts": "69bf828a8641a66129ac11fa81c5dea6286518500fb6a300aecb686a012d8060",
+        "src/server/analytics/index.ts": "576b6836fd7c17c3dbc84d7fa646e26cf23c5b6332c0436d8e2c212aae35d43d",
+        "src/server/analytics/port.ts": "caca820ae81c783583eed6c10179e48c20d9362dd12c2f314359d72fd6478b9d"
+      },
+      "dependencies": {},
+      "environment": {
+        "src/env.ts": "8b63cbd54a4a8386456b1322a8f110f4a71fb156f29346d0b48c078af201c6f7",
+        ".env.example": "c0729f5296330285762bef7bd93ce1bc633de9f43e871bea04af9fa8cbc8b234",
+        ".env": "c0729f5296330285762bef7bd93ce1bc633de9f43e871bea04af9fa8cbc8b234"
+      },
+      "manualSteps": []
+    },
+    "analytics=noop": {
+      "files": {
+        "src/server/analytics/adapters/noop.ts": "a765dc1ff51b60baa7979eee6160eb35a6bef371171aa17148432ac81d04bfd8",
+        "src/server/analytics/index.ts": "b552af53092ae46bc8e3926a6bb837a484948ecc24ad09d3c8d5665f1021c105",
+        "src/server/analytics/port.ts": "caca820ae81c783583eed6c10179e48c20d9362dd12c2f314359d72fd6478b9d"
+      },
+      "dependencies": {},
+      "environment": {
+        "src/env.ts": "d9d7254e0b1807670b70ca8bf0c476c50bcced5de0b47306c3f09fa44e5af68f",
+        ".env.example": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        ".env": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "manualSteps": []
+    },
+    "jobs=inngest": {
+      "files": {
+        "src/routes/api/inngest.ts": "9d40f47fcc478010d549cd0066690b89863ead9d309e81bba1eeb9bd79d5db99",
+        "src/server/jobs/events.ts": "3974ba2fd0b9d066561562af41a5a6ccf1b01c56264f42f37d96867f3fa289c9",
+        "src/server/jobs/functions.ts": "2a92eaf4ba6f5257848ef84b68ede1b9cb953bcd694cce6b9d0dcd153abb8500",
+        "src/server/jobs/index.ts": "3a4f2390dbe9acdab531b570147ff7a5a401ba768f058d71e4869d6e6bc9fe0b",
+        "src/server/jobs/serve.ts": "dfb6b070f1a966d7bf582d85073b5865dbbdff6f8e1b3bc664069e8bd7ccc2dd"
+      },
+      "dependencies": {
+        "inngest": "4.23.0"
+      },
+      "environment": {
+        "src/env.ts": "b1074e82eeb682508c0078d9e31bdfe11a7fd06efbaa6892b3e00b90fc6acf1b",
+        ".env.example": "1c6d82e5b0703a793ca6a8920ccfb5df86d089c20bfce66b5c8bdaaf6e25516c",
+        ".env": "1c6d82e5b0703a793ca6a8920ccfb5df86d089c20bfce66b5c8bdaaf6e25516c"
+      },
+      "manualSteps": []
+    },
+    "errors=sentry": {
+      "files": {
+        "instrument.server.mjs": "3e2b939a6dacd933570cbd2f15ef65442f53de8f5a7a98ec1303bd1b227e3b5a",
+        "src/instrument.client.tsx": "fe8bb514599f01302e778258193c889edf8df6a54e46e7b2be76d5c246e38431",
+        "src/server/error-tracking/index.ts": "d7b6ddb7ef01e83d69514564edbb4e21aee958b4ddf786d2a7e45183f873360a",
+        "src/server/error-tracking/options.ts": "e19de4712bd7f214eb3ce2eacca726e3947b6e7e9cab9d3c7f781f6a97e55ef4"
+      },
+      "dependencies": {
+        "@sentry/tanstackstart-react": "10.76.2"
+      },
+      "environment": {
+        "src/env.ts": "67ea81d44202edba680f4f741dbcf5c53004ce58689aff50a052042f2c2b768f",
+        ".env.example": "864f9321e98ede2f8783f798d69b7606fae0703b68e91fc18e23d47b4f90f5b7",
+        ".env": "864f9321e98ede2f8783f798d69b7606fae0703b68e91fc18e23d47b4f90f5b7"
+      },
+      "manualSteps": [
+        "errors: Add `sentryTanstackStart()` as the LAST plugin in vite.config.ts.",
+        "errors: Import `./instrument.client` as the first import in",
+        "src/client.tsx.",
+        "errors: Wrap the fetch handler in src/server.ts with",
+        "`wrapFetchWithSentry`.",
+        "errors: Add `sentryGlobalRequestMiddleware` /",
+        "`sentryGlobalFunctionMiddleware` in src/start.ts.",
+        "errors: Run the server with NODE_OPTIONS='--import",
+        "./instrument.server.mjs'."
+      ]
+    },
+    "mail=resend": {
+      "files": {
+        "src/server/email/adapters/resend.ts": "8b85a5e03f14d6220b7ca62e0d4b2a45005fb72132e3ef5f147b3a79126f3607",
+        "src/server/email/address.ts": "71108bf98cf3ca043175f8ce7db97bc8a63a81febca8597c7ba4d0b622779a72",
+        "src/server/email/factory.ts": "ccd2368342893657b1745e321d307b54adb6ae4b5293714dba8db87811be5ba7",
+        "src/server/email/index.ts": "3baa9aedb64e1155dc9ba9343d419c22103dded8a78ef288bfa9f3412a6a4bb0",
+        "src/server/email/port.ts": "f07a3beda0446ed935fbaf8bdc074df24b4f6f8b05bd537bf20114349f596c3f"
+      },
+      "dependencies": {
+        "resend": "6.32.1",
+        "react-email": "6.11.1"
+      },
+      "environment": {
+        "src/env.ts": "a7333a2cb5c44d996506eb3e94fe9812383d227e805e4413bdfa1a64c5b514c6",
+        ".env.example": "11f9cdaf37d0bae0199fb967ceeb32b0b890c275d7c62f41dd8fe0ab8f604d23",
+        ".env": "11f9cdaf37d0bae0199fb967ceeb32b0b890c275d7c62f41dd8fe0ab8f604d23"
+      },
+      "manualSteps": []
+    },
+    "mail=brevo": {
+      "files": {
+        "src/server/email/adapters/brevo.ts": "11bb6231ff0b69ecd9fbbcc72b4c405e1660559d2bf7222b1ac1b6dadfab0070",
+        "src/server/email/address.ts": "71108bf98cf3ca043175f8ce7db97bc8a63a81febca8597c7ba4d0b622779a72",
+        "src/server/email/factory.ts": "ccd2368342893657b1745e321d307b54adb6ae4b5293714dba8db87811be5ba7",
+        "src/server/email/index.ts": "3e6f0f100f28d505da29c00ba11abfeaeb4c685aaff17f86085b85c62dac4a2f",
+        "src/server/email/port.ts": "f07a3beda0446ed935fbaf8bdc074df24b4f6f8b05bd537bf20114349f596c3f"
+      },
+      "dependencies": {
+        "@getbrevo/brevo": "6.1.0",
+        "react-email": "6.11.1"
+      },
+      "environment": {
+        "src/env.ts": "ffe1035dbd6b65058d3cb95a4e06c7da04c6f4b206abec072595dbd32ba9b56d",
+        ".env.example": "fdc50734b7cb5e192382074b1c1d237970bd1fb24b7d21ac271dd3d8b7b84f52",
+        ".env": "fdc50734b7cb5e192382074b1c1d237970bd1fb24b7d21ac271dd3d8b7b84f52"
+      },
+      "manualSteps": []
+    },
+    "mail=ses": {
+      "files": {
+        "src/server/email/adapters/ses.ts": "5f439255b1400507b83c7177618742d0628fd16a5593400e752fe15c38896535",
+        "src/server/email/address.ts": "71108bf98cf3ca043175f8ce7db97bc8a63a81febca8597c7ba4d0b622779a72",
+        "src/server/email/factory.ts": "ccd2368342893657b1745e321d307b54adb6ae4b5293714dba8db87811be5ba7",
+        "src/server/email/index.ts": "4dbb6d8555ac26bde33b4c84e719948384a3b141748dc53e3a22798b25d45845",
+        "src/server/email/port.ts": "f07a3beda0446ed935fbaf8bdc074df24b4f6f8b05bd537bf20114349f596c3f"
+      },
+      "dependencies": {
+        "@aws-sdk/client-sesv2": "3.1151.0",
+        "react-email": "6.11.1"
+      },
+      "environment": {
+        "src/env.ts": "f16b0a6fafc86e5a4b12ddbcc66e08c0f62eb90250f40cbd734c398b54c8088c",
+        ".env.example": "89bdbdd53da6d05973bc93f7e2f3a67e131e8c47988fafbf3e8a9027dd77d88b",
+        ".env": "89bdbdd53da6d05973bc93f7e2f3a67e131e8c47988fafbf3e8a9027dd77d88b"
+      },
+      "manualSteps": []
+    },
+    "email-ui": {
+      "files": {
+        "src/emails/components/components.tsx": "4cc441311ce679dd491509bc527533b54e6a27e1d740cde495893a37ac4b6ad7",
+        "src/emails/components/context.tsx": "7f93a7cdfd837e5f78330312ff0eb86f316880f3d5c2f818d3c04baf000b4558",
+        "src/emails/components/index.ts": "c8d0b77575eea83f46ed76d98986b4b8ab14b1cd4f096813fc1744c30397c36a",
+        "src/emails/components/theme.ts": "c758a7fe950fd4ddce663d3dc74ed6b6d70eeec93769eb22856e026e577184f2"
+      },
+      "dependencies": {},
+      "environment": {
+        "src/env.ts": "d9d7254e0b1807670b70ca8bf0c476c50bcced5de0b47306c3f09fa44e5af68f",
+        ".env.example": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        ".env": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "manualSteps": []
+    },
+    "http": {
+      "files": {
+        "src/lib/http/api.ts": "c75e41eb96a6fbfe16e8bc37e68ddd8cad10e346bc387612296e502b494be4d2",
+        "src/lib/http/index.ts": "bd66d07e50a2a6676289532ab00c3c1df271ef9563329dbf091c78f01d206a84",
+        "src/lib/http/responses.ts": "e16918300a927aff1825b8fc46ad9574bca77fa94cb81ee605d84a5745e123d3",
+        "src/lib/http/types.ts": "ec30ce7023321094c8c4c5bdd07318cf489f8b53de4fd2d43681c1471895a684"
+      },
+      "dependencies": {},
+      "environment": {
+        "src/env.ts": "d9d7254e0b1807670b70ca8bf0c476c50bcced5de0b47306c3f09fa44e5af68f",
+        ".env.example": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        ".env": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "manualSteps": []
+    }
+  },
+  "baselineCommit": "9ec2bbd19c26992254142a40c99bf77a883ce5d3"
+}

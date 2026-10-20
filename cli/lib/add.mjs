@@ -1,25 +1,18 @@
 import { detectAlias, rewriteAlias } from './alias.mjs'
 import {
   adapterChoices,
-  adapterRemovableDeps,
   CAPABILITIES,
   capabilityChoices,
   capabilityDir,
   currentAdapter,
-  hasAdapters,
-  installedAdapters,
-  MANUAL_STEPS,
   resolveAdapter,
-  vendorCapability,
-  vendorPackageSrc,
 } from './capabilities.mjs'
-import { detectFrameworkModule, frameworkModules } from './engine.mjs'
+import { detectFrameworkModule, frameworkModules, wireCapabilityAddition } from './engine.mjs'
 import { appendEnv } from './env.mjs'
-import { vendorMailer } from './mailer.mjs'
+import { currentMailerAdapter, MAILER_ADAPTERS } from './mailer.mjs'
 import { FRAMEWORK_SUPPORT } from './stack-config.mjs'
-import { exists, join, pkgAddDeps, pkgRemoveDeps, read, readJSON, writeJSON } from './util.mjs'
+import { join, pkgAddDeps, pkgRemoveDeps, readJSON, writeJSON } from './util.mjs'
 
-const MAILER_ADAPTERS = ['resend', 'brevo', 'ses']
 const UNIQUE_PROVIDERS = { jobs: 'inngest', 'error-tracking': 'sentry' }
 const RECOMMENDED_PROVIDERS = { storage: 'r2', cache: 'upstash' }
 
@@ -111,47 +104,16 @@ export function requireFrameworkModule(projectDir) {
   throw new Error(`Could not detect a registered framework (${frameworks}) in ${projectDir}`)
 }
 
-const currentMailerAdapter = (projectDir) => {
-  const idx = join(projectDir, EXTRA_DIR.mailer, 'index.ts')
-  return exists(idx) ? (read(idx).match(/\.\/adapters\/([\w-]+)['"]/)?.[1] ?? null) : null
-}
-
 export const currentTargetAdapter = (projectDir, cap) =>
   cap === 'mailer' ? currentMailerAdapter(projectDir) : currentAdapter(projectDir, cap)
-
-function vendor({ projectDir, framework, projectName, cap, adapter, keep }) {
-  if (cap === 'mailer') {
-    const from = currentMailerAdapter(projectDir)
-    return {
-      swappedFrom: from && from !== adapter ? from : null,
-      ...vendorMailer(projectDir, framework, adapter, keep),
-    }
-  }
-
-  const from = hasAdapters(cap) ? currentAdapter(projectDir, cap) : null
-  const swappedFrom = from && from !== adapter ? from : null
-  return {
-    swappedFrom,
-    removeDeps:
-      hasAdapters(cap) && !keep
-        ? adapterRemovableDeps(cap, installedAdapters(projectDir, cap), adapter)
-        : [],
-    ...vendorCapability({ projectDir, framework, projectName, cap, adapter, keep }),
-  }
-}
 
 export function addCapability({ projectDir, cap, adapter, keep }) {
   const pkgPath = join(projectDir, 'package.json')
   const pkg = readJSON(pkgPath)
-  const framework = requireFrameworkModule(projectDir).id
+  const module = requireFrameworkModule(projectDir)
+  const framework = module.id
   const projectName = pkg.name ?? 'app'
   const alias = detectAlias(projectDir)
-
-  if (NO_ADAPTER.has(cap)) {
-    vendorPackageSrc(cap, join(projectDir, targetDir(cap)))
-    rewriteAlias(projectDir, alias)
-    return { framework, projectName, addDeps: {}, envKeys: [], swappedFrom: null, manualSteps: [] }
-  }
 
   const {
     swappedFrom,
@@ -159,13 +121,13 @@ export function addCapability({ projectDir, cap, adapter, keep }) {
     addDeps,
     envKeys,
     requiredEnvKeys,
-  } = vendor({
+    manualSteps,
+  } = wireCapabilityAddition(module, {
     projectDir,
-    framework,
     projectName,
     cap,
     adapter,
-    keep,
+    keep: !!keep,
   })
 
   pkgRemoveDeps(pkg, removeDeps)
@@ -173,6 +135,5 @@ export function addCapability({ projectDir, cap, adapter, keep }) {
   writeJSON(pkgPath, pkg)
   appendEnv(projectDir, envKeys, requiredEnvKeys)
   rewriteAlias(projectDir, alias)
-  const manualSteps = MANUAL_STEPS[cap]?.[framework] ?? []
   return { framework, projectName, addDeps, envKeys, swappedFrom, manualSteps }
 }

@@ -19,6 +19,7 @@ import type {
   JavaScriptFrameworkModule,
 } from '../javascript/project-parts.ts'
 import { packageScriptGate } from '../javascript/verification-gate.ts'
+import { nextAdditions } from './next-additions.ts'
 import { assembleProject } from './project-assembly.ts'
 
 function assembleNextParts({
@@ -91,7 +92,7 @@ export const nextModule: JavaScriptFrameworkModule = {
   detect: (applicationDir) => declaresDependency(applicationDir, ['next']),
   assemble: assembleProject('next'),
   assembleParts: assembleNextParts,
-  additions: { componentRoot: 'src/app/layout.tsx' },
+  additions: nextAdditions,
   gate: packageScriptGate,
   monorepoOutputs: ['.next/**', '!.next/cache/**'],
   packagedAssets: ['apps/next-base'],

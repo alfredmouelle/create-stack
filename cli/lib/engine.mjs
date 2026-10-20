@@ -14,4 +14,6 @@ export const {
   frameworkModules,
   getFrameworkModule,
   runVerificationGate,
+  validateAdditions,
+  wireCapabilityAddition,
 } = engine

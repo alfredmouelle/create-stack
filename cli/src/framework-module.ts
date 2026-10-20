@@ -43,8 +43,34 @@ export type AssemblyResult = {
   readonly manualSteps: readonly string[]
 }
 
+export type AdditionSelection =
+  | { readonly type: 'capability'; readonly cap: string; readonly adapter: string | null }
+  | { readonly type: 'component'; readonly name: string }
+
+export type CapabilityAdditionRequest = {
+  readonly projectDir: string
+  readonly projectName: string
+  readonly adapter: string | null
+  readonly keep: boolean
+}
+
+export type CapabilityAdditionResult = {
+  readonly addDeps: Readonly<Record<string, string>>
+  readonly removeDeps: readonly string[]
+  readonly envKeys: readonly string[]
+  readonly requiredEnvKeys: readonly string[]
+  readonly swappedFrom: string | null
+  readonly manualSteps: readonly string[]
+}
+
+export type CapabilityAddition = {
+  readonly providers: readonly (string | null)[]
+  readonly apply: (request: CapabilityAdditionRequest) => CapabilityAdditionResult
+}
+
 export type AdditionWiring = {
-  readonly componentRoot: string
+  readonly componentRoot: string | null
+  readonly capabilities: Readonly<Record<string, CapabilityAddition>>
 }
 
 export type FrameworkModule = {

@@ -235,50 +235,13 @@ export const example = jobs.createFunction(
 export const functions = [example]
 `
 
-const NEXT_INNGEST_ROUTE = `import { jobs } from '~/server/jobs'
-import { functions } from '~/server/jobs/functions'
-import { jobsHandler } from '~/server/jobs/serve'
-
-const handler = jobsHandler({ client: jobs, functions })
-
-export { handler as GET, handler as POST, handler as PUT }
-`
-
-const TANSTACK_INNGEST_ROUTE = `import { createFileRoute } from '@tanstack/react-router'
-import type {} from '@tanstack/react-start'
-import { jobs } from '~/server/jobs'
-import { functions } from '~/server/jobs/functions'
-import { jobsHandler } from '~/server/jobs/serve'
-
-const handler = jobsHandler({ client: jobs, functions })
-
-export const Route = createFileRoute('/api/inngest')({
-  server: {
-    handlers: {
-      GET: ({ request }) => handler(request),
-      POST: ({ request }) => handler(request),
-      PUT: ({ request }) => handler(request),
-    },
-  },
-})
-`
-
-const JOBS_ROUTE_FILES = ['src/app/api/inngest/route.ts', 'src/routes/api/inngest.ts']
-
-function vendorJobs(projectDir, destDir, framework, projectName) {
+function vendorJobs(destDir, projectName) {
   write(join(destDir, 'index.ts'), JOBS_INDEX(projectName))
   write(join(destDir, 'events.ts'), JOBS_EVENTS)
   write(join(destDir, 'functions.ts'), JOBS_FUNCTIONS)
-  const [next, tanstack] = JOBS_ROUTE_FILES
-  write(
-    join(projectDir, framework === 'next' ? next : tanstack),
-    framework === 'next' ? NEXT_INNGEST_ROUTE : TANSTACK_INNGEST_ROUTE,
-  )
 }
 
-const SENTRY_SDK = { next: '@sentry/nextjs', tanstack: '@sentry/tanstackstart-react' }
-
-const sentryInit = (sdk, extra = '') => `import * as Sentry from '${sdk}'
+export const sentryInit = (sdk, extra = '') => `import * as Sentry from '${sdk}'
 import { sentryOptions } from '~/server/error-tracking'
 
 Sentry.init({
@@ -289,91 +252,6 @@ Sentry.init({
   }),${extra}
 })
 `
-
-const NEXT_INSTRUMENTATION = `import * as Sentry from '@sentry/nextjs'
-
-export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') await import('../sentry.server.config')
-  if (process.env.NEXT_RUNTIME === 'edge') await import('../sentry.edge.config')
-}
-
-// Server Components, middleware and proxies: Next swallows these, so nothing but
-// this hook ever sees them.
-export const onRequestError = Sentry.captureRequestError
-`
-
-const NEXT_GLOBAL_ERROR = `'use client'
-
-import * as Sentry from '@sentry/nextjs'
-import { useEffect } from 'react'
-
-// Last resort for render errors that escape every other boundary.
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
-  useEffect(() => {
-    Sentry.captureException(error)
-  }, [error])
-
-  return (
-    <html lang="en">
-      <body>
-        <h1>Something went wrong</h1>
-      </body>
-    </html>
-  )
-}
-`
-
-const TANSTACK_INSTRUMENT_SERVER = `import * as Sentry from '@sentry/tanstackstart-react'
-
-// Loaded via NODE_OPTIONS='--import ./instrument.server.mjs' so it runs before the
-// app, which is what makes auto-instrumentation work.
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV,
-  enabled: Boolean(process.env.SENTRY_DSN),
-  tracesSampleRate: process.env.NODE_ENV === 'development' ? 1 : 0.1,
-  enableLogs: true,
-})
-`
-
-function vendorErrorTracking(projectDir, framework) {
-  const sdk = SENTRY_SDK[framework]
-  if (framework === 'next') {
-    write(join(projectDir, 'sentry.server.config.ts'), sentryInit(sdk))
-    write(join(projectDir, 'sentry.edge.config.ts'), sentryInit(sdk))
-    write(
-      join(projectDir, 'src/instrumentation-client.ts'),
-      `${sentryInit(sdk)}
-// Instruments client-side router navigations.
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart
-`,
-    )
-    write(join(projectDir, 'src/instrumentation.ts'), NEXT_INSTRUMENTATION)
-    write(join(projectDir, 'src/app/global-error.tsx'), NEXT_GLOBAL_ERROR)
-    return
-  }
-  write(join(projectDir, 'instrument.server.mjs'), TANSTACK_INSTRUMENT_SERVER)
-  write(
-    join(projectDir, 'src/instrument.client.tsx'),
-    sentryInit(sdk, '\n  integrations: [Sentry.replayIntegration()],'),
-  )
-}
-
-export const MANUAL_STEPS = {
-  'error-tracking': {
-    next: [
-      'Wrap next.config.ts with `withSentryConfig` from @sentry/nextjs (source maps).',
-      'Set SENTRY_AUTH_TOKEN in CI for source-map upload.',
-    ],
-    tanstack: [
-      'Add `sentryTanstackStart()` as the LAST plugin in vite.config.ts.',
-      'Import `./instrument.client` as the first import in src/client.tsx.',
-      'Wrap the fetch handler in src/server.ts with `wrapFetchWithSentry`.',
-      'Add `sentryGlobalRequestMiddleware` / `sentryGlobalFunctionMiddleware` in src/start.ts.',
-      "Run the server with NODE_OPTIONS='--import ./instrument.server.mjs'.",
-    ],
-  },
-}
 
 function copyPath(cap, relSrc, destDir) {
   copy(join(PKG(cap), relSrc), join(destDir, relSrc.replace(/^src\//, '')))
@@ -430,35 +308,18 @@ function resolveDeps(cap, names, manifest) {
   return out
 }
 
-const MODULE_EXTRA_FILES = {
-  jobs: JOBS_ROUTE_FILES,
-  'error-tracking': [
-    'sentry.server.config.ts',
-    'sentry.edge.config.ts',
-    'src/instrumentation.ts',
-    'src/instrumentation-client.ts',
-    'src/app/global-error.tsx',
-    'instrument.server.mjs',
-    'src/instrument.client.tsx',
-  ],
-}
-
-const MODULE_WIRING = {
-  jobs: ({ projectDir, destDir, framework, projectName }) =>
-    vendorJobs(projectDir, destDir, framework, projectName),
-  'error-tracking': ({ projectDir, framework }) => vendorErrorTracking(projectDir, framework),
-}
-
-function vendorModule({ projectDir, destDir, framework, projectName, cap, manifest }) {
+function vendorModule({ projectDir, destDir, projectName, cap, manifest, integration }) {
   for (const f of manifest.files) copyPath(cap, f, destDir)
   stripJsExtensions(destDir)
-  MODULE_WIRING[cap]?.({ projectDir, destDir, framework, projectName })
+  if (cap === 'jobs') vendorJobs(destDir, projectName)
+  for (const [path, source] of Object.entries(integration.files)) {
+    write(join(projectDir, path), source)
+  }
   vendorHttp(projectDir, destDir)
 
-  const perFramework = manifest.frameworks?.[framework] ?? {}
   return {
-    addDeps: resolveDeps(cap, [...(manifest.deps ?? []), ...(perFramework.deps ?? [])], manifest),
-    envKeys: [...(manifest.env ?? []), ...(perFramework.env ?? [])],
+    addDeps: { ...resolveDeps(cap, manifest.deps ?? [], manifest), ...integration.dependencies },
+    envKeys: manifest.env ?? [],
     requiredEnvKeys: [],
   }
 }
@@ -485,19 +346,23 @@ function vendorPort({ projectDir, destDir, cap, adapter, spec, manifest }) {
   }
 }
 
-export function vendorCapability({ projectDir, framework, projectName, cap, adapter, keep }) {
+export function vendorCapability({ projectDir, projectName, cap, adapter, keep, integration }) {
   const spec = SPEC[cap]
   if (!spec) throw new Error(`Unknown capability: ${cap}`)
 
   const manifest = readJSON(join(PKG(cap), 'capability.json'))
+  if (manifest.kind === 'module' && !integration)
+    throw new Error(`No framework integration declared for ${cap}`)
   const destDir = join(projectDir, spec.dir)
 
   if (!keep) {
-    remove(destDir)
-    for (const f of MODULE_EXTRA_FILES[cap] ?? []) remove(join(projectDir, f))
+    for (const [provider, part] of Object.entries(manifest.adapters ?? {})) {
+      if (provider === adapter) continue
+      for (const file of part.files) remove(join(destDir, file.replace(/^src\//, '')))
+    }
   }
 
-  const args = { projectDir, destDir, framework, projectName, cap, adapter, spec, manifest }
+  const args = { projectDir, destDir, projectName, cap, adapter, spec, manifest, integration }
   return manifest.kind === 'module' ? vendorModule(args) : vendorPort(args)
 }
 
@@ -532,7 +397,6 @@ export function adapterRemovableDeps(cap, installed, to) {
 }
 
 export function vendorPackageSrc(pkgName, destDir) {
-  remove(destDir)
   const manifest = readJSON(join(PKG(pkgName), 'capability.json'))
   for (const f of manifest.files) copyPath(pkgName, f, destDir)
   stripJsExtensions(destDir)
