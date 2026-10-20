@@ -15,7 +15,7 @@ import {
   variantFiles,
 } from '../javascript/reference-parts.ts'
 import type { ApplicationPart, ReferenceApplication } from '../reference-application.ts'
-import { renderRoot } from './tanstack-renderers.ts'
+import { renderDevtools, renderRoot, renderRouter } from './tanstack-renderers.ts'
 
 const reference = javascriptReference(join(STACK_ROOT, 'apps/tanstack-base'))
 
@@ -176,16 +176,8 @@ const skeleton = skeletonPart(
     { path: '.gitignore', source: join(TEMPLATES, 'tanstack/gitignore') },
     { path: 'src/routeTree.gen.ts', referencePath: 'src/routeTree.gen.ts', source: null },
     rendered('src/routes/__root.tsx', renderRoot),
-    rendered('src/router.tsx', (selection) =>
-      selection.trpc
-        ? reference.read('src/router.tsx')
-        : readTemplate('tanstack/router.no-trpc.tsx'),
-    ),
-    rendered('src/components/devtools.tsx', (selection) =>
-      selection.trpc
-        ? reference.read('src/components/devtools.tsx')
-        : readTemplate('tanstack/devtools.no-trpc.tsx'),
-    ),
+    rendered('src/router.tsx', renderRouter),
+    rendered('src/components/devtools.tsx', renderDevtools),
   ],
   { name: '@alfredmouelle/tanstack-base', private: true, type: 'module' },
   featureParts,

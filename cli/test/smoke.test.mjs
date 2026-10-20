@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, test } from 'vitest'
+import { frameworkModules, getFrameworkModule } from '../src/framework-registry.ts'
 import { assertBrandedSurface, customizeTheme } from './branded-surface.mjs'
 
 const testDirectory = dirname(fileURLToPath(import.meta.url))
@@ -31,7 +32,7 @@ afterAll(
 
 const FRAMEWORKS = process.env.SMOKE_FRAMEWORK
   ? [process.env.SMOKE_FRAMEWORK]
-  : ['tanstack', 'next']
+  : frameworkModules.map(({ id }) => id)
 const TIMEOUT = 15 * 60 * 1000
 
 function run(command, args, cwd) {
@@ -176,7 +177,7 @@ const CUSTOM_ALIASES = {
   utils: '~/shared/utils',
 }
 
-describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
+describe.skipIf(process.env.RUN_SMOKE !== '1')('installed CLI smoke matrix', () => {
   for (const framework of FRAMEWORKS) {
     for (const workflow of CREATION_WORKFLOWS) {
       test(
@@ -232,14 +233,14 @@ describe.skipIf(!process.env.RUN_SMOKE)('installed CLI smoke matrix', () => {
           ],
           projectDir,
         )
-        const rootFile = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+        const rootFile = getFrameworkModule(framework).additions.componentRoot
         const root = readFileSync(join(projectDir, rootFile), 'utf8')
         for (const name of ['Prompt', 'Choice', 'ConfirmPassphrase', 'ConfirmOtp']) {
           expect(root).toContain(`<${name} />`)
         }
         const prompt = readFileSync(`${projectDir}/src/components/ui/prompt.tsx`, 'utf8')
         expect(prompt.includes("'use client'") || prompt.includes('"use client"')).toBe(
-          framework === 'next',
+          SHADCN_CONFIGURATIONS[framework].rsc,
         )
         verify(projectDir)
       },

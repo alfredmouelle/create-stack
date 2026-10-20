@@ -34,7 +34,7 @@ test('every package ships a manifest', () => {
 test('Email UI keeps its package, manifest, export, and bundling identity aligned', () => {
   const pkg = JSON.parse(readFileSync(join(PACKAGES, 'email-ui/package.json'), 'utf8'))
   const emailUiManifest = manifest('email-ui')
-  const bundleScript = readFileSync(join(REPO_ROOT, 'cli/scripts/bundle.mjs'), 'utf8')
+  const bundleScript = readFileSync(join(REPO_ROOT, 'cli/scripts/bundle.ts'), 'utf8')
 
   expect(pkg.name).toBe('@alfredmouelle/email-ui')
   expect(pkg.private).not.toBe(true)

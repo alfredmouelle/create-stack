@@ -1,20 +1,20 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+__SSR_IMPORT__import type { ReactNode } from 'react'
 import { ThemeProvider } from './components/theme-provider'
 import { routeTree } from './routeTree.gen'
-
+__TRPC_IMPORTS__
 export function getRouter() {
-  const router = createTanStackRouter({
+__QUERY_CONTEXT__  const router = createTanStackRouter({
     routeTree,
-    scrollRestoration: true,
+__ROUTER_CONTEXT__    scrollRestoration: true,
     defaultPreload: 'intent',
-
+__PRELOAD_STALE_TIME__
     Wrap: (props: { children: ReactNode }) => (
-      <ThemeProvider defaultTheme="system">{props.children}</ThemeProvider>
+__WRAP__
     ),
   })
 
-  return router
+__SSR_INTEGRATION__  return router
 }
 
 declare module '@tanstack/react-router' {

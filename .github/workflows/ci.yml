@@ -19,7 +19,14 @@ jobs:
     outputs:
       marketing: ${{ steps.filter.outputs.marketing }}
       cli: ${{ steps.filter.outputs.cli }}
+      frameworks: ${{ steps.frameworks.outputs.frameworks }}
     steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+      - id: frameworks
+        run: echo "frameworks=$(node cli/scripts/list-frameworks.ts)" >> "$GITHUB_OUTPUT"
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -84,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [tanstack, next]
+        framework: ${{ fromJSON(needs.changes.outputs.frameworks) }}
     steps:
       - name: Skip smoke tests when CLI is unchanged
         if: needs.changes.outputs.cli != 'true'

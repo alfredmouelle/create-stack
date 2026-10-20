@@ -281,8 +281,8 @@ const CONFIGS = [
 for (const framework of ['tanstack', 'next']) {
   describe(framework, () => {
     for (const cfg of CONFIGS) {
-      test(cfg.name, () => {
-        const { dir, result } = build({ ...cfg, framework })
+      test(cfg.name, async () => {
+        const { dir, result } = await build({ ...cfg, framework })
         const pkg = readJSON(`${dir}/package.json`)
         const deps = allDeps(pkg)
         const env = exists(`${dir}/.env.example`) ? read(`${dir}/.env.example`) : ''

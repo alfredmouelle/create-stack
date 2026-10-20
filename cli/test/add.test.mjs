@@ -8,8 +8,8 @@ const envText = (dir) => read(`${dir}/.env.example`)
 const serverHas = (dir, key) => new RegExp(`\\n {4}${key}:`).test(read(`${dir}/src/env.ts`))
 
 describe('add', () => {
-  test('vendors a capability + merges deps/env', () => {
-    const { dir } = build({ framework: 'tanstack', trpc: false, mailer: 'none' })
+  test('vendors a capability + merges deps/env', async () => {
+    const { dir } = await build({ framework: 'tanstack', trpc: false, mailer: 'none' })
 
     const res = addCapability({ projectDir: dir, cap: 'storage', adapter: 's3' })
     expect(res.framework).toBe('tanstack')
@@ -21,16 +21,16 @@ describe('add', () => {
     expect(envText(dir)).toContain('S3_BUCKET=')
   })
 
-  test('detects next from deps', () => {
-    const { dir } = build({ framework: 'next', trpc: false, mailer: 'none' })
+  test('detects next from deps', async () => {
+    const { dir } = await build({ framework: 'next', trpc: false, mailer: 'none' })
     expect(addCapability({ projectDir: dir, cap: 'cache', adapter: 'redis' }).framework).toBe(
       'next',
     )
     expect(serverHas(dir, 'REDIS_URL')).toBe(true)
   })
 
-  test('a second capability coexists with the first', () => {
-    const { dir } = build({ framework: 'tanstack', trpc: false, mailer: 'resend' })
+  test('a second capability coexists with the first', async () => {
+    const { dir } = await build({ framework: 'tanstack', trpc: false, mailer: 'resend' })
     addCapability({ projectDir: dir, cap: 'storage', adapter: 's3' })
     addCapability({ projectDir: dir, cap: 'cache', adapter: 'redis' })
 
@@ -41,8 +41,8 @@ describe('add', () => {
     expect(serverHas(dir, 'RESEND_API_KEY')).toBe(true)
   })
 
-  test('r2 vendors only its own adapter and wires the jurisdiction', () => {
-    const { dir } = build({ framework: 'tanstack', trpc: false, mailer: 'none' })
+  test('r2 vendors only its own adapter and wires the jurisdiction', async () => {
+    const { dir } = await build({ framework: 'tanstack', trpc: false, mailer: 'none' })
     addCapability({ projectDir: dir, cap: 'storage', adapter: 'r2' })
 
     expect(exists(`${dir}/src/server/storage/adapters/r2.ts`)).toBe(true)
@@ -54,8 +54,8 @@ describe('add', () => {
     expect(read(`${dir}/.env.example`)).toMatch(/^R2_JURISDICTION=$/m)
   })
 
-  test('rejects an unknown adapter', () => {
-    const { dir } = build({ framework: 'tanstack', trpc: false, mailer: 'none' })
+  test('rejects an unknown adapter', async () => {
+    const { dir } = await build({ framework: 'tanstack', trpc: false, mailer: 'none' })
     expect(() => addCapability({ projectDir: dir, cap: 'storage', adapter: 'nope' })).toThrow()
   })
 })
@@ -68,8 +68,8 @@ describe('swap', () => {
     expect(resolveTargetAdapter('cache', true)).toBe('upstash')
   })
 
-  test('re-adding a capability swaps its adapter and drops the old deps', () => {
-    const { dir } = build({
+  test('re-adding a capability swaps its adapter and drops the old deps', async () => {
+    const { dir } = await build({
       framework: 'next',
       trpc: false,
       mailer: 'none',
@@ -84,8 +84,8 @@ describe('swap', () => {
     expect('@upstash/redis' in deps(dir)).toBe(true)
   })
 
-  test('--keep retains the previous adapter and its deps', () => {
-    const { dir } = build({
+  test('--keep retains the previous adapter and its deps', async () => {
+    const { dir } = await build({
       framework: 'next',
       trpc: false,
       mailer: 'none',
@@ -99,8 +99,8 @@ describe('swap', () => {
     expect('@upstash/redis' in deps(dir)).toBe(true)
   })
 
-  test('jobs vendors the Inngest module and its route', () => {
-    const { dir } = build({
+  test('jobs vendors the Inngest module and its route', async () => {
+    const { dir } = await build({
       framework: 'next',
       trpc: false,
       mailer: 'none',
@@ -120,8 +120,8 @@ describe('swap', () => {
     expect(() => resolveTargetAdapter('jobs', 'trigger')).toThrow(/only supports inngest/)
   })
 
-  test('error-tracking vendors the Sentry wiring and reports what it will not do', () => {
-    const { dir } = build({ framework: 'next', trpc: false, mailer: 'none' })
+  test('error-tracking vendors the Sentry wiring and reports what it will not do', async () => {
+    const { dir } = await build({ framework: 'next', trpc: false, mailer: 'none' })
     const res = addCapability({ projectDir: dir, cap: 'error-tracking', adapter: null })
 
     expect(exists(`${dir}/src/instrumentation.ts`)).toBe(true)
@@ -131,8 +131,8 @@ describe('swap', () => {
     expect(res.addDeps['@sentry/nextjs']).toMatch(/^\d+\.\d+\.\d+$/)
   })
 
-  test('error-tracking wires TanStack differently', () => {
-    const { dir } = build({ framework: 'tanstack', trpc: false, mailer: 'none' })
+  test('error-tracking wires TanStack differently', async () => {
+    const { dir } = await build({ framework: 'tanstack', trpc: false, mailer: 'none' })
     const res = addCapability({ projectDir: dir, cap: 'error-tracking', adapter: null })
 
     expect(exists(`${dir}/instrument.server.mjs`)).toBe(true)
@@ -143,8 +143,8 @@ describe('swap', () => {
 })
 
 describe('mailer / lib targets', () => {
-  test('mailer swaps the adapter behind the same port', () => {
-    const { dir } = build({ framework: 'next', trpc: false, mailer: 'resend' })
+  test('mailer swaps the adapter behind the same port', async () => {
+    const { dir } = await build({ framework: 'next', trpc: false, mailer: 'resend' })
     const res = addCapability({ projectDir: dir, cap: 'mailer', adapter: 'brevo' })
 
     expect(res.swappedFrom).toBe('resend')
@@ -156,8 +156,8 @@ describe('mailer / lib targets', () => {
     expect(serverHas(dir, 'BREVO_API_KEY')).toBe(true)
   })
 
-  test('mailer can be re-added after being stripped', () => {
-    const { dir } = build({ framework: 'next', auth: 'none', trpc: false, mailer: 'none' })
+  test('mailer can be re-added after being stripped', async () => {
+    const { dir } = await build({ framework: 'next', auth: 'none', trpc: false, mailer: 'none' })
     expect(exists(`${dir}/src/server/email`)).toBe(false)
 
     addCapability({ projectDir: dir, cap: 'mailer', adapter: 'ses' })
@@ -167,8 +167,8 @@ describe('mailer / lib targets', () => {
     expect(serverHas(dir, 'AWS_REGION')).toBe(true)
   })
 
-  test('http vendors the helpers, no deps/env', () => {
-    const { dir } = build({ framework: 'tanstack', trpc: false, mailer: 'none' })
+  test('http vendors the helpers, no deps/env', async () => {
+    const { dir } = await build({ framework: 'tanstack', trpc: false, mailer: 'none' })
     const res = addCapability({ projectDir: dir, cap: 'http', adapter: null })
     expect(exists(`${dir}/src/lib/http/index.ts`)).toBe(true)
     expect(res.envKeys).toEqual([])
@@ -179,15 +179,15 @@ describe('mailer / lib targets', () => {
     expect(() => resolveTargetAdapter('http', 'fetch')).toThrow(/no provider/)
   })
 
-  test('email-ui vendors the React Email primitives', () => {
-    const { dir } = build({ framework: 'next', trpc: false, mailer: 'resend' })
+  test('email-ui vendors the React Email primitives', async () => {
+    const { dir } = await build({ framework: 'next', trpc: false, mailer: 'resend' })
     addCapability({ projectDir: dir, cap: 'email-ui', adapter: null })
     expect(exists(`${dir}/src/emails/components/index.ts`)).toBe(true)
   })
 })
 
-test('SENTRY_DSN is left empty so a fresh project boots with Sentry off', () => {
-  const { dir } = build({
+test('SENTRY_DSN is left empty so a fresh project boots with Sentry off', async () => {
+  const { dir } = await build({
     framework: 'next',
     trpc: false,
     mailer: 'none',

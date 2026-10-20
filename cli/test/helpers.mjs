@@ -10,14 +10,14 @@ export const REPO_ROOT = resolve(here, '..', '..')
 
 process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 
-const { buildProject } = await import('../lib/build.mjs')
+const { getFrameworkModule } = await import('../lib/engine.mjs')
 export const { addCapability } = await import('../lib/add.mjs')
 
 const PM = resolvePackageManager('pnpm')
 
 const tmpRoots = []
 
-export function build(cfg) {
+export async function build(cfg) {
   const dir = mkdtempSync(join(tmpdir(), 'create-stack-test-'))
   tmpRoots.push(dir)
   const projectDir = join(dir, cfg.name ?? 'app')
@@ -27,19 +27,27 @@ export function build(cfg) {
     auth: cfg.auth,
     mailer: cfg.mailer,
   })
-  const result = buildProject({
+  const module = getFrameworkModule(cfg.framework)
+  const monorepo = cfg.monorepo ?? false
+  await module.assemble({
     projectDir,
-    projectName: cfg.name ?? 'app',
-    framework: cfg.framework,
+    trpc,
+    database,
+    auth,
+    mailer: mailerProvider,
+    capabilities: cfg.capabilities ?? {},
+    alias: cfg.alias ?? '~',
+    monorepo,
+    packageManager: cfg.pm ? resolvePackageManager(cfg.pm) : PM,
+  })
+  const result = {
     trpc,
     database,
     auth,
     mailerProvider,
-    capabilities: cfg.capabilities ?? {},
-    alias: cfg.alias,
-    monorepo: cfg.monorepo ?? false,
-    pm: cfg.pm ? resolvePackageManager(cfg.pm) : PM,
-  })
+    keptMailer: mailerProvider !== 'none',
+    monorepo,
+  }
   return { dir: projectDir, result }
 }
 
