@@ -17,6 +17,13 @@ const result = resolveStackConfiguration({ database: 'convex' })
 // result.cliArgs is ['--database', 'convex']
 ```
 
+`FRAMEWORK_SUPPORT` declares each framework's label, maturity (`stable` or
+`preview`), supported values per stack axis, and ordered recommendations. The
+resolver takes omitted choices from the selected framework's recommendations,
+using the first one compatible with the other choices, and reports an explicit
+choice the framework does not support as a choice conflict. The CLI and the
+marketing configurator read the framework list from it.
+
 The module is pure TypeScript. It has no filesystem, CLI, framework, React, or
 browser-global dependency. Explicit conflicts leave `cliArgs` empty so callers
 must handle them before project generation.

@@ -12,6 +12,49 @@ export type Mailer = (typeof MAILERS)[number]
 
 export type StackAxis = 'framework' | 'database' | 'auth' | 'trpc' | 'mailer'
 
+export type FrameworkMaturity = 'stable' | 'preview'
+
+export type FrameworkSupport = {
+  readonly label: string
+  readonly maturity: FrameworkMaturity
+  readonly supports: {
+    readonly database: readonly Database[]
+    readonly auth: readonly Auth[]
+    readonly trpc: readonly boolean[]
+    readonly mailer: readonly Mailer[]
+  }
+  readonly recommendations: {
+    readonly database: readonly Database[]
+    readonly auth: readonly Auth[]
+    readonly trpc: boolean
+    readonly mailer: readonly Mailer[]
+  }
+}
+
+export type FrameworkSupportCatalog = Readonly<Record<Framework, FrameworkSupport>>
+
+const FULL_STACK_SUPPORT = {
+  supports: {
+    database: DATABASES,
+    auth: AUTHS,
+    trpc: [true, false],
+    mailer: MAILERS,
+  },
+  recommendations: {
+    database: ['drizzle'],
+    auth: ['better-auth', 'clerk'],
+    trpc: true,
+    mailer: ['resend'],
+  },
+} satisfies Pick<FrameworkSupport, 'supports' | 'recommendations'>
+
+export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
+  tanstack: { label: 'TanStack Start', maturity: 'stable', ...FULL_STACK_SUPPORT },
+  next: { label: 'Next.js', maturity: 'stable', ...FULL_STACK_SUPPORT },
+}
+
+export const RECOMMENDED_FRAMEWORK: Framework = 'tanstack'
+
 export type ResolutionReasonKind = 'explicit' | 'recommended' | 'dependency' | 'minimal'
 
 export type StackChoiceValue = Framework | Database | Auth | Mailer | boolean
@@ -53,11 +96,6 @@ export interface StackConfigurationResult {
   cliArgs: readonly string[]
 }
 
-const DEFAULT_FRAMEWORK: Framework = 'tanstack'
-const DEFAULT_DATABASE: Database = 'drizzle'
-const DEFAULT_AUTH: Auth = 'better-auth'
-const DEFAULT_MAILER: Mailer = 'resend'
-
 function assertChoice(
   value: unknown,
   name: string,
@@ -86,86 +124,126 @@ function explicitChoices(input: StackConfigurationInput) {
   }
 }
 
-function findConflicts(choices: ReturnType<typeof explicitChoices>): readonly ChoiceConflict[] {
-  const conflicts: ChoiceConflict[] = []
+const listFormat = new Intl.ListFormat('en', { type: 'disjunction' })
 
-  if (choices.database === 'convex' && choices.auth === 'better-auth') {
-    conflicts.push({
-      axes: ['database', 'auth'],
-      message: 'Better Auth cannot be used with Convex',
-    })
+function unsupportedChoiceMessage(
+  framework: FrameworkSupport,
+  axis: Exclude<StackAxis, 'framework'>,
+  value: StackChoiceValue,
+): string {
+  if (axis === 'trpc') {
+    return value
+      ? `${framework.label} does not support tRPC; use --no-trpc`
+      : `${framework.label} requires tRPC; remove --no-trpc`
   }
-  if (choices.database === 'convex' && choices.trpc === true) {
-    conflicts.push({
-      axes: ['database', 'trpc'],
-      message: 'Convex cannot be combined with tRPC',
-    })
-  }
-  if (choices.auth === 'better-auth' && choices.database === 'none') {
-    conflicts.push({
-      axes: ['auth', 'database'],
-      message: 'Better Auth requires a database; remove --no-db or choose another auth',
-    })
-  }
-  if (choices.auth === 'better-auth' && choices.mailer === 'none') {
-    conflicts.push({
-      axes: ['auth', 'mailer'],
-      message: 'Better Auth requires mail; remove --no-mail or choose another auth',
-    })
-  }
-
-  return conflicts
+  const supported = framework.supports[axis]
+  return `${framework.label} does not support ${axis} ${JSON.stringify(value)}; choose ${listFormat.format(supported)}`
 }
 
-function resolveDatabase(choices: ReturnType<typeof explicitChoices>, minimal: boolean): Database {
-  if (choices.database === undefined && minimal && choices.auth === 'better-auth') {
-    return DEFAULT_DATABASE
-  }
-  return choices.database ?? (minimal ? 'none' : DEFAULT_DATABASE)
-}
-
-function resolveAuth(
+function findUnsupportedChoices(
   choices: ReturnType<typeof explicitChoices>,
-  database: Database,
-  minimal: boolean,
-): Auth {
-  if (choices.auth !== undefined) return choices.auth
-  if (minimal) return 'none'
-  if (database === 'convex' || database === 'none' || choices.mailer === 'none') return 'clerk'
-  return DEFAULT_AUTH
+  framework: FrameworkSupport,
+): ChoiceConflict[] {
+  const axes = ['database', 'auth', 'trpc', 'mailer'] as const
+  return axes.flatMap((axis) => {
+    const value = choices[axis]
+    const supported: readonly StackChoiceValue[] = framework.supports[axis]
+    if (value === undefined || supported.includes(value)) return []
+    return [
+      { axes: ['framework', axis], message: unsupportedChoiceMessage(framework, axis, value) },
+    ]
+  })
 }
 
-function resolveTrpc(
-  choices: ReturnType<typeof explicitChoices>,
-  database: Database,
-  minimal: boolean,
-): boolean {
-  return choices.trpc ?? (minimal ? false : database !== 'convex')
+type StackSelection = Partial<Pick<StackConfiguration, 'database' | 'auth' | 'trpc' | 'mailer'>>
+
+type CompatibilityRule = {
+  readonly axes: readonly [StackAxis, StackAxis]
+  readonly message: string
+  readonly violatedBy: (selection: StackSelection) => boolean
 }
 
-function resolveMailer(
+const COMPATIBILITY_RULES: readonly CompatibilityRule[] = [
+  {
+    axes: ['database', 'auth'],
+    message: 'Better Auth cannot be used with Convex',
+    violatedBy: ({ database, auth }) => database === 'convex' && auth === 'better-auth',
+  },
+  {
+    axes: ['database', 'trpc'],
+    message: 'Convex cannot be combined with tRPC',
+    violatedBy: ({ database, trpc }) => database === 'convex' && trpc === true,
+  },
+  {
+    axes: ['auth', 'database'],
+    message: 'Better Auth requires a database; remove --no-db or choose another auth',
+    violatedBy: ({ auth, database }) => auth === 'better-auth' && database === 'none',
+  },
+  {
+    axes: ['auth', 'mailer'],
+    message: 'Better Auth requires mail; remove --no-mail or choose another auth',
+    violatedBy: ({ auth, mailer }) => auth === 'better-auth' && mailer === 'none',
+  },
+]
+
+const fitsAxis = (axis: StackAxis, selection: StackSelection): boolean =>
+  COMPATIBILITY_RULES.every((rule) => !rule.axes.includes(axis) || !rule.violatedBy(selection))
+
+function findConflicts(
   choices: ReturnType<typeof explicitChoices>,
-  auth: Auth,
-  minimal: boolean,
-): Mailer {
-  if (choices.mailer === undefined && minimal && auth === 'better-auth') {
-    return DEFAULT_MAILER
-  }
-  return choices.mailer ?? (minimal ? 'none' : auth === 'better-auth' ? DEFAULT_MAILER : 'none')
+  framework: FrameworkSupport,
+): readonly ChoiceConflict[] {
+  return [
+    ...findUnsupportedChoices(choices, framework),
+    ...COMPATIBILITY_RULES.filter((rule) => rule.violatedBy(choices)).map(({ axes, message }) => ({
+      axes,
+      message,
+    })),
+  ]
+}
+
+function choose<Value>(
+  preferences: readonly Value[],
+  fallback: Value,
+  preferFallback: boolean,
+  fits: (value: Value) => boolean,
+): Value {
+  if (preferFallback && fits(fallback)) return fallback
+  return preferences.find(fits) ?? fallback
 }
 
 function resolveConfiguration(
   choices: ReturnType<typeof explicitChoices>,
+  framework: FrameworkSupport,
   minimal: boolean,
 ): StackConfiguration {
-  const database = resolveDatabase(choices, minimal)
-  const auth = resolveAuth(choices, database, minimal)
+  const { recommendations } = framework
+  const database =
+    choices.database ??
+    choose(recommendations.database, 'none', minimal, (database) =>
+      fitsAxis('database', { ...choices, database }),
+    )
+  const auth =
+    choices.auth ??
+    choose(recommendations.auth, 'none', minimal, (auth) =>
+      fitsAxis('auth', { ...choices, database, auth }),
+    )
+  const trpc =
+    choices.trpc ??
+    choose(recommendations.trpc ? [true] : [], false, minimal, (trpc) =>
+      fitsAxis('trpc', { ...choices, database, auth, trpc }),
+    )
+  const mailer =
+    choices.mailer ??
+    choose(recommendations.mailer, 'none', true, (mailer) =>
+      fitsAxis('mailer', { ...choices, database, auth, trpc, mailer }),
+    )
   return {
-    framework: choices.framework ?? DEFAULT_FRAMEWORK,
+    framework: choices.framework ?? RECOMMENDED_FRAMEWORK,
     database,
     auth,
-    trpc: resolveTrpc(choices, database, minimal),
-    mailer: resolveMailer(choices, auth, minimal),
+    trpc,
+    mailer,
     minimal,
   }
 }
@@ -275,17 +353,19 @@ function cliArgsFor(input: StackConfigurationInput): readonly string[] {
 
 export function resolveStackConfiguration(
   input: StackConfigurationInput = {},
+  frameworkSupport: FrameworkSupportCatalog = FRAMEWORK_SUPPORT,
 ): StackConfigurationResult {
   validateBoolean(input.trpc, 'trpc')
   validateBoolean(input.minimal, 'minimal')
 
   const choices = explicitChoices(input)
-  const conflicts = findConflicts(choices)
+  const framework = frameworkSupport[choices.framework ?? RECOMMENDED_FRAMEWORK]
+  const conflicts = findConflicts(choices, framework)
   const minimal = input.minimal === true
   const hasExplicitChoice = Object.values(choices).some((value) => value !== undefined)
   const recommendationMessage =
     !minimal && !hasExplicitChoice ? 'recommended stack' : 'applicable recommendation'
-  const configuration = resolveConfiguration(choices, minimal)
+  const configuration = resolveConfiguration(choices, framework, minimal)
   const reasons = createReasons(choices, configuration, minimal, recommendationMessage)
   completeDependencyReasons(choices, configuration, reasons)
 

@@ -5,8 +5,6 @@ import { assembleWithLegacyBuild } from './legacy-assembly.ts'
 
 export const tanstackModule: FrameworkModule = {
   id: 'tanstack',
-  label: 'TanStack Start',
-  maturity: 'stable',
   detect: (applicationDir) =>
     declaresDependency(applicationDir, ['@tanstack/react-start', '@tanstack/react-router']),
   assemble: assembleWithLegacyBuild('tanstack'),

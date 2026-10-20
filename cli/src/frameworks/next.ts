@@ -5,8 +5,6 @@ import { assembleWithLegacyBuild } from './legacy-assembly.ts'
 
 export const nextModule: FrameworkModule = {
   id: 'next',
-  label: 'Next.js',
-  maturity: 'stable',
   detect: (applicationDir) => declaresDependency(applicationDir, ['next']),
   assemble: assembleWithLegacyBuild('next'),
   additions: { componentRoot: 'src/app/layout.tsx' },

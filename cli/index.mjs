@@ -22,12 +22,7 @@ import {
   resolveCreationProvider,
 } from './lib/capabilities.mjs'
 import { resolveDatabase } from './lib/database.mjs'
-import {
-  createProject,
-  detectFrameworkModule,
-  frameworkModules,
-  runVerificationGate,
-} from './lib/engine.mjs'
+import { createProject, detectFrameworkModule, runVerificationGate } from './lib/engine.mjs'
 import {
   detectPackageManager,
   detectProjectPackageManager,
@@ -42,16 +37,17 @@ import {
 } from './lib/project-target.mjs'
 import { COMPONENT_CATALOG, COMPONENT_NAMES } from './lib/registry.mjs'
 import { installRegistryComponents, preflightRegistryComponents } from './lib/shadcn.mjs'
-import { resolveCreationConfiguration } from './lib/stack-config.mjs'
+import {
+  FRAMEWORK_SUPPORT,
+  FRAMEWORKS,
+  RECOMMENDED_FRAMEWORK,
+  resolveCreationConfiguration,
+} from './lib/stack-config.mjs'
 import { CLI_VERSION } from './lib/version.mjs'
 
 const detectedPm = detectPackageManager()
 
 const VERSION = CLI_VERSION
-
-const FRAMEWORK_IDS = frameworkModules.map((module) => module.id)
-
-const RECOMMENDED_FRAMEWORK = resolveCreationConfiguration().framework
 
 const HELP = `create-stack: fork a base app, strip it to your selection.
 
@@ -65,7 +61,7 @@ Run a command with no args for an interactive picker; pass a selection flag
 See \`add --help\` for its options.
 
 Scaffold flags:
-  -f, --framework [${FRAMEWORK_IDS.join('|')}]   Base app to fork (bare/default = ${RECOMMENDED_FRAMEWORK})
+  -f, --framework [${FRAMEWORKS.join('|')}]   Base app to fork (bare/default = ${RECOMMENDED_FRAMEWORK})
   --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
@@ -284,8 +280,8 @@ function collectCapabilityFlags(flags) {
 function resolveFrameworkFlag(flags) {
   const value = flags.f ?? flags.framework
   if (value === true || value == null) return RECOMMENDED_FRAMEWORK
-  if (FRAMEWORK_IDS.includes(value)) return value
-  const expected = new Intl.ListFormat('en', { type: 'disjunction' }).format(FRAMEWORK_IDS)
+  if (FRAMEWORKS.includes(value)) return value
+  const expected = new Intl.ListFormat('en', { type: 'disjunction' }).format(FRAMEWORKS)
   throw new Error(`Invalid framework: ${JSON.stringify(value)} (expected ${expected})`)
 }
 
@@ -415,7 +411,7 @@ async function collectFromPrompts(argDir) {
     await p.select({
       message: 'Framework',
       initialValue: RECOMMENDED_FRAMEWORK,
-      options: frameworkModules.map(({ id, label }) => ({ value: id, label })),
+      options: FRAMEWORKS.map((id) => ({ value: id, label: FRAMEWORK_SUPPORT[id].label })),
     }),
   )
 
