@@ -170,7 +170,7 @@ test('publishes the changelog route', async ({ page }) => {
   await openPage(page, '/changelog')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Changelog' })).toBeVisible()
-  await expect(page.getByText('0.12.0', { exact: true })).toBeVisible()
+  await expect(page.locator('#v-0-12-0').getByText('0.12.0', { exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'View source ↗' })).toHaveAttribute(
     'href',
     'https://github.com/alfredmouelle/create-stack/blob/main/cli/CHANGELOG.md',
