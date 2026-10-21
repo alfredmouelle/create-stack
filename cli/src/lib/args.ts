@@ -8,7 +8,7 @@ import {
   scaffoldFlag,
   scaffoldFlagSpellings,
   scaffoldFlagSwitches,
-} from '../../../packages/stack-config/src/index.ts'
+} from '@alfredmouelle/stack-config'
 import type { Monorepo } from '../framework-module.ts'
 
 export type OptionValue = string | true

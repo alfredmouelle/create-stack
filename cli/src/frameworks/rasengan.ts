@@ -1,6 +1,6 @@
 import { appendFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { FRAMEWORK_SUPPORT } from '../../../packages/stack-config/src/index.ts'
+import { FRAMEWORK_SUPPORT } from '@alfredmouelle/stack-config'
 import type { FrameworkModule } from '../framework-module.ts'
 import { readJsonObject, writeJsonObject } from '../javascript/json.ts'
 import { declaresDependency } from '../javascript/package-manifest.ts'

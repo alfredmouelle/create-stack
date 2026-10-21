@@ -1,4 +1,4 @@
-import { FRAMEWORK_SUPPORT } from '../../../packages/stack-config/src/index.ts'
+import { FRAMEWORK_SUPPORT } from '@alfredmouelle/stack-config'
 import type { FrameworkModule } from '../framework-module.ts'
 import { declaresDependency } from '../javascript/package-manifest.ts'
 import { assembleProject } from '../javascript/project-assembly.ts'

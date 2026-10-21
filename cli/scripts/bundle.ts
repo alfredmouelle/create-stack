@@ -16,6 +16,7 @@ const APP_EXCLUDES = new Set([
   'node_modules',
   'dist',
   '.turbo',
+  'turbo.json',
   'start-database.sh',
   ...frameworkModules.flatMap(frameworkAssetExcludes),
 ])

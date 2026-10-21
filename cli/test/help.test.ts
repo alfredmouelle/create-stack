@@ -1,12 +1,8 @@
 import { spawnSync } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { optionSpelling, SCAFFOLD_FLAGS, scaffoldFlagSpellings } from '@alfredmouelle/stack-config'
 import { beforeAll, expect, test } from 'vitest'
-import {
-  optionSpelling,
-  SCAFFOLD_FLAGS,
-  scaffoldFlagSpellings,
-} from '../../packages/stack-config/src/index.ts'
 
 const cliEntry = resolve(dirname(fileURLToPath(import.meta.url)), '../index.mjs')
 

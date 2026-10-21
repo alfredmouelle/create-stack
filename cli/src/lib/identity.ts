@@ -1,5 +1,5 @@
 import { basename } from 'node:path'
-import type { Database } from '../../../packages/stack-config/src/index.ts'
+import type { Database } from '@alfredmouelle/stack-config'
 import type { PackageManager } from '../framework-module.ts'
 import { readJsonObject, writeJsonObject } from '../javascript/json.ts'
 import { TEMPLATES } from './paths.ts'

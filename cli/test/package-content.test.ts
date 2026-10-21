@@ -207,7 +207,6 @@ test('published package includes the local registry and its executable shadcn ru
     ...objectField(packageJson, 'dependencies'),
     ...objectField(packageJson, 'optionalDependencies'),
     ...objectField(packageJson, 'peerDependencies'),
-    ...objectField(packageJson, 'devDependencies'),
   }).not.toHaveProperty('@alfredmouelle/stack-config')
 
   const installed = spawnSync('pnpm', ['add', '--ignore-scripts', archive], {

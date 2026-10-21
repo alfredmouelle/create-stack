@@ -4,7 +4,7 @@ import {
   type StackAxis,
   type StackConfiguration,
   type StackConfigurationInput,
-} from '../../packages/stack-config/src/index.ts'
+} from '@alfredmouelle/stack-config'
 
 export type CreationConfiguration = StackConfiguration & {
   readonly mailerProvider: Mailer

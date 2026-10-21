@@ -1,6 +1,6 @@
 import { accessSync, constants } from 'node:fs'
+import type { Framework } from '@alfredmouelle/stack-config'
 import { afterAll, describe, expect, test } from 'vitest'
-import type { Framework } from '../../packages/stack-config/src/index.ts'
 import type { Monorepo } from '../src/framework-module.ts'
 import { build, cleanup, exists, REPO_ROOT, read } from './helpers.ts'
 import { readField, readJson } from './json.ts'

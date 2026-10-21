@@ -1,5 +1,5 @@
 import { chmodSync } from 'node:fs'
-import type { Database } from '../../../packages/stack-config/src/index.ts'
+import type { Database } from '@alfredmouelle/stack-config'
 import { readJsonObject, writeJsonObject } from '../javascript/json.ts'
 import { packageName } from './identity.ts'
 import { TEMPLATES } from './paths.ts'

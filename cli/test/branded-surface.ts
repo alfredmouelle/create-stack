@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import type { Framework } from '@alfredmouelle/stack-config'
 import type { ExpectStatic } from 'vitest'
-import type { Framework } from '../../packages/stack-config/src/index.ts'
 
 export function assertBrandedSurface(
   projectDir: string,

@@ -347,7 +347,7 @@ const UNAVAILABLE_CHOICES: Partial<Record<StackAxis, Readonly<Record<string, str
   },
 }
 
-function assertChoice<Value extends string>(
+export function parseStackChoice<Value extends string>(
   value: unknown,
   name: StackAxis,
   choices: readonly Value[],
@@ -374,13 +374,13 @@ type ExplicitChoices = {
 
 function explicitChoices(input: StackConfigurationInput): ExplicitChoices {
   return {
-    framework: assertChoice(input.framework, 'framework', FRAMEWORKS),
-    database: assertChoice(input.database, 'database', DATABASES),
-    auth: assertChoice(input.auth, 'auth', AUTHS),
+    framework: parseStackChoice(input.framework, 'framework', FRAMEWORKS),
+    database: parseStackChoice(input.database, 'database', DATABASES),
+    auth: parseStackChoice(input.auth, 'auth', AUTHS),
     trpc: input.trpc,
-    mailer: assertChoice(input.mailer, 'mailer', MAILERS),
-    formatter: assertChoice(input.formatter, 'formatter', FORMATTERS),
-    linter: assertChoice(input.linter, 'linter', LINTERS),
+    mailer: parseStackChoice(input.mailer, 'mailer', MAILERS),
+    formatter: parseStackChoice(input.formatter, 'formatter', FORMATTERS),
+    linter: parseStackChoice(input.linter, 'linter', LINTERS),
   }
 }
 

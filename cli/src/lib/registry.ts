@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, isAbsolute, join, relative, resolve } from 'node:path'
+import type { ComponentName } from '@alfredmouelle/stack-config'
 import { type RegistryItem, registryItemSchema, registrySchema } from 'shadcn/schema'
-import type { ComponentName } from '../../../packages/stack-config/src/index.ts'
 import { isJsonObject, readJsonObject } from '../javascript/json.ts'
 
 export type CatalogFile = {

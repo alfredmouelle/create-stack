@@ -11,11 +11,8 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
+import { FRAMEWORK_SUPPORT, resolveStackConfiguration } from '@alfredmouelle/stack-config'
 import { afterAll, describe, expect, test } from 'vitest'
-import {
-  FRAMEWORK_SUPPORT,
-  resolveStackConfiguration,
-} from '../../packages/stack-config/src/index.ts'
 import { frameworkModules } from '../src/framework-registry.ts'
 import { createProject, detectFrameworkModule } from '../src/index.ts'
 import {

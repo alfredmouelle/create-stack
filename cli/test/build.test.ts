@@ -1,6 +1,6 @@
 import { accessSync, constants } from 'node:fs'
+import type { Auth, Database, Framework } from '@alfredmouelle/stack-config'
 import { afterAll, describe, expect, test } from 'vitest'
-import type { Auth, Database, Framework } from '../../packages/stack-config/src/index.ts'
 import type { CapabilitySelection } from '../src/framework-module.ts'
 import {
   type BuildConfig,

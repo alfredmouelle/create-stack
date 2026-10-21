@@ -1,10 +1,10 @@
 import { join } from 'node:path'
+import type { Database } from '@alfredmouelle/stack-config'
 import { type creationMetadata, renderProjectReadme } from '#lib/identity.ts'
 import { PM_VERSIONS } from '#lib/package-manager.ts'
 import { TEMPLATES } from '#lib/paths.ts'
 import { NATIVE_BUILD_DEPS } from '#lib/scaffold.ts'
 import { copy, remove, write } from '#lib/util.ts'
-import type { Database } from '../../../packages/stack-config/src/index.ts'
 import type { Monorepo, PackageManager } from '../framework-module.ts'
 import { isJsonObject, type JsonObject, readJsonObject, writeJsonObject } from './json.ts'
 

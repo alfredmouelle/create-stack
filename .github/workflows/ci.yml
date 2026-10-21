@@ -19,6 +19,7 @@ jobs:
     outputs:
       marketing: ${{ steps.filter.outputs.marketing }}
       cli: ${{ steps.filter.outputs.cli }}
+      packages: ${{ steps.filter.outputs.packages }}
       frameworks: ${{ steps.frameworks.outputs.frameworks }}
     steps:
       - name: Check out repository
@@ -39,12 +40,15 @@ jobs:
             marketing:
               - 'marketing/**'
               - 'cli/CHANGELOG.md'
+              - 'cli/package.json'
               - 'packages/stack-config/**'
+              - 'packages/*/capability.json'
               - '.github/workflows/ci.yml'
               - '.github/workflows/deploy-marketing.yml'
               - 'package.json'
               - 'pnpm-workspace.yaml'
               - 'pnpm-lock.yaml'
+              - '.npmrc'
             cli:
               - 'cli/**'
               - 'apps/**'
@@ -54,6 +58,18 @@ jobs:
               - 'package.json'
               - 'pnpm-workspace.yaml'
               - 'pnpm-lock.yaml'
+              - '.npmrc'
+              - 'turbo.json'
+              - 'tsconfig.base.json'
+            packages:
+              - 'packages/**'
+              - 'cli/**'
+              - 'apps/**'
+              - '.github/workflows/ci.yml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'pnpm-lock.yaml'
+              - '.npmrc'
               - 'turbo.json'
               - 'tsconfig.base.json'
 
@@ -76,7 +92,7 @@ jobs:
         run: pnpm check
 
   build-tests:
-    name: cli (unit, acceptance)
+    name: cli (typecheck, unit, acceptance)
     needs: changes
     if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-latest
@@ -92,8 +108,32 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Typecheck CLI
+        run: pnpm --filter @alfredmouelle/create-stack typecheck
       - name: Run CLI tests
         run: pnpm --filter @alfredmouelle/create-stack test
+
+  shared-packages:
+    name: shared packages (typecheck, tests)
+    needs: changes
+    if: needs.changes.outputs.packages == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck shared packages
+        run: pnpm --filter "./packages/*" typecheck
+      - name: Run shared package tests
+        run: pnpm --filter "./packages/*" test
 
   base-apps:
     name: reference applications (typecheck, tests)

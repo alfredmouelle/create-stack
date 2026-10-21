@@ -14,6 +14,7 @@ on:
       - package.json
       - pnpm-workspace.yaml
       - pnpm-lock.yaml
+      - .npmrc
   workflow_dispatch:
     inputs:
       worker_url:
