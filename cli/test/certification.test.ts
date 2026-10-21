@@ -178,6 +178,7 @@ function assetSignature(root: string, module: FrameworkModule): Record<string, s
         !excludedDirectories.has(entry.name) &&
         !entry.name.endsWith('.tsbuildinfo') &&
         entry.name !== 'start-database.sh' &&
+        entry.name !== 'turbo.json' &&
         !entry.name.startsWith('.env')
       ) {
         files.push(relativePath)
