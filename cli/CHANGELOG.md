@@ -12,8 +12,26 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+### Added
+
+- `--formatter biome|prettier` and `--linter biome|oxlint` choose the generated project's
+  quality tools, and interactive creation asks for both. Biome stays recommended for
+  each, and a bare flag selects it. `--no-formatter`, `--no-linter`, oxfmt, and ESLint
+  are rejected with an explanation before generation.
+- The Prettier configuration sorts imports and Tailwind classes with the house style
+  (single quotes, no semicolons, trailing commas, width 100). The Oxlint configuration
+  is always type-aware, with its strict rule categories as errors.
+- A choice the selected framework does not support is reported as a choice conflict
+  before any file is written, and recommendations come from the selected framework.
+
 ### Changed
 
+- Projects are assembled from the parts of each framework's reference application that
+  the configuration selects, instead of copying a full base app and deleting what was
+  not selected. Generated applications keep the same behavior for every database,
+  authentication provider, mailer, tRPC choice, and capability.
+- The pre-commit hook formats and lints staged files with the selected tools, and the
+  first commit waits for install, format, typecheck, and lint with those tools.
 - Every generated project enables the same strict TypeScript options, whatever its
   framework: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
   `noImplicitOverride`, `noUnusedLocals`, `noUnusedParameters`,
@@ -23,6 +41,11 @@ refactors, and documentation-only changes wait for the next release that adds pr
   to the Biome configuration and Git hooks.
 - `add component date-picker` passes the calendar's optional `locale` only when it is
   set, so the shadcn calendar typechecks under `exactOptionalPropertyTypes`.
+
+### Removed
+
+- The fork-and-strip generation path, with its strip and testing removal steps and its
+  `no-trpc` replacement templates.
 
 ### Fixed
 

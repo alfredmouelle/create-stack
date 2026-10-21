@@ -2,7 +2,7 @@ export const PUBLIC_SITE_ORIGIN = 'https://create-stack.alfredmouelle.com'
 
 export const SITE_TITLE = 'Create Stack. A real app wired around your choices'
 export const SITE_DESCRIPTION =
-  'Create Stack generates a working SaaS project from your choices. It wires the selected pieces together and removes the rest.'
+  'Create Stack generates a working SaaS project from your choices. It assembles only the selected pieces from a tested reference application.'
 export const SITE_NAME = 'create-stack'
 export const OG_IMAGE_PATH = '/og-image.png'
 export const OG_IMAGE_ALT = 'Create Stack. A real app wired around your choices'

@@ -50,7 +50,7 @@ const detectedPm = detectPackageManager()
 
 const VERSION = CLI_VERSION
 
-const HELP = `create-stack: fork a base app, strip it to your selection.
+const HELP = `create-stack: assemble your selected stack from a tested reference application.
 
 Usage:
   create-stack [project] [flags]          Scaffold a new project
@@ -62,16 +62,16 @@ Run a command with no args for an interactive picker; pass a selection flag
 See \`add --help\` for its options.
 
 Scaffold flags:
-  -f, --framework [${FRAMEWORKS.join('|')}]   Framework (bare/default = ${RECOMMENDED_FRAMEWORK})
+${`  -f, --framework [${FRAMEWORKS.join('|')}]`.padEnd(34)} Framework (bare/default = ${RECOMMENDED_FRAMEWORK})
   --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --db, --database [drizzle|prisma|convex|none] ORM the app ships (bare/default = drizzle)
   --auth <better-auth|clerk|none>  Auth provider (default better-auth)
   --mail, --mailer [resend|brevo|ses|none] Mail provider (bare/default = resend)
-  --formatter [biome|prettier]       Formatter (bare/default = biome, required)
-  --linter [biome|oxlint]            Linter (bare/default = biome, required)
-  --minimal                        Start with a frontend-only project
+  --formatter [biome|prettier]     Formatter (bare/default = biome; cannot be excluded)
+  --linter [biome|oxlint]          Linter (bare/default = biome; cannot be excluded)
+  --minimal                        Start with the framework's smallest runnable project
   --trpc / --no-trpc               Include or explicitly exclude tRPC
   --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
   --no-install                     Skip install + verification
@@ -84,7 +84,12 @@ Capability flags (omit to skip; pass with no value for the default adapter):
   --storage  --cache  --logger  --analytics    swappable behind a port
   --jobs [inngest]  --errors [sentry]           single provider
   --error-tracking [sentry]                     readable alias for --errors
-  Adapters are listed in the interactive picker, or run \`add --help\`.`
+  Adapters are listed in the interactive picker, or run \`add --help\`.
+
+A choice the selected framework does not support is reported as a conflict
+before any file is written. Every project gets the strict quality profile
+(strict TypeScript, Git hooks, editor settings); the first commit is created
+only after install, format, typecheck, and lint pass.`
 
 const ADD_HELP = `create-stack add: enrich an existing application.
 
@@ -424,7 +429,7 @@ async function pickAdapters(caps) {
 }
 
 async function collectFromPrompts(argDir) {
-  p.intro('create-stack: fork a base app, strip it to your selection')
+  p.intro('create-stack: assemble your selected stack')
 
   const name = cancelled(
     await p.text({

@@ -12,7 +12,7 @@ export const features = [
   {
     label: 'A clean handoff',
     title: 'Take over a project you can read.',
-    text: 'Create Stack keeps the choices you made, removes the rest, and runs TypeScript and Biome before it finishes.',
+    text: 'Create Stack copies only the pieces you chose, then runs TypeScript and your formatter and linter before it finishes.',
   },
 ] as const
 
@@ -20,18 +20,20 @@ export const terminalTranscript = {
   version: 1,
   lines: [
     { kind: 'command', text: 'pnpm dlx @alfredmouelle/create-stack@latest orbit' },
-    { kind: 'muted', text: 'create-stack: fork a base app, strip it to your selection' },
+    { kind: 'muted', text: 'create-stack: assemble your selected stack' },
     { kind: 'output', text: 'Target: orbit' },
     { kind: 'output', text: 'Framework: TanStack Start' },
     { kind: 'output', text: 'Database: drizzle' },
     { kind: 'output', text: 'Auth: better-auth' },
     { kind: 'output', text: 'tRPC: yes' },
     { kind: 'output', text: 'Mailer: resend' },
-    { kind: 'muted', text: 'Forking + stripping the base app' },
+    { kind: 'output', text: 'Formatter: biome' },
+    { kind: 'output', text: 'Linter: biome' },
+    { kind: 'muted', text: 'Assembling the selected stack parts' },
     { kind: 'success', text: '✓ Project scaffolded' },
     { kind: 'muted', text: 'pnpm install' },
-    { kind: 'muted', text: 'Verifying (typecheck + biome)' },
-    { kind: 'success', text: '✓ typecheck + biome clean' },
+    { kind: 'muted', text: 'Verifying (typecheck + selected quality tools)' },
+    { kind: 'success', text: '✓ typecheck + selected quality tools clean' },
   ],
 } as const
 

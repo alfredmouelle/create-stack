@@ -37,6 +37,9 @@ Only surface normalization when it affects a stated preference:
 
 - Convex drops tRPC and cannot back better-auth.
 - better-auth requires a database and a real mailer.
+- Each framework accepts only the options it supports, and the formatter and
+  linter always have a value. The CLI reports any other choice as a conflict
+  before writing files; map that preference to a supported value with the user.
 
 If the user explicitly wants the TTY wizard, give them
 `create-stack <project-dir>` and hand over that interactive step.
