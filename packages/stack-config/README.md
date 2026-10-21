@@ -24,6 +24,12 @@ using the first one compatible with the other choices, and reports an explicit
 choice the framework does not support as a choice conflict. The CLI and the
 marketing configurator read the framework list from it.
 
-The module is pure TypeScript. It has no filesystem, CLI, framework, React, or
-browser-global dependency. Explicit conflicts leave `cliArgs` empty so callers
+It also holds the CLI facts the website shows: the minimum Node version,
+package managers, monorepo orchestrators, components, the import alias rule,
+and each framework's monorepo outputs. `CAPABILITY_CATALOG` reads capability
+names, providers, and recommended providers from the `packages/*/capability.json`
+manifests, so a new adapter reaches the CLI and the website without other edits.
+
+The module is pure TypeScript plus static JSON imports. It has no filesystem,
+CLI, framework, React, or browser-global dependency. Explicit conflicts leave `cliArgs` empty so callers
 must handle them before project generation.

@@ -4,6 +4,7 @@ export {
   FRAMEWORK_SUPPORT,
   frameworkTitle,
   MAILERS,
+  PACKAGE_MANAGERS,
   QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,
 } from '../../packages/stack-config/src/index.ts'
@@ -43,7 +44,6 @@ export { resolveDatabase } from './lib/database.ts'
 export {
   detectPackageManager,
   detectProjectPackageManager,
-  PM_NAMES,
   resolveExplicitPackageManager,
   resolvePackageManager,
 } from './lib/package-manager.ts'

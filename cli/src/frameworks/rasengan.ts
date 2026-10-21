@@ -1,6 +1,6 @@
 import { appendFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { FRAMEWORK_SUPPORT } from '../../../packages/stack-config/src/index.ts'
+import { FRAMEWORK_SUPPORT, MONOREPO_OUTPUTS } from '../../../packages/stack-config/src/index.ts'
 import type { FrameworkModule } from '../framework-module.ts'
 import { readJsonObject, writeJsonObject } from '../javascript/json.ts'
 import { declaresDependency } from '../javascript/package-manifest.ts'
@@ -12,7 +12,7 @@ import { PM_VERSIONS } from '../lib/package-manager.ts'
 import { rasenganAdditions } from './rasengan-additions.ts'
 import { rasenganReference } from './rasengan-parts.ts'
 
-const monorepoOutputs = ['dist/**', '.rasengan/**']
+const monorepoOutputs = MONOREPO_OUTPUTS.rasengan
 const { label, maturity } = FRAMEWORK_SUPPORT.rasengan
 
 export const rasenganModule: FrameworkModule = {

@@ -1,6 +1,6 @@
-import type { StackConfiguration } from '@alfredmouelle/stack-config'
+import type { PackageManagerName, StackConfiguration } from '@alfredmouelle/stack-config'
 import type { CaptureResult } from 'posthog-js'
-import type { BuildState, PackageManager } from './build-config'
+import type { BuildState } from './build-config'
 
 export const ANALYTICS_CONSENT_STORAGE_KEY = 'create-stack.analytics-consent'
 export const ANALYTICS_PRODUCTION_HOSTNAME = 'create-stack.alfredmouelle.com'
@@ -160,7 +160,7 @@ export function commandCopiedProperties({
   configuration,
 }: {
   source: CommandCopiedSource
-  packageManager: PackageManager
+  packageManager: PackageManagerName
   state: BuildState
   configuration: StackConfiguration
 }): Record<string, unknown> {
@@ -205,7 +205,7 @@ export function captureMarketingEvent(
 
 export function captureCommandCopied(input: {
   source: CommandCopiedSource
-  packageManager: PackageManager
+  packageManager: PackageManagerName
   state?: BuildState
   configuration?: StackConfiguration
 }): void {

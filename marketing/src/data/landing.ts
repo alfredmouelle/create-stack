@@ -1,3 +1,10 @@
+import {
+  CAPABILITY_CATALOG,
+  FRAMEWORK_SUPPORT,
+  MAILERS,
+  RECOMMENDED_FRAMEWORK,
+} from '@alfredmouelle/stack-config'
+
 export const GATE_STEPS = [
   { id: 'install', label: 'install', command: 'pnpm install' },
   { id: 'format', label: 'format', command: 'pnpm run check:write' },
@@ -87,16 +94,38 @@ export const REFERENCE_PARTS = [
   },
 ] as const
 
-export const PORT_CAPABILITIES = [
-  { name: 'storage', providers: ['s3', 'r2', 'gcs', 'local'], recommended: 'r2' },
-  { name: 'cache', providers: ['redis', 'upstash', 'memory'], recommended: 'upstash' },
-  { name: 'logger', providers: ['pino', 'console'], recommended: 'pino' },
-  { name: 'analytics', providers: ['posthog', 'plausible', 'noop'], recommended: 'posthog' },
-  { name: 'mailer', providers: ['resend', 'brevo', 'ses'], recommended: 'resend' },
-] as const
+type PortCapability = {
+  readonly name: string
+  readonly providers: readonly string[]
+  readonly recommended: string | undefined
+}
 
-export const SINGLE_PROVIDER_MODULES = [
-  { name: 'jobs', provider: 'Inngest' },
-  { name: 'error-tracking', provider: 'Sentry' },
+export const PORT_CAPABILITIES: readonly PortCapability[] = [
+  ...CAPABILITY_CATALOG.filter(({ kind }) => kind === 'port').map(
+    ({ name, providers, recommendedProvider }) => ({
+      name,
+      providers,
+      recommended: recommendedProvider,
+    }),
+  ),
+  {
+    name: 'mailer',
+    providers: MAILERS.filter((mailer) => mailer !== 'none'),
+    recommended: FRAMEWORK_SUPPORT[RECOMMENDED_FRAMEWORK].recommendations.mailer[0],
+  },
+]
+
+const PROVIDER_LABELS: Readonly<Record<string, string>> = { inngest: 'Inngest', sentry: 'Sentry' }
+
+export const SINGLE_PROVIDER_MODULES: readonly {
+  readonly name: string
+  readonly provider: string
+}[] = [
+  ...CAPABILITY_CATALOG.filter(({ kind }) => kind === 'module').map(
+    ({ name, recommendedProvider }) => ({
+      name,
+      provider: PROVIDER_LABELS[recommendedProvider] ?? recommendedProvider,
+    }),
+  ),
   { name: 'email-ui', provider: 'React Email primitives' },
-] as const
+]

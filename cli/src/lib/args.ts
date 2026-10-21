@@ -1,3 +1,10 @@
+import {
+  DEFAULT_IMPORT_ALIAS,
+  isValidImportAlias,
+  MONOREPO_ORCHESTRATORS,
+  type MonorepoOrchestrator,
+  normalizeImportAlias,
+} from '../../../packages/stack-config/src/index.ts'
 import type { Monorepo } from '../framework-module.ts'
 
 export type OptionValue = string | true
@@ -31,6 +38,9 @@ const BOOLEAN_LONG_OPTIONS = new Set([
   'force',
 ])
 
+const isMonorepoOrchestrator = (value: unknown): value is MonorepoOrchestrator =>
+  MONOREPO_ORCHESTRATORS.some((orchestrator) => orchestrator === value)
+
 function parseLongOption(argv: readonly string[], index: number, option: OptionSink): number {
   const argument = argv[index] ?? ''
   const equals = argument.indexOf('=')
@@ -41,7 +51,7 @@ function parseLongOption(argv: readonly string[], index: number, option: OptionS
   const key = argument.slice(2)
   const next = argv[index + 1]
   const isMonorepoOption = ['mono', 'monorepo'].includes(key)
-  const hasExplicitMonorepoValue = isMonorepoOption && (next === 'turbo' || next === 'nx')
+  const hasExplicitMonorepoValue = isMonorepoOption && isMonorepoOrchestrator(next)
   if (
     !BOOLEAN_LONG_OPTIONS.has(key) &&
     next &&
@@ -93,11 +103,20 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   return out
 }
 
+const MONOREPO_LAYOUTS: Readonly<Record<MonorepoOrchestrator, Exclude<Monorepo, false>>> = {
+  turbo: 'turborepo',
+  nx: 'nx',
+}
+
+const orchestratorList = new Intl.ListFormat('en', { type: 'disjunction' })
+
 export function resolveMonorepo(v: unknown): Monorepo {
   if (v == null || v === false) return false
-  if (v === true || v === 'turbo') return 'turborepo'
-  if (v === 'nx') return 'nx'
-  throw new Error(`Invalid --monorepo value: ${JSON.stringify(v)} (expected turbo or nx)`)
+  if (v === true) return MONOREPO_LAYOUTS.turbo
+  if (isMonorepoOrchestrator(v)) return MONOREPO_LAYOUTS[v]
+  throw new Error(
+    `Invalid --monorepo value: ${JSON.stringify(v)} (expected ${orchestratorList.format(MONOREPO_ORCHESTRATORS)})`,
+  )
 }
 
 export const csv = (v: unknown): string[] =>
@@ -108,21 +127,11 @@ export const csv = (v: unknown): string[] =>
         .filter(Boolean)
     : []
 
-export const ALIAS_RE = /^[@~#]?[\w-]*$/
-
-const cleanAlias = (v: unknown): string =>
-  String(v ?? '')
-    .trim()
-    .replace(/\/+$/, '')
-
-export const isValidAlias = (v: unknown): boolean => {
-  const t = cleanAlias(v)
-  return t.length > 0 && ALIAS_RE.test(t)
-}
+export const isValidAlias = (v: unknown): boolean => isValidImportAlias(String(v ?? ''))
 
 export function normalizeAlias(v: unknown): string {
-  const t = cleanAlias(v)
-  if (!t) return '~'
-  if (!ALIAS_RE.test(t)) throw new Error(`Invalid import alias: ${JSON.stringify(v)}`)
+  const t = normalizeImportAlias(String(v ?? ''))
+  if (!t) return DEFAULT_IMPORT_ALIAS
+  if (!isValidImportAlias(t)) throw new Error(`Invalid import alias: ${JSON.stringify(v)}`)
   return t
 }

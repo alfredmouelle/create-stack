@@ -1,14 +1,19 @@
 import {
   type Auth,
+  CAPABILITY_CATALOG,
   type Database,
+  DEFAULT_IMPORT_ALIAS,
   FORMATTERS,
   type Formatter,
   FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   type Framework,
+  isValidImportAlias,
   LINTERS,
   type Linter,
   type Mailer,
+  MONOREPO_ORCHESTRATORS,
+  PACKAGE_MANAGERS,
   QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,
   type StackAxis,
@@ -19,13 +24,10 @@ import { captureCommandCopied, captureShareLinkCopied } from '../lib/analytics'
 import {
   type BuildState,
   type BuildStateResult,
-  CAPABILITY_CATALOG,
+  CAPABILITY_LABELS,
   creationPlanLines,
-  DEFAULT_IMPORT_ALIAS,
   defaultBuildState,
-  isValidImportAlias,
-  MONOREPOS,
-  PACKAGE_MANAGERS,
+  MONOREPO_LABELS,
   type ParsedBuildState,
   parseBuildState,
   resolveBuildState,
@@ -232,7 +234,7 @@ function CapabilityRow({
   return (
     <div className="capability" data-selected={selected}>
       <span className="capability-label" id={labelId}>
-        {capability.label}
+        {CAPABILITY_LABELS[capability.name]}
       </span>
       <fieldset aria-labelledby={labelId} className="chips is-small">
         {capability.providers.map((option) => (
@@ -449,7 +451,10 @@ function StackChoices({
 
       <Axis id="monorepo" label="Monorepo">
         <div className="chips">
-          {[{ value: undefined, label: 'none' }, ...MONOREPOS].map((monorepo) => (
+          {[
+            { value: undefined, label: 'none' },
+            ...MONOREPO_ORCHESTRATORS.map((value) => ({ value, label: MONOREPO_LABELS[value] })),
+          ].map((monorepo) => (
             <label
               className="chip"
               data-state={state.monorepo === monorepo.value ? 'selected' : 'idle'}

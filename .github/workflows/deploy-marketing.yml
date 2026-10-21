@@ -8,6 +8,7 @@ on:
       - marketing/**
       - cli/CHANGELOG.md
       - packages/stack-config/**
+      - packages/*/capability.json
       - .github/workflows/deploy-marketing.yml
       - package.json
       - pnpm-workspace.yaml

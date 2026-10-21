@@ -3,6 +3,7 @@ import {
   FRAMEWORKS,
   type Framework,
   type FrameworkSupport,
+  MONOREPO_OUTPUTS,
   RECOMMENDED_FRAMEWORK,
 } from '@alfredmouelle/stack-config'
 
@@ -40,10 +41,7 @@ export type PlannedFramework = {
 
 export type RegistryEntry = RegisteredFramework | PlannedFramework
 
-type RegisteredDetails = Pick<
-  RegisteredFramework,
-  'summary' | 'documentationUrl' | 'monorepoOutputs' | 'tree'
->
+type RegisteredDetails = Pick<RegisteredFramework, 'summary' | 'documentationUrl' | 'tree'>
 
 const PROFILE_TREE: readonly TreeEntry[] = [
   { path: '.githooks/pre-commit', depth: 0, owner: 'quality profile' },
@@ -63,7 +61,6 @@ const DETAILS = {
     documentationUrl: 'https://tanstack.com/start/latest/docs/framework/react/overview',
     summary:
       'SSR and file-based routing. Supports every database, auth, API, mailer, formatter and linter option.',
-    monorepoOutputs: ['.output/**', '.nitro/**', 'dist/**'],
     tree: [
       ...PROFILE_TREE,
       { path: 'src/', depth: 0 },
@@ -82,7 +79,6 @@ const DETAILS = {
     documentationUrl: 'https://www.rasengan.dev/docs/getting-started/introduction',
     summary:
       'Preview on Node with SSR, file-based routes, the shared quality profile, and an application-owned production server.',
-    monorepoOutputs: ['dist/**', '.rasengan/**'],
     tree: [
       ...PROFILE_TREE,
       { path: 'src/', depth: 0 },
@@ -99,7 +95,6 @@ const DETAILS = {
     documentationUrl: 'https://nextjs.org/docs',
     summary:
       'App Router with SSR and routing. Supports every database, auth, API, mailer, formatter and linter option.',
-    monorepoOutputs: ['.next/**', '!.next/cache/**'],
     tree: [
       ...PROFILE_TREE,
       { path: 'src/app/', depth: 0 },
@@ -162,6 +157,7 @@ const REGISTERED: readonly RegisteredFramework[] = FRAMEWORKS.map((id) => {
     support,
     modulePath: `cli/src/frameworks/${id}.ts`,
     referenceApplication: `apps/${id}-base`,
+    monorepoOutputs: MONOREPO_OUTPUTS[id],
   }
 }).toSorted((a, b) => Number(b.recommended) - Number(a.recommended))
 

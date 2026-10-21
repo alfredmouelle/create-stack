@@ -1,8 +1,11 @@
 import {
   AUTHS,
   type Auth,
+  CAPABILITY_CATALOG,
+  type CapabilityName,
   DATABASES,
   type Database,
+  DEFAULT_IMPORT_ALIAS,
   FORMATTERS,
   type Formatter,
   FRAMEWORK_SUPPORT,
@@ -10,96 +13,42 @@ import {
   type Framework,
   type FrameworkSupportCatalog,
   frameworkTitle,
+  isValidImportAlias,
   LINTERS,
   type Linter,
   MAILERS,
   type Mailer,
+  MONOREPO_ORCHESTRATORS,
+  type MonorepoOrchestrator,
+  normalizeImportAlias,
+  PACKAGE_MANAGERS,
+  type PackageManagerName,
   resolveStackConfiguration,
   type StackConfigurationInput,
   type StackConfigurationResult,
 } from '@alfredmouelle/stack-config'
 
 export const BUILD_SCHEMA_VERSION = '1'
-export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
-export type PackageManager = (typeof PACKAGE_MANAGERS)[number]
 
-export const DEFAULT_IMPORT_ALIAS = '~'
-const IMPORT_ALIAS_PATTERN = /^[@~#]?[\w-]*$/
-
-export function normalizeImportAlias(alias: string): string {
-  return alias.trim().replace(/\/+$/, '')
+export const CAPABILITY_LABELS: Readonly<Record<CapabilityName, string>> = {
+  storage: 'Object storage',
+  cache: 'Cache',
+  logger: 'Structured logging',
+  analytics: 'Analytics',
+  jobs: 'Background jobs',
+  'error-tracking': 'Error tracking',
 }
 
-export function isValidImportAlias(alias: string): boolean {
-  const normalized = normalizeImportAlias(alias)
-  return normalized.length > 0 && IMPORT_ALIAS_PATTERN.test(normalized)
+export const MONOREPO_LABELS: Readonly<Record<MonorepoOrchestrator, string>> = {
+  turbo: 'Turborepo',
+  nx: 'Nx',
 }
 
-export const MONOREPOS = [
-  { value: 'turbo', label: 'Turborepo' },
-  { value: 'nx', label: 'Nx' },
-] as const
-export type Monorepo = (typeof MONOREPOS)[number]['value']
-
-export const CAPABILITY_CATALOG = [
-  {
-    name: 'storage',
-    label: 'Object storage',
-    flag: 'storage',
-    providers: ['s3', 'r2', 'gcs', 'local'],
-    recommendedProvider: 'r2',
-  },
-  {
-    name: 'cache',
-    label: 'Cache',
-    flag: 'cache',
-    providers: ['redis', 'upstash', 'memory'],
-    recommendedProvider: 'upstash',
-  },
-  {
-    name: 'logger',
-    label: 'Structured logging',
-    flag: 'logger',
-    providers: ['pino', 'console'],
-    recommendedProvider: 'pino',
-  },
-  {
-    name: 'analytics',
-    label: 'Analytics',
-    flag: 'analytics',
-    providers: ['posthog', 'plausible', 'noop'],
-    recommendedProvider: 'posthog',
-  },
-  {
-    name: 'jobs',
-    label: 'Background jobs',
-    flag: 'jobs',
-    providers: ['inngest'],
-    recommendedProvider: 'inngest',
-  },
-  {
-    name: 'error-tracking',
-    label: 'Error tracking',
-    flag: 'errors',
-    providers: ['sentry'],
-    recommendedProvider: 'sentry',
-  },
-] as const
-
-export type CapabilityName = (typeof CAPABILITY_CATALOG)[number]['name']
 export type CapabilitySelection = Partial<Record<CapabilityName, string>>
-
-interface CapabilityDefinition {
-  name: CapabilityName
-  label: string
-  flag: string
-  providers: readonly string[]
-  recommendedProvider: string
-}
 
 export interface BuildState {
   projectName: string
-  packageManager: PackageManager
+  packageManager: PackageManagerName
   framework?: Framework
   database?: Database
   auth?: Auth
@@ -108,7 +57,7 @@ export interface BuildState {
   formatter?: Formatter
   linter?: Linter
   alias?: string
-  monorepo?: Monorepo
+  monorepo?: MonorepoOrchestrator
   capabilities: CapabilitySelection
 }
 
@@ -121,7 +70,7 @@ export type ParsedBuildState =
   | { kind: 'unsupported'; version: string }
   | { kind: 'invalid'; message: string }
 
-const EXECUTORS: Record<PackageManager, string> = {
+const EXECUTORS: Record<PackageManagerName, string> = {
   pnpm: 'pnpm dlx',
   npm: 'npx',
   yarn: 'yarn dlx',
@@ -155,7 +104,7 @@ function stackInput(state: BuildState): StackConfigurationInput {
   }
 }
 
-function capabilityDefinition(name: string): CapabilityDefinition | undefined {
+function capabilityDefinition(name: string): (typeof CAPABILITY_CATALOG)[number] | undefined {
   return CAPABILITY_CATALOG.find((capability) => capability.name === name)
 }
 
@@ -176,7 +125,7 @@ function commandFor(state: BuildState, stackArgs: readonly string[]): string | n
   for (const capability of CAPABILITY_CATALOG) {
     const provider = state.capabilities[capability.name]
     if (provider === undefined) continue
-    args.push(`--${capability.flag}`, provider)
+    args.push(`--${capability.flags[0]}`, provider)
   }
 
   return [...EXECUTORS[state.packageManager].split(' '), STACK_PACKAGE, state.projectName, ...args]
@@ -253,12 +202,13 @@ function parseCapabilities(params: URLSearchParams, state: BuildState): void {
 }
 
 function parsePackageManager(params: URLSearchParams, state: BuildState): void {
-  const packageManager = params.get('pm')
-  if (packageManager === null) return
-  if (!PACKAGE_MANAGERS.includes(packageManager as PackageManager)) {
-    throw new Error(`Invalid package manager value "${packageManager}"`)
+  const value = params.get('pm')
+  if (value === null) return
+  const packageManager = PACKAGE_MANAGERS.find((name) => name === value)
+  if (packageManager === undefined) {
+    throw new Error(`Invalid package manager value "${value}"`)
   }
-  state.packageManager = packageManager as PackageManager
+  state.packageManager = packageManager
 }
 
 function parseTrpc(params: URLSearchParams, state: BuildState): void {
@@ -278,12 +228,13 @@ function parseAlias(params: URLSearchParams, state: BuildState): void {
 }
 
 function parseMonorepo(params: URLSearchParams, state: BuildState): void {
-  const monorepo = params.get('mono')
-  if (monorepo === null) return
-  if (!MONOREPOS.some((option) => option.value === monorepo)) {
-    throw new Error(`Invalid monorepo value "${monorepo}"`)
+  const value = params.get('mono')
+  if (value === null) return
+  const monorepo = MONOREPO_ORCHESTRATORS.find((orchestrator) => orchestrator === value)
+  if (monorepo === undefined) {
+    throw new Error(`Invalid monorepo value "${value}"`)
   }
-  state.monorepo = monorepo as Monorepo
+  state.monorepo = monorepo
 }
 
 function parseStateValues(params: URLSearchParams, state: BuildState): string | undefined {
@@ -318,8 +269,6 @@ export function parseBuildState(search: string): ParsedBuildState {
 
   return { kind: 'current', state }
 }
-
-const MONOREPO_LABELS: Record<Monorepo, string> = { turbo: 'Turborepo', nx: 'Nx' }
 
 const orNone = (value: string): string => (value && value !== 'none' ? value : '(none)')
 

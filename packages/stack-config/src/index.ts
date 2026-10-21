@@ -1,3 +1,10 @@
+import analyticsManifest from '../../analytics/capability.json' with { type: 'json' }
+import cacheManifest from '../../cache/capability.json' with { type: 'json' }
+import errorTrackingManifest from '../../error-tracking/capability.json' with { type: 'json' }
+import jobsManifest from '../../jobs/capability.json' with { type: 'json' }
+import loggerManifest from '../../logger/capability.json' with { type: 'json' }
+import storageManifest from '../../storage/capability.json' with { type: 'json' }
+
 export const FRAMEWORKS = ['tanstack', 'next', 'rasengan'] as const
 export type Framework = (typeof FRAMEWORKS)[number]
 
@@ -21,6 +28,88 @@ export const QUALITY_TOOL_LABELS = {
   prettier: 'Prettier',
   oxlint: 'Oxlint',
 } as const satisfies Readonly<Record<Formatter | Linter, string>>
+
+export const MINIMUM_NODE_VERSION = '24.19.0'
+
+export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
+export type PackageManagerName = (typeof PACKAGE_MANAGERS)[number]
+
+export const MONOREPO_ORCHESTRATORS = ['turbo', 'nx'] as const
+export type MonorepoOrchestrator = (typeof MONOREPO_ORCHESTRATORS)[number]
+
+export const DEFAULT_IMPORT_ALIAS = '~'
+const IMPORT_ALIAS_PATTERN = /^[@~#]?[\w-]*$/
+
+export function normalizeImportAlias(alias: string): string {
+  return alias.trim().replace(/\/+$/, '')
+}
+
+export function isValidImportAlias(alias: string): boolean {
+  const normalized = normalizeImportAlias(alias)
+  return normalized.length > 0 && IMPORT_ALIAS_PATTERN.test(normalized)
+}
+
+export const COMPONENTS = [
+  'date-picker',
+  'data-table',
+  'confirm',
+  'alert',
+  'prompt',
+  'choice',
+  'confirm-passphrase',
+  'confirm-otp',
+] as const
+export type ComponentName = (typeof COMPONENTS)[number]
+
+export type CapabilityFacts<Name extends string = string> = {
+  readonly name: Name
+  readonly kind: 'port' | 'module'
+  readonly flags: readonly [string, ...string[]]
+  readonly providers: readonly string[]
+  readonly recommendedProvider: string
+}
+
+type PortManifest = {
+  readonly adapters: object
+  readonly defaultAdapter: string
+  readonly creationRecommendedProvider?: string
+}
+
+type ModuleManifest = { readonly provider: string }
+
+function port<Name extends string>(name: Name, manifest: PortManifest): CapabilityFacts<Name> {
+  return {
+    name,
+    kind: 'port',
+    flags: [name],
+    providers: Object.keys(manifest.adapters),
+    recommendedProvider: manifest.creationRecommendedProvider ?? manifest.defaultAdapter,
+  }
+}
+
+function singleProvider<Name extends string>(
+  name: Name,
+  manifest: ModuleManifest,
+  flags: readonly [string, ...string[]] = [name],
+): CapabilityFacts<Name> {
+  return {
+    name,
+    kind: 'module',
+    flags,
+    providers: [manifest.provider],
+    recommendedProvider: manifest.provider,
+  }
+}
+
+export const CAPABILITY_CATALOG = [
+  port('storage', storageManifest),
+  port('cache', cacheManifest),
+  port('logger', loggerManifest),
+  port('analytics', analyticsManifest),
+  singleProvider('jobs', jobsManifest),
+  singleProvider('error-tracking', errorTrackingManifest, ['errors', 'error-tracking']),
+] as const
+export type CapabilityName = (typeof CAPABILITY_CATALOG)[number]['name']
 
 export type StackAxis =
   | 'framework'
@@ -82,6 +171,12 @@ export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
 }
 
 export const RECOMMENDED_FRAMEWORK: Framework = 'tanstack'
+
+export const MONOREPO_OUTPUTS: Readonly<Record<Framework, readonly string[]>> = {
+  tanstack: ['.output/**', '.nitro/**', 'dist/**'],
+  next: ['.next/**', '!.next/cache/**'],
+  rasengan: ['dist/**', '.rasengan/**'],
+}
 
 export function frameworkTitle(framework: Framework): string {
   const { label, maturity } = FRAMEWORK_SUPPORT[framework]

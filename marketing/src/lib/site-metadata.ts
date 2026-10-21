@@ -1,3 +1,18 @@
+import {
+  AUTHS,
+  CAPABILITY_CATALOG,
+  DATABASES,
+  FORMATTERS,
+  FRAMEWORK_SUPPORT,
+  FRAMEWORKS,
+  type FrameworkMaturity,
+  LINTERS,
+  MAILERS,
+  MONOREPO_ORCHESTRATORS,
+  PACKAGE_MANAGERS,
+} from '@alfredmouelle/stack-config'
+import { PLANNED_FRAMEWORKS } from '../data/frameworks'
+
 export const PUBLIC_SITE_ORIGIN = 'https://create-stack.alfredmouelle.com'
 export const REPOSITORY_URL = 'https://github.com/alfredmouelle/create-stack'
 export const NPM_URL = 'https://www.npmjs.com/package/@alfredmouelle/create-stack'
@@ -27,21 +42,50 @@ export interface SiteMetadata {
   sitemap: string
 }
 
+const list = new Intl.ListFormat('en', { type: 'conjunction' })
+
+function frameworkLabels(maturity: FrameworkMaturity): string[] {
+  return FRAMEWORKS.filter((id) => FRAMEWORK_SUPPORT[id].maturity === maturity).map(
+    (id) => FRAMEWORK_SUPPORT[id].label,
+  )
+}
+
+function maturitySentence(labels: readonly string[], state: string): string {
+  if (labels.length === 0) return ''
+  return `${list.format(labels)} ${labels.length === 1 ? 'is' : 'are'} ${state}.`
+}
+
+const FRAMEWORK_MATURITY = [
+  maturitySentence(frameworkLabels('stable'), 'stable'),
+  maturitySentence(frameworkLabels('preview'), 'in preview'),
+  maturitySentence(
+    PLANNED_FRAMEWORKS.map(({ label }) => label),
+    'planned, not installable',
+  ),
+]
+  .filter(Boolean)
+  .join(' ')
+
+const flag = (name: string, values: readonly string[]): string =>
+  `\`--${name} ${values.join('|')}\``
+
+const CAPABILITY_FLAGS = CAPABILITY_CATALOG.map(({ flags }) => `\`--${flags[0]}\``).join(', ')
+
 const LLMS = (canonicalUrl: string) => `# Create Stack
 
 Create Stack assembles a project from the selected parts of a framework's tested reference application.
 Before the first Git commit it runs install, format, typecheck and lint, and it commits only when all four pass.
-Next.js and TanStack Start are stable. RasenganJS is a preview on Node with pinned beta dependencies and an application-owned production server. Remix, Vue, NestJS and PHP frameworks are planned, not installable.
+${FRAMEWORK_MATURITY}
 
 Start with \`pnpm dlx @alfredmouelle/create-stack@latest my-app\`.
 
 ## Non-interactive use
 
 - \`--yes\` accepts every default without a prompt. Any stack or capability flag also switches to non-interactive mode.
-- \`--framework tanstack|next|rasengan\`, \`--database drizzle|prisma|convex|none\`, \`--auth better-auth|clerk|none\`.
-- \`--trpc\` / \`--no-trpc\`, \`--mailer resend|brevo|ses|none\`, \`--formatter biome|prettier\`, \`--linter biome|oxlint\`.
-- \`--monorepo turbo|nx\`, \`--alias <prefix>\`, \`--pm pnpm|npm|yarn|bun\`, \`--no-install\`, \`--no-git\`.
-- Capabilities: \`--storage\`, \`--cache\`, \`--logger\`, \`--analytics\`, \`--jobs\`, \`--errors\`.
+- ${flag('framework', FRAMEWORKS)}, ${flag('database', DATABASES)}, ${flag('auth', AUTHS)}.
+- \`--trpc\` / \`--no-trpc\`, ${flag('mailer', MAILERS)}, ${flag('formatter', FORMATTERS)}, ${flag('linter', LINTERS)}.
+- ${flag('monorepo', MONOREPO_ORCHESTRATORS)}, \`--alias <prefix>\`, ${flag('pm', PACKAGE_MANAGERS)}, \`--no-install\`, \`--no-git\`.
+- Capabilities: ${CAPABILITY_FLAGS}.
 - A choice the framework does not support is reported as a conflict before any file is written. Nothing is substituted.
 
 After creation, \`create-stack add --with kind[=provider] [...]\` adds capabilities as a validated batch.

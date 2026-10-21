@@ -5,8 +5,6 @@ import {
   buildCommand,
   creationPlanLines,
   defaultBuildState,
-  isValidImportAlias,
-  normalizeImportAlias,
   parseBuildState,
   resolveBuildState,
   serializeBuildState,
@@ -214,18 +212,6 @@ describe('build configurator state', () => {
       configuration: { formatter: 'biome', linter: 'biome' },
       command: 'pnpm dlx @alfredmouelle/create-stack@latest orbit --framework next',
     })
-  })
-
-  it.each(['~', '@', '#', '@app', '~/', '#src//'])('accepts the %s import alias', (alias) => {
-    expect(isValidImportAlias(alias)).toBe(true)
-  })
-
-  it.each(['$', 'app.lib', '@/x', 'src lib'])('rejects the %s import alias', (alias) => {
-    expect(isValidImportAlias(alias)).toBe(false)
-  })
-
-  it('trims trailing slashes from import aliases', () => {
-    expect(normalizeImportAlias('@app//')).toBe('@app')
   })
 
   it('does not produce a command for an invalid import alias', () => {

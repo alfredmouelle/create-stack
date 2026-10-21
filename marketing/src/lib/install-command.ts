@@ -1,14 +1,12 @@
-export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
+import type { PackageManagerName } from '@alfredmouelle/stack-config'
 
-export type PackageManager = (typeof PACKAGE_MANAGERS)[number]
-
-const EXECUTORS: Record<PackageManager, string> = {
+const EXECUTORS: Record<PackageManagerName, string> = {
   pnpm: 'pnpm dlx',
   npm: 'npx',
   yarn: 'yarn dlx',
   bun: 'bunx',
 }
 
-export function installCommand(packageManager: PackageManager) {
+export function installCommand(packageManager: PackageManagerName) {
   return `${EXECUTORS[packageManager]} @alfredmouelle/create-stack@latest my-app`
 }

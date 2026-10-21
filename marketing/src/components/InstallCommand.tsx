@@ -1,6 +1,7 @@
+import { PACKAGE_MANAGERS, type PackageManagerName } from '@alfredmouelle/stack-config'
 import { useEffect, useRef, useState } from 'react'
 import { captureCommandCopied } from '../lib/analytics'
-import { installCommand, PACKAGE_MANAGERS, type PackageManager } from '../lib/install-command'
+import { installCommand } from '../lib/install-command'
 
 type CopyState = 'idle' | 'copied' | 'error'
 
@@ -12,7 +13,7 @@ const STATUS_MESSAGES = {
 
 export default function InstallCommand() {
   const commandInput = useRef<HTMLInputElement>(null)
-  const [packageManager, setPackageManager] = useState<PackageManager>('pnpm')
+  const [packageManager, setPackageManager] = useState<PackageManagerName>('pnpm')
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const [isCommandOverflowing, setIsCommandOverflowing] = useState(false)
   const command = installCommand(packageManager)

@@ -1,16 +1,23 @@
 ---
 import {
   AUTHS,
+  CAPABILITY_CATALOG,
+  COMPONENTS,
+  type ComponentName,
   DATABASES,
+  DEFAULT_IMPORT_ALIAS,
   FORMATTERS,
   FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   LINTERS,
   MAILERS,
+  MINIMUM_NODE_VERSION,
+  MONOREPO_ORCHESTRATORS,
+  PACKAGE_MANAGERS,
   RECOMMENDED_FRAMEWORK,
 } from '@alfredmouelle/stack-config'
-import { PORT_CAPABILITIES } from '../data/landing'
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { CAPABILITY_LABELS } from '../lib/build-config'
 
 type FlagRow = {
   flags: readonly string[]
@@ -88,39 +95,33 @@ const STACK_FLAGS: readonly FlagRow[] = [
   },
 ]
 
-const CAPABILITY_FLAGS: readonly FlagRow[] = [
-  ...PORT_CAPABILITIES.filter((capability) => capability.name !== 'mailer').map((capability) => ({
-    flags: [`--${capability.name}`],
-    values: capability.providers,
-    defaultValue: capability.recommended,
-    notes: 'Swappable provider behind a port.',
-  })),
-  { flags: ['--jobs'], values: ['inngest'], defaultValue: 'inngest', notes: 'Background jobs.' },
-  {
-    flags: ['--errors', '--error-tracking'],
-    values: ['sentry'],
-    defaultValue: 'sentry',
-    notes: 'Error reporting.',
-  },
-]
+const CAPABILITY_FLAGS: readonly FlagRow[] = CAPABILITY_CATALOG.map((capability) => ({
+  flags: capability.flags.map((flag) => `--${flag}`),
+  values: capability.providers,
+  defaultValue: capability.recommendedProvider,
+  notes:
+    capability.kind === 'port'
+      ? 'Swappable provider behind a port.'
+      : `${CAPABILITY_LABELS[capability.name]}.`,
+}))
 
 const PROJECT_FLAGS: readonly FlagRow[] = [
   {
     flags: ['--monorepo'],
-    values: ['turbo', 'nx'],
+    values: MONOREPO_ORCHESTRATORS,
     defaultValue: 'standalone',
     notes: 'Put the app in apps/web inside a Turborepo or Nx monorepo. A bare flag selects turbo.',
   },
   {
     flags: ['--pm'],
-    values: ['pnpm', 'npm', 'yarn', 'bun'],
+    values: PACKAGE_MANAGERS,
     defaultValue: 'detected',
     notes: 'Package manager for the generated project. Defaults to the one that ran the CLI.',
   },
   {
     flags: ['--alias'],
     values: ['<prefix>'],
-    defaultValue: '~',
+    defaultValue: DEFAULT_IMPORT_ALIAS,
     notes: 'Import alias, such as @ or #. Imports matching <alias>/* resolve to src/*.',
   },
   {
@@ -139,16 +140,20 @@ const FLAG_TABLES = [
   { caption: 'Project flags', rows: PROJECT_FLAGS },
 ] as const
 
-const COMPONENTS = [
-  { name: 'date-picker', provides: 'date picker and date range picker' },
-  { name: 'data-table', provides: 'sortable and infinite data tables' },
-  { name: 'confirm', provides: 'waits for a yes or no answer' },
-  { name: 'alert', provides: 'waits for an acknowledgement' },
-  { name: 'prompt', provides: 'waits for text input' },
-  { name: 'choice', provides: 'waits for a selection' },
-  { name: 'confirm-passphrase', provides: 'checks an exact phrase' },
-  { name: 'confirm-otp', provides: 'checks a one-time code' },
-] as const
+const COMPONENT_PROVIDES: Readonly<Record<ComponentName, string>> = {
+  'date-picker': 'date picker and date range picker',
+  'data-table': 'sortable and infinite data tables',
+  confirm: 'waits for a yes or no answer',
+  alert: 'waits for an acknowledgement',
+  prompt: 'waits for text input',
+  choice: 'waits for a selection',
+  'confirm-passphrase': 'checks an exact phrase',
+  'confirm-otp': 'checks a one-time code',
+}
+
+const packageManagerList = new Intl.ListFormat('en', { type: 'disjunction' }).format(
+  PACKAGE_MANAGERS,
+)
 
 const SCAFFOLD_EXAMPLES = `# accept every default without prompts
 pnpm dlx @alfredmouelle/create-stack@latest my-app --yes
@@ -221,7 +226,7 @@ pnpm dev`
           <h2 id="quick-start">Quick start</h2>
           <pre><code>pnpm create @alfredmouelle/stack@latest my-app</code></pre>
           <p>
-            Requires <strong>Node 24.19.0 or later</strong>, a package manager (pnpm, npm, yarn, or bun), and <strong>git</strong> on <code>PATH</code>. With no flags the CLI asks for each choice. <strong>Any stack or capability flag switches to non-interactive mode</strong> for CI and scripts.
+            Requires <strong>Node {MINIMUM_NODE_VERSION} or later</strong>, a package manager ({packageManagerList}), and <strong>git</strong> on <code>PATH</code>. With no flags the CLI asks for each choice. <strong>Any stack or capability flag switches to non-interactive mode</strong> for CI and scripts.
           </p>
           <p>
             The <code>project</code> argument names the target directory and becomes the default
@@ -290,7 +295,7 @@ pnpm dev`
               <thead><tr><th scope="col">Component</th><th scope="col">Provides</th></tr></thead>
               <tbody>
                 {COMPONENTS.map((component) => (
-                  <tr><th scope="row">{component.name}</th><td>{component.provides}</td></tr>
+                  <tr><th scope="row">{component}</th><td>{COMPONENT_PROVIDES[component]}</td></tr>
                 ))}
               </tbody>
             </table>

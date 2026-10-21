@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import {
-  detectPackageManager,
-  PM_NAMES,
-  resolvePackageManager,
-} from '../src/lib/package-manager.ts'
+import { PACKAGE_MANAGERS } from '../../packages/stack-config/src/index.ts'
+import { detectPackageManager, resolvePackageManager } from '../src/lib/package-manager.ts'
 
 describe('detectPackageManager', () => {
   let saved: string | undefined
@@ -44,8 +41,8 @@ describe('detectPackageManager', () => {
 
 describe('resolvePackageManager', () => {
   test('every advertised name resolves to a matching descriptor', () => {
-    expect(PM_NAMES).toEqual(['pnpm', 'npm', 'yarn', 'bun'])
-    for (const name of PM_NAMES) expect(resolvePackageManager(name).name).toBe(name)
+    expect(PACKAGE_MANAGERS).toEqual(['pnpm', 'npm', 'yarn', 'bun'])
+    for (const name of PACKAGE_MANAGERS) expect(resolvePackageManager(name).name).toBe(name)
   })
   test('unknown / empty → npm default', () => {
     expect(resolvePackageManager('deno').name).toBe('npm')

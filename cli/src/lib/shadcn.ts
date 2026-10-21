@@ -13,14 +13,11 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { type RegistryItem, rawConfigSchema, registryItemSchema } from 'shadcn/schema'
+import type { PackageManagerName } from '../../../packages/stack-config/src/index.ts'
 import type { PackageManager } from '../framework-module.ts'
 import { requireFrameworkModule } from '../framework-registry.ts'
 import { isJsonObject, type JsonObject, readJsonObject } from '../javascript/json.ts'
-import {
-  detectEffectivePackageManager,
-  isPackageManagerName,
-  type PackageManagerName,
-} from './package-manager.ts'
+import { detectEffectivePackageManager, isPackageManagerName } from './package-manager.ts'
 import { CLI_ROOT, STACK_ROOT } from './paths.ts'
 import {
   asErrorText,

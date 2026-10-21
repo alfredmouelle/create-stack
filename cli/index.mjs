@@ -28,7 +28,7 @@ import {
   isValidAlias,
   MAILERS,
   normalizeAlias,
-  PM_NAMES,
+  PACKAGE_MANAGERS,
   parseArgs,
   preflightRegistryComponents,
   QUALITY_TOOL_LABELS,
@@ -326,9 +326,10 @@ function resolveFrameworkFlag(flags) {
 function resolvePackageManagerFlag(flags) {
   const value = flags.pm ?? flags['package-manager']
   if (value == null) return detectedPm
-  if (typeof value === 'string' && PM_NAMES.includes(value)) return resolvePackageManager(value)
+  if (typeof value === 'string' && PACKAGE_MANAGERS.includes(value))
+    return resolvePackageManager(value)
   throw new Error(
-    `Invalid package manager: ${JSON.stringify(value)} (expected ${PM_NAMES.join(', ')})`,
+    `Invalid package manager: ${JSON.stringify(value)} (expected ${PACKAGE_MANAGERS.join(', ')})`,
   )
 }
 
@@ -536,7 +537,7 @@ async function collectFromPrompts(argDir) {
       await p.select({
         message: 'Package manager',
         initialValue: detectedPm.name,
-        options: PM_NAMES.map((n) => ({
+        options: PACKAGE_MANAGERS.map((n) => ({
           value: n,
           label: n === detectedPm.name ? `${n} (detected)` : n,
         })),

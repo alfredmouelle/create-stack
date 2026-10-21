@@ -1,5 +1,6 @@
+import type { PackageManagerName } from '../../../packages/stack-config/src/index.ts'
 import type { PackageManager } from '../framework-module.ts'
-import { isPackageManagerName, type PackageManagerName, PM_VERSIONS } from './package-manager.ts'
+import { isPackageManagerName, PM_VERSIONS } from './package-manager.ts'
 import { join, write } from './util.ts'
 
 const setupNode = (nvmrc: string, cache?: string): string => `      - uses: actions/setup-node@v4
