@@ -1,6 +1,6 @@
 {
   "name": "@alfredmouelle/create-stack",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "type": "module",
   "description": "Framework-agnostic, deterministic installer that bootstraps a real, fully-wired app for your favorite framework (Next.js, TanStack Start, and RasenganJS preview) and assembles your selected stack parts.",
   "author": {

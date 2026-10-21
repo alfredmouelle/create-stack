@@ -12,64 +12,48 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-21
+
 ### Added
 
-- RasenganJS is available as an official preview with `--framework rasengan`, including
-  the existing database, authentication, tRPC, mailer and capability choices. Generated
-  projects support standalone, Turborepo and Nx layouts, all four quality-tool pairs,
-  and a production Node server with pnpm, npm, Yarn or Bun.
-- Rasengan Sentry integration captures browser and server errors and generates hidden
-  source maps with debug IDs. Builds upload maps when credentials are configured and
-  delete them afterward.
-- `--formatter biome|prettier` and `--linter biome|oxlint` choose the generated project's
-  quality tools, and interactive creation asks for both. Biome stays recommended for
-  each, and a bare flag selects it. `--no-formatter`, `--no-linter`, oxfmt, and ESLint
-  are rejected with an explanation before generation.
-- The Prettier configuration sorts imports and Tailwind classes with the house style
-  (single quotes, no semicolons, trailing commas, width 100). The Oxlint configuration
-  is always type-aware, with its strict rule categories as errors.
-- A choice the selected framework does not support is reported as a choice conflict
-  before any file is written, and recommendations come from the selected framework.
-  Interactive prompts offer only the selected framework's supported values, and bare
-  `--db` and `--mail` select its recommendation.
+- `--framework rasengan` adds official RasenganJS preview support with database,
+  authentication, tRPC, mailer, capabilities and callable components. Generate standalone,
+  Turborepo or Nx projects with pnpm, npm, Yarn or Bun, including a production Node
+  server and Docker image.
+- Rasengan supports Sentry in the browser and on the server, including hidden source
+  maps with debug IDs. Configured builds upload the maps and delete them afterward.
+  Docker images include and preload the optional server instrumentation.
+- Choose Biome or Prettier with `--formatter`, and Biome or Oxlint with `--linter`, or
+  select them during interactive creation. Biome remains recommended for both, including
+  when either flag is bare. Formatter and linter are required; `--no-formatter`,
+  `--no-linter`, oxfmt and ESLint fail before generation.
+- Prettier sorts imports and Tailwind classes, using single quotes, no semicolons,
+  trailing commas and a line width of 100. Oxlint runs type-aware checks with strict
+  rule categories treated as errors.
 
 ### Changed
 
+- Prompts offer only the selected framework's supported choices. Unsupported choices
+  fail before generation, and bare `--db` and `--mail` use that framework's recommendations.
+- All generated projects use the same strict TypeScript profile, including
+  `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
+- Git hooks format and lint staged files with the selected tools. The automatic first
+  commit requires installation, formatting, typecheck and lint to succeed. Verification
+  shows formatter output and names any failing step.
+- Generated Next.js and TanStack Start projects use the website's green theme,
+  typography and branding across home pages, authentication, dashboards and emails.
+- Monorepo projects place VS Code and Zed settings at the workspace root alongside
+  the quality-tool configuration and Git hooks.
 - Generated Yarn projects pin Yarn 4.18.1 for compatibility with TypeScript 7.
-- Projects are assembled from the parts of each framework's reference application that
-  the configuration selects, instead of copying a full base app and deleting what was
-  not selected. Generated applications keep the same behavior for every database,
-  authentication provider, mailer, tRPC choice, and capability.
-- The pre-commit hook formats and lints staged files with the selected tools, and the
-  first commit waits for install, format, typecheck, and lint with those tools.
-- Every generated project enables the same strict TypeScript options, whatever its
-  framework: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
-  `noImplicitOverride`, `noUnusedLocals`, `noUnusedParameters`,
-  `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules`, and
-  `noUncheckedSideEffectImports`. Generated code and capabilities pass them without casts.
-- A failed verification names the failing step (format, typecheck, or lint), and the
-  format step's output is shown.
-- `add mail` writes the same mailer module that project creation generates.
-- Monorepo projects receive their VS Code and Zed settings at the workspace root, next
-  to the Biome configuration and Git hooks.
-- `add component date-picker` passes the calendar's optional `locale` only when it is
-  set, so the shadcn calendar typechecks under `exactOptionalPropertyTypes`.
-- The generated README links its CLI reference to the website docs
-  (https://create-stack.alfredmouelle.com/docs) instead of the CLI README.
-
-### Removed
-
-- The fork-and-strip generation path, with its strip and testing removal steps and its
-  `no-trpc` replacement templates.
+- Generated READMEs link to the [CLI reference](https://create-stack.alfredmouelle.com/docs).
 
 ### Fixed
 
-- Callable components mount in Rasengan's `<Body>` template element.
+- `add mail` generates the same mailer module as project creation.
+- Date picker additions typecheck with `exactOptionalPropertyTypes` by omitting an
+  unset calendar `locale`.
 - Generated Prisma projects and Brevo/SES mail adapters pass the strict Oxlint profile.
-- Rasengan Docker images include and preload the optional Sentry server instrumentation.
-- TanStack Start projects with Clerk and tRPC typecheck again: they pin
-  `@tanstack/query-core` with React Query, so the router's SSR query integration and
-  React Query share one `QueryClient` type.
+- TanStack Start projects combining Clerk and tRPC pass typecheck again.
 
 ## [0.15.0] - 2026-10-15
 
