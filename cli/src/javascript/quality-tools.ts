@@ -5,7 +5,9 @@ import { TEMPLATES } from '#lib/paths.ts'
 import type { QualityProfileRequest } from '../framework-module.ts'
 import { isJsonObject, type JsonObject, readJsonObject, writeJsonObject } from './json.ts'
 
-export type QualityTools = Pick<QualityProfileRequest, 'formatter' | 'linter' | 'alias'>
+export type QualityTools = Pick<QualityProfileRequest, 'formatter' | 'linter' | 'alias'> & {
+  readonly tailwindStylesheet?: string
+}
 
 type QualityToolsTarget = Pick<QualityProfileRequest, 'projectDir' | 'applicationDir'>
 
@@ -151,6 +153,12 @@ function configureZed(projectDir: string, linter: Linter): void {
   writeJsonObject(path, zed)
 }
 
+function readTailwindStylesheet(applicationDir: string): string | undefined {
+  const components = readJsonObject(join(applicationDir, 'components.json'))
+  const stylesheet = isJsonObject(components.tailwind) ? components.tailwind.css : undefined
+  return typeof stylesheet === 'string' ? stylesheet : undefined
+}
+
 export function applyQualityTools(
   { projectDir, applicationDir }: QualityToolsTarget,
   tools: QualityTools,
@@ -165,9 +173,8 @@ export function applyQualityTools(
     const config = readJsonObject(join(TEMPLATES, 'quality-profile/.prettierrc.json'))
     const alias = tools.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     config.importOrder = ['<BUILTIN_MODULES>', '<THIRD_PARTY_MODULES>', `^${alias}/`, '^[.]']
-    const components = readJsonObject(join(applicationDir, 'components.json'))
-    const stylesheet = isJsonObject(components.tailwind) ? components.tailwind.css : undefined
-    if (typeof stylesheet === 'string')
+    const stylesheet = tools.tailwindStylesheet ?? readTailwindStylesheet(applicationDir)
+    if (stylesheet !== undefined)
       config.tailwindStylesheet = join(relative(projectDir, applicationDir), stylesheet)
     writeJsonObject(join(projectDir, '.prettierrc.json'), config)
     cpSync(join(TEMPLATES, 'quality-profile/.prettierignore'), join(projectDir, '.prettierignore'))

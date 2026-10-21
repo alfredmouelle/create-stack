@@ -137,6 +137,12 @@ tools, hook preparation, and editor settings. Your reference application's
 (JSX, paths, plugins, types). Generation fails when a generated `tsconfig.json` sets a
 profile option, or a member of `strict`, to `false`.
 
+A framework without shadcn can pass `tailwindStylesheet` to
+`applyJavaScriptQualityProfile` in its `applyQualityProfile` implementation. The path
+is relative to `applicationDir`; the toolkit resolves it from the project-level
+Prettier configuration, including in monorepos. When omitted, the toolkit reads
+`tailwind.css` from the application's `components.json` as before.
+
 When an upstream framework forces a relaxation, declare it:
 
 ```ts
