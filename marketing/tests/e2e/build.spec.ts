@@ -1,3 +1,4 @@
+import { FRAMEWORKS } from '@alfredmouelle/stack-config'
 import { expect, type Page, test } from '@playwright/test'
 import { openPage } from './navigation'
 
@@ -69,7 +70,7 @@ test.describe('stack configurator', () => {
 
     const framework = axis(page, 'Framework')
     await expect(framework.getByText('Remix · planned')).toHaveAttribute('aria-disabled', 'true')
-    await expect(framework.getByRole('radio')).toHaveCount(2)
+    await expect(framework.getByRole('radio')).toHaveCount(FRAMEWORKS.length)
     await expect(axis(page, 'Formatter').getByText('oxfmt', { exact: true })).toHaveAttribute(
       'aria-disabled',
       'true',
@@ -77,6 +78,23 @@ test.describe('stack configurator', () => {
     await expect(axis(page, 'Linter').getByText('ESLint', { exact: true })).toHaveAttribute(
       'aria-disabled',
       'true',
+    )
+  })
+
+  test('selects Rasengan preview and restores it from the URL', async ({ page }) => {
+    await openPage(page, '/build')
+
+    const rasengan = axis(page, 'Framework').getByRole('radio', { name: /^RasenganJS/ })
+    await rasengan.check()
+    await expect(generatedCommand(page)).toHaveText(
+      'pnpm dlx @alfredmouelle/create-stack@latest my-app --framework rasengan',
+    )
+    await expect(page).toHaveURL(/&framework=rasengan$/)
+    await page.reload()
+
+    await expect(rasengan).toBeChecked()
+    await expect(generatedCommand(page)).toHaveText(
+      'pnpm dlx @alfredmouelle/create-stack@latest my-app --framework rasengan',
     )
   })
 
@@ -108,9 +126,10 @@ test.describe('stack configurator', () => {
   test('renders a valid explicit selection and updates the shareable URL', async ({
     context,
     page,
+    baseURL,
   }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
-      origin: 'http://127.0.0.1:4321',
+      origin: new URL(baseURL ?? 'http://127.0.0.1:4321').origin,
     })
     await openPage(page, '/build')
 
@@ -197,9 +216,10 @@ test.describe('stack configurator', () => {
   test('restores a shared selection after reload and copies its link', async ({
     context,
     page,
+    baseURL,
   }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
-      origin: 'http://127.0.0.1:4321',
+      origin: new URL(baseURL ?? 'http://127.0.0.1:4321').origin,
     })
     await openPage(page, '/build')
     await page.getByLabel('Project name').fill('shared-app')

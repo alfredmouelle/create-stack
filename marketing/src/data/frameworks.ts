@@ -121,21 +121,21 @@ const PLANNED: readonly PlannedFramework[] = [
     id: 'vue',
     label: 'Vue',
     summary: 'Needs a framework module.',
-    roadmapPosition: 3,
+    roadmapPosition: 2,
   },
   {
     maturity: 'planned',
     id: 'nestjs',
     label: 'NestJS',
     summary: 'Needs a framework module.',
-    roadmapPosition: 4,
+    roadmapPosition: 3,
   },
   {
     maturity: 'planned',
     id: 'php',
     label: 'PHP frameworks',
     summary: 'Needs an owner and a framework module.',
-    roadmapPosition: 5,
+    roadmapPosition: 4,
   },
 ]
 
