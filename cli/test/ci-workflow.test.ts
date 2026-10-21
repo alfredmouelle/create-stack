@@ -28,6 +28,13 @@ const filterPaths = (name: string): string[] =>
 
 const WORKSPACE_FILES = ['package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml', '.npmrc']
 
+test('framework detection installs workspace dependencies before reading the registry', () => {
+  const changes = job('changes')
+  const install = changes.indexOf('run: pnpm install --frozen-lockfile')
+  expect(install).toBeGreaterThanOrEqual(0)
+  expect(changes.indexOf('node cli/scripts/list-frameworks.ts')).toBeGreaterThan(install)
+})
+
 test('linting runs on every pull request', () => {
   expect(job('lint')).not.toContain('needs:')
   expect(job('lint')).toContain('run: pnpm check')

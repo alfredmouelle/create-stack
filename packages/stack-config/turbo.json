@@ -25,7 +25,8 @@
         "$TURBO_ROOT$/cli/**",
         "$TURBO_ROOT$/apps/**",
         "$TURBO_ROOT$/packages/**",
-        "!$TURBO_ROOT$/**/node_modules/**"
+        "!$TURBO_ROOT$/**/node_modules/**",
+        "!$TURBO_ROOT$/**/.turbo/**"
       ]
     }
   }

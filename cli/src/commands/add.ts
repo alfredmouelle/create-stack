@@ -187,19 +187,18 @@ async function resolveAddSelections(args: ParsedArgs): Promise<Addition[]> {
       selections.push({ type: 'component', name: addition.slice('component='.length) })
       continue
     }
-    const cap = addition
-    const choices = adapterChoicesFor(cap)
+    const choices = adapterChoicesFor(addition)
     const adapter = choices
       ? cancelled(
           await p.select({
-            message: `${cap} adapter`,
+            message: `${addition} adapter`,
             options: [...choices.options],
             initialValue: choices.defaultAdapter,
           }),
         )
       : null
-    const resolved = resolveAdditionKind(cap)
-    if (!resolved) throw new Error(`Unknown addition: ${cap}`)
+    const resolved = resolveAdditionKind(addition)
+    if (!resolved) throw new Error(`Unknown addition: ${addition}`)
     selections.push({ type: 'capability', ...resolved, adapter })
   }
   return selections

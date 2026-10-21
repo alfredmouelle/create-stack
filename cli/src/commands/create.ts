@@ -33,7 +33,10 @@ import {
 } from '#lib/capabilities.ts'
 import { resolveDatabase } from '#lib/database.ts'
 import { detectPackageManager, resolvePackageManager } from '#lib/package-manager.ts'
-import { resolveCreationConfiguration } from '../creation-configuration.ts'
+import {
+  type CreationConfiguration,
+  resolveCreationConfiguration,
+} from '../creation-configuration.ts'
 import { type CreationRequest, createProject } from '../engine.ts'
 import type { CapabilitySelection, Monorepo, PackageManager } from '../framework-module.ts'
 import { frameworkModules } from '../framework-registry.ts'
@@ -364,6 +367,17 @@ function creationConfigurationInput(flags: Flags): StackConfigurationInput {
   return input
 }
 
+const stackRequest = (stack: CreationConfiguration) => ({
+  framework: stack.framework,
+  database: stack.database,
+  auth: stack.auth,
+  trpc: stack.trpc,
+  mailer: stack.mailerProvider,
+  formatter: stack.formatter,
+  linter: stack.linter,
+  selectionReasons: stack.selectionReasons,
+})
+
 function collectFromFlags(args: ParsedArgs, detected: PackageManager): CreationRequest {
   const argDir = args._[0]
   if (!argDir) throw new Error('Project name is required (positional) in non-interactive mode')
@@ -375,14 +389,7 @@ function collectFromFlags(args: ParsedArgs, detected: PackageManager): CreationR
     cwd: process.cwd(),
     target: argDir,
     name: argDir,
-    framework: stack.framework,
-    database: stack.database,
-    auth: stack.auth,
-    trpc: stack.trpc,
-    mailer: stack.mailerProvider,
-    formatter: stack.formatter,
-    linter: stack.linter,
-    selectionReasons: stack.selectionReasons,
+    ...stackRequest(stack),
     capabilities,
     monorepo: resolveMonorepo(args.flags.mono ?? args.flags.monorepo),
     alias,
@@ -616,14 +623,7 @@ async function collectFromPrompts(
     cwd: process.cwd(),
     target: argDir ?? projectName,
     name: projectName,
-    framework: stack.framework,
-    database: stack.database,
-    auth: stack.auth,
-    trpc: stack.trpc,
-    mailer: stack.mailerProvider,
-    formatter: stack.formatter,
-    linter: stack.linter,
-    selectionReasons: stack.selectionReasons,
+    ...stackRequest(stack),
     capabilities,
     monorepo,
     alias,

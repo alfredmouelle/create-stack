@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { join, relative, resolve } from 'node:path'
 import { expect, test } from 'vitest'
 import { frameworkModules } from '../src/framework-registry.ts'
+import { isJsonObject, type JsonObject } from '../src/javascript/json.ts'
 
 const repositoryRoot = resolve(import.meta.dirname, '../..')
 
@@ -9,7 +10,7 @@ type DryTask = {
   readonly taskId: string
   readonly directory: string
   readonly dependencies: readonly string[]
-  readonly inputs: Readonly<Record<string, string>>
+  readonly inputs: readonly string[]
   readonly resolvedTaskDefinition: { readonly outputs: readonly string[] }
 }
 
@@ -23,8 +24,39 @@ function dryRun(tasks: readonly string[], filters: readonly string[]): readonly 
       env: { ...process.env, TURBO_TELEMETRY_DISABLED: '1' },
     },
   )
-  const plan: { tasks: DryTask[] } = JSON.parse(output)
-  return plan.tasks
+  const plan: unknown = JSON.parse(output)
+  if (!isJsonObject(plan) || !Array.isArray(plan.tasks)) throw new Error('Invalid turbo dry run')
+  return plan.tasks.map(dryTask)
+}
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+
+const stringField = (source: JsonObject, field: string): string => {
+  const value = source[field]
+  if (typeof value !== 'string') throw new Error(`Invalid turbo task ${field}`)
+  return value
+}
+
+const stringArrayField = (source: JsonObject, field: string): string[] => {
+  const value = source[field]
+  if (!isStringArray(value)) throw new Error(`Invalid turbo task ${field}`)
+  return value
+}
+
+function dryTask(value: unknown): DryTask {
+  if (!isJsonObject(value)) throw new Error('Invalid turbo task')
+  const { inputs, resolvedTaskDefinition } = value
+  if (!isJsonObject(inputs) || !isJsonObject(resolvedTaskDefinition)) {
+    throw new Error('Invalid turbo task definition')
+  }
+  return {
+    taskId: stringField(value, 'taskId'),
+    directory: stringField(value, 'directory'),
+    dependencies: stringArrayField(value, 'dependencies'),
+    inputs: Object.keys(inputs),
+    resolvedTaskDefinition: { outputs: stringArrayField(resolvedTaskDefinition, 'outputs') },
+  }
 }
 
 function task(tasks: readonly DryTask[], taskId: string): DryTask {
@@ -34,7 +66,7 @@ function task(tasks: readonly DryTask[], taskId: string): DryTask {
 }
 
 const repositoryInputs = ({ directory, inputs }: DryTask): string[] =>
-  Object.keys(inputs).map((path) => relative(repositoryRoot, join(repositoryRoot, directory, path)))
+  inputs.map((path) => relative(repositoryRoot, join(repositoryRoot, directory, path)))
 
 const cliTasks = dryRun(['test', 'typecheck'], ['@alfredmouelle/create-stack'])
 
@@ -56,10 +88,13 @@ test('CLI tests hash the reference applications and capability sources they read
     'tsconfig.base.json',
     'pnpm-workspace.yaml',
     '.github/workflows/publish.yml',
+    'README.md',
+    'docs/adding-a-framework.md',
+    'marketing/package.json',
   ]) {
     expect(inputs).toContain(path)
   }
-  expect(inputs.some((path) => path.includes('node_modules/'))).toBe(false)
+  expect(inputs.some((path) => /(?:^|\/)(?:node_modules|\.turbo)\//.test(path))).toBe(false)
 })
 
 test('CLI typecheck hashes the shared TypeScript configuration', () => {
@@ -107,5 +142,5 @@ test('the shared stack configuration tests hash the CLI they characterize', () =
       ),
     ]),
   )
-  expect(inputs.some((path) => path.includes('node_modules/'))).toBe(false)
+  expect(inputs.some((path) => /(?:^|\/)(?:node_modules|\.turbo)\//.test(path))).toBe(false)
 })

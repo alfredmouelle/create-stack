@@ -69,7 +69,9 @@ reports a missing or mistyped field as you write it. `cli/src/frameworks/next.ts
 - `maturity`: `stable`, or `preview` while the framework depends on prerelease upstream
   packages.
 - `monorepoOutputs`: build outputs and caches for Turborepo and Nx, for example
-  `['.next/**', '!.next/cache/**']`. The website shows the same list.
+  `['.next/**', '!.next/cache/**']`. The website shows the same list, and your reference
+  application's `turbo.json` declares it as its `build` outputs (own that file with
+  `source: null`).
 - `supports`: the values your framework implements for each stack axis (`database`,
   `auth`, `trpc`, `mailer`, `formatter`, `linter`).
 - `recommendations`: the values applied to axes the user leaves unchosen. They must be

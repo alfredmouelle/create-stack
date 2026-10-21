@@ -175,6 +175,7 @@ const skeleton = skeletonPart(
       'vite.config.ts',
     ]),
     { path: '.gitignore', referencePath: '.gitignore', source: null },
+    { path: 'turbo.json', referencePath: 'turbo.json', source: null },
     { path: '.gitignore', source: join(TEMPLATES, 'tanstack/gitignore') },
     { path: 'src/routeTree.gen.ts', referencePath: 'src/routeTree.gen.ts', source: null },
     rendered('src/routes/__root.tsx', renderRoot),
