@@ -1,0 +1,14 @@
+---
+interface Props {
+  id: string
+  question: string
+  title: string
+}
+
+const { id, question, title } = Astro.props
+---
+
+<div class="sec-head">
+  <p class="sec-question">{question}</p>
+  <h2 class="t-h2" id={id}>{title}</h2>
+</div>

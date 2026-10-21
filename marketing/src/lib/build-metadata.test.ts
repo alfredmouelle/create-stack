@@ -64,17 +64,17 @@ describe('marketing metadata builds', () => {
     expect(html).toContain('<meta name="robots" content="index, follow">')
     expect(html).not.toContain('noindex')
     expect(html).toContain(
-      '<meta name="description" content="Create Stack generates a working SaaS project from your choices. It assembles only the selected pieces from a tested reference application.">',
+      '<meta name="description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
     )
-    expect(html).toContain('<title>Create Stack. A real app wired around your choices</title>')
+    expect(html).toContain('<title>create-stack. Your first commit is green</title>')
     expect(html).toContain('<link rel="canonical" href="https://create-stack.alfredmouelle.com/">')
     expect(html).toContain('<link rel="icon" href="/favicon.svg" type="image/svg+xml">')
     expect(html).toContain('<link rel="icon" href="/favicon.ico" sizes="48x48">')
     expect(html).toContain(
-      '<meta property="og:title" content="Create Stack. A real app wired around your choices">',
+      '<meta property="og:title" content="create-stack. Your first commit is green">',
     )
     expect(html).toContain(
-      '<meta property="og:description" content="Create Stack generates a working SaaS project from your choices. It assembles only the selected pieces from a tested reference application.">',
+      '<meta property="og:description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
     )
     expect(html).toContain(
       '<meta property="og:url" content="https://create-stack.alfredmouelle.com/">',
@@ -85,10 +85,10 @@ describe('marketing metadata builds', () => {
     )
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image">')
     expect(html).toContain(
-      '<meta name="twitter:title" content="Create Stack. A real app wired around your choices">',
+      '<meta name="twitter:title" content="create-stack. Your first commit is green">',
     )
     expect(html).toContain(
-      '<meta name="twitter:description" content="Create Stack generates a working SaaS project from your choices. It assembles only the selected pieces from a tested reference application.">',
+      '<meta name="twitter:description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
     )
     expect(html).toContain(
       '<meta name="twitter:image" content="https://create-stack.alfredmouelle.com/og-image.png">',

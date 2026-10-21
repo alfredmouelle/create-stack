@@ -1,4 +1,4 @@
-const EXPECTED_TITLE = 'Create Stack. A real app wired around your choices'
+const EXPECTED_TITLE = 'create-stack. Your first commit is green'
 
 function normalizeUrl(rawUrl: string) {
   let url: URL

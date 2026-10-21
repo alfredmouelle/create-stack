@@ -1,0 +1,99 @@
+---
+import Badge from '../../components/Badge.astro'
+import { isRegistered, maturityCounts, REGISTRY } from '../../data/frameworks'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+const counts = maturityCounts()
+const AXES = ['database', 'auth', 'trpc', 'mailer', 'formatter', 'linter'] as const
+const AXIS_LABELS = {
+  database: 'database',
+  auth: 'auth',
+  trpc: 'api',
+  mailer: 'mailer',
+  formatter: 'formatter',
+  linter: 'linter',
+} as const satisfies Record<(typeof AXES)[number], string>
+---
+
+<BaseLayout
+  description="The create-stack framework registry: stable frameworks with their supported stack options, and planned frameworks waiting for an owner."
+  title="Frameworks · create-stack"
+>
+  <main class="shell">
+    <header class="page-head">
+      <p class="t-label">Registry</p>
+      <h1 class="t-h1">Frameworks</h1>
+      <p class="t-lead">
+        Each framework is one module, one reference application and one registry entry. Stable
+        means its module passes the conformance suite and the gate in CI.
+      </p>
+      <p class="summary-line">
+        <span><Badge maturity="stable" /> <b>{counts.stable}</b></span>
+        <span><Badge maturity="preview" /> <b>{counts.preview}</b></span>
+        <span><Badge maturity="planned" /> <b>{counts.planned}</b></span>
+        <span><span class="is-pass">*</span> recommended by the framework</span>
+      </p>
+    </header>
+    <ul class="framework-list">
+      {
+        REGISTRY.map((entry) =>
+          isRegistered(entry) ? (
+            <li class={`framework-row is-${entry.maturity}`}>
+              <div>
+                <h2 class="framework-name">{entry.label}</h2>
+                <p class="framework-id">
+                  {entry.id}
+                  {entry.recommended ? ' · default' : ''}
+                </p>
+              </div>
+              <Badge maturity={entry.maturity} />
+              <dl class="kv">
+                {AXES.map((axis) => (
+                  <>
+                    <dt>{AXIS_LABELS[axis]}</dt>
+                    <dd>
+                      {entry.support.supports[axis].map((value) => {
+                        const recommended = entry.support.recommendations[axis]
+                        const isRecommended = Array.isArray(recommended)
+                          ? recommended.includes(value)
+                          : recommended === value
+                        const label = typeof value === 'boolean' ? (value ? 'trpc' : 'none') : value
+                        return (
+                          <span>
+                            {label}
+                            {isRecommended ? <span class="is-pass">*</span> : null}{' '}
+                          </span>
+                        )
+                      })}
+                    </dd>
+                  </>
+                ))}
+              </dl>
+              <div class="framework-actions">
+                <code class="mini-cmd">--framework {entry.id}</code>
+                <a class="text-link" href={`/frameworks/${entry.id}`}>Details →</a>
+              </div>
+            </li>
+          ) : (
+            <li class="framework-row is-planned">
+              <div>
+                <h2 class="framework-name">{entry.label}</h2>
+                <p class="framework-id">roadmap {entry.roadmapPosition} of {counts.planned}</p>
+              </div>
+              <Badge maturity="planned" />
+              <ul class="missing" aria-label={`Missing for ${entry.label}`}>
+                <li>framework module</li>
+                <li>reference application</li>
+                <li>registry entry</li>
+              </ul>
+              <div class="framework-actions">
+                <a class="button is-ghost is-small" href="/contribute">Own this framework</a>
+                <a class="text-link" href={`/frameworks/${entry.id}`}>Details →</a>
+              </div>
+            </li>
+          ),
+        )
+      }
+    </ul>
+  </main>
+</BaseLayout>

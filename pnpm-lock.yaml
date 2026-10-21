@@ -376,13 +376,10 @@ importers:
       '@astrojs/react':
         specifier: 7.0.1
         version: 7.0.1(@types/node@24.19.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tsx@4.23.15)(yaml@2.9.1)
-      '@fontsource-variable/bricolage-grotesque':
+      '@fontsource-variable/instrument-sans':
         specifier: 5.3.0
         version: 5.3.0
-      '@fontsource-variable/geist':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource-variable/geist-mono':
+      '@fontsource/commit-mono':
         specifier: 5.3.0
         version: 5.3.0
       astro:
@@ -1699,11 +1696,14 @@ packages:
   '@fontsource-variable/bricolage-grotesque@5.3.0':
     resolution: {integrity: sha512-TLi9Q4hJjS2UvoTMRSS2nHu6c4R56lAw60NR9QYtVRCHn0XtsFpiEhNffZ8Glsoxu6wEEwLKBP8lb94J52PNBA==}
 
-  '@fontsource-variable/geist-mono@5.3.0':
-    resolution: {integrity: sha512-vBbuwDEo9AkrqADMXOrlAR3DFcJi4/JxeuU43FoiQERnNwsfXNnvxvReZG02cQKmyk4DZkZdBZX3oTDvy2zBAw==}
-
   '@fontsource-variable/geist@5.3.0':
     resolution: {integrity: sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA==}
+
+  '@fontsource-variable/instrument-sans@5.3.0':
+    resolution: {integrity: sha512-u4gKbDBTNFGkg997tfQn3eHOhHuquWUFTRT/rwzuKtrxX5P2ekfs2x+LgBPP4P32+cC+vUwF1Cr+IdRoPQbrGw==}
+
+  '@fontsource/commit-mono@5.3.0':
+    resolution: {integrity: sha512-Bs+zlEWHDgk/cCVWEMJJaA7LbBU3Ixi5Zums+SSwMKdm2N7RJ4P7jCJTwsMHRt5WFiXYB0tu0q9HMfkn0YsLsQ==}
 
   '@getbrevo/brevo@6.1.0':
     resolution: {integrity: sha512-QLJLqxI0A6+umc1hqZ0TY5bvrAJxNkjSCfzLA56/o5gyiJvaMwYzoFG6V21ajzVA0gKFEtyYjGjzrR2kx+/dvQ==}
@@ -9553,9 +9553,11 @@ snapshots:
 
   '@fontsource-variable/bricolage-grotesque@5.3.0': {}
 
-  '@fontsource-variable/geist-mono@5.3.0': {}
-
   '@fontsource-variable/geist@5.3.0': {}
+
+  '@fontsource-variable/instrument-sans@5.3.0': {}
+
+  '@fontsource/commit-mono@5.3.0': {}
 
   '@getbrevo/brevo@6.1.0': {}
 

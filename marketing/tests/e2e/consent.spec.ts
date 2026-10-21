@@ -37,11 +37,11 @@ test.describe('analytics consent', () => {
 
     const dialog = page.getByRole('dialog', { name: 'Analytics, on your terms.' })
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Refuse' })).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Accept analytics' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Decline', exact: true })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Accept', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Open privacy settings' })).not.toBeVisible()
 
-    await dialog.getByRole('button', { name: 'Refuse' }).click()
+    await dialog.getByRole('button', { name: 'Decline', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Open privacy settings' })).toBeVisible()
     expect(await page.evaluate((key) => localStorage.getItem(key), consentKey)).toBe('v1:rejected')
   })
@@ -49,19 +49,19 @@ test.describe('analytics consent', () => {
   test('can accept analytics and change the choice later', async ({ page }) => {
     await page.goto('/')
 
-    await page.getByRole('button', { name: 'Accept analytics' }).click()
+    await page.getByRole('button', { name: 'Accept', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Open privacy settings' })).toBeVisible()
     expect(await page.evaluate((key) => localStorage.getItem(key), consentKey)).toBe('v1:accepted')
 
     await page.getByRole('button', { name: 'Open privacy settings' }).click()
     await expect(page.getByRole('dialog', { name: 'Analytics, on your terms.' })).toBeVisible()
-    await page.getByRole('button', { name: 'Refuse' }).click()
+    await page.getByRole('button', { name: 'Decline', exact: true }).click()
     expect(await page.evaluate((key) => localStorage.getItem(key), consentKey)).toBe('v1:rejected')
   })
 
   test('links the consent choice to the privacy page', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: 'Read the privacy page ↗' }).click()
+    await page.getByRole('link', { name: 'Read the privacy page' }).click()
 
     await expect(page).toHaveURL(/\/privacy$/)
     await expect(
@@ -72,7 +72,7 @@ test.describe('analytics consent', () => {
 
   test('keeps privacy settings clear of the footer at the bottom of the page', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: 'Refuse' }).click()
+    await page.getByRole('button', { name: 'Decline', exact: true }).click()
     await page.evaluate(() => {
       document.documentElement.style.scrollBehavior = 'auto'
       window.scrollTo(0, document.documentElement.scrollHeight)

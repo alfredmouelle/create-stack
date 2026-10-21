@@ -21,4 +21,16 @@ describe('marketing changelog', () => {
       '<strong>Fixed</strong> <code>&lt;script&gt;</code> <a href="https://example.com" rel="noreferrer" target="_blank">docs</a>',
     )
   })
+
+  it('keeps code spans literal', () => {
+    expect(renderInline('Set `BETTER_AUTH_SECRET` and `**not bold**` in `.env`')).toBe(
+      'Set <code>BETTER_AUTH_SECRET</code> and <code>**not bold**</code> in <code>.env</code>',
+    )
+  })
+
+  it('italicizes only whole underscore-delimited words', () => {
+    expect(renderInline('an _important_ note about snake_case_names')).toBe(
+      'an <em>important</em> note about snake_case_names',
+    )
+  })
 })

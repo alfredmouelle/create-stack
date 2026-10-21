@@ -6,23 +6,23 @@ import BaseLayout from '../layouts/BaseLayout.astro'
   description="How create-stack handles analytics, consent, and privacy on the marketing site."
   title="Privacy · create-stack"
 >
-  <main class="privacy-page page-shell">
-    <header class="privacy-intro">
-      <p class="section-kicker">Privacy</p>
-      <h1>Analytics with a clear boundary.</h1>
-      <p>
+  <main class="shell">
+    <header class="page-head is-reading">
+      <p class="t-label">Privacy</p>
+      <h1 class="t-h1">Analytics with a clear boundary.</h1>
+      <p class="t-lead">
         This page explains what the create-stack marketing site sends to PostHog and what it does
         not send.
       </p>
-      <p class="privacy-updated">Last updated: August 24, 2026</p>
+      <p class="t-label">Last updated: <time datetime="2026-08-24">2026-08-24</time></p>
     </header>
 
-    <div class="privacy-content">
+    <article class="prose">
       <section>
         <h2>Analytics is off by default</h2>
         <p>
-          The site does not load PostHog until you choose "Accept analytics". You can refuse or
-          change your choice at any time through the Privacy settings button.
+          The site does not load PostHog until you choose "Accept". You can decline or change
+          your choice at any time through the Privacy settings button.
         </p>
       </section>
 
@@ -70,6 +70,6 @@ import BaseLayout from '../layouts/BaseLayout.astro'
           <a href="mailto:contact@alfredmouelle.com">contact@alfredmouelle.com</a>.
         </p>
       </section>
-    </div>
+    </article>
   </main>
 </BaseLayout>

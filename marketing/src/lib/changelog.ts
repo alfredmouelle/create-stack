@@ -53,21 +53,33 @@ export function parseChangelog(source: string): ChangelogRelease[] {
   return releases
 }
 
-export function renderInline(markdown: string): string {
-  const escaped = markdown
+function escapeHtml(text: string): string {
+  return text
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
+}
 
-  return escaped
+function renderProse(text: string): string {
+  return escapeHtml(text)
     .replace(
       /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
       '<a href="$2" rel="noreferrer" target="_blank">$1</a>',
     )
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    .replace(/(^|[^\w])_([^_]+)_(?!\w)/g, '$1<em>$2</em>')
+}
+
+export function renderInline(markdown: string): string {
+  return markdown
+    .split(/(`[^`]+`)/)
+    .map((part) =>
+      part.startsWith('`') && part.endsWith('`') && part.length > 1
+        ? `<code>${escapeHtml(part.slice(1, -1))}</code>`
+        : renderProse(part),
+    )
+    .join('')
 }
 
 export const CHANGELOG_RELEASES = parseChangelog(CHANGELOG_SOURCE)

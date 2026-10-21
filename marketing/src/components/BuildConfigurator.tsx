@@ -1,19 +1,29 @@
 import {
+  type Auth,
+  type Database,
   FORMATTERS,
+  type Formatter,
   FRAMEWORK_SUPPORT,
   FRAMEWORKS,
+  type Framework,
   LINTERS,
+  type Linter,
+  type Mailer,
   QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,
+  type StackAxis,
 } from '@alfredmouelle/stack-config'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { IMPLEMENTER_GUIDE_URL, PLANNED_FRAMEWORKS } from '../data/frameworks'
 import { captureCommandCopied, captureShareLinkCopied } from '../lib/analytics'
 import {
   type BuildState,
   type BuildStateResult,
   CAPABILITY_CATALOG,
+  creationPlanLines,
+  DEFAULT_IMPORT_ALIAS,
   defaultBuildState,
-  IMPORT_ALIASES,
+  isValidImportAlias,
   MONOREPOS,
   PACKAGE_MANAGERS,
   type ParsedBuildState,
@@ -21,417 +31,184 @@ import {
   resolveBuildState,
   serializeBuildState,
 } from '../lib/build-config'
-import BackToTop from './BackToTop'
+
+type CopyState = 'idle' | 'copied' | 'error'
+
+type UpdateState = (patch: Partial<BuildState>) => void
 
 type ChoiceOption<Value extends string | boolean> = {
   value: Value
   label: string
-  hint?: string
 }
 
-type UpdateState = (patch: Partial<BuildState>) => void
+const COPY_FAILURE = 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.'
 
-type ChoiceGroupProps<Value extends string | boolean> = {
-  id: string
-  label: string
-  options: readonly ChoiceOption<Value>[]
-  reason?: string
-  reasonKind?: string
-  selectedValue: Value
-  supportedValues?: readonly Value[]
-  onChange: (value: Value) => void
-}
+const databaseOptions: readonly ChoiceOption<Database>[] = [
+  { value: 'drizzle', label: 'Drizzle' },
+  { value: 'prisma', label: 'Prisma' },
+  { value: 'convex', label: 'Convex' },
+  { value: 'none', label: 'none' },
+]
 
-function ChoiceGroup<Value extends string | boolean>({
-  id,
-  label,
-  options,
-  reason,
-  reasonKind,
-  selectedValue,
-  supportedValues,
-  onChange,
-}: ChoiceGroupProps<Value>) {
-  return (
-    <fieldset className="build-choice-group">
-      <legend>{label}</legend>
-      <div className="build-choice-options">
-        {options.map((option) => {
-          const unavailable =
-            supportedValues !== undefined && !supportedValues.includes(option.value)
-          return (
-            <label className="build-choice" key={String(option.value)}>
-              <input
-                checked={selectedValue === option.value}
-                disabled={unavailable}
-                name={id}
-                onChange={() => onChange(option.value)}
-                type="radio"
-                value={String(option.value)}
-              />
-              <span className="build-choice-copy">
-                <strong>{option.label}</strong>
-                {unavailable ? (
-                  <small>Unavailable for this framework</small>
-                ) : option.hint ? (
-                  <small>{option.hint}</small>
-                ) : null}
-              </span>
-            </label>
-          )
-        })}
-      </div>
-      {reason ? (
-        <p className="build-reason" data-reason-kind={reasonKind}>
-          <span aria-hidden="true">↳</span> {reason}
-        </p>
-      ) : null}
-    </fieldset>
-  )
-}
+const authOptions: readonly ChoiceOption<Auth>[] = [
+  { value: 'better-auth', label: 'Better Auth' },
+  { value: 'clerk', label: 'Clerk' },
+  { value: 'none', label: 'none' },
+]
 
-const frameworkOptions = FRAMEWORKS.map((framework) => {
-  const { label, maturity } = FRAMEWORK_SUPPORT[framework]
-  const hint =
-    framework === RECOMMENDED_FRAMEWORK ? 'recommended' : maturity === 'preview' ? 'preview' : null
-  return hint ? { value: framework, label, hint } : { value: framework, label }
-})
-
-const databaseOptions = [
-  { value: 'drizzle', label: 'Drizzle', hint: 'Postgres ORM' },
-  { value: 'prisma', label: 'Prisma', hint: 'Postgres ORM' },
-  { value: 'convex', label: 'Convex', hint: 'realtime database' },
-  { value: 'none', label: 'None', hint: 'no database' },
-] as const
-
-const authOptions = [
-  { value: 'better-auth', label: 'Better Auth', hint: 'email + password' },
-  { value: 'clerk', label: 'Clerk', hint: 'hosted authentication' },
-  { value: 'none', label: 'None', hint: 'no authentication' },
-] as const
-
-const mailerOptions = [
+const mailerOptions: readonly ChoiceOption<Mailer>[] = [
   { value: 'resend', label: 'Resend' },
   { value: 'brevo', label: 'Brevo' },
   { value: 'ses', label: 'Amazon SES' },
-  { value: 'none', label: 'None', hint: 'no transactional mail' },
-] as const
+  { value: 'none', label: 'none' },
+]
 
-const trpcOptions = [
-  { value: true, label: 'Include tRPC' },
+const trpcOptions: readonly ChoiceOption<boolean>[] = [
+  { value: true, label: 'tRPC' },
   { value: false, label: 'No tRPC' },
-] as const
+]
 
-const formatterOptions = FORMATTERS.map((value) => ({ value, label: QUALITY_TOOL_LABELS[value] }))
-
-const linterOptions = LINTERS.map((value) => ({ value, label: QUALITY_TOOL_LABELS[value] }))
-
-function reasonFor(result: BuildStateResult, axis: string) {
-  const reason = result.reasons.find((candidate) => candidate.axis === axis)
-  if (!reason) return undefined
-  if (reason.kind === 'dependency') return `Added by dependency completion: ${reason.message}`
-  if (reason.kind === 'recommended') return `Recommended: ${reason.message}`
-  if (reason.kind === 'minimal') return `Minimal project: ${reason.message}`
-  return reason.message
-}
-
-function reasonKindFor(result: BuildStateResult, axis: string) {
-  return result.reasons.find((reason) => reason.axis === axis)?.kind
-}
-
-function ProviderSelect({
-  capabilityName,
-  capabilityLabel,
-  options,
+const formatterOptions: readonly ChoiceOption<Formatter>[] = FORMATTERS.map((value) => ({
   value,
-  onChange,
-}: {
-  capabilityName: string
-  capabilityLabel: string
-  options: readonly string[]
-  value: string
-  onChange: (value: string) => void
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [highlightedIndex, setHighlightedIndex] = useState(() =>
-    Math.max(options.indexOf(value), 0),
-  )
-  const rootRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const listboxId = `${capabilityName}-provider-options`
+  label: QUALITY_TOOL_LABELS[value],
+}))
 
-  useEffect(() => {
-    if (!isOpen) return
+const linterOptions: readonly ChoiceOption<Linter>[] = LINTERS.map((value) => ({
+  value,
+  label: QUALITY_TOOL_LABELS[value],
+}))
 
-    function closeOnOutsidePointer(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false)
-    }
+const frameworkOptions: readonly ChoiceOption<Framework>[] = FRAMEWORKS.map((value) => ({
+  value,
+  label: FRAMEWORK_SUPPORT[value].label,
+}))
 
-    document.addEventListener('pointerdown', closeOnOutsidePointer)
-    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
-  }, [isOpen])
+function isRecommended(framework: Framework, axis: StackAxis, value: string | boolean): boolean {
+  if (axis === 'framework') return value === RECOMMENDED_FRAMEWORK
+  const recommendations: Readonly<Record<string, unknown>> =
+    FRAMEWORK_SUPPORT[framework].recommendations
+  const recommended = recommendations[axis]
+  return Array.isArray(recommended) ? recommended.includes(value) : recommended === value
+}
 
-  useEffect(() => {
-    if (isOpen) setHighlightedIndex(Math.max(options.indexOf(value), 0))
-  }, [isOpen, options, value])
+function reasonFor(result: BuildStateResult, axis: StackAxis) {
+  return result.reasons.find((reason) => reason.axis === axis)
+}
 
-  function choose(index: number) {
-    const nextValue = options[index]
-    if (!nextValue) return
-    onChange(nextValue)
-    setIsOpen(false)
-    triggerRef.current?.focus()
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
-    const lastIndex = options.length - 1
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault()
-        setIsOpen(true)
-        setHighlightedIndex((current) => Math.min(current + 1, lastIndex))
-        break
-      case 'ArrowUp':
-        event.preventDefault()
-        setIsOpen(true)
-        setHighlightedIndex((current) => Math.max(current - 1, 0))
-        break
-      case 'Home':
-        event.preventDefault()
-        setIsOpen(true)
-        setHighlightedIndex(0)
-        break
-      case 'End':
-        event.preventDefault()
-        setIsOpen(true)
-        setHighlightedIndex(lastIndex)
-        break
-      case 'Enter':
-      case ' ':
-        event.preventDefault()
-        if (isOpen) choose(highlightedIndex)
-        else setIsOpen(true)
-        break
-      case 'Escape':
-        if (isOpen) {
-          event.preventDefault()
-          setIsOpen(false)
-        }
-        break
-      default:
-        break
-    }
-  }
+function Reveal({ open, children }: { open: boolean; children: ReactNode }) {
+  const [kept, setKept] = useState<ReactNode>(open ? children : null)
+  if (open && kept !== children) setKept(children)
 
   return (
-    <div className="build-select-control" ref={rootRef}>
-      <button
-        aria-activedescendant={isOpen ? `${listboxId}-${highlightedIndex}` : undefined}
-        aria-controls={listboxId}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-label={`${capabilityLabel} provider`}
-        className="build-select-trigger"
-        onClick={() => setIsOpen((current) => !current)}
-        onKeyDown={handleKeyDown}
-        ref={triggerRef}
-        role="combobox"
-        type="button"
-      >
-        <span>{value}</span>
-        <span aria-hidden="true" className="build-select-arrow" />
-      </button>
-      {isOpen ? (
-        <div
-          aria-label={`${capabilityLabel} provider options`}
-          className="build-select-menu"
-          id={listboxId}
-          role="listbox"
-        >
-          {options.map((option, index) => (
-            <div
-              aria-selected={value === option}
-              className="build-select-option"
-              data-highlighted={highlightedIndex === index}
-              id={`${listboxId}-${index}`}
-              key={option}
-              onClick={() => choose(index)}
-              onMouseEnter={() => setHighlightedIndex(index)}
-              role="option"
-              tabIndex={-1}
-            >
-              {option}
-            </div>
-          ))}
-        </div>
-      ) : null}
+    <div className="reveal" data-open={open} inert={!open}>
+      <div className="reveal-inner">{open ? children : kept}</div>
     </div>
   )
 }
 
-function copyFailureMessage() {
-  return 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.'
-}
-
-function BuildRecovery({ route, onRestore }: { route: ParsedBuildState; onRestore: UpdateState }) {
-  if (route.kind === 'unsupported') {
-    return (
-      <section className="build-recovery page-shell" data-state="unsupported" role="alert">
-        <p className="section-kicker">Configuration link</p>
-        <h1>That build link uses an older schema.</h1>
-        <p>
-          Version {route.version} is not understood by this configurator. Your choices were left
-          untouched; start from the current recommended stack when you are ready.
-        </p>
-        <button className="build-primary-button" onClick={() => onRestore({})} type="button">
-          Use the current recommended stack
-        </button>
-      </section>
-    )
-  }
-
-  if (route.kind === 'invalid') {
-    return (
-      <section className="build-recovery page-shell" data-state="invalid" role="alert">
-        <p className="section-kicker">Configuration link</p>
-        <h1>This build link could not be read.</h1>
-        <p>{route.message}. Start from the current recommended stack to continue.</p>
-        <button className="build-primary-button" onClick={() => onRestore({})} type="button">
-          Use the current recommended stack
-        </button>
-      </section>
-    )
-  }
-
-  return null
-}
-
-function ProjectPanel({ state, updateState }: { state: BuildState; updateState: UpdateState }) {
-  return (
-    <section aria-labelledby="project-heading" className="build-panel build-project-panel">
-      <div className="build-panel-heading">
-        <div>
-          <p className="build-panel-index">01 / project</p>
-          <h2 id="project-heading">Name the project</h2>
-        </div>
-        <span className="build-panel-note">required</span>
-      </div>
-      <label className="build-text-field" htmlFor="project-name">
-        <span>Project name</span>
-        <input
-          id="project-name"
-          onChange={(event) => updateState({ projectName: event.currentTarget.value })}
-          placeholder="my-app"
-          spellCheck="false"
-          value={state.projectName}
-        />
-      </label>
-      {!state.projectName.trim() ? (
-        <p className="build-field-error" role="alert">
-          Enter a project name to generate a command.
-        </p>
-      ) : null}
-    </section>
-  )
-}
-
-function StackPanel({
-  state,
-  result,
-  updateState,
+function Axis({
+  id,
+  label,
+  hint,
+  children,
 }: {
-  state: BuildState
-  result: BuildStateResult
-  updateState: UpdateState
+  id: string
+  label: string
+  hint?: string
+  children: ReactNode
 }) {
-  const { supports } = FRAMEWORK_SUPPORT[result.configuration.framework]
-
   return (
-    <section aria-labelledby="stack-heading" className="build-panel">
-      <div className="build-panel-heading">
-        <div>
-          <p className="build-panel-index">02 / main axes</p>
-          <h2 id="stack-heading">Shape the stack</h2>
-        </div>
-        <span className="build-panel-note">recommendations on</span>
+    <fieldset aria-labelledby={`${id}-label`} className="axis">
+      <div className="axis-label">
+        <span id={`${id}-label`}>{label}</span>
+        {hint ? <small>{hint}</small> : null}
       </div>
-      <div className="build-choice-grid">
-        <ChoiceGroup
-          id="framework"
-          label="Framework"
-          onChange={(value) => updateState({ framework: value })}
-          options={frameworkOptions}
-          reason={reasonFor(result, 'framework')}
-          reasonKind={reasonKindFor(result, 'framework')}
-          selectedValue={state.framework ?? result.configuration.framework}
-        />
-        <ChoiceGroup
-          id="database"
-          label="Database"
-          onChange={(value) => updateState({ database: value })}
-          options={databaseOptions}
-          reason={reasonFor(result, 'database')}
-          reasonKind={reasonKindFor(result, 'database')}
-          selectedValue={state.database ?? result.configuration.database}
-          supportedValues={supports.database}
-        />
-        <ChoiceGroup
-          id="auth"
-          label="Authentication"
-          onChange={(value) => updateState({ auth: value })}
-          options={authOptions}
-          reason={reasonFor(result, 'auth')}
-          reasonKind={reasonKindFor(result, 'auth')}
-          selectedValue={state.auth ?? result.configuration.auth}
-          supportedValues={supports.auth}
-        />
-        <ChoiceGroup
-          id="trpc"
-          label="API"
-          onChange={(value) => updateState({ trpc: value })}
-          options={trpcOptions}
-          reason={reasonFor(result, 'trpc')}
-          reasonKind={reasonKindFor(result, 'trpc')}
-          selectedValue={state.trpc ?? result.configuration.trpc}
-          supportedValues={supports.trpc}
-        />
-        <ChoiceGroup
-          id="mailer"
-          label="Mailer"
-          onChange={(value) => updateState({ mailer: value })}
-          options={mailerOptions}
-          reason={reasonFor(result, 'mailer')}
-          reasonKind={reasonKindFor(result, 'mailer')}
-          selectedValue={state.mailer ?? result.configuration.mailer}
-          supportedValues={supports.mailer}
-        />
-        <ChoiceGroup
-          id="formatter"
-          label="Formatter"
-          onChange={(value) => updateState({ formatter: value })}
-          options={formatterOptions}
-          reason={reasonFor(result, 'formatter')}
-          reasonKind={reasonKindFor(result, 'formatter')}
-          selectedValue={state.formatter ?? result.configuration.formatter}
-          supportedValues={supports.formatter}
-        />
-        <ChoiceGroup
-          id="linter"
-          label="Linter"
-          onChange={(value) => updateState({ linter: value })}
-          options={linterOptions}
-          reason={reasonFor(result, 'linter')}
-          reasonKind={reasonKindFor(result, 'linter')}
-          selectedValue={state.linter ?? result.configuration.linter}
-          supportedValues={supports.linter}
-        />
-      </div>
-    </section>
+      <div className="axis-body">{children}</div>
+    </fieldset>
   )
 }
 
-function CapabilityOption({
+function ChoiceChips<Value extends string | boolean>({
+  axis,
+  options,
+  result,
+  selectedValue,
+  supportedValues,
+  onChange,
+}: {
+  axis: StackAxis
+  options: readonly ChoiceOption<Value>[]
+  result: BuildStateResult
+  selectedValue: Value
+  supportedValues?: readonly Value[]
+  onChange: (value: Value) => void
+}) {
+  const framework = result.configuration.framework
+  const conflicted = result.conflicts.some((conflict) => conflict.axes.includes(axis))
+  const reason = reasonFor(result, axis)
+
+  return (
+    <>
+      <div className="chips">
+        {options.map((option) => {
+          const unsupported =
+            supportedValues !== undefined && !supportedValues.includes(option.value)
+          const selected = selectedValue === option.value
+          const state = unsupported
+            ? 'unsupported'
+            : selected && conflicted
+              ? 'conflict'
+              : selected
+                ? 'selected'
+                : 'idle'
+          return (
+            <label className="chip" data-state={state} key={String(option.value)}>
+              <input
+                checked={selected}
+                className="chip-input"
+                disabled={unsupported}
+                name={axis}
+                onChange={() => onChange(option.value)}
+                type="radio"
+                value={String(option.value)}
+              />
+              {option.label}
+              {isRecommended(framework, axis, option.value) ? (
+                <span className="chip-mark">recommended</span>
+              ) : null}
+            </label>
+          )
+        })}
+      </div>
+      <Reveal open={conflicted}>
+        {result.conflicts
+          .filter((conflict) => conflict.axes.includes(axis))
+          .map((conflict) => (
+            <p className="chip-reason is-conflict" key={conflict.message}>
+              {conflict.message}
+            </p>
+          ))}
+      </Reveal>
+      <Reveal open={!conflicted && reason !== undefined}>
+        {reason ? (
+          <p className="chip-reason" data-reason-kind={reason.kind}>
+            ↳ {reason.message}
+          </p>
+        ) : null}
+      </Reveal>
+    </>
+  )
+}
+
+function UnofferedChip({ label }: { label: string }) {
+  return (
+    <span aria-disabled="true" className="chip" data-state="unsupported">
+      {label}
+    </span>
+  )
+}
+
+function CapabilityRow({
   capability,
   state,
   updateState,
@@ -443,373 +220,424 @@ function CapabilityOption({
   const provider = state.capabilities[capability.name]
   const selected = provider !== undefined
 
-  function changeSelection(checked: boolean) {
+  const labelId = `capability-${capability.name}-label`
+
+  function toggle(option: string) {
     const capabilities = { ...state.capabilities }
-    if (checked) capabilities[capability.name] = capability.recommendedProvider
-    else delete capabilities[capability.name]
+    if (provider === option) delete capabilities[capability.name]
+    else capabilities[capability.name] = option
     updateState({ capabilities })
   }
 
   return (
-    <div className="build-capability">
-      <label className="build-capability-toggle">
-        <input
-          checked={selected}
-          onChange={(event) => changeSelection(event.currentTarget.checked)}
-          type="checkbox"
-        />
-        <span>
-          <strong>{capability.label}</strong>
-          <small>{selected ? 'included' : 'not included'}</small>
-        </span>
-      </label>
-      <div className="build-provider-slot" data-state={selected ? 'active' : 'empty'}>
-        {selected ? (
-          <div className="build-provider-field">
-            <span>Provider</span>
-            <ProviderSelect
-              capabilityLabel={capability.label}
-              capabilityName={capability.name}
-              onChange={(value) =>
-                updateState({
-                  capabilities: {
-                    ...state.capabilities,
-                    [capability.name]: value,
-                  },
-                })
-              }
-              options={capability.providers}
-              value={provider ?? capability.recommendedProvider}
-            />
-          </div>
+    <div className="capability" data-selected={selected}>
+      <span className="capability-label" id={labelId}>
+        {capability.label}
+      </span>
+      <fieldset aria-labelledby={labelId} className="chips is-small">
+        {capability.providers.map((option) => (
+          <button
+            aria-pressed={provider === option}
+            className="chip is-small is-toggle"
+            data-state={provider === option ? 'selected' : 'idle'}
+            key={option}
+            onClick={() => toggle(option)}
+            type="button"
+          >
+            {option}
+          </button>
+        ))}
+        {capability.providers.length === 1 ? (
+          <span className="chip-note">single provider</span>
         ) : null}
-      </div>
+      </fieldset>
     </div>
   )
 }
 
-function AdditionalPanel({ state, updateState }: { state: BuildState; updateState: UpdateState }) {
-  return (
-    <details className="build-panel build-additional" open>
-      <summary>
-        <span>
-          <span className="build-panel-index">03 / additional options</span>
-          <strong className="build-additional-title">Extend the project</strong>
-        </span>
-        <span aria-hidden="true" className="build-summary-arrow">
-          ↘
-        </span>
-      </summary>
-      <div className="build-additional-body">
-        <ChoiceGroup
-          id="import-alias"
-          label="Import alias"
-          onChange={(value) => updateState({ alias: value as BuildState['alias'] })}
-          options={IMPORT_ALIASES}
-          selectedValue={state.alias ?? '~'}
-        />
-        <fieldset className="build-choice-group">
-          <legend>Monorepo</legend>
-          <div className="build-choice-options build-choice-options-wide">
-            <label className="build-choice">
-              <input
-                checked={!state.monorepo}
-                name="monorepo"
-                onChange={() => updateState({ monorepo: undefined })}
-                type="radio"
-              />
-              <span className="build-choice-copy">
-                <strong>Single app</strong>
-                <small>standalone project</small>
-              </span>
-            </label>
-            {MONOREPOS.map((monorepo) => (
-              <label className="build-choice" key={monorepo.value}>
-                <input
-                  checked={state.monorepo === monorepo.value}
-                  name="monorepo"
-                  onChange={() => updateState({ monorepo: monorepo.value })}
-                  type="radio"
-                />
-                <span className="build-choice-copy">
-                  <strong>{monorepo.label}</strong>
-                  <small>app in apps/web</small>
-                </span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+function BuildRecovery({ route, onRestore }: { route: ParsedBuildState; onRestore: () => void }) {
+  if (route.kind === 'current') return null
 
-        <fieldset className="build-capabilities">
-          <legend>Capabilities</legend>
-          <p className="build-additional-copy">
-            Add infrastructure now. Each capability uses the same provider choices as the CLI.
-          </p>
-          <div className="build-capability-grid">
-            {CAPABILITY_CATALOG.map((capability) => (
-              <CapabilityOption
-                capability={capability}
-                key={capability.name}
-                state={state}
-                updateState={updateState}
-              />
-            ))}
-          </div>
-        </fieldset>
-      </div>
-    </details>
+  return (
+    <main className="shell recovery" data-state={route.kind} role="alert">
+      <p className="t-label">Configuration link</p>
+      <h1 className="t-h1">
+        {route.kind === 'unsupported'
+          ? 'That build link uses an older schema.'
+          : 'This build link could not be read.'}
+      </h1>
+      <p className="t-lead">
+        {route.kind === 'unsupported'
+          ? `Version ${route.version} is not understood by this builder. Start from the current recommended stack.`
+          : `${route.message}. Start from the current recommended stack to continue.`}
+      </p>
+      <button className="button is-primary" onClick={onRestore} type="button">
+        Use the current recommended stack
+      </button>
+    </main>
   )
 }
 
-function commandStatusMessage(result: BuildStateResult, copyState: 'idle' | 'copied' | 'error') {
-  if (copyState === 'copied') return 'Command copied to your clipboard.'
-  if (copyState === 'error') return copyFailureMessage()
-  if (result.command) return 'Run it from the directory where you want the project.'
-  return 'Command generation is paused until the conflicts are resolved.'
+function StackChoices({
+  state,
+  result,
+  updateState,
+}: {
+  state: BuildState
+  result: BuildStateResult
+  updateState: UpdateState
+}) {
+  const { supports } = FRAMEWORK_SUPPORT[result.configuration.framework]
+  const aliasValue = state.alias ?? DEFAULT_IMPORT_ALIAS
+  const aliasIsValid = isValidImportAlias(aliasValue)
+
+  return (
+    <div className="build-form">
+      <div className="axis">
+        <div className="axis-label">
+          <label htmlFor="project-name">Project name</label>
+          <small>directory and package name</small>
+        </div>
+        <div className="axis-body">
+          <input
+            aria-invalid={!state.projectName.trim()}
+            className="field"
+            id="project-name"
+            onChange={(event) => updateState({ projectName: event.currentTarget.value })}
+            placeholder="my-app"
+            spellCheck="false"
+            value={state.projectName}
+          />
+          <Reveal open={!state.projectName.trim()}>
+            <p className="chip-reason is-conflict" role="alert">
+              Enter a project name to generate a command.
+            </p>
+          </Reveal>
+        </div>
+      </div>
+
+      <Axis id="framework" label="Framework">
+        <ChoiceChips
+          axis="framework"
+          onChange={(framework) => updateState({ framework })}
+          options={frameworkOptions}
+          result={result}
+          selectedValue={state.framework ?? result.configuration.framework}
+        />
+        <div className="chips">
+          {PLANNED_FRAMEWORKS.slice(0, 1).map((framework) => (
+            <UnofferedChip key={framework.id} label={`${framework.label} · planned`} />
+          ))}
+        </div>
+        <p className="chip-reason">
+          Planned frameworks are listed, not selectable.{' '}
+          <a href={IMPLEMENTER_GUIDE_URL} rel="noreferrer" target="_blank">
+            Own one →
+          </a>
+        </p>
+      </Axis>
+
+      <Axis id="database" label="Database">
+        <ChoiceChips
+          axis="database"
+          onChange={(database) => updateState({ database })}
+          options={databaseOptions}
+          result={result}
+          selectedValue={state.database ?? result.configuration.database}
+          supportedValues={supports.database}
+        />
+      </Axis>
+
+      <Axis id="auth" label="Authentication">
+        <ChoiceChips
+          axis="auth"
+          onChange={(auth) => updateState({ auth })}
+          options={authOptions}
+          result={result}
+          selectedValue={state.auth ?? result.configuration.auth}
+          supportedValues={supports.auth}
+        />
+      </Axis>
+
+      <Axis id="trpc" label="API">
+        <ChoiceChips
+          axis="trpc"
+          onChange={(trpc) => updateState({ trpc })}
+          options={trpcOptions}
+          result={result}
+          selectedValue={state.trpc ?? result.configuration.trpc}
+          supportedValues={supports.trpc}
+        />
+      </Axis>
+
+      <Axis id="mailer" label="Mailer">
+        <ChoiceChips
+          axis="mailer"
+          onChange={(mailer) => updateState({ mailer })}
+          options={mailerOptions}
+          result={result}
+          selectedValue={state.mailer ?? result.configuration.mailer}
+          supportedValues={supports.mailer}
+        />
+      </Axis>
+
+      <Axis id="formatter" label="Formatter">
+        <ChoiceChips
+          axis="formatter"
+          onChange={(formatter) => updateState({ formatter })}
+          options={formatterOptions}
+          result={result}
+          selectedValue={state.formatter ?? result.configuration.formatter}
+          supportedValues={supports.formatter}
+        />
+        <div className="chips">
+          <UnofferedChip label="oxfmt" />
+        </div>
+        <p className="chip-reason">
+          oxfmt and no formatter are not offered: every project ships a strict formatter.
+        </p>
+      </Axis>
+
+      <Axis id="linter" label="Linter">
+        <ChoiceChips
+          axis="linter"
+          onChange={(linter) => updateState({ linter })}
+          options={linterOptions}
+          result={result}
+          selectedValue={state.linter ?? result.configuration.linter}
+          supportedValues={supports.linter}
+        />
+        <div className="chips">
+          <UnofferedChip label="ESLint" />
+        </div>
+        <p className="chip-reason">ESLint waits for typescript-eslint support of TypeScript 7.</p>
+      </Axis>
+
+      <Axis hint="add more later with create-stack add" id="capabilities" label="Capabilities">
+        {CAPABILITY_CATALOG.map((capability) => (
+          <CapabilityRow
+            capability={capability}
+            key={capability.name}
+            state={state}
+            updateState={updateState}
+          />
+        ))}
+      </Axis>
+
+      <div className="axis">
+        <div className="axis-label">
+          <label htmlFor="import-alias">Import alias</label>
+          <small>rewrites &lt;alias&gt;/* to src/*</small>
+        </div>
+        <div className="axis-body">
+          <input
+            aria-invalid={!aliasIsValid}
+            className="field"
+            id="import-alias"
+            onChange={(event) => updateState({ alias: event.currentTarget.value })}
+            placeholder={DEFAULT_IMPORT_ALIAS}
+            spellCheck="false"
+            value={aliasValue}
+          />
+          <Reveal open={!aliasIsValid}>
+            <p className="chip-reason is-conflict" role="alert">
+              Use an optional @, ~ or # followed by letters, digits, _ or -.
+            </p>
+          </Reveal>
+        </div>
+      </div>
+
+      <Axis id="monorepo" label="Monorepo">
+        <div className="chips">
+          {[{ value: undefined, label: 'none' }, ...MONOREPOS].map((monorepo) => (
+            <label
+              className="chip"
+              data-state={state.monorepo === monorepo.value ? 'selected' : 'idle'}
+              key={monorepo.label}
+            >
+              <input
+                checked={state.monorepo === monorepo.value}
+                className="chip-input"
+                name="monorepo"
+                onChange={() => updateState({ monorepo: monorepo.value })}
+                type="radio"
+              />
+              {monorepo.label}
+            </label>
+          ))}
+        </div>
+        <Reveal open={state.monorepo !== undefined}>
+          <p className="chip-reason">↳ app in apps/web</p>
+        </Reveal>
+      </Axis>
+
+      <Axis id="package-manager" label="Package manager">
+        <div className="chips">
+          {PACKAGE_MANAGERS.map((packageManager) => (
+            <label
+              className="chip"
+              data-state={state.packageManager === packageManager ? 'selected' : 'idle'}
+              key={packageManager}
+            >
+              <input
+                checked={state.packageManager === packageManager}
+                className="chip-input"
+                name="package-manager"
+                onChange={() => updateState({ packageManager })}
+                type="radio"
+              />
+              {packageManager}
+            </label>
+          ))}
+        </div>
+      </Axis>
+    </div>
+  )
 }
 
 function CommandPanel({
   state,
   result,
   copyState,
-  commandInput,
-  updateState,
+  shareState,
+  commandRef,
   copyCommand,
+  copyShareLink,
 }: {
   state: BuildState
   result: BuildStateResult
-  copyState: 'idle' | 'copied' | 'error'
-  commandInput: React.RefObject<HTMLInputElement | null>
-  updateState: UpdateState
+  copyState: CopyState
+  shareState: CopyState
+  commandRef: React.RefObject<HTMLElement | null>
   copyCommand: () => void
+  copyShareLink: () => void
 }) {
-  const [isCommandOverflowing, setIsCommandOverflowing] = useState(false)
-  const command = result.command ?? 'Resolve the choices above to continue'
-
-  useEffect(() => {
-    const input = commandInput.current
-    if (!input) return
-
-    const updateOverflow = () => {
-      if (input.value !== command) return
-      setIsCommandOverflowing(input.scrollWidth > input.clientWidth + 1)
-    }
-
-    updateOverflow()
-    const observer = new ResizeObserver(updateOverflow)
-    observer.observe(input)
-    return () => observer.disconnect()
-  }, [command, commandInput])
+  const [isOpen, setIsOpen] = useState(false)
+  const hasConflicts = result.conflicts.length > 0
+  const command = result.command ?? 'Resolve the highlighted choices to get a command.'
+  const shareUrl = `create-stack.alfredmouelle.com/build${serializeBuildState(state)}`
 
   return (
-    <section aria-labelledby="command-heading" className="build-command-panel">
-      <div className="build-command-heading">
-        <div>
-          <p className="build-panel-index">Ready to run</p>
-          <h2 id="command-heading">Your command</h2>
-        </div>
-        <span className="build-command-status">non-interactive</span>
-      </div>
-      <div className="build-command-display" data-overflowing={isCommandOverflowing}>
-        <span aria-hidden="true">$</span>
-        <input
-          aria-label="Generated Create Stack command"
-          className="build-command-input"
-          onFocus={(event) => event.currentTarget.select()}
-          readOnly
-          ref={commandInput}
-          title="Scroll horizontally to inspect the full command"
-          value={command}
-        />
-        <span aria-hidden="true" className="build-command-scroll-cue">
-          ↔
+    <aside aria-label="Generated command and creation plan" className="panel" data-open={isOpen}>
+      <div className="panel-summary">
+        <span className="panel-count" data-state={hasConflicts ? 'conflict' : 'clear'}>
+          {conflictSummary(result.conflicts.length)}
         </span>
+        <button
+          aria-expanded={isOpen}
+          className="panel-toggle"
+          onClick={() => setIsOpen((current) => !current)}
+          type="button"
+        >
+          {isOpen ? 'Hide plan ▾' : 'Show plan ▴'}
+        </button>
       </div>
-      <fieldset className="build-package-managers">
-        <legend className="sr-only">Package manager</legend>
-        {PACKAGE_MANAGERS.map((packageManager) => (
+      <div className="panel-head">
+        <span className="t-label">Command</span>
+        <span className="t-label">{state.packageManager}</span>
+      </div>
+      <div className="cmd is-block" data-state={result.command ? 'ready' : 'blocked'}>
+        <div className="cmd-line">
+          <span aria-hidden="true" className="cmd-prompt">
+            $
+          </span>
+          <code className="cmd-code is-wrapping" id="generated-command" ref={commandRef}>
+            {command.split(' ').map((token, index) => [
+              index ? ' ' : '',
+              <span className="cmd-token" key={`${index}-${token}`}>
+                {token}
+              </span>,
+            ])}
+          </code>
           <button
-            aria-pressed={state.packageManager === packageManager}
-            key={packageManager}
-            onClick={() => updateState({ packageManager })}
+            className="copy-button"
+            data-state={copyState}
+            disabled={!result.command}
+            onClick={copyCommand}
             type="button"
           >
-            {packageManager}
+            {copyState === 'copied' ? 'Copied ✓' : 'Copy command'}
           </button>
-        ))}
-      </fieldset>
-      <button
-        className="build-primary-button"
-        disabled={!result.command}
-        onClick={copyCommand}
-        type="button"
-      >
-        {copyState === 'copied' ? 'Command copied' : 'Copy command'}
-      </button>
-      <p className="build-command-status-message" data-state={copyState} role="status">
-        {commandStatusMessage(result, copyState)}
-      </p>
-    </section>
-  )
-}
-
-function ConflictPanel({ result }: { result: BuildStateResult }) {
-  if (result.conflicts.length === 0) return null
-  return (
-    <section aria-labelledby="conflicts-heading" className="build-conflicts" role="alert">
-      <p className="build-panel-index">Choice conflict</p>
-      <h2 id="conflicts-heading">These choices cannot ship together.</h2>
-      <ul>
-        {result.conflicts.map((conflict) => (
-          <li key={conflict.message}>{conflict.message}</li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-function ReasonsPanel({ result }: { result: BuildStateResult }) {
-  return (
-    <section aria-labelledby="reasons-heading" className="build-reasons">
-      <div className="build-reasons-heading">
-        <p className="build-panel-index">Resolution notes</p>
-        <h2 id="reasons-heading">Nothing changes silently.</h2>
+        </div>
       </div>
-      <ul>
-        {result.reasons.map((reason) => (
-          <li data-kind={reason.kind} key={reason.axis}>
-            <span>{reason.axis}</span>
-            <strong>{String(reason.value)}</strong>
-            <small>{reason.message}</small>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-function SharePanel({
-  shareState,
-  copyShareLink,
-}: {
-  shareState: 'idle' | 'copied' | 'error'
-  copyShareLink: () => void
-}) {
-  return (
-    <section aria-labelledby="share-heading" className="build-share-panel">
-      <div>
-        <p className="build-panel-index">Share this stack</p>
-        <h2 id="share-heading">Keep the choices in the URL.</h2>
-      </div>
-      <button className="build-share-button" onClick={copyShareLink} type="button">
-        {shareState === 'copied' ? 'Link copied' : 'Copy share link'}
-      </button>
-      <p className="build-command-status-message" data-state={shareState} role="status">
-        {shareState === 'copied'
-          ? 'Anyone with this link can restore this configuration.'
-          : shareState === 'error'
-            ? copyFailureMessage()
-            : 'The link updates as you make a choice.'}
+      <p className="panel-status" data-state={copyState} role="status">
+        {commandStatus(copyState, result.command !== null)}
       </p>
-    </section>
-  )
-}
-
-function BuildSidebar({
-  state,
-  result,
-  copyState,
-  shareState,
-  commandInput,
-  updateState,
-  copyCommand,
-  copyShareLink,
-}: {
-  state: BuildState
-  result: BuildStateResult
-  copyState: 'idle' | 'copied' | 'error'
-  shareState: 'idle' | 'copied' | 'error'
-  commandInput: React.RefObject<HTMLInputElement | null>
-  updateState: UpdateState
-  copyCommand: () => void
-  copyShareLink: () => void
-}) {
-  return (
-    <aside aria-label="Generated command and summary" className="build-sidebar">
-      <CommandPanel
-        commandInput={commandInput}
-        copyCommand={copyCommand}
-        copyState={copyState}
-        result={result}
-        state={state}
-        updateState={updateState}
-      />
-      <ConflictPanel result={result} />
-      <ReasonsPanel result={result} />
-      <SharePanel copyShareLink={copyShareLink} shareState={shareState} />
+      <div className="panel-details">
+        <div className="share">
+          <span className="share-url">{shareUrl}</span>
+          <button className="copy-button" onClick={copyShareLink} type="button">
+            {shareState === 'copied' ? 'Link copied ✓' : 'Copy share link'}
+          </button>
+        </div>
+        <p className="panel-status" data-state={shareState} role="status">
+          {SHARE_STATUS[shareState]}
+        </p>
+        <Reveal open={hasConflicts}>
+          <section aria-labelledby="conflicts-heading" className="conflicts" role="alert">
+            <h2 id="conflicts-heading">These choices cannot ship together.</h2>
+            <ul>
+              {result.conflicts.map((conflict) => (
+                <li key={conflict.message}>■ {conflict.message}</li>
+              ))}
+            </ul>
+          </section>
+        </Reveal>
+        <span className="t-label">Creation plan</span>
+        <div className="terminal">
+          <div className="terminal-body is-compact">
+            <span className="terminal-line is-heading">
+              <span aria-hidden="true" className="terminal-prefix">
+                ◇{'  '}
+              </span>
+              Creation plan
+            </span>
+            <Reveal open={hasConflicts}>
+              <span className="terminal-line is-conflict">
+                <span aria-hidden="true" className="terminal-prefix">
+                  │{'  '}
+                </span>
+                Not resolved: the CLI stops here and writes no file.
+              </span>
+            </Reveal>
+            <Reveal open={!hasConflicts}>
+              {creationPlanLines(state, result).map((line) => (
+                <span className="terminal-line is-output" key={line}>
+                  <span aria-hidden="true" className="terminal-prefix">
+                    │{'  '}
+                  </span>
+                  {line}
+                </span>
+              ))}
+            </Reveal>
+          </div>
+        </div>
+      </div>
     </aside>
   )
 }
 
-function BuildPage({
-  state,
-  result,
-  copyState,
-  shareState,
-  commandInput,
-  updateState,
-  restoreRecommended,
-  copyCommand,
-  copyShareLink,
-}: {
-  state: BuildState
-  result: BuildStateResult
-  copyState: 'idle' | 'copied' | 'error'
-  shareState: 'idle' | 'copied' | 'error'
-  commandInput: React.RefObject<HTMLInputElement | null>
-  updateState: UpdateState
-  restoreRecommended: () => void
-  copyCommand: () => void
-  copyShareLink: () => void
-}) {
-  return (
-    <>
-      <main className="build-page page-shell">
-        <div className="build-intro">
-          <div>
-            <p className="section-kicker">Build your stack</p>
-            <h1>Choose the shape of your first useful commit.</h1>
-            <p>
-              Start from the same recommended stack as the CLI. Explicit choices stay explicit,
-              while compatible omissions are completed with a reason you can see.
-            </p>
-          </div>
-          <button className="build-reset-button" onClick={restoreRecommended} type="button">
-            Reset to recommended
-          </button>
-        </div>
+function commandStatus(copyState: CopyState, hasCommand: boolean) {
+  if (copyState === 'copied') return 'Command copied to your clipboard.'
+  if (copyState === 'error') return COPY_FAILURE
+  return hasCommand
+    ? 'Run it from the directory where you want the project.'
+    : 'Command generation is paused until the choices are resolved.'
+}
 
-        <div className="build-layout">
-          <section aria-label="Stack choices" className="build-form">
-            <ProjectPanel state={state} updateState={updateState} />
-            <StackPanel result={result} state={state} updateState={updateState} />
-            <AdditionalPanel state={state} updateState={updateState} />
-          </section>
-          <BuildSidebar
-            commandInput={commandInput}
-            copyCommand={copyCommand}
-            copyShareLink={copyShareLink}
-            copyState={copyState}
-            result={result}
-            shareState={shareState}
-            state={state}
-            updateState={updateState}
-          />
-        </div>
-      </main>
-      <BackToTop />
-    </>
-  )
+const SHARE_STATUS = {
+  idle: 'The link updates as you make a choice.',
+  copied: 'Anyone with this link can restore this configuration.',
+  error: COPY_FAILURE,
+} as const satisfies Record<CopyState, string>
+
+function conflictSummary(count: number) {
+  if (count === 0) return '✓ no conflicts'
+  return `■ ${count} ${count === 1 ? 'conflict' : 'conflicts'}`
+}
+
+function persist(next: BuildState) {
+  window.history.replaceState(null, '', `${window.location.pathname}${serializeBuildState(next)}`)
 }
 
 export default function BuildConfigurator() {
@@ -818,23 +646,19 @@ export default function BuildConfigurator() {
     kind: 'current',
     state: defaultBuildState(),
   }))
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
-  const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle')
-  const commandInput = useRef<HTMLInputElement>(null)
+  const [copyState, setCopyState] = useState<CopyState>('idle')
+  const [shareState, setShareState] = useState<CopyState>('idle')
+  const commandRef = useRef<HTMLElement>(null)
   const stateRef = useRef(state)
 
   useEffect(() => {
     function readUrl() {
       const parsed = parseBuildState(window.location.search)
       setRoute(parsed)
-      if (parsed.kind === 'current') {
-        stateRef.current = parsed.state
-        setState(parsed.state)
-        const canonicalSearch = serializeBuildState(parsed.state)
-        if (window.location.search !== canonicalSearch) {
-          window.history.replaceState(null, '', `${window.location.pathname}${canonicalSearch}`)
-        }
-      }
+      if (parsed.kind !== 'current') return
+      stateRef.current = parsed.state
+      setState(parsed.state)
+      if (window.location.search !== serializeBuildState(parsed.state)) persist(parsed.state)
     }
 
     readUrl()
@@ -844,24 +668,17 @@ export default function BuildConfigurator() {
 
   const result = useMemo(() => resolveBuildState(state), [state])
 
-  function updateState(patch: Partial<BuildState>) {
-    const next = { ...stateRef.current, ...patch }
+  function replaceState(next: BuildState) {
     stateRef.current = next
     setState(next)
     setRoute({ kind: 'current', state: next })
-    window.history.replaceState(null, '', `${window.location.pathname}${serializeBuildState(next)}`)
+    persist(next)
     setCopyState('idle')
     setShareState('idle')
   }
 
-  function restoreRecommended() {
-    const next = defaultBuildState()
-    stateRef.current = next
-    setState(next)
-    setRoute({ kind: 'current', state: next })
-    window.history.replaceState(null, '', `${window.location.pathname}${serializeBuildState(next)}`)
-    setCopyState('idle')
-    setShareState('idle')
+  function updateState(patch: Partial<BuildState>) {
+    replaceState({ ...stateRef.current, ...patch })
   }
 
   async function copyCommand() {
@@ -878,10 +695,8 @@ export default function BuildConfigurator() {
       })
     } catch {
       setCopyState('error')
-      requestAnimationFrame(() => {
-        commandInput.current?.focus()
-        commandInput.current?.select()
-      })
+      const command = commandRef.current
+      if (command) window.getSelection()?.selectAllChildren(command)
     }
   }
 
@@ -897,20 +712,36 @@ export default function BuildConfigurator() {
   }
 
   if (route.kind !== 'current') {
-    return <BuildRecovery onRestore={restoreRecommended} route={route} />
+    return <BuildRecovery onRestore={() => replaceState(defaultBuildState())} route={route} />
   }
 
   return (
-    <BuildPage
-      commandInput={commandInput}
-      copyCommand={copyCommand}
-      copyShareLink={copyShareLink}
-      copyState={copyState}
-      restoreRecommended={restoreRecommended}
-      result={result}
-      shareState={shareState}
-      state={state}
-      updateState={updateState}
-    />
+    <main className="shell build">
+      <div className="build-head">
+        <div className="stack is-tight">
+          <p className="t-label">Stack builder</p>
+          <h1 className="t-h1">Build your stack</h1>
+        </div>
+        <button
+          className="button is-quiet"
+          onClick={() => replaceState(defaultBuildState())}
+          type="button"
+        >
+          Reset to recommended
+        </button>
+      </div>
+      <div className="build-layout">
+        <StackChoices result={result} state={state} updateState={updateState} />
+        <CommandPanel
+          commandRef={commandRef}
+          copyCommand={copyCommand}
+          copyShareLink={copyShareLink}
+          copyState={copyState}
+          result={result}
+          shareState={shareState}
+          state={state}
+        />
+      </div>
+    </main>
   )
 }

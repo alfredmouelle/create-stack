@@ -1,0 +1,43 @@
+---
+import type { RegistryEntry } from '../data/frameworks'
+
+interface Props {
+  maturity: RegistryEntry['maturity']
+}
+
+const { maturity } = Astro.props
+---
+
+<span class={`badge is-${maturity}`}>
+  {
+    maturity === 'stable' ? (
+      <svg aria-hidden="true" height="10" viewBox="0 0 12 12" width="10">
+        <path
+          d="M2.2 6.3 4.8 8.7 9.8 3.3"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="square"
+          stroke-width="2.2"
+        />
+      </svg>
+    ) : maturity === 'preview' ? (
+      <svg aria-hidden="true" height="10" viewBox="0 0 10 10" width="10">
+        <circle cx="5" cy="5" fill="none" r="4" stroke="currentColor" stroke-width="1.5" />
+        <path d="M5 1a4 4 0 0 1 0 8z" fill="currentColor" />
+      </svg>
+    ) : (
+      <svg aria-hidden="true" height="10" viewBox="0 0 10 10" width="10">
+        <circle
+          cx="5"
+          cy="5"
+          fill="none"
+          r="3.6"
+          stroke="currentColor"
+          stroke-dasharray="2 1.6"
+          stroke-width="1.5"
+        />
+      </svg>
+    )
+  }
+  {maturity}
+</span>

@@ -1,22 +1,24 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro'
 import BackToTop from '../components/BackToTop'
+import BaseLayout from '../layouts/BaseLayout.astro'
 import { CHANGELOG_RELEASES, renderInline } from '../lib/changelog'
+
+const anchor = (version: string) => `v-${version.toLowerCase().replaceAll('.', '-')}`
 ---
 
 <BaseLayout
   description="A record of the user-facing changes shipped in Create Stack."
   title="Changelog · create-stack"
 >
-  <main class="changelog-page page-shell">
-    <header class="changelog-intro">
-      <div>
-        <p class="section-kicker">Changelog</p>
-        <h1>What changed in create-stack.</h1>
-        <p>New capabilities, fixes, and changes to the generated project.</p>
-      </div>
+  <main class="shell">
+    <header class="page-head">
+      <p class="t-label">Releases</p>
+      <h1 class="t-h1">Changelog</h1>
+      <p class="t-lead">
+        Every release adds user-facing value. You always run the latest with <code>@latest</code>.
+      </p>
       <a
-        class="text-link changelog-source"
+        class="text-link"
         href="https://github.com/alfredmouelle/create-stack/blob/main/cli/CHANGELOG.md"
         rel="noreferrer"
         target="_blank"
@@ -24,31 +26,103 @@ import { CHANGELOG_RELEASES, renderInline } from '../lib/changelog'
         View source ↗
       </a>
     </header>
-
-    <div class="changelog-list">
-      {CHANGELOG_RELEASES.map((release) => (
-        <article class="changelog-release">
-          <div class="changelog-release-meta">
-            <p class="changelog-version" data-version={release.version}>{release.version}</p>
-            {release.date ? <time datetime={release.date}>{release.date}</time> : null}
-          </div>
-          <div class="changelog-release-body">
-            {release.sections.length ? (
-              release.sections.map((section) => (
-                <section class="changelog-section">
-                  <h2>{section.heading}</h2>
-                  <ul>
-                    {section.items.map((item) => <li set:html={renderInline(item)} />)}
-                  </ul>
-                </section>
-              ))
-            ) : (
-              <p class="changelog-empty">No entries yet.</p>
-            )}
-          </div>
-        </article>
-      ))}
+    <div class="changelog">
+      <nav aria-label="Versions" class="version-index">
+        {
+          CHANGELOG_RELEASES.map((release) => (
+            <a data-spy-target={anchor(release.version)} href={`#${anchor(release.version)}`}>
+              <b>{release.version}</b>
+              {release.date ? <span>{release.date}</span> : null}
+            </a>
+          ))
+        }
+      </nav>
+      <ol class="timeline">
+        {
+          CHANGELOG_RELEASES.map((release) => (
+            <li class:list={['release', !release.date && 'is-pending']} id={anchor(release.version)}>
+              <div class="release-meta">
+                <p class="release-version" data-version={release.version}>
+                  {release.version}
+                </p>
+                {release.date ? (
+                  <time datetime={release.date}>{release.date}</time>
+                ) : (
+                  <span>next release</span>
+                )}
+              </div>
+              <span aria-hidden="true" class="release-rail" />
+              <div class="release-body">
+                {release.sections.length ? (
+                  release.sections.map((section) => (
+                    <section>
+                      <h2 class="release-group">{section.heading}</h2>
+                      <ul>
+                        {section.items.map((item) => (
+                          <li set:html={renderInline(item)} />
+                        ))}
+                      </ul>
+                    </section>
+                  ))
+                ) : (
+                  <p class="is-muted">No entries yet.</p>
+                )}
+              </div>
+            </li>
+          ))
+        }
+      </ol>
     </div>
   </main>
-  <BackToTop client:load />
+  <BackToTop client:idle />
 </BaseLayout>
+
+<script>
+  const index = document.querySelector<HTMLElement>('.version-index')
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-spy-target]')]
+  const releases = links.flatMap((link) => {
+    const release = document.getElementById(link.dataset.spyTarget ?? '')
+    return release ? [{ link, release }] : []
+  })
+  const sidebar = window.matchMedia('(min-width: 900px)')
+  let frame = 0
+  let active: HTMLAnchorElement | undefined
+
+  function revealInIndex(link: HTMLAnchorElement) {
+    if (!index) return
+    const bounds = index.getBoundingClientRect()
+    const target = link.getBoundingClientRect()
+    if (index.scrollWidth > index.clientWidth) {
+      index.scrollLeft += target.left - bounds.left - (bounds.width - target.width) / 2
+    }
+    if (index.scrollHeight > index.clientHeight) {
+      index.scrollTop += target.top - bounds.top - (bounds.height - target.height) / 2
+    }
+  }
+
+  function update() {
+    frame = 0
+    const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0
+    const stickyBar = sidebar.matches ? header : (index?.getBoundingClientRect().bottom ?? header)
+    const threshold = Math.max(header, stickyBar) + window.innerHeight * 0.25
+    const atBottom =
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
+    const current = atBottom
+      ? releases.at(-1)
+      : (releases.findLast(({ release }) => release.getBoundingClientRect().top <= threshold) ??
+        releases[0])
+    if (!current || current.link === active) return
+    active?.removeAttribute('aria-current')
+    current.link.setAttribute('aria-current', 'true')
+    active = current.link
+    revealInIndex(current.link)
+  }
+
+  function schedule() {
+    if (!frame) frame = window.requestAnimationFrame(update)
+  }
+
+  window.addEventListener('scroll', schedule, { passive: true })
+  window.addEventListener('resize', schedule)
+  update()
+</script>

@@ -1,0 +1,156 @@
+---
+import Badge from '../../components/Badge.astro'
+import CommandLine from '../../components/CommandLine.astro'
+import FileTree from '../../components/FileTree.astro'
+import GateRail from '../../components/GateRail.astro'
+import {
+  frameworkCommand,
+  IMPLEMENTER_GUIDE_URL,
+  isRegistered,
+  PLANNED_FRAMEWORKS,
+  REGISTERED_FRAMEWORKS,
+  REGISTRY,
+  type RegistryEntry,
+} from '../../data/frameworks'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+export function getStaticPaths() {
+  return REGISTRY.map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+}
+
+interface Props {
+  entry: RegistryEntry
+}
+
+const { entry } = Astro.props
+const AXES = [
+  ['database', 'database'],
+  ['auth', 'auth'],
+  ['trpc', 'api'],
+  ['mailer', 'mailer'],
+  ['formatter', 'formatter'],
+  ['linter', 'linter'],
+] as const
+const display = (value: string | boolean) =>
+  typeof value === 'boolean' ? (value ? 'trpc' : 'none') : value
+const displayRecommendation = (value: string | boolean | readonly string[]) =>
+  typeof value === 'object' ? value.join(', ') : display(value)
+const stableNames = REGISTERED_FRAMEWORKS.map((framework) => framework.label).join(', ')
+---
+
+<BaseLayout
+  description={isRegistered(entry)
+    ? `${entry.label} on create-stack: supported stack options, recommended command, generated tree and gate commands.`
+    : `${entry.label} is planned for create-stack. See what is missing and how to own it.`}
+  title={`${entry.label} · create-stack`}
+>
+  <main class="shell">
+    <header class="page-head">
+      <p class="crumb"><a href="/frameworks">Frameworks</a> / {entry.id}</p>
+      <div class:list={['title-row', entry.maturity === 'planned' && 'is-planned']}>
+        <h1 class="t-h1">{entry.label}</h1>
+        <Badge maturity={entry.maturity} />
+      </div>
+      {
+        isRegistered(entry) ? (
+          <>
+            <p class="t-lead">{entry.summary}</p>
+            <CommandLine command={frameworkCommand(entry.id)} label={`Copy the ${entry.label} command`} />
+          </>
+        ) : (
+          <p class="t-lead">
+            Not installable yet. <code>--framework {entry.id}</code> is not an accepted value today. It
+            becomes one when a module passes the conformance suite.
+          </p>
+        )
+      }
+    </header>
+
+    {
+      isRegistered(entry) ? (
+        <div class="detail-grid">
+          <section aria-labelledby="matrix-title" class="stack">
+            <h2 class="t-label" id="matrix-title">Support matrix</h2>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Option</th>
+                  <th scope="col">Supported</th>
+                  <th scope="col">Recommended</th>
+                </tr>
+              </thead>
+              <tbody>
+                {AXES.map(([axis, label]) => {
+                  const recommended = entry.support.recommendations[axis]
+                  return (
+                    <tr>
+                      <th scope="row">{label}</th>
+                      <td class="is-pass">{entry.support.supports[axis].map(display).join(' · ')}</td>
+                      <td>{displayRecommendation(recommended)}</td>
+                    </tr>
+                  )
+                })}
+                <tr>
+                  <th scope="row">profile exceptions</th>
+                  <td class="is-muted" colspan="2">none declared</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section aria-labelledby="tree-title" class="stack">
+            <h2 class="t-label" id="tree-title">Generated tree · recommended stack</h2>
+            <FileTree entries={entry.tree} label={`${entry.label} generated tree`} root="my-app/" />
+          </section>
+          <section aria-labelledby="gate-commands-title" class="stack">
+            <h2 class="t-label" id="gate-commands-title">Gate commands</h2>
+            <GateRail />
+          </section>
+          <section aria-labelledby="module-title" class="stack">
+            <h2 class="t-label" id="module-title">Module</h2>
+            <dl class="kv is-wide">
+              <dt>module</dt>
+              <dd>{entry.modulePath}</dd>
+              <dt>reference app</dt>
+              <dd>{entry.referenceApplication}</dd>
+              <dt>monorepo outputs</dt>
+              <dd>{entry.monorepoOutputs.join(', ')}</dd>
+            </dl>
+          </section>
+        </div>
+      ) : (
+        <div class="detail-grid">
+          <section aria-labelledby="missing-title" class="plan-panel">
+            <h2 class="t-label" id="missing-title">What is missing</h2>
+            <ul class="roadmap">
+              <li><span aria-hidden="true" class="hollow"></span><span>Framework module<small>cli/src/frameworks/{entry.id}.ts</small></span><span class="is-muted">open</span></li>
+              <li><span aria-hidden="true" class="hollow"></span><span>Reference application<small>apps/{entry.id}-base</small></span><span class="is-muted">open</span></li>
+              <li><span aria-hidden="true" class="hollow"></span><span>Registry entry<small>FRAMEWORKS + FRAMEWORK_SUPPORT</small></span><span class="is-muted">open</span></li>
+              <li><span aria-hidden="true" class="hollow"></span><span>Conformance suite and gate in CI</span><span class="is-muted">open</span></li>
+            </ul>
+            <div class="actions">
+              <a class="button is-outline" href="/contribute">Own this framework →</a>
+              <a class="text-link" href={IMPLEMENTER_GUIDE_URL} rel="noreferrer" target="_blank">Implementer guide</a>
+            </div>
+          </section>
+          <section aria-labelledby="roadmap-title" class="stack">
+            <h2 class="t-label" id="roadmap-title">Roadmap position</h2>
+            <ol class="roadmap">
+              <li class="is-done"><span aria-hidden="true" class="tick"></span><span>{stableNames}</span><span class="is-muted">stable</span></li>
+              {PLANNED_FRAMEWORKS.map((planned) => (
+                <li class:list={[planned.id === entry.id && 'is-current']}>
+                  <span aria-hidden="true" class="hollow" />
+                  <span>{planned.label}</span>
+                  <span class="is-muted">
+                    {planned.id === entry.id
+                      ? `${planned.roadmapPosition} of ${PLANNED_FRAMEWORKS.length}`
+                      : planned.roadmapPosition}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+      )
+    }
+  </main>
+</BaseLayout>

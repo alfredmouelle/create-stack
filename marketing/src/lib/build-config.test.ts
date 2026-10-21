@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest'
 import {
   type BuildState,
   buildCommand,
+  creationPlanLines,
   defaultBuildState,
+  isValidImportAlias,
+  normalizeImportAlias,
   parseBuildState,
   resolveBuildState,
   serializeBuildState,
@@ -211,6 +214,60 @@ describe('build configurator state', () => {
       configuration: { formatter: 'biome', linter: 'biome' },
       command: 'pnpm dlx @alfredmouelle/create-stack@latest orbit --framework next',
     })
+  })
+
+  it.each(['~', '@', '#', '@app', '~/', '#src//'])('accepts the %s import alias', (alias) => {
+    expect(isValidImportAlias(alias)).toBe(true)
+  })
+
+  it.each(['$', 'app.lib', '@/x', 'src lib'])('rejects the %s import alias', (alias) => {
+    expect(isValidImportAlias(alias)).toBe(false)
+  })
+
+  it('trims trailing slashes from import aliases', () => {
+    expect(normalizeImportAlias('@app//')).toBe('@app')
+  })
+
+  it('does not produce a command for an invalid import alias', () => {
+    expect(buildCommand({ ...defaultBuildState(), alias: 'app.lib' })).toBeNull()
+  })
+
+  it('renders the creation plan in the CLI format', () => {
+    const state = defaultBuildState()
+
+    expect(creationPlanLines(state, resolveBuildState(state))).toEqual([
+      'Target: my-app',
+      'Framework: TanStack Start',
+      'Monorepo: (none)',
+      'Package manager: pnpm',
+      'Import alias: ~/',
+      'Database: drizzle, recommended stack',
+      'Auth: better-auth, recommended stack',
+      'tRPC: yes, recommended stack',
+      'Mailer: resend, recommended stack',
+      'Formatter: biome, recommended stack',
+      'Linter: biome, recommended stack',
+      'Capabilities: (none)',
+      'Install and verify: yes',
+      'Initialize Git: yes (outside an existing repository)',
+    ])
+  })
+
+  it('marks explicit choices and capabilities as requested in the creation plan', () => {
+    const state: BuildState = {
+      ...defaultBuildState(),
+      projectName: 'orbit',
+      framework: 'next',
+      database: 'prisma',
+      monorepo: 'turbo',
+      capabilities: { storage: 'r2' },
+    }
+    const lines = creationPlanLines(state, resolveBuildState(state))
+
+    expect(lines).toContain('Framework: Next.js')
+    expect(lines).toContain('Monorepo: Turborepo')
+    expect(lines).toContain('Database: prisma, requested')
+    expect(lines).toContain('Capabilities: storage (r2), requested')
   })
 
   it('quotes project names that need shell protection', () => {
