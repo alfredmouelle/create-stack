@@ -17,7 +17,7 @@ export default async function setup(project: TestProject): Promise<void> {
   execFileSync(findDatabaseScript(process.cwd()), [resolve(envFile)], { stdio: 'inherit' })
 
   const url = project.config.env.DATABASE_URL
-  if (!url) throw new Error('DATABASE_URL is missing from .env.test')
+  if (url === undefined || url === '') throw new Error('DATABASE_URL is missing from .env.test')
 
   const schema = execFileSync(
     'npx',
