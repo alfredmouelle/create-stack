@@ -14,6 +14,13 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ### Added
 
+- RasenganJS is available as an official preview with `--framework rasengan`, including
+  the existing database, authentication, tRPC, mailer and capability choices. Generated
+  projects support standalone, Turborepo and Nx layouts, all four quality-tool pairs,
+  and a production Node server with pnpm, npm, Yarn or Bun.
+- Rasengan Sentry integration captures browser and server errors and generates hidden
+  source maps with debug IDs. Builds upload maps when credentials are configured and
+  delete them afterward.
 - `--formatter biome|prettier` and `--linter biome|oxlint` choose the generated project's
   quality tools, and interactive creation asks for both. Biome stays recommended for
   each, and a bare flag selects it. `--no-formatter`, `--no-linter`, oxfmt, and ESLint
@@ -28,6 +35,7 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ### Changed
 
+- Generated Yarn projects pin Yarn 4.18.1 for compatibility with TypeScript 7.
 - Projects are assembled from the parts of each framework's reference application that
   the configuration selects, instead of copying a full base app and deleting what was
   not selected. Generated applications keep the same behavior for every database,
@@ -56,6 +64,8 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 ### Fixed
 
+- Callable components mount in Rasengan's `<Body>` template element.
+- Generated Prisma projects and Brevo/SES mail adapters pass the strict Oxlint profile.
 - TanStack Start projects with Clerk and tRPC typecheck again: they pin
   `@tanstack/query-core` with React Query, so the router's SSR query integration and
   React Query share one `QueryClient` type.
