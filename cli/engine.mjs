@@ -36,6 +36,7 @@ export const {
   isValidAlias,
   MAILERS,
   normalizeAlias,
+  optionSpelling,
   PACKAGE_MANAGERS,
   parseArgs,
   preflightRegistryComponents,

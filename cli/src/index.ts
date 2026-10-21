@@ -5,6 +5,7 @@ export {
   FRAMEWORK_SUPPORT,
   frameworkTitle,
   MAILERS,
+  optionSpelling,
   PACKAGE_MANAGERS,
   QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,

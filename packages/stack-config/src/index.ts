@@ -68,9 +68,9 @@ export const COMPONENTS = [
 ] as const
 export type ComponentName = (typeof COMPONENTS)[number]
 
-export type CapabilityFacts<Name extends string> = {
+export type CapabilityFacts<Name extends string, Kind extends 'port' | 'module'> = {
   readonly name: Name
-  readonly kind: 'port' | 'module'
+  readonly kind: Kind
   readonly flag: string
   readonly aliases: readonly string[]
   readonly providers: readonly string[]
@@ -85,7 +85,10 @@ type PortManifest = {
 
 type ModuleManifest = { readonly provider: string }
 
-function port<Name extends string>(name: Name, manifest: PortManifest): CapabilityFacts<Name> {
+function port<Name extends string>(
+  name: Name,
+  manifest: PortManifest,
+): CapabilityFacts<Name, 'port'> {
   return {
     name,
     kind: 'port',
@@ -100,7 +103,7 @@ function singleProvider<Name extends string>(
   name: Name,
   manifest: ModuleManifest,
   flag: string = name,
-): CapabilityFacts<Name> {
+): CapabilityFacts<Name, 'module'> {
   return {
     name,
     kind: 'module',
@@ -119,7 +122,10 @@ export const CAPABILITY_CATALOG = [
   singleProvider('jobs', jobsManifest),
   singleProvider('error-tracking', errorTrackingManifest, 'errors'),
 ] as const
-export type CapabilityName = (typeof CAPABILITY_CATALOG)[number]['name']
+type CapabilityEntry = (typeof CAPABILITY_CATALOG)[number]
+export type CapabilityName = CapabilityEntry['name']
+export type PortCapabilityName = Extract<CapabilityEntry, { readonly kind: 'port' }>['name']
+export type ModuleCapabilityName = Extract<CapabilityEntry, { readonly kind: 'module' }>['name']
 
 export type ScaffoldFlagValue =
   | { readonly kind: 'none' }

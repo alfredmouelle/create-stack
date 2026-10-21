@@ -1,5 +1,9 @@
 import { readdirSync, statSync } from 'node:fs'
-import { CAPABILITY_CATALOG } from '../../../packages/stack-config/src/index.ts'
+import {
+  CAPABILITY_CATALOG,
+  type ModuleCapabilityName,
+  type PortCapabilityName,
+} from '../../../packages/stack-config/src/index.ts'
 import type { ModuleIntegration } from '../framework-module.ts'
 import { isJsonObject, readJsonObject } from '../javascript/json.ts'
 import { STACK_ROOT } from './paths.ts'
@@ -122,7 +126,7 @@ function moduleManifest(cap: string): ModuleManifest {
   return manifest
 }
 
-const PORTS: Readonly<Record<string, PortSpec>> = {
+const PORT_SPECS = {
   storage: {
     label: 'Storage',
     dir: 'src/server/storage',
@@ -211,14 +215,18 @@ const PORTS: Readonly<Record<string, PortSpec>> = {
       noop: { fn: 'noopAdapter', args: [] },
     },
   },
-}
+} satisfies Readonly<Record<PortCapabilityName, PortSpec>>
 
-const MODULES: Readonly<Record<string, ModuleSpec>> = {
+const MODULE_SPECS = {
   jobs: { label: 'Background jobs', dir: 'src/server/jobs' },
   'error-tracking': { label: 'Error tracking', dir: 'src/server/error-tracking' },
-}
+} satisfies Readonly<Record<ModuleCapabilityName, ModuleSpec>>
 
-const SPEC: Readonly<Record<string, PortSpec | ModuleSpec>> = { ...PORTS, ...MODULES }
+const SPECS_BY_NAME = { ...PORT_SPECS, ...MODULE_SPECS }
+
+const PORTS: Readonly<Record<string, PortSpec>> = PORT_SPECS
+const MODULES: Readonly<Record<string, ModuleSpec>> = MODULE_SPECS
+const SPEC: Readonly<Record<string, PortSpec | ModuleSpec>> = SPECS_BY_NAME
 
 const capabilityFacts = (cap: string) => CAPABILITY_CATALOG.find(({ name }) => name === cap)
 
@@ -239,7 +247,7 @@ export const capabilityDir = (cap: string): string | undefined => SPEC[cap]?.dir
 export const capabilityChoices = (): CapabilityChoice[] =>
   CAPABILITY_CATALOG.map(({ name, providers }) => ({
     value: name,
-    label: SPEC[name]?.label ?? name,
+    label: SPECS_BY_NAME[name].label,
     hint: providers.join(' / '),
   }))
 

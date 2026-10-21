@@ -28,6 +28,7 @@ import {
   isValidAlias,
   MAILERS,
   normalizeAlias,
+  optionSpelling,
   PACKAGE_MANAGERS,
   parseArgs,
   preflightRegistryComponents,
@@ -203,7 +204,8 @@ function validateCreationOptionNames(flags) {
     const suggestion = CREATION_OPTIONS.reduce((best, candidate) =>
       editDistance(name, candidate) < editDistance(name, best) ? candidate : best,
     )
-    const hint = editDistance(name, suggestion) <= 3 ? ` Did you mean --${suggestion}?` : ''
+    const hint =
+      editDistance(name, suggestion) <= 3 ? ` Did you mean ${optionSpelling(suggestion)}?` : ''
     throw new Error(`Unknown option: --${name}.${hint}`)
   }
 }
