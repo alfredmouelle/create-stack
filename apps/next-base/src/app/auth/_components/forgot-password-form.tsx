@@ -50,8 +50,13 @@ export function ForgotPasswordForm() {
 
   return (
     <Form {...form}>
-      <form className="grid gap-4" onSubmit={onSubmit}>
-        {formError ? <FormAlert>{formError}</FormAlert> : null}
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          void onSubmit(event)
+        }}
+      >
+        {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
         <FormField
           control={form.control}

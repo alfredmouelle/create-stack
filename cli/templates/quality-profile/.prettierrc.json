@@ -1,0 +1,12 @@
+{
+  "singleQuote": true,
+  "semi": false,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "endOfLine": "lf",
+  "plugins": ["@ianvs/prettier-plugin-sort-imports", "prettier-plugin-tailwindcss"],
+  "importOrderTypeScriptVersion": "7.0.2",
+  "tailwindFunctions": ["clsx", "cva", "cn"]
+}

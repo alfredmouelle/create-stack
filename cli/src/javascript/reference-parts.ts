@@ -352,6 +352,7 @@ export const renderTrpc =
         betterAuthImport: "import { auth } from '~/server/better-auth'\n",
         session: '  const session = await auth.api.getSession({ headers: opts.headers })\n',
         context: ['session'],
+        contextType: ['readonly session: Awaited<ReturnType<typeof auth.api.getSession>>'],
         procedure: 'javascript/protected-better-auth.txt',
       },
       clerk: {
@@ -359,9 +360,17 @@ export const renderTrpc =
         betterAuthImport: '',
         session: '',
         context: ['auth: await auth()'],
+        contextType: ['readonly auth: Awaited<ReturnType<typeof auth>>'],
         procedure: 'javascript/protected-clerk.txt',
       },
-      none: { clerkImport: '', betterAuthImport: '', session: '', context: [], procedure: null },
+      none: {
+        clerkImport: '',
+        betterAuthImport: '',
+        session: '',
+        context: [],
+        contextType: [],
+        procedure: null,
+      },
     }[selection.auth]
     const context = [...(sql ? ['db'] : []), ...auth.context, '...opts']
     return fillTemplate('javascript/trpc.txt', {
@@ -370,6 +379,11 @@ export const renderTrpc =
       BETTER_AUTH_IMPORT: auth.betterAuthImport,
       DATABASE_IMPORT: sql ? "import { db } from '~/server/db'\n" : '',
       CONTEXT: `${auth.session}  return { ${context.join(', ')} }`,
+      CONTEXT_TYPE: [
+        ...(sql ? ['readonly db: typeof db'] : []),
+        ...auth.contextType,
+        'readonly headers: Headers',
+      ].join('\n  '),
       PROTECTED_PROCEDURE: auth.procedure ? `\n${readTemplate(auth.procedure)}` : '',
     })
   }

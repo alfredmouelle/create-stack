@@ -58,10 +58,10 @@ function ForgotPassword() {
           className="grid gap-4"
           onSubmit={(e) => {
             e.preventDefault()
-            form.handleSubmit()
+            void form.handleSubmit()
           }}
         >
-          {formError ? <FormAlert>{formError}</FormAlert> : null}
+          {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
           <form.Field name="email">
             {(field) => (
@@ -75,7 +75,7 @@ function ForgotPassword() {
             )}
           </form.Field>
 
-          <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+          <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting] as const}>
             {([canSubmit, isSubmitting]) => (
               <Button className="w-full cursor-pointer" disabled={!canSubmit} type="submit">
                 {isSubmitting ? <Spinner /> : null}

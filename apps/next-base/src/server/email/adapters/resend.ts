@@ -1,35 +1,19 @@
-import { Resend } from 'resend'
+import { type CreateEmailOptions, Resend } from 'resend'
 import { formatAddress } from '../address'
 import { type MailerAdapter, MailerError, type RenderedMessage } from '../port'
 
 export interface ResendClient {
-  emails: {
-    send(payload: ResendSendPayload): Promise<{
-      data: { id: string } | null
-      error: { message: string; name?: string } | null
+  readonly emails: {
+    send(payload: CreateEmailOptions): Promise<{
+      readonly data: { readonly id: string } | null
+      readonly error: { readonly message: string; readonly name?: string } | null
     }>
   }
 }
 
-interface ResendSendPayload {
-  from: string
-  to: string[]
-  subject: string
-  html: string
-  text: string
-  replyTo?: string | undefined
-  cc?: string[] | undefined
-  bcc?: string[] | undefined
-  headers?: Record<string, string> | undefined
-  tags?: { name: string; value: string }[] | undefined
-  attachments?:
-    | { filename: string; content: Buffer | string; contentType?: string | undefined }[]
-    | undefined
-}
-
 export interface ResendAdapterOptions {
-  apiKey: string
-  client?: ResendClient | undefined
+  readonly apiKey: string
+  readonly client?: ResendClient | undefined
 }
 
 function toAttachmentContent(content: Uint8Array | string): Buffer | string {
@@ -38,8 +22,7 @@ function toAttachmentContent(content: Uint8Array | string): Buffer | string {
 
 export function resendAdapter(options: ResendAdapterOptions): MailerAdapter {
   if (!options.apiKey) throw new MailerError('apiKey is required', { adapter: 'resend' })
-  const client: ResendClient =
-    options.client ?? (new Resend(options.apiKey) as unknown as ResendClient)
+  const client: ResendClient = options.client ?? new Resend(options.apiKey)
 
   return {
     name: 'resend',
@@ -50,18 +33,28 @@ export function resendAdapter(options: ResendAdapterOptions): MailerAdapter {
         subject: message.subject,
         html: message.html,
         text: message.text,
-        replyTo: message.replyTo ? formatAddress(message.replyTo) : undefined,
-        cc: message.cc?.map(formatAddress),
-        bcc: message.bcc?.map(formatAddress),
-        headers: message.headers,
-        tags: message.tags
-          ? Object.entries(message.tags).map(([name, value]) => ({ name, value }))
-          : undefined,
-        attachments: message.attachments?.map((a) => ({
-          filename: a.filename,
-          content: toAttachmentContent(a.content),
-          contentType: a.contentType,
-        })),
+        ...(message.replyTo === undefined ? {} : { replyTo: formatAddress(message.replyTo) }),
+        ...(message.cc === undefined
+          ? {}
+          : { cc: message.cc.map((address) => formatAddress(address)) }),
+        ...(message.bcc === undefined
+          ? {}
+          : { bcc: message.bcc.map((address) => formatAddress(address)) }),
+        ...(message.headers === undefined ? {} : { headers: { ...message.headers } }),
+        ...(message.tags === undefined
+          ? {}
+          : { tags: Object.entries(message.tags).map(([name, value]) => ({ name, value })) }),
+        ...(message.attachments === undefined
+          ? {}
+          : {
+              attachments: message.attachments.map((attachment) => ({
+                filename: attachment.filename,
+                content: toAttachmentContent(attachment.content),
+                ...(attachment.contentType === undefined
+                  ? {}
+                  : { contentType: attachment.contentType }),
+              })),
+            }),
       })
 
       if (error) throw new MailerError(error.message, { adapter: 'resend', cause: error })

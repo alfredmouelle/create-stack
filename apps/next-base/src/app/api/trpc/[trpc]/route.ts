@@ -4,9 +4,10 @@ import { env } from '~/env'
 import { appRouter } from '~/server/api/root'
 import { createTRPCContext } from '~/server/api/trpc'
 
-const createContext = async (req: NextRequest) => createTRPCContext({ headers: req.headers })
+const createContext = (req: NextRequest): ReturnType<typeof createTRPCContext> =>
+  createTRPCContext({ headers: req.headers })
 
-const handler = (req: NextRequest) =>
+const handler = (req: NextRequest): Promise<Response> =>
   fetchRequestHandler({
     endpoint: '/api/trpc',
     req,

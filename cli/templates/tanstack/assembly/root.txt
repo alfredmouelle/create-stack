@@ -62,7 +62,7 @@ __ROUTER_CONTEXT__export const Route = __CREATE_ROOT__({
   shellComponent: RootDocument,
 })
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { readonly children: React.ReactNode }) {
   return (
 __CLERK_OPEN__    <html lang="en" suppressHydrationWarning>
       <head>

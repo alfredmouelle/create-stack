@@ -9,7 +9,7 @@ __QUERY_CONTEXT__  const router = createTanStackRouter({
 __ROUTER_CONTEXT__    scrollRestoration: true,
     defaultPreload: 'intent',
 __PRELOAD_STALE_TIME__
-    Wrap: (props: { children: ReactNode }) => (
+    Wrap: (props: { readonly children: ReactNode }) => (
 __WRAP__
     ),
   })
@@ -19,6 +19,6 @@ __SSR_INTEGRATION__  return router
 
 declare module '@tanstack/react-router' {
   interface Register {
-    router: ReturnType<typeof getRouter>
+    readonly router: ReturnType<typeof getRouter>
   }
 }

@@ -48,6 +48,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@ianvs/prettier-plugin-sort-imports": "4.7.1",
+    "oxlint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2004",
+    "prettier": "3.9.10",
+    "prettier-plugin-tailwindcss": "0.8.1",
     "tsdown": "0.23.1",
     "turbo": "2.11.8",
     "typescript": "7.0.2",

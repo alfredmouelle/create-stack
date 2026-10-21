@@ -4,8 +4,8 @@ import { normalizeAddress, normalizeRecipients } from './address'
 import type { Mailer, MailerAdapter, MailRecipient, RenderedMessage } from './port'
 
 export interface RenderedBody {
-  html: string
-  text: string
+  readonly html: string
+  readonly text: string
 }
 
 export type EmailRenderer = (react: ReactElement) => Promise<RenderedBody>
@@ -19,9 +19,9 @@ export const renderEmail: EmailRenderer = async (react) => {
 }
 
 export interface CreateMailerOptions {
-  adapter: MailerAdapter
-  from: MailRecipient
-  render?: EmailRenderer | undefined
+  readonly adapter: MailerAdapter
+  readonly from: MailRecipient
+  readonly render?: EmailRenderer | undefined
 }
 
 export function createMailer(options: CreateMailerOptions): Mailer {
@@ -34,13 +34,25 @@ export function createMailer(options: CreateMailerOptions): Mailer {
 
       const rendered: RenderedMessage = {
         to: normalizeRecipients(message.to),
-        from: message.from ? normalizeAddress(message.from) : defaultFrom,
+        from:
+          message.from !== undefined && message.from !== ''
+            ? normalizeAddress(message.from)
+            : defaultFrom,
         subject: message.subject,
         html,
         text,
-        replyTo: message.replyTo ? normalizeAddress(message.replyTo) : undefined,
-        cc: message.cc ? normalizeRecipients(message.cc) : undefined,
-        bcc: message.bcc ? normalizeRecipients(message.bcc) : undefined,
+        replyTo:
+          message.replyTo !== undefined && message.replyTo !== ''
+            ? normalizeAddress(message.replyTo)
+            : undefined,
+        cc:
+          message.cc !== undefined && message.cc !== ''
+            ? normalizeRecipients(message.cc)
+            : undefined,
+        bcc:
+          message.bcc !== undefined && message.bcc !== ''
+            ? normalizeRecipients(message.bcc)
+            : undefined,
         headers: message.headers,
         tags: message.tags,
         attachments: message.attachments,

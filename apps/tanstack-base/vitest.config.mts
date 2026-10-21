@@ -2,11 +2,10 @@ import { existsSync, readFileSync } from 'node:fs'
 import { parse } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 
-const env = Object.assign(
-  {},
-  ...['.env.test', '.env.test.local']
+const env: Record<string, string> = Object.fromEntries(
+  ['.env.test', '.env.test.local']
     .filter((file) => existsSync(file))
-    .map((file) => parse(readFileSync(file))),
+    .flatMap((file) => Object.entries(parse(readFileSync(file)))),
 )
 
 export default defineConfig({

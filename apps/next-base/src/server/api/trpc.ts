@@ -5,7 +5,13 @@ import { env } from '~/env'
 import { auth } from '~/server/better-auth'
 import { db } from '~/server/db'
 
-export const createTRPCContext = async (opts: { headers: Headers }) => {
+export const createTRPCContext = async (opts: {
+  readonly headers: Headers
+}): Promise<{
+  readonly db: typeof db
+  readonly session: Awaited<ReturnType<typeof auth.api.getSession>>
+  readonly headers: Headers
+}> => {
   const session = await auth.api.getSession({ headers: opts.headers })
   return { db, session, ...opts }
 }
@@ -34,7 +40,9 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
   if (isDevelopment) {
     const waitMs = Math.floor(Math.random() * 400) + 100
-    await new Promise((resolve) => setTimeout(resolve, waitMs))
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, waitMs)
+    })
   }
 
   const result = await next()

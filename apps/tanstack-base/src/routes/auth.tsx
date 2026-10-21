@@ -5,9 +5,7 @@ import { getServerSession } from '~/server/better-auth/session'
 export const Route = createFileRoute('/auth')({
   beforeLoad: async () => {
     const session = await getServerSession()
-    if (session) {
-      throw redirect({ to: '/' })
-    }
+    return session ? redirect({ to: '/' }) : undefined
   },
   component: AuthLayout,
 })

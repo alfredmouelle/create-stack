@@ -64,13 +64,13 @@ function SignIn() {
         className="grid gap-4"
         onSubmit={(e) => {
           e.preventDefault()
-          form.handleSubmit()
+          void form.handleSubmit()
         }}
       >
         <GoogleButton label="Continue with Google" />
         <AuthDivider />
 
-        {formError ? <FormAlert>{formError}</FormAlert> : null}
+        {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
         <form.Field name="email">
           {(field) => (
@@ -103,7 +103,7 @@ function SignIn() {
           )}
         </form.Field>
 
-        <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+        <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting] as const}>
           {([canSubmit, isSubmitting]) => (
             <Button className="w-full cursor-pointer" disabled={!canSubmit} type="submit">
               {isSubmitting ? <Spinner /> : null}

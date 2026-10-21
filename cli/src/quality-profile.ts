@@ -1,6 +1,7 @@
 import { cpSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { TEMPLATES } from '#lib/paths.mjs'
+import { applyQualityTools, type QualityTools } from './javascript/quality-tools.ts'
 
 export const QUALITY_PROFILE_OPTIONS = [
   'strict',
@@ -101,10 +102,12 @@ function prepareHooks(projectDir: string): void {
 export function applyQualityProfile(
   framework: ProfiledFramework,
   { projectDir, applicationDir }: QualityProfileTarget,
+  tools: QualityTools = { formatter: 'biome', linter: 'biome', alias: '~' },
 ): void {
   applyCompilerOptions(framework, applicationDir)
   for (const file of PROFILE_FILES) {
     cpSync(join(TEMPLATES, 'quality-profile', file), join(projectDir, file), { recursive: true })
   }
   prepareHooks(projectDir)
+  applyQualityTools({ projectDir, applicationDir }, tools)
 }

@@ -2,12 +2,15 @@ import { and, type Column, eq, gt, lt, or, type SQL } from 'drizzle-orm'
 
 export type SortDirection = 'asc' | 'desc'
 
-export const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (char) => `\\${char}`)
+export const escapeLike = (value: string): string =>
+  value.replaceAll(/[\\%_]/gu, (char) => `\\${char}`)
 
 export const encodeCursor = (value: string, id: string): string =>
   Buffer.from(JSON.stringify([value, id])).toString('base64url')
 
-export const decodeCursor = (cursor: string): { value: string; id: string } | null => {
+export const decodeCursor = (
+  cursor: string,
+): { readonly value: string; readonly id: string } | null => {
   try {
     const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString())
     if (!Array.isArray(parsed)) return null
@@ -26,11 +29,11 @@ export const keysetCondition = ({
   cursor,
   toComparable,
 }: {
-  sortColumn: Column
-  idColumn: Column
-  direction: SortDirection
-  cursor: string
-  toComparable: (value: string) => unknown
+  readonly sortColumn: Column
+  readonly idColumn: Column
+  readonly direction: SortDirection
+  readonly cursor: string
+  readonly toComparable: (value: string) => unknown
 }): SQL | undefined => {
   const decoded = decodeCursor(cursor)
   if (!decoded) return undefined
@@ -50,13 +53,13 @@ export const takePage = <T>({
   getSortValue,
   getId,
 }: {
-  rows: T[]
-  limit: number
-  getSortValue: (row: T) => string
-  getId: (row: T) => string
-}): { items: T[]; nextCursor: string | null } => {
+  readonly rows: readonly T[]
+  readonly limit: number
+  readonly getSortValue: (row: T) => string
+  readonly getId: (row: T) => string
+}): { readonly items: T[]; readonly nextCursor: string | null } => {
   if (rows.length <= limit) {
-    return { items: rows, nextCursor: null }
+    return { items: [...rows], nextCursor: null }
   }
 
   const items = rows.slice(0, limit)

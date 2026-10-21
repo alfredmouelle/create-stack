@@ -5,10 +5,11 @@ import { ResetPasswordForm } from '../_components/reset-password-form'
 export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string; error?: string }>
+  readonly searchParams: Promise<{ readonly token?: string; readonly error?: string }>
 }) {
   const { token, error } = await searchParams
-  const validToken = token && error !== 'INVALID_TOKEN' ? token : undefined
+  const validToken =
+    token !== undefined && token !== '' && error !== 'INVALID_TOKEN' ? token : undefined
 
   return (
     <AuthCard

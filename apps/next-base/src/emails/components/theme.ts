@@ -1,21 +1,21 @@
 export interface EmailTheme {
-  brand: {
-    name: string
-    footer: string
+  readonly brand: {
+    readonly name: string
+    readonly footer: string
   }
-  fontFamily: string
-  colors: {
-    pageBg: string
-    cardBg: string
-    fg: string
-    fgStrong: string
-    fgMuted: string
-    fgFaint: string
-    border: string
-    borderSubtle: string
-    primary?: string
-    destructive: string
-    onAccent: string
+  readonly fontFamily: string
+  readonly colors: {
+    readonly pageBg: string
+    readonly cardBg: string
+    readonly fg: string
+    readonly fgStrong: string
+    readonly fgMuted: string
+    readonly fgFaint: string
+    readonly border: string
+    readonly borderSubtle: string
+    readonly primary?: string
+    readonly destructive: string
+    readonly onAccent: string
   }
 }
 
@@ -41,9 +41,9 @@ export const defaultTheme: EmailTheme = {
 }
 
 export type EmailThemeOverride = {
-  brand?: Partial<EmailTheme['brand']>
-  fontFamily?: string
-  colors?: Partial<EmailTheme['colors']>
+  readonly brand?: Partial<EmailTheme['brand']>
+  readonly fontFamily?: string
+  readonly colors?: Partial<EmailTheme['colors']>
 }
 
 export function createEmailTheme(

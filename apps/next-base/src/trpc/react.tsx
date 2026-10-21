@@ -11,7 +11,7 @@ import type { AppRouter } from '~/server/api/root'
 import { createQueryClient } from './query-client'
 
 let clientQueryClientSingleton: QueryClient | undefined
-const getQueryClient = () => {
+const getQueryClient = (): QueryClient => {
   if (typeof window === 'undefined') {
     return createQueryClient()
   }
@@ -25,13 +25,14 @@ export type RouterInputs = inferRouterInputs<AppRouter>
 
 export type RouterOutputs = inferRouterOutputs<AppRouter>
 
-function getBaseUrl() {
+function getBaseUrl(): string {
   if (typeof window !== 'undefined') return window.location.origin
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  if (process.env.VERCEL_URL !== undefined && process.env.VERCEL_URL !== '')
+    return `https://${process.env.VERCEL_URL}`
   return `http://localhost:${process.env.PORT ?? 3000}`
 }
 
-export function TRPCReactProvider(props: { children: ReactNode }) {
+export function TRPCReactProvider(props: { readonly children: ReactNode }) {
   const queryClient = getQueryClient()
 
   const [trpcClient] = useState(() =>

@@ -6,7 +6,7 @@ config({ path: ['.env', '.env.local'], override: true })
 // Deterministic across runs.
 faker.seed(42)
 
-async function main() {
+function main(): void {
   // Seed tables here (idempotent), via faker:
   //   const { db } = await import('~/server/db')
   //   await db.insert(user).values({
@@ -16,12 +16,12 @@ async function main() {
   //   }).onConflictDoNothing()
 
   // biome-ignore lint/suspicious/noConsole: seed reporting
-  console.log('✓ Seed terminé')
+  console.log('Seed complete')
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error)
-    process.exit(1)
-  })
+try {
+  main()
+} catch (error) {
+  console.error(error)
+  process.exit(1)
+}

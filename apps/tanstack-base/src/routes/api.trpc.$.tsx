@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import type {} from '@tanstack/react-start'
+import '@tanstack/react-start'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { appRouter } from '~/server/api/root'
 import { createTRPCContext } from '~/server/api/trpc'
 
-function handler({ request }: { request: Request }) {
+function handler({ request }: { readonly request: Request }): Promise<Response> {
   return fetchRequestHandler({
     req: request,
     router: appRouter,

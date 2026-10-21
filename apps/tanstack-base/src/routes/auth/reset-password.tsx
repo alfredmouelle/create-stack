@@ -10,12 +10,12 @@ import { ResetPasswordSchema } from '~/features/auth/schemas'
 import { authClient } from '~/server/better-auth/client'
 
 interface ResetPasswordSearch {
-  token?: string | undefined
-  error?: string | undefined
+  readonly token?: string | undefined
+  readonly error?: string | undefined
 }
 
 export const Route = createFileRoute('/auth/reset-password')({
-  validateSearch: (search: Record<string, unknown>): ResetPasswordSearch => ({
+  validateSearch: (search: Readonly<Record<string, unknown>>): ResetPasswordSearch => ({
     token: typeof search.token === 'string' ? search.token : undefined,
     error: typeof search.error === 'string' ? search.error : undefined,
   }),
@@ -27,13 +27,13 @@ function ResetPassword() {
   const { token, error: tokenError } = Route.useSearch()
   const [formError, setFormError] = useState<string | null>(null)
 
-  const invalidToken = !token || tokenError === 'INVALID_TOKEN'
+  const invalidToken = token === undefined || token === '' || tokenError === 'INVALID_TOKEN'
 
   const form = useForm({
     defaultValues: { password: '', confirmPassword: '' },
     validators: { onBlur: ResetPasswordSchema },
     onSubmit: async ({ value }) => {
-      if (!token) return
+      if (token === undefined || token === '') return
       setFormError(null)
       const { error } = await authClient.resetPassword({
         newPassword: value.password,
@@ -68,10 +68,10 @@ function ResetPassword() {
           className="grid gap-4"
           onSubmit={(e) => {
             e.preventDefault()
-            form.handleSubmit()
+            void form.handleSubmit()
           }}
         >
-          {formError ? <FormAlert>{formError}</FormAlert> : null}
+          {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
           <form.Field name="password">
             {(field) => (
@@ -96,7 +96,7 @@ function ResetPassword() {
             )}
           </form.Field>
 
-          <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+          <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting] as const}>
             {([canSubmit, isSubmitting]) => (
               <Button className="w-full cursor-pointer" disabled={!canSubmit} type="submit">
                 {isSubmitting ? <Spinner /> : null}

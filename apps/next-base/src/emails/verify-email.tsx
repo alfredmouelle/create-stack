@@ -6,13 +6,19 @@ import {
   EmailLayout,
 } from '~/emails/components'
 
-export function VerifyEmail({ name, url }: { name?: string | undefined; url: string }) {
+export function VerifyEmail({
+  name,
+  url,
+}: {
+  readonly name?: string | undefined
+  readonly url: string
+}) {
   return (
     <EmailLayout preview="Confirm your email address to activate your account.">
       <EmailHeading kicker="Confirmation">Confirm your address.</EmailHeading>
       <EmailBodyText>
-        Hi{name ? ` ${name}` : ''}, welcome aboard. Click the button below to confirm your email
-        address and activate your account.
+        Hi{name !== undefined && name !== '' ? ` ${name}` : ''}, welcome aboard. Click the button
+        below to confirm your email address and activate your account.
       </EmailBodyText>
       <EmailBodyText muted size="sm">
         This link is valid for one hour.

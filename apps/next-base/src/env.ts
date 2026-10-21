@@ -30,6 +30,6 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
   },
 
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  skipValidation: Boolean(process.env.SKIP_ENV_VALIDATION),
   emptyStringAsUndefined: true,
 })
