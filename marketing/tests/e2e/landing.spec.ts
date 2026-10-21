@@ -252,6 +252,7 @@ test('opens every external link in a new tab', async ({ page }) => {
   for (const path of [
     '/',
     '/build',
+    '/docs',
     '/frameworks/next',
     '/frameworks/remix',
     '/contribute',

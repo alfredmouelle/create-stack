@@ -9,7 +9,15 @@ export const SITE_NAME = 'create-stack'
 export const OG_IMAGE_PATH = '/og-image.png'
 export const OG_IMAGE_ALT = 'create-stack. Your first commit is green'
 
-export const SITE_PAGES = ['/', '/build', '/frameworks', '/contribute', '/changelog', '/privacy']
+export const SITE_PAGES = [
+  '/',
+  '/build',
+  '/docs',
+  '/frameworks',
+  '/contribute',
+  '/changelog',
+  '/privacy',
+]
 
 export interface SiteMetadata {
   canonicalUrl: string
@@ -40,6 +48,7 @@ After creation, \`create-stack add --with kind[=provider] [...]\` adds capabilit
 
 Website: ${canonicalUrl}
 Stack builder: ${canonicalUrl}build
+Docs: ${canonicalUrl}docs
 Repository: ${REPOSITORY_URL}
 `
 

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css'
+import BackToTop from '../components/BackToTop'
 import CommandLine from '../components/CommandLine.astro'
 import ConsentBanner from '../components/ConsentBanner'
 import Mark from '../components/Mark.astro'
@@ -27,9 +28,10 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/'
 const latestVersion = CHANGELOG_RELEASES.find((release) => release.date)?.version
 const navigation = [
   { href: '/build', label: 'Build' },
+  { href: '/docs', label: 'Docs' },
   { href: '/frameworks', label: 'Frameworks' },
-  { href: '/contribute', label: 'Contribute' },
   { href: '/changelog', label: 'Changelog' },
+  { href: '/contribute', label: 'Contribute' },
 ]
 const themeChoices = [
   { value: 'light', label: 'Light' },
@@ -190,6 +192,7 @@ const isCurrent = (href: string) => currentPath === href || currentPath.startsWi
           <div>
             <h2>Product</h2>
             <a href="/build">Build</a>
+            <a href="/docs">Docs</a>
             <a href="/frameworks">Frameworks</a>
             <a href="/changelog">Changelog</a>
           </div>
@@ -213,6 +216,7 @@ const isCurrent = (href: string) => currentPath === href || currentPath.startsWi
         </div>
       </div>
     </footer>
+    <BackToTop client:idle />
     <ConsentBanner client:load />
     <script>
       import { setupPageControls } from '../lib/page-controls'
