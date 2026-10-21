@@ -23,8 +23,9 @@ const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tan
   <main>
     <section aria-labelledby="hero-title" class="hero shell">
       <p class="t-label hero-label">
-        <Badge maturity="stable" />
-        {REGISTERED_FRAMEWORKS.map((framework) => framework.label).join(' · ')}
+        {REGISTERED_FRAMEWORKS.map((framework) => (
+          <span><Badge maturity={framework.maturity} /> {framework.label}</span>
+        ))}
       </p>
       <h1 class="t-display" id="hero-title">Your first commit <br />is <em>green.</em></h1>
       <p class="t-lead">
@@ -179,7 +180,7 @@ const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tan
         <SectionHead
           id="frameworks-title"
           question="Does it support my framework?"
-          title="Two stable today. The registry is open."
+          title="Two stable. RasenganJS in preview."
         />
         <ul class="registry">
           {

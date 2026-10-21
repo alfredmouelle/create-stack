@@ -1,4 +1,4 @@
-export const FRAMEWORKS = ['tanstack', 'next'] as const
+export const FRAMEWORKS = ['tanstack', 'next', 'rasengan'] as const
 export type Framework = (typeof FRAMEWORKS)[number]
 
 export const DATABASES = ['drizzle', 'prisma', 'convex', 'none'] as const
@@ -78,6 +78,7 @@ const FULL_STACK_SUPPORT = {
 export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
   tanstack: { label: 'TanStack Start', maturity: 'stable', ...FULL_STACK_SUPPORT },
   next: { label: 'Next.js', maturity: 'stable', ...FULL_STACK_SUPPORT },
+  rasengan: { label: 'RasenganJS', maturity: 'preview', ...FULL_STACK_SUPPORT },
 }
 
 export const RECOMMENDED_FRAMEWORK: Framework = 'tanstack'

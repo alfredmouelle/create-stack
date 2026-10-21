@@ -35,7 +35,6 @@ const display = (value: string | boolean) =>
   typeof value === 'boolean' ? (value ? 'trpc' : 'none') : value
 const displayRecommendation = (value: string | boolean | readonly string[]) =>
   typeof value === 'object' ? value.join(', ') : display(value)
-const stableNames = REGISTERED_FRAMEWORKS.map((framework) => framework.label).join(', ')
 ---
 
 <BaseLayout
@@ -135,7 +134,9 @@ const stableNames = REGISTERED_FRAMEWORKS.map((framework) => framework.label).jo
           <section aria-labelledby="roadmap-title" class="stack">
             <h2 class="t-label" id="roadmap-title">Roadmap position</h2>
             <ol class="roadmap">
-              <li class="is-done"><span aria-hidden="true" class="tick"></span><span>{stableNames}</span><span class="is-muted">stable</span></li>
+              {REGISTERED_FRAMEWORKS.map((framework) => (
+                <li class="is-done"><span aria-hidden="true" class="tick"></span><span>{framework.label}</span><Badge maturity={framework.maturity} /></li>
+              ))}
               {PLANNED_FRAMEWORKS.map((planned) => (
                 <li class:list={[planned.id === entry.id && 'is-current']}>
                   <span aria-hidden="true" class="hollow" />

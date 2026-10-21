@@ -72,3 +72,7 @@ only when a later integration is relevant.
 
 **Done when:** every printed step is completed or explicitly handed off, and
 the user has the exact env path, remaining values, and next commands.
+
+### RasenganJS preview
+
+Select `--framework rasengan` through the registered module. Keep private environment, database and auth imports in API routes; page loaders fetch session data over HTTP. Use the generated `scripts/start.ts` for Node production serving. Hosted integrations require provider credentials.

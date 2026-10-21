@@ -14,7 +14,7 @@ project.
 ## 1. Resolve the project and intent
 
 Locate the app root whose `package.json` declares a framework create-stack
-detects: `next`, `@tanstack/react-start`, or `@tanstack/react-router`. In a
+detects: `next`, `@tanstack/react-start`, `@tanstack/react-router`, or `rasengan`. In a
 generated monorepo this is normally `apps/web`, not the workspace root. Read the
 existing dependencies and capability files, record pre-existing working-tree
 changes, and determine whether the requested result is an addition, a swap, or

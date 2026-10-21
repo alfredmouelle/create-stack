@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, expect, test } from 'vitest'
+import { FRAMEWORKS } from '../../packages/stack-config/src/index.ts'
 import { cleanupAcceptanceFixtures, createAcceptanceFixture, runCli } from './acceptance.ts'
 
 afterAll(cleanupAcceptanceFixtures)
@@ -37,11 +38,17 @@ const combinations = [
 
 test.each(
   combinations.flatMap((tools) =>
-    ['', 'install', 'format', 'typecheck', 'lint'].map((failure) => ({ ...tools, failure })),
+    FRAMEWORKS.flatMap((framework) =>
+      ['', 'install', 'format', 'typecheck', 'lint'].map((failure) => ({
+        ...tools,
+        framework,
+        failure,
+      })),
+    ),
   ),
 )(
-  'executable gate runs $formatter/$linter and commits only on success, failure=$failure',
-  ({ formatter, linter, commands, failure }) => {
+  'executable $framework gate runs $formatter/$linter and commits only on success, failure=$failure',
+  ({ framework, formatter, linter, commands, failure }) => {
     const fixture = createAcceptanceFixture('standalone')
     const bin = join(fixture.root, 'bin')
     const log = join(fixture.root, 'commands.log')
@@ -73,6 +80,8 @@ process.exit(spawnSync('sh', ['-c', manifest.scripts[script]], { stdio: 'inherit
       args: [
         'project',
         '--minimal',
+        '--framework',
+        framework,
         '--pm',
         'npm',
         `--formatter=${formatter}`,

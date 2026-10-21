@@ -1,7 +1,7 @@
 
 export type SortDirection = 'asc' | 'desc'
 
-export const escapeLike = (value: string): string => value.replace(/[\\%_]/g, (char) => `\\${char}`)
+export const escapeLike = (value: string): string => value.replace(/[\\%_]/gu, (char) => `\\${char}`)
 
 export const encodeCursor = (value: string, id: string): string =>
   Buffer.from(JSON.stringify([value, id])).toString('base64url')
@@ -24,13 +24,13 @@ export const takePage = <T>({
   getSortValue,
   getId,
 }: {
-  rows: T[]
-  limit: number
-  getSortValue: (row: T) => string
-  getId: (row: T) => string
+  readonly rows: readonly T[]
+  readonly limit: number
+  readonly getSortValue: (row: T) => string
+  readonly getId: (row: T) => string
 }): { items: T[]; nextCursor: string | null } => {
   if (rows.length <= limit) {
-    return { items: rows, nextCursor: null }
+    return { items: [...rows], nextCursor: null }
   }
 
   const items = rows.slice(0, limit)

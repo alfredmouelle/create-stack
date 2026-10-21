@@ -1,0 +1,27 @@
+import { faker } from '@faker-js/faker'
+import { config } from 'dotenv'
+
+config({ path: ['.env', '.env.local'], override: true })
+
+// Deterministic across runs.
+faker.seed(42)
+
+function main(): void {
+  // Seed tables here (idempotent), via faker:
+  //   const { db } = await import('~/server/db')
+  //   await db.insert(user).values({
+  //     id: faker.string.uuid(),
+  //     name: faker.person.fullName(),
+  //     email: faker.internet.email().toLowerCase(),
+  //   }).onConflictDoNothing()
+
+  // biome-ignore lint/suspicious/noConsole: seed reporting
+  console.log('Seed complete')
+}
+
+try {
+  main()
+} catch (error) {
+  console.error(error)
+  process.exit(1)
+}

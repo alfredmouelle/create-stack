@@ -74,6 +74,8 @@ function createBundleFixture() {
           '.output',
           '.nitro',
           '.tanstack',
+          '.rasengan',
+          '.data',
         ].includes(basename(source)) && !basename(source).startsWith('.env'),
     })
   }
@@ -104,6 +106,7 @@ function createBundleFixture() {
 }
 
 const GENERATED_FILES = {
+  rasengan: ['.rasengan/cache/config.js', '.data/messages.json', 'dist/server/private.js'],
   next: ['next-env.d.ts', '.next/server/chunk.js'],
   tanstack: [
     'src/routeTree.gen.ts',

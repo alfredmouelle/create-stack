@@ -436,7 +436,7 @@ function mountRoot(projectDir: string, config: ComponentsConfig, name: string): 
     return { mounted: true, rootName: root.name, manualSteps: [] }
   }
 
-  const bodyClose = lines.findIndex((line) => line.includes('</body>'))
+  const bodyClose = lines.findIndex((line) => /<\/(?:body|Body)>/.test(line))
   let lastImport = -1
   for (let index = 0; index < lines.length; index++) {
     if (/^import\b/.test(lines[index] ?? '')) lastImport = index

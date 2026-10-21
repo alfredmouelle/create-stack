@@ -1,6 +1,6 @@
 # create-stack
 
-An opinionated, framework-agnostic SaaS foundation and CLI (`@alfredmouelle/create-stack`) for scaffolding production-ready web projects (Next.js or TanStack Start) with swappable ports & adapters and single-provider modules.
+An opinionated, framework-agnostic SaaS foundation and CLI (`@alfredmouelle/create-stack`) for scaffolding web projects (Next.js, TanStack Start, or RasenganJS preview) with swappable ports & adapters and single-provider modules.
 
 ## Agent skills
 

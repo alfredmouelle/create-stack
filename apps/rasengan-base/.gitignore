@@ -1,0 +1,11 @@
+node_modules
+dist
+.rasengan
+.data
+coverage
+.turbo
+.env
+.env.local
+.env.test.local
+*.tsbuildinfo
+.DS_Store

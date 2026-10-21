@@ -6,7 +6,7 @@ config({ path: ['.env', '.env.local'], override: true })
 // Deterministic across runs.
 faker.seed(42)
 
-async function main() {
+function main(): void {
   // Seed your tables here (idempotent) via faker + Prisma:
   //   const { db } = await import('~/server/db')
   //   await db.post.create({
@@ -14,12 +14,12 @@ async function main() {
   //   })
 
   // biome-ignore lint/suspicious/noConsole: seed reporting
-  console.log('✓ Seed terminé')
+  console.log('Seed complete')
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error)
-    process.exit(1)
-  })
+try {
+  main()
+} catch (error) {
+  console.error(error)
+  process.exit(1)
+}

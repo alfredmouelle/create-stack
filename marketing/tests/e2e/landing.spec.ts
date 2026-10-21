@@ -236,6 +236,31 @@ test('shows planned frameworks as not installable', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toHaveCount(0)
 })
 
+test('numbers the remaining planned frameworks consecutively', async ({ page }) => {
+  await openPage(page, '/frameworks')
+
+  const rows = page.locator('.framework-row.is-planned')
+  const total = await rows.count()
+  expect(total).toBeGreaterThan(0)
+  await expect(rows.locator('.framework-id')).toHaveText(
+    Array.from({ length: total }, (_, index) => `roadmap ${index + 1} of ${total}`),
+  )
+})
+
+test('identifies Rasengan as preview on the homepage and planned framework roadmap', async ({
+  page,
+}) => {
+  await openPage(page, '/')
+  const hero = page.locator('.hero-label > span').filter({ hasText: 'RasenganJS' })
+  await expect(hero.getByText('preview', { exact: true })).toBeVisible()
+  await expect(hero.getByText('stable', { exact: true })).toHaveCount(0)
+
+  await openPage(page, '/frameworks/remix')
+  const roadmap = page.locator('.roadmap .is-done').filter({ hasText: 'RasenganJS' })
+  await expect(roadmap.getByText('preview', { exact: true })).toBeVisible()
+  await expect(roadmap.getByText('stable', { exact: true })).toHaveCount(0)
+})
+
 test('makes a long install command horizontally inspectable', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await openPage(page, '/')

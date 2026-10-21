@@ -1,0 +1,14 @@
+node_modules
+dist
+.rasengan
+.data
+.turbo
+coverage
+.git
+.env
+.env.*
+!.env.example
+npm-debug.log*
+Dockerfile
+.dockerignore
+README.md
