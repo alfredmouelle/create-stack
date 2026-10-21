@@ -251,16 +251,16 @@ function addSelection({
   selection,
   projectDir,
   keepFiles,
-  registryResults,
+  componentResults,
 }: {
   readonly selection: Addition
   readonly projectDir: string
   readonly keepFiles: boolean
-  readonly registryResults: ReadonlyMap<string, ComponentResult>
+  readonly componentResults: ReadonlyMap<string, ComponentResult>
 }): Added {
   if (selection.type === 'component') {
-    const result = registryResults.get(selection.name)
-    if (!result) throw new Error(`Missing registry result for component: ${selection.name}`)
+    const result = componentResults.get(selection.name)
+    if (!result) throw new Error(`Missing component result for component: ${selection.name}`)
     return { ...selection, ...result }
   }
 
@@ -355,13 +355,16 @@ export async function runAddition(args: ParsedArgs): Promise<void> {
     throw new Error('--keep-files only applies to provider changes')
   }
 
-  const registryPreflight = preflightRegistryComponents({
-    projectDir,
-    pm,
-    components,
-    noInstall: !!args.flags['no-install'],
-    force,
-  })
+  const registryPreflight =
+    module.additions.components.kind === 'native'
+      ? null
+      : preflightRegistryComponents({
+          projectDir,
+          pm,
+          components,
+          noInstall: !!args.flags['no-install'],
+          force,
+        })
 
   p.intro('create-stack add')
   const plan = [
@@ -380,9 +383,18 @@ export async function runAddition(args: ParsedArgs): Promise<void> {
   ]
   p.note(plan.join('\n'), 'Addition plan')
 
-  const registryResults = installRegistryResults(registryPreflight)
+  const componentResults =
+    components.length === 0
+      ? new Map<string, ComponentResult>()
+      : module.additions.components.kind === 'native'
+        ? module.additions.components.install({
+            projectDir,
+            names: components.map(({ name }) => name),
+            force,
+          })
+        : installRegistryResults(registryPreflight)
   const added = selections.map((selection) =>
-    addSelection({ selection, projectDir, keepFiles, registryResults }),
+    addSelection({ selection, projectDir, keepFiles, componentResults }),
   )
   if (!args.flags['no-install']) {
     runVerificationGate(module.gate(pm), {

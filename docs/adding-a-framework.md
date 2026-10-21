@@ -118,6 +118,14 @@ The rules the conformance suite enforces:
 skeleton (which renders `package.json` and `src/env.ts`), the SQL database parts, the
 mailer parts, and the testing part.
 
+A framework with its own component runtime supplies `additions.components.kind: 'native'`,
+`additions.components.names`, and `additions.components.install`. The CLI validates the entire addition batch
+before calling this installer. It receives the application directory, requested
+component names, and replacement flag, and returns each component's copied and
+preserved paths, dependencies, root mounting result, and manual steps. It runs only
+when components were requested. Registry-backed frameworks explicitly supply
+`components: { kind: 'registry' }` to use the existing shadcn installer.
+
 ## Verification gate
 
 Before the automatic first commit, the engine runs `install`, then `format` (with fixes),

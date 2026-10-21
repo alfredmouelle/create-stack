@@ -87,5 +87,5 @@ export function javascriptAdditions({
       }),
     }
   }
-  return { componentRoot, capabilities }
+  return { componentRoot, components: { kind: 'registry' }, capabilities }
 }
