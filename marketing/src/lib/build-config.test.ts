@@ -1,3 +1,4 @@
+import { FRAMEWORK_SUPPORT, type FrameworkSupport } from '@alfredmouelle/stack-config'
 import { describe, expect, it } from 'vitest'
 import {
   type BuildState,
@@ -24,6 +25,24 @@ describe('build configurator state', () => {
     })
     expect(result.conflicts).toEqual([])
     expect(result.command).toBe('pnpm dlx @alfredmouelle/create-stack@latest my-app')
+  })
+
+  it.each([
+    { formatter: 'biome', linter: 'biome' },
+    { formatter: 'biome', linter: 'oxlint' },
+    { formatter: 'prettier', linter: 'biome' },
+    { formatter: 'prettier', linter: 'oxlint' },
+  ] as const)('preserves $formatter formatting and $linter linting in the command', (tools) => {
+    const result = resolveBuildState({
+      ...defaultBuildState(),
+      ...tools,
+    })
+
+    expect(result.configuration).toMatchObject(tools)
+    expect(result.conflicts).toEqual([])
+    expect(result.command).toBe(
+      `pnpm dlx @alfredmouelle/create-stack@latest my-app --formatter ${tools.formatter} --linter ${tools.linter}`,
+    )
   })
 
   it('renders an explicit valid configuration, monorepo, and capabilities', () => {
@@ -89,6 +108,51 @@ describe('build configurator state', () => {
     ])
   })
 
+  it('blocks choices unsupported by the selected framework', () => {
+    const restrictedNext = {
+      ...FRAMEWORK_SUPPORT.next,
+      supports: {
+        database: ['prisma', 'none'],
+        auth: ['clerk', 'none'],
+        trpc: [false],
+        mailer: ['brevo', 'none'],
+        formatter: ['prettier'],
+        linter: ['oxlint'],
+      },
+      recommendations: {
+        database: ['prisma'],
+        auth: ['clerk'],
+        trpc: false,
+        mailer: ['brevo'],
+        formatter: 'prettier',
+        linter: 'oxlint',
+      },
+    } satisfies FrameworkSupport
+    const result = resolveBuildState(
+      {
+        ...defaultBuildState(),
+        framework: 'next',
+        database: 'drizzle',
+        auth: 'better-auth',
+        trpc: true,
+        mailer: 'ses',
+        formatter: 'biome',
+        linter: 'biome',
+      },
+      { ...FRAMEWORK_SUPPORT, next: restrictedNext },
+    )
+
+    expect(result.command).toBeNull()
+    expect(result.conflicts.map(({ axes }) => axes)).toEqual([
+      ['framework', 'database'],
+      ['framework', 'auth'],
+      ['framework', 'trpc'],
+      ['framework', 'mailer'],
+      ['framework', 'formatter'],
+      ['framework', 'linter'],
+    ])
+  })
+
   it('round-trips shareable state in a stable query schema', () => {
     const state: BuildState = {
       ...defaultBuildState(),
@@ -99,6 +163,8 @@ describe('build configurator state', () => {
       auth: 'clerk',
       trpc: false,
       mailer: 'ses',
+      formatter: 'prettier',
+      linter: 'oxlint',
       alias: '#',
       monorepo: 'turbo',
       capabilities: {
@@ -111,7 +177,7 @@ describe('build configurator state', () => {
     const parsed = parseBuildState(encoded)
 
     expect(encoded).toBe(
-      '?v=1&name=my+shared+app&pm=bun&framework=next&database=prisma&auth=clerk&trpc=0&mailer=ses&alias=%23&mono=turbo&cap=storage%3Dgcs&cap=analytics%3Dplausible',
+      '?v=1&name=my+shared+app&pm=bun&framework=next&database=prisma&auth=clerk&trpc=0&mailer=ses&formatter=prettier&linter=oxlint&alias=%23&mono=turbo&cap=storage%3Dgcs&cap=analytics%3Dplausible',
     )
     expect(parsed).toEqual({ kind: 'current', state })
   })
@@ -120,6 +186,30 @@ describe('build configurator state', () => {
     expect(parseBuildState('?v=9&name=legacy')).toEqual({
       kind: 'unsupported',
       version: '9',
+    })
+  })
+
+  it.each([
+    ['formatter', 'oxfmt'],
+    ['formatter', 'none'],
+    ['linter', 'eslint'],
+    ['linter', 'none'],
+  ])('rejects an unavailable %s value from a shared URL: %s', (axis, value) => {
+    expect(parseBuildState(`?v=1&${axis}=${value}`)).toEqual({
+      kind: 'invalid',
+      message: `Invalid ${axis} value "${value}"`,
+    })
+  })
+
+  it('keeps existing shared URLs on the recommended quality tools without adding flags', () => {
+    const parsed = parseBuildState('?v=1&name=orbit&pm=pnpm&framework=next')
+
+    expect(parsed.kind).toBe('current')
+    if (parsed.kind !== 'current') throw new Error('Expected a current configuration')
+    expect(serializeBuildState(parsed.state)).toBe('?v=1&name=orbit&pm=pnpm&framework=next')
+    expect(resolveBuildState(parsed.state)).toMatchObject({
+      configuration: { formatter: 'biome', linter: 'biome' },
+      command: 'pnpm dlx @alfredmouelle/create-stack@latest orbit --framework next',
     })
   })
 

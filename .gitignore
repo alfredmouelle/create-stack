@@ -8,6 +8,7 @@ coverage
 *.tsbuildinfo
 .env
 .env.local
+.env.test.local
 .DS_Store
 
 cli/_stack/

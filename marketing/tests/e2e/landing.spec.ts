@@ -1,4 +1,5 @@
 import { devices, expect, test } from '@playwright/test'
+import { openPage } from './navigation'
 
 const canonicalPnpmCommand = 'pnpm dlx @alfredmouelle/create-stack@latest my-app'
 
@@ -17,7 +18,7 @@ test.describe('install command', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
       origin: new URL(baseURL ?? 'http://127.0.0.1:4321').origin,
     })
-    await page.goto('/')
+    await openPage(page, '/')
 
     const command = page.getByRole('textbox', { name: 'Create Stack install command' })
     await expect(command).toHaveValue(canonicalPnpmCommand)
@@ -50,7 +51,7 @@ test.describe('install command', () => {
         }),
       })
     })
-    await page.goto('/')
+    await openPage(page, '/')
 
     const command = page.getByRole('textbox', { name: 'Create Stack install command' })
     await page.getByRole('button', { name: 'Copy command' }).click()
@@ -67,7 +68,7 @@ test.describe('terminal playback', () => {
   test.setTimeout(30_000)
 
   test('pauses, resumes, and replays the public CLI sequence', async ({ page }) => {
-    await page.goto('/')
+    await openPage(page, '/')
 
     const terminal = page.getByRole('region', { name: 'Example Create Stack terminal session' })
     const transcript = terminal.locator('[aria-live="polite"]')
@@ -93,7 +94,7 @@ test.describe('terminal playback', () => {
 
   test('shows the final verification result without motion when requested', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/')
+    await openPage(page, '/')
 
     const terminal = page.getByRole('region', { name: 'Example Create Stack terminal session' })
     await expect(terminal).toContainText('✓ typecheck + biome clean')
@@ -112,7 +113,7 @@ test.describe('mobile keyboard experience', () => {
   })
 
   test('supports keyboard navigation and stays usable on a narrow viewport', async ({ page }) => {
-    await page.goto('/')
+    await openPage(page, '/')
 
     const packageManager = page.getByRole('button', { name: 'pnpm', exact: true })
     await packageManager.focus()
@@ -147,7 +148,7 @@ test.describe('mobile keyboard experience', () => {
 })
 
 test('publishes the changelog route', async ({ page }) => {
-  await page.goto('/changelog')
+  await openPage(page, '/changelog')
 
   await expect(page.getByRole('heading', { name: 'What changed in create-stack.' })).toBeVisible()
   await expect(page.getByText('0.12.0', { exact: true })).toBeVisible()
@@ -164,7 +165,7 @@ test('publishes the changelog route', async ({ page }) => {
 })
 
 test('uses the same branded mark in the wordmark and favicon', async ({ page }) => {
-  await page.goto('/')
+  await openPage(page, '/')
 
   await expect(page.locator('.wordmark-mark')).toHaveAttribute('src', '/favicon.svg')
   await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute(
@@ -174,7 +175,7 @@ test('uses the same branded mark in the wordmark and favicon', async ({ page }) 
 })
 
 test('keeps the install card controls on the left like a terminal window', async ({ page }) => {
-  await page.goto('/')
+  await openPage(page, '/')
 
   const commandBar = page.locator('.command-label')
   const windowControls = commandBar.locator('.terminal-window')
@@ -190,7 +191,7 @@ test('keeps the install card controls on the left like a terminal window', async
 })
 
 test('makes a long install command horizontally inspectable', async ({ page }) => {
-  await page.goto('/')
+  await openPage(page, '/')
 
   const command = page.getByRole('textbox', { name: 'Create Stack install command' })
   await expect(command).toHaveAttribute('title', 'Scroll horizontally to inspect the full command')

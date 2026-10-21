@@ -1,7 +1,9 @@
 import {
+  FORMATTERS,
   FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   type Framework,
+  LINTERS,
   RECOMMENDED_FRAMEWORK,
 } from '@alfredmouelle/stack-config'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -21,52 +23,63 @@ import {
 } from '../lib/build-config'
 import BackToTop from './BackToTop'
 
-type ChoiceOption = {
-  value: string | boolean
+type ChoiceOption<Value extends string | boolean> = {
+  value: Value
   label: string
   hint?: string
 }
 
 type UpdateState = (patch: Partial<BuildState>) => void
 
-interface ChoiceGroupProps {
+type ChoiceGroupProps<Value extends string | boolean> = {
   id: string
   label: string
-  options: readonly ChoiceOption[]
+  options: readonly ChoiceOption<Value>[]
   reason?: string
   reasonKind?: string
-  selectedValue: string | boolean
-  onChange: (value: string | boolean) => void
+  selectedValue: Value
+  supportedValues?: readonly Value[]
+  onChange: (value: Value) => void
 }
 
-function ChoiceGroup({
+function ChoiceGroup<Value extends string | boolean>({
   id,
   label,
   options,
   reason,
   reasonKind,
   selectedValue,
+  supportedValues,
   onChange,
-}: ChoiceGroupProps) {
+}: ChoiceGroupProps<Value>) {
   return (
     <fieldset className="build-choice-group">
       <legend>{label}</legend>
       <div className="build-choice-options">
-        {options.map((option) => (
-          <label className="build-choice" key={String(option.value)}>
-            <input
-              checked={selectedValue === option.value}
-              name={id}
-              onChange={() => onChange(option.value)}
-              type="radio"
-              value={String(option.value)}
-            />
-            <span className="build-choice-copy">
-              <strong>{option.label}</strong>
-              {option.hint ? <small>{option.hint}</small> : null}
-            </span>
-          </label>
-        ))}
+        {options.map((option) => {
+          const unavailable =
+            supportedValues !== undefined && !supportedValues.includes(option.value)
+          return (
+            <label className="build-choice" key={String(option.value)}>
+              <input
+                checked={selectedValue === option.value}
+                disabled={unavailable}
+                name={id}
+                onChange={() => onChange(option.value)}
+                type="radio"
+                value={String(option.value)}
+              />
+              <span className="build-choice-copy">
+                <strong>{option.label}</strong>
+                {unavailable ? (
+                  <small>Unavailable for this framework</small>
+                ) : option.hint ? (
+                  <small>{option.hint}</small>
+                ) : null}
+              </span>
+            </label>
+          )
+        })}
       </div>
       {reason ? (
         <p className="build-reason" data-reason-kind={reasonKind}>
@@ -82,36 +95,46 @@ const frameworkHints: Partial<Record<Framework, string>> = {
   next: 'App Router',
 }
 
-const frameworkOptions: readonly ChoiceOption[] = FRAMEWORKS.map((framework) => {
+const frameworkOptions = FRAMEWORKS.map((framework) => {
   const { label } = FRAMEWORK_SUPPORT[framework]
   const hint = frameworkHints[framework]
   return hint ? { value: framework, label, hint } : { value: framework, label }
 })
 
-const databaseOptions: readonly ChoiceOption[] = [
+const databaseOptions = [
   { value: 'drizzle', label: 'Drizzle', hint: 'Postgres ORM' },
   { value: 'prisma', label: 'Prisma', hint: 'Postgres ORM' },
   { value: 'convex', label: 'Convex', hint: 'realtime database' },
   { value: 'none', label: 'None', hint: 'no database' },
-]
+] as const
 
-const authOptions: readonly ChoiceOption[] = [
+const authOptions = [
   { value: 'better-auth', label: 'Better Auth', hint: 'email + password' },
   { value: 'clerk', label: 'Clerk', hint: 'hosted authentication' },
   { value: 'none', label: 'None', hint: 'no authentication' },
-]
+] as const
 
-const mailerOptions: readonly ChoiceOption[] = [
+const mailerOptions = [
   { value: 'resend', label: 'Resend' },
   { value: 'brevo', label: 'Brevo' },
   { value: 'ses', label: 'Amazon SES' },
   { value: 'none', label: 'None', hint: 'no transactional mail' },
-]
+] as const
 
-const trpcOptions: readonly ChoiceOption[] = [
+const trpcOptions = [
   { value: true, label: 'Include tRPC' },
   { value: false, label: 'No tRPC' },
-]
+] as const
+
+const formatterOptions = FORMATTERS.map((value) => ({
+  value,
+  label: value === 'biome' ? 'Biome' : 'Prettier',
+}))
+
+const linterOptions = LINTERS.map((value) => ({
+  value,
+  label: value === 'biome' ? 'Biome' : 'Oxlint',
+}))
 
 function reasonFor(result: BuildStateResult, axis: string) {
   const reason = result.reasons.find((candidate) => candidate.axis === axis)
@@ -332,6 +355,8 @@ function StackPanel({
   result: BuildStateResult
   updateState: UpdateState
 }) {
+  const { supports } = FRAMEWORK_SUPPORT[result.configuration.framework]
+
   return (
     <section aria-labelledby="stack-heading" className="build-panel">
       <div className="build-panel-heading">
@@ -345,7 +370,7 @@ function StackPanel({
         <ChoiceGroup
           id="framework"
           label="Framework"
-          onChange={(value) => updateState({ framework: value as BuildState['framework'] })}
+          onChange={(value) => updateState({ framework: value })}
           options={frameworkOptions}
           reason={reasonFor(result, 'framework')}
           reasonKind={reasonKindFor(result, 'framework')}
@@ -354,38 +379,62 @@ function StackPanel({
         <ChoiceGroup
           id="database"
           label="Database"
-          onChange={(value) => updateState({ database: value as BuildState['database'] })}
+          onChange={(value) => updateState({ database: value })}
           options={databaseOptions}
           reason={reasonFor(result, 'database')}
           reasonKind={reasonKindFor(result, 'database')}
           selectedValue={state.database ?? result.configuration.database}
+          supportedValues={supports.database}
         />
         <ChoiceGroup
           id="auth"
           label="Authentication"
-          onChange={(value) => updateState({ auth: value as BuildState['auth'] })}
+          onChange={(value) => updateState({ auth: value })}
           options={authOptions}
           reason={reasonFor(result, 'auth')}
           reasonKind={reasonKindFor(result, 'auth')}
           selectedValue={state.auth ?? result.configuration.auth}
+          supportedValues={supports.auth}
         />
         <ChoiceGroup
           id="trpc"
           label="API"
-          onChange={(value) => updateState({ trpc: value as boolean })}
+          onChange={(value) => updateState({ trpc: value })}
           options={trpcOptions}
           reason={reasonFor(result, 'trpc')}
           reasonKind={reasonKindFor(result, 'trpc')}
           selectedValue={state.trpc ?? result.configuration.trpc}
+          supportedValues={supports.trpc}
         />
         <ChoiceGroup
           id="mailer"
           label="Mailer"
-          onChange={(value) => updateState({ mailer: value as BuildState['mailer'] })}
+          onChange={(value) => updateState({ mailer: value })}
           options={mailerOptions}
           reason={reasonFor(result, 'mailer')}
           reasonKind={reasonKindFor(result, 'mailer')}
           selectedValue={state.mailer ?? result.configuration.mailer}
+          supportedValues={supports.mailer}
+        />
+        <ChoiceGroup
+          id="formatter"
+          label="Formatter"
+          onChange={(value) => updateState({ formatter: value })}
+          options={formatterOptions}
+          reason={reasonFor(result, 'formatter')}
+          reasonKind={reasonKindFor(result, 'formatter')}
+          selectedValue={state.formatter ?? result.configuration.formatter}
+          supportedValues={supports.formatter}
+        />
+        <ChoiceGroup
+          id="linter"
+          label="Linter"
+          onChange={(value) => updateState({ linter: value })}
+          options={linterOptions}
+          reason={reasonFor(result, 'linter')}
+          reasonKind={reasonKindFor(result, 'linter')}
+          selectedValue={state.linter ?? result.configuration.linter}
+          supportedValues={supports.linter}
         />
       </div>
     </section>
