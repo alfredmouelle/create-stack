@@ -1,4 +1,4 @@
-import type { Auth } from '../../../packages/stack-config/src/index.ts'
+import type { Auth } from '@alfredmouelle/stack-config'
 
 export const AUTHS = ['better-auth', 'clerk'] as const satisfies readonly Auth[]
 export const DEFAULT_AUTH = 'better-auth' satisfies Auth

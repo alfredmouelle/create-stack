@@ -6,7 +6,7 @@ import type {
   FrameworkMaturity,
   Linter,
   Mailer,
-} from '../../packages/stack-config/src/index.ts'
+} from '@alfredmouelle/stack-config'
 import type { QualityProfileException } from './quality-profile.ts'
 import type { ReferenceApplication } from './reference-application.ts'
 

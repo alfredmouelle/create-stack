@@ -1,8 +1,5 @@
 import { dirname, join, resolve } from 'node:path'
-import {
-  PACKAGE_MANAGERS,
-  type PackageManagerName,
-} from '../../../packages/stack-config/src/index.ts'
+import { PACKAGE_MANAGERS, type PackageManagerName } from '@alfredmouelle/stack-config'
 import type { PackageManager } from '../framework-module.ts'
 import { isJsonObject, type JsonObject } from '../javascript/json.ts'
 import { exists, readJSON } from './util.ts'

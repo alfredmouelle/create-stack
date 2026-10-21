@@ -2,8 +2,8 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { FRAMEWORKS } from '@alfredmouelle/stack-config'
 import { afterAll, describe, expect, test } from 'vitest'
-import { FRAMEWORKS } from '../../packages/stack-config/src/index.ts'
 import {
   detectFrameworkModule,
   frameworkModules,

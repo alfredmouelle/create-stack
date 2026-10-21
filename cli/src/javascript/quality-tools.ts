@@ -1,7 +1,7 @@
 import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
+import type { Formatter, Linter } from '@alfredmouelle/stack-config'
 import { TEMPLATES } from '#lib/paths.ts'
-import type { Formatter, Linter } from '../../../packages/stack-config/src/index.ts'
 import type { QualityProfileRequest } from '../framework-module.ts'
 import { isJsonObject, type JsonObject, readJsonObject, writeJsonObject } from './json.ts'
 

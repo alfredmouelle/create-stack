@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import {
+  FORMATTERS,
   FRAMEWORK_SUPPORT,
   type FrameworkSupport,
+  LINTERS,
+  parseStackChoice,
   resolveStackConfiguration,
   stackConfigurationCliArgs,
 } from '../src/index.js'
@@ -85,6 +88,22 @@ describe('resolveStackConfiguration', () => {
     [{ linter: 'biome,oxlint' }, 'Invalid linter'],
   ])('rejects unsupported or excluded quality tools %j', (input, diagnostic) => {
     expect(() => Reflect.apply(resolveStackConfiguration, undefined, [input])).toThrow(diagnostic)
+  })
+
+  test.each([
+    ['formatter', FORMATTERS, 'prettier', 'prettier'],
+    ['linter', LINTERS, 'oxlint', 'oxlint'],
+    ['linter', LINTERS, undefined, undefined],
+  ] as const)('parses a raw %s choice', (axis, choices, value, expected) => {
+    expect(parseStackChoice(value, axis, choices)).toBe(expected)
+  })
+
+  test.each([
+    ['formatter', FORMATTERS, 'oxfmt', 'oxfmt is not supported until its 1.0 release'],
+    ['formatter', FORMATTERS, 'none', 'Invalid formatter: "none" (expected biome, prettier)'],
+    ['linter', LINTERS, true, 'Invalid linter: true (expected biome, oxlint)'],
+  ] as const)('rejects a raw %s choice %j', (axis, choices, value, diagnostic) => {
+    expect(() => parseStackChoice(value, axis, choices)).toThrow(diagnostic)
   })
 
   test('resolves the recommended stack', () => {

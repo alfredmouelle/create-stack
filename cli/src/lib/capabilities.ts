@@ -3,7 +3,7 @@ import {
   CAPABILITY_CATALOG,
   type ModuleCapabilityName,
   type PortCapabilityName,
-} from '../../../packages/stack-config/src/index.ts'
+} from '@alfredmouelle/stack-config'
 import type { ModuleIntegration } from '../framework-module.ts'
 import { isJsonObject, readJsonObject } from '../javascript/json.ts'
 import { STACK_ROOT } from './paths.ts'

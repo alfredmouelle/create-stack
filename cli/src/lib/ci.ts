@@ -1,4 +1,4 @@
-import type { PackageManagerName } from '../../../packages/stack-config/src/index.ts'
+import type { PackageManagerName } from '@alfredmouelle/stack-config'
 import type { PackageManager } from '../framework-module.ts'
 import { isPackageManagerName, PM_VERSIONS } from './package-manager.ts'
 import { join, write } from './util.ts'

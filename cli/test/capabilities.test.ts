@@ -1,5 +1,5 @@
+import { CAPABILITY_CATALOG } from '@alfredmouelle/stack-config'
 import { describe, expect, test } from 'vitest'
-import { CAPABILITY_CATALOG } from '../../packages/stack-config/src/index.ts'
 import {
   adapterChoices,
   CAPABILITIES,

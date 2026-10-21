@@ -2,7 +2,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { Auth, Database, Framework, Mailer } from '../../packages/stack-config/src/index.ts'
+import type { Auth, Database, Framework, Mailer } from '@alfredmouelle/stack-config'
 import type { CapabilitySelection, Monorepo } from '../src/framework-module.ts'
 import { resolvePackageManager } from '../src/lib/package-manager.ts'
 import { readJson } from './json.ts'

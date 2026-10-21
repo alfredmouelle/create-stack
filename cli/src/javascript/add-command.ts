@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { CAPABILITY_CATALOG } from '@alfredmouelle/stack-config'
 import {
   adapterChoices,
   CAPABILITIES,
@@ -9,7 +10,6 @@ import {
 } from '#lib/capabilities.ts'
 import { appendEnv } from '#lib/env.ts'
 import { pkgAddDeps, pkgRemoveDeps } from '#lib/util.ts'
-import { CAPABILITY_CATALOG } from '../../../packages/stack-config/src/index.ts'
 import { wireCapabilityAddition } from '../additions.ts'
 import { requireFrameworkModule } from '../framework-registry.ts'
 import { detectAlias, rewriteAlias } from './import-alias.ts'

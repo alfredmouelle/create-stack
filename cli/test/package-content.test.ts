@@ -173,6 +173,7 @@ test('published package includes the local registry and its executable shadcn ru
     for (const asset of module.packagedAssets) {
       expect(contents.stdout).toContain(`package/_stack/${asset}/package.json`)
       expect(contents.stdout).toContain(`package/_stack/${asset}/src/lib/site-config.ts`)
+      expect(contents.stdout).not.toContain(`package/_stack/${asset}/turbo.json`)
       for (const generated of [
         'dist/index.js',
         '.turbo/turbo-test.log',
@@ -207,7 +208,6 @@ test('published package includes the local registry and its executable shadcn ru
     ...objectField(packageJson, 'dependencies'),
     ...objectField(packageJson, 'optionalDependencies'),
     ...objectField(packageJson, 'peerDependencies'),
-    ...objectField(packageJson, 'devDependencies'),
   }).not.toHaveProperty('@alfredmouelle/stack-config')
 
   const installed = spawnSync('pnpm', ['add', '--ignore-scripts', archive], {

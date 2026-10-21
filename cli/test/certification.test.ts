@@ -13,8 +13,8 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { Framework } from '@alfredmouelle/stack-config'
 import { afterAll, describe, expect, test } from 'vitest'
-import type { Framework } from '../../packages/stack-config/src/index.ts'
 import type { FrameworkModule } from '../src/framework-module.ts'
 import { frameworkAssetExcludes, frameworkModules } from '../src/framework-registry.ts'
 import { assertBrandedSurface, customizeTheme } from './branded-surface.ts'
@@ -178,6 +178,7 @@ function assetSignature(root: string, module: FrameworkModule): Record<string, s
         !excludedDirectories.has(entry.name) &&
         !entry.name.endsWith('.tsbuildinfo') &&
         entry.name !== 'start-database.sh' &&
+        entry.name !== 'turbo.json' &&
         !entry.name.startsWith('.env')
       ) {
         files.push(relativePath)

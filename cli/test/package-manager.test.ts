@@ -1,5 +1,5 @@
+import { PACKAGE_MANAGERS } from '@alfredmouelle/stack-config'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { PACKAGE_MANAGERS } from '../../packages/stack-config/src/index.ts'
 import { detectPackageManager, resolvePackageManager } from '../src/lib/package-manager.ts'
 
 describe('detectPackageManager', () => {

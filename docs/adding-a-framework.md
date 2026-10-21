@@ -29,7 +29,7 @@ You add exactly two shared entries:
 Everything else is shared and stays unchanged in your framework change: the engine
 (`cli/src/engine.ts`), the contract (`cli/src/framework-module.ts`), the quality profile
 (`cli/src/quality-profile.ts`), the assembly toolkit (`cli/src/reference-application.ts`,
-`cli/src/javascript/`), the CLI (`cli/index.mjs`, `cli/engine.mjs`, `cli/src/lib/`), packaging
+`cli/src/javascript/`), the CLI (`cli/index.mjs`, `cli/engine.mjs`, `cli/src/commands/`, `cli/src/lib/`), packaging
 (`cli/scripts/bundle.ts`), CI workflows, the marketing configurator behavior, and the conformance
 test infrastructure in `cli/test/`. Complete the framework details/tree data and explicit test fixtures when adding a registered framework. The shared template directories (`cli/templates/database/`,
 `testing/`, `javascript/`, `quality-profile/`) and the shared JavaScript parts in
@@ -69,7 +69,9 @@ reports a missing or mistyped field as you write it. `cli/src/frameworks/next.ts
 - `maturity`: `stable`, or `preview` while the framework depends on prerelease upstream
   packages.
 - `monorepoOutputs`: build outputs and caches for Turborepo and Nx, for example
-  `['.next/**', '!.next/cache/**']`. The website shows the same list.
+  `['.next/**', '!.next/cache/**']`. The website shows the same list, and your reference
+  application's `turbo.json` declares it as its `build` outputs (own that file with
+  `source: null`).
 - `supports`: the values your framework implements for each stack axis (`database`,
   `auth`, `trpc`, `mailer`, `formatter`, `linter`).
 - `recommendations`: the values applied to axes the user leaves unchosen. They must be

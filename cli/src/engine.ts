@@ -1,16 +1,16 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
-import * as p from '@clack/prompts'
-import { canonicalCapabilityName } from '#lib/capabilities.ts'
-import { isSqlDatabase } from '#lib/database.ts'
 import {
   type Formatter,
   type Framework,
   frameworkTitle,
   type Linter,
   type StackAxis,
-} from '../../packages/stack-config/src/index.ts'
+} from '@alfredmouelle/stack-config'
+import * as p from '@clack/prompts'
+import { canonicalCapabilityName } from '#lib/capabilities.ts'
+import { isSqlDatabase } from '#lib/database.ts'
 import { validateAdditions } from './additions.ts'
 import type {
   AssemblyRequest,

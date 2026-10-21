@@ -190,6 +190,7 @@ const skeleton = skeletonPart(
       'tsconfig.json',
     ]),
     { path: '.gitignore', referencePath: '.gitignore', source: null },
+    { path: 'turbo.json', referencePath: 'turbo.json', source: null },
     { path: '.gitignore', source: join(TEMPLATES, 'rasengan/gitignore') },
     rendered('src/main.tsx', renderMain),
   ],

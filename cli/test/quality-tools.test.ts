@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import type { Formatter, Linter } from '@alfredmouelle/stack-config'
 import { expect, test } from 'vitest'
-import type { Formatter, Linter } from '../../packages/stack-config/src/index.ts'
 import { frameworkModules } from '../src/framework-registry.ts'
 import { readField, readJson } from './json.ts'
 import {

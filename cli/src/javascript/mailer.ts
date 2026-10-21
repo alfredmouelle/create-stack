@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import type { Mailer } from '@alfredmouelle/stack-config'
 import { stripJsExtensions } from '#lib/capabilities.ts'
 import { STACK_ROOT, TEMPLATES } from '#lib/paths.ts'
 import { copy, exists, read, remove, write } from '#lib/util.ts'
-import type { Mailer } from '../../../packages/stack-config/src/index.ts'
 import { isJsonObject, readJsonObject } from './json.ts'
 
 export type MailerProvider = Exclude<Mailer, 'none'>
