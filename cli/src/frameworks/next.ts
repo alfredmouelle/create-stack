@@ -1,22 +1,19 @@
+import type { FrameworkModule } from '../framework-module.ts'
 import { declaresDependency } from '../javascript/package-manifest.ts'
-import {
-  assembleReferenceParts,
-  type JavaScriptFrameworkModule,
-} from '../javascript/project-parts.ts'
+import { assembleProject } from '../javascript/project-assembly.ts'
 import { packageScriptGate } from '../javascript/verification-gate.ts'
 import { nextAdditions } from './next-additions.ts'
 import { nextReference } from './next-parts.ts'
-import { assembleProject } from './project-assembly.ts'
 
-export const nextModule: JavaScriptFrameworkModule = {
+export const nextModule: FrameworkModule = {
   id: 'next',
   detect: (applicationDir) => declaresDependency(applicationDir, ['next']),
-  assemble: assembleProject('next'),
-  assembleParts: assembleReferenceParts(nextReference),
+  assemble: assembleProject('next', nextReference),
   additions: nextAdditions,
   gate: packageScriptGate,
   monorepoOutputs: ['.next/**', '!.next/cache/**'],
   packagedAssets: ['apps/next-base'],
+  assetExcludes: ['next-env.d.ts'],
   qualityProfileExceptions: [],
   referenceApplication: nextReference,
 }

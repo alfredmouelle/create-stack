@@ -31,8 +31,8 @@ for (const framework of ['tanstack', 'next']) {
   for (const [tool, spec] of Object.entries(TOOLS)) {
     for (const pm of ['pnpm', 'npm']) {
       describe(`${tool} · ${framework} · ${pm}`, () => {
-        test('wraps the app in a monorepo', () => {
-          const { dir, result } = build({ name: 'acme', framework, pm, monorepo: tool })
+        test('wraps the app in a monorepo', async () => {
+          const { dir, result } = await build({ name: 'acme', framework, pm, monorepo: tool })
           const app = `${dir}/apps/web`
 
           expect(result.monorepo).toBe(tool)
@@ -117,8 +117,8 @@ for (const framework of ['tanstack', 'next']) {
   }
 }
 
-test('the root pins a packageManager, which turbo requires to resolve the workspace', () => {
-  const { dir } = build({
+test('the root pins a packageManager, which turbo requires to resolve the workspace', async () => {
+  const { dir } = await build({
     framework: 'next',
     trpc: false,
     mailer: 'none',
