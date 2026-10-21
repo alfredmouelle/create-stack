@@ -4,7 +4,7 @@
   Pick a framework and the pieces your app needs. create-stack assembles them from a
   tested reference application.
   <br>
-  <sub>Supports <strong>Next.js App Router</strong> and <strong>TanStack Start</strong>.</sub>
+  <sub>Supports <strong>Next.js App Router</strong>, <strong>TanStack Start</strong>, and <strong>RasenganJS preview</strong>.</sub>
 </p>
 
 <p align="center">
@@ -75,3 +75,7 @@ Inspired by [create-t3-app](https://create.t3.gg) and the work of [Theo Browne](
 ## Author
 
 [Alfred MOUELLE](https://alfredmouelle.com), full-stack developer.
+
+## RasenganJS preview
+
+Select `--framework rasengan`. The recommended stack uses Drizzle, Better Auth, tRPC and Resend; the global default remains TanStack Start. Rasengan and its Node runtime are pinned betas. The generated `scripts/start.ts` serves browser and public assets without publishing compiled server files. Use the generated build/start scripts for production. Keep private modules in API routes; page loaders use HTTP for session data. Hosted providers require configured credentials.

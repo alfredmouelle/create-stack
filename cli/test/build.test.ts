@@ -25,6 +25,7 @@ type BuildResult = Awaited<ReturnType<typeof build>>['result']
 
 const AUTH_PATHS = {
   tanstack: { shell: 'src/routes/__root.tsx', signIn: 'src/routes/sign-in.$.tsx' },
+  rasengan: { shell: 'src/main.tsx', signIn: 'src/app/_routes/sign-in.page.tsx' },
   next: { shell: 'src/app/layout.tsx', signIn: 'src/app/sign-in/[[...sign-in]]/page.tsx' },
 } satisfies Record<Framework, { shell: string; signIn: string }>
 
@@ -104,14 +105,19 @@ function assertAuth(dir: string, auth: Auth, deps: Deps, framework: Framework) {
   }
 
   if (auth === 'clerk') {
-    const clerkPkg = framework === 'next' ? '@clerk/nextjs' : '@clerk/tanstack-react-start'
+    const clerkPkg = {
+      next: '@clerk/nextjs',
+      tanstack: '@clerk/tanstack-react-start',
+      rasengan: '@clerk/react',
+    }[framework]
     expect(clerkPkg in deps, 'clerk dep').toBe(true)
     expect(read(`${dir}/${paths.shell}`), 'ClerkProvider in shell').toContain('ClerkProvider')
     expect(exists(`${dir}/${paths.signIn}`), 'clerk sign-in route').toBe(true)
   } else {
-    expect('@clerk/nextjs' in deps || '@clerk/tanstack-react-start' in deps, 'no clerk dep').toBe(
-      false,
-    )
+    expect(
+      '@clerk/nextjs' in deps || '@clerk/tanstack-react-start' in deps || '@clerk/react' in deps,
+      'no clerk dep',
+    ).toBe(false)
   }
 }
 
@@ -164,10 +170,17 @@ function assertDatabase(
     expect(exists(`${dir}/drizzle.config.ts`), 'no drizzle.config').toBe(false)
     expect(exists(`${dir}/convex/schema.ts`), 'convex schema').toBe(true)
     expect(exists(`${dir}/convex/_generated/api.d.ts`), 'convex generated').toBe(true)
-    const shell = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+    const shell = {
+      next: 'src/app/layout.tsx',
+      tanstack: 'src/routes/__root.tsx',
+      rasengan: 'src/main.tsx',
+    }[framework]
     expect(read(`${dir}/${shell}`), 'convex provider in shell').toContain('Convex')
-    const demo =
-      framework === 'next' ? 'src/app/convex-demo/page.tsx' : 'src/routes/convex-demo.tsx'
+    const demo = {
+      next: 'src/app/convex-demo/page.tsx',
+      tanstack: 'src/routes/convex-demo.tsx',
+      rasengan: 'src/app/_routes/convex-demo.page.tsx',
+    }[framework]
     expect(exists(`${dir}/${demo}`), 'convex demo route').toBe(true)
     expect(filesImporting(dir, ['~/server/db']), 'dangling db imports').toEqual([])
     return
@@ -225,7 +238,7 @@ function assertMailer(dir: string, result: BuildResult, deps: Deps) {
   if (result.mailerProvider !== 'ses') expect(root).toContain('apiKey: env.')
 }
 
-function assertTrpcContext(dir: string, database: Database, auth: Auth) {
+function assertTrpcContext(dir: string, database: Database, auth: Auth, framework: Framework) {
   const context = read(`${dir}/src/server/api/trpc.ts`)
   const hasDatabaseContext = database === 'drizzle' || database === 'prisma'
   const hasAuth = auth !== 'none'
@@ -241,8 +254,14 @@ function assertTrpcContext(dir: string, database: Database, auth: Auth) {
     expect(context).toContain('session,')
     expect(context).not.toContain('auth: await auth()')
   } else if (auth === 'clerk') {
-    expect(context).toContain("import { auth } from '@clerk/")
-    expect(context).toContain('auth: await auth()')
+    expect(context).toContain(
+      framework === 'rasengan'
+        ? "import { auth } from '~/server/clerk'"
+        : "import { auth } from '@clerk/",
+    )
+    expect(context).toContain(
+      framework === 'rasengan' ? 'auth: await auth(opts.headers)' : 'auth: await auth()',
+    )
     expect(context).not.toContain('session,')
   } else {
     expect(context).not.toContain('import { auth }')
@@ -302,7 +321,7 @@ const CONFIGS: readonly Config[] = [
   { name: 'minimal', database: 'none', auth: 'none', trpc: false, mailer: 'none' },
 ]
 
-for (const framework of ['tanstack', 'next'] as const) {
+for (const framework of ['tanstack', 'next', 'rasengan'] as const) {
   describe(framework, () => {
     for (const cfg of CONFIGS) {
       test(cfg.name, async () => {
@@ -323,14 +342,18 @@ for (const framework of ['tanstack', 'next'] as const) {
         assertDatabase(dir, result.database, deps, result.auth === 'better-auth', framework)
         assertOptionalComponentsAbsent(dir, deps)
         assertMailer(dir, result, deps)
-        if (result.trpc) assertTrpcContext(dir, result.database, result.auth)
+        if (result.trpc) assertTrpcContext(dir, result.database, result.auth, framework)
         assertTesting(dir, result)
 
         const sqlDb = result.database === 'drizzle' || result.database === 'prisma'
         expect(env.includes('DATABASE_URL')).toBe(sqlDb)
         expect(env.includes('BETTER_AUTH_SECRET')).toBe(result.auth === 'better-auth')
         expect(env.includes('CLERK_SECRET_KEY')).toBe(result.auth === 'clerk')
-        const convexUrlKey = framework === 'next' ? 'NEXT_PUBLIC_CONVEX_URL' : 'VITE_CONVEX_URL'
+        const convexUrlKey = {
+          next: 'NEXT_PUBLIC_CONVEX_URL',
+          tanstack: 'VITE_CONVEX_URL',
+          rasengan: 'RASENGAN_CONVEX_URL',
+        }[framework]
         expect(env.includes(convexUrlKey)).toBe(result.database === 'convex')
         expect(env.includes('CONVEX_DEPLOYMENT')).toBe(result.database === 'convex')
 

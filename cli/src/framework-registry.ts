@@ -1,8 +1,13 @@
 import type { FrameworkModule } from './framework-module.ts'
 import { nextModule } from './frameworks/next.ts'
+import { rasenganModule } from './frameworks/rasengan.ts'
 import { tanstackModule } from './frameworks/tanstack.ts'
 
-export const frameworkModules: readonly FrameworkModule[] = [tanstackModule, nextModule]
+export const frameworkModules: readonly FrameworkModule[] = [
+  tanstackModule,
+  nextModule,
+  rasenganModule,
+]
 
 export function frameworkAssetExcludes(module: FrameworkModule): string[] {
   return [

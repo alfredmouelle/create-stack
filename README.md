@@ -1,6 +1,6 @@
 # create-stack
 
-> A SaaS foundation and CLI for scaffolding Next.js or TanStack Start projects.
+> A SaaS foundation and CLI for scaffolding Next.js, TanStack Start, or RasenganJS preview projects.
 > Replaceable integrations live behind ports. Integrations with one useful provider
 > ship as modules.
 
@@ -194,3 +194,7 @@ Alfred MOUELLE | FullStack Developer
 [![X](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/alfredmouelle)
 [![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:alfredmouelle@gmail.com)
 [![Portfolio](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Portfolio&color=blue)](https://alfredmouelle.com)
+
+## RasenganJS preview
+
+Select `--framework rasengan`. The recommended stack uses Drizzle, Better Auth, tRPC and Resend; the global default remains TanStack Start. Rasengan and its Node runtime are pinned betas. The generated `scripts/start.ts` serves browser and public assets without publishing compiled server files. Use the generated build/start scripts for production. Keep private modules in API routes; page loaders use HTTP for session data. Hosted providers require configured credentials.

@@ -31,14 +31,14 @@ const LLMS = (canonicalUrl: string) => `# Create Stack
 
 Create Stack assembles a project from the selected parts of a framework's tested reference application.
 Before the first Git commit it runs install, format, typecheck and lint, and it commits only when all four pass.
-Next.js and TanStack Start are stable. Remix, RasenganJS, Vue, NestJS and PHP frameworks are planned, not installable.
+Next.js and TanStack Start are stable. RasenganJS is a preview on Node with pinned beta dependencies and an application-owned production server. Remix, Vue, NestJS and PHP frameworks are planned, not installable.
 
 Start with \`pnpm dlx @alfredmouelle/create-stack@latest my-app\`.
 
 ## Non-interactive use
 
 - \`--yes\` accepts every default without a prompt. Any stack or capability flag also switches to non-interactive mode.
-- \`--framework tanstack|next\`, \`--database drizzle|prisma|convex|none\`, \`--auth better-auth|clerk|none\`.
+- \`--framework tanstack|next|rasengan\`, \`--database drizzle|prisma|convex|none\`, \`--auth better-auth|clerk|none\`.
 - \`--trpc\` / \`--no-trpc\`, \`--mailer resend|brevo|ses|none\`, \`--formatter biome|prettier\`, \`--linter biome|oxlint\`.
 - \`--monorepo turbo|nx\`, \`--alias <prefix>\`, \`--pm pnpm|npm|yarn|bun\`, \`--no-install\`, \`--no-git\`.
 - Capabilities: \`--storage\`, \`--cache\`, \`--logger\`, \`--analytics\`, \`--jobs\`, \`--errors\`.

@@ -1932,14 +1932,18 @@ test('adds date-picker through the packaged shadcn runtime and local item', asyn
   }
 })
 
-test.each(['next', 'tanstack'])(
+test.each(['next', 'tanstack', 'rasengan'])(
   'adds confirm and alert registry items for %s',
   async (framework) => {
     const fixture = createAcceptanceFixture('standalone')
     expect(createProject(fixture, { framework, pm: 'npm' }).exitStatus).toBe(0)
     const fake = fakePackageManager(fixture)
     const registry = await startRegistry()
-    const rootFile = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+    const rootFile = {
+      next: 'src/app/layout.tsx',
+      tanstack: 'src/routes/__root.tsx',
+      rasengan: 'src/template.tsx',
+    }[framework]
 
     try {
       const added = runCli({
@@ -2011,14 +2015,18 @@ test('force replaces only the selected callable source', async () => {
   }
 }, 15_000)
 
-test.each(['next', 'tanstack'])(
+test.each(['next', 'tanstack', 'rasengan'])(
   'manual root instructions preserve %s callable installation',
   async (framework) => {
     const fixture = createAcceptanceFixture('standalone')
     expect(createProject(fixture, { framework, pm: 'npm' }).exitStatus).toBe(0)
     const fake = fakePackageManager(fixture)
     const registry = await startRegistry()
-    const rootFile = framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'
+    const rootFile = {
+      next: 'src/app/layout.tsx',
+      tanstack: 'src/routes/__root.tsx',
+      rasengan: 'src/template.tsx',
+    }[framework]
     writeFileSync(
       `${fixture.app}/${rootFile}`,
       'export default function CustomRoot() { return <div>customized root</div> }\n',

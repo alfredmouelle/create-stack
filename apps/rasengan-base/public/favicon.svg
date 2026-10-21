@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Create Stack icon</title>
+  <rect width="32" height="32" rx="7" fill="#0b0d0c"/>
+  <path d="m8.2 9.2 6.8 6.8-6.8 6.8" fill="none" stroke="#f6f7f6" stroke-width="2.8" stroke-linecap="square"/>
+  <rect x="17" y="19.4" width="8.6" height="3.8" fill="#3fb950"/>
+</svg>

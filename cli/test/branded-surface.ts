@@ -9,13 +9,27 @@ export function assertBrandedSurface(
   expect: ExpectStatic,
 ): void {
   const home = readFileSync(
-    join(projectDir, framework === 'next' ? 'src/app/page.tsx' : 'src/routes/index.tsx'),
+    join(
+      projectDir,
+      {
+        next: 'src/app/page.tsx',
+        tanstack: 'src/routes/index.tsx',
+        rasengan: 'src/app/_routes/index.page.tsx',
+      }[framework],
+    ),
     'utf8',
   )
   const toggle = readFileSync(join(projectDir, 'src/components/theme-toggle.tsx'), 'utf8')
   const provider = readFileSync(join(projectDir, 'src/components/theme-provider.tsx'), 'utf8')
   const shell = readFileSync(
-    join(projectDir, framework === 'next' ? 'src/app/layout.tsx' : 'src/routes/__root.tsx'),
+    join(
+      projectDir,
+      {
+        next: 'src/app/layout.tsx',
+        tanstack: 'src/routes/__root.tsx',
+        rasengan: 'src/template.tsx',
+      }[framework],
+    ),
     'utf8',
   )
   const theme = readFileSync(

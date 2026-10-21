@@ -171,6 +171,15 @@ type ShadcnConfiguration = {
 }
 
 const SHADCN_CONFIGURATIONS: Record<Framework, ShadcnConfiguration> = {
+  rasengan: {
+    style: 'radix-luma',
+    rsc: false,
+    iconLibrary: 'lucide',
+    iconDependencies: ['lucide-react'],
+    styleDependencies: [],
+    iconImport: 'lucide-react',
+    primitiveImport: 'radix-ui',
+  },
   next: {
     style: 'radix-luma',
     rsc: true,
@@ -201,6 +210,26 @@ const CUSTOM_ALIASES = {
 
 describe.skipIf(process.env.RUN_SMOKE !== '1')('installed CLI smoke matrix', () => {
   for (const framework of FRAMEWORKS) {
+    if (framework === 'rasengan')
+      test(
+        'rasengan/prisma-brevo-ses',
+        () => {
+          const { projectDir } = scaffold(framework, 'prisma-brevo-ses', [
+            '--database',
+            'prisma',
+            '--mailer',
+            'brevo',
+            '--formatter',
+            'prettier',
+            '--linter',
+            'oxlint',
+          ])
+          verify(projectDir, { build: true })
+          runCli(['add', 'mailer', 'ses'], projectDir)
+          verify(projectDir, { build: true })
+        },
+        TIMEOUT,
+      )
     for (const workflow of CREATION_WORKFLOWS) {
       test(
         `${framework}/${workflow.name}`,
@@ -312,7 +341,8 @@ describe.skipIf(process.env.RUN_SMOKE !== '1')('installed CLI smoke matrix', () 
         expect(datePicker).toContain("from '~/shared/utils'")
         expect(datePicker).toContain('text-muted-foreground')
         expect(calendar).toContain(configuration.iconImport)
-        expect(calendar).not.toContain('lucide-react')
+        for (const icons of ['lucide-react', '@tabler/icons-react', '@hugeicons/react'])
+          if (icons !== configuration.iconImport) expect(calendar).not.toContain(icons)
         expect(popover).toContain(configuration.primitiveImport)
         expect(datePicker.includes("'use client'") || datePicker.includes('"use client"')).toBe(
           configuration.rsc,

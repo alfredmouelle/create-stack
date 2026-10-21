@@ -30,11 +30,11 @@ Everything else is shared and stays unchanged in your framework change: the engi
 (`cli/src/engine.ts`), the contract (`cli/src/framework-module.ts`), the quality profile
 (`cli/src/quality-profile.ts`), the assembly toolkit (`cli/src/reference-application.ts`,
 `cli/src/javascript/`), the CLI (`cli/index.mjs`, `cli/engine.mjs`, `cli/src/lib/`), packaging
-(`cli/scripts/bundle.ts`), CI workflows, the marketing configurator, and the conformance
-tests in `cli/test/`. The shared template directories (`cli/templates/database/`,
+(`cli/scripts/bundle.ts`), CI workflows, the marketing configurator behavior, and the conformance
+test infrastructure in `cli/test/`. Complete the framework details/tree data and explicit test fixtures when adding a registered framework. The shared template directories (`cli/templates/database/`,
 `testing/`, `javascript/`, `quality-profile/`) and the shared JavaScript parts in
 `cli/src/javascript/reference-parts.ts` belong to the toolkit too. Help, prompts, the creation plan, `add` detection, bundling, the CI
-smoke matrix, and the configurator all derive from the two entries above. When the
+smoke matrix, and core configurator choices derive from the two entries above. Marketing framework details/tree data and framework-specific test fixtures also require explicit entries. When the
 toolkit lacks something you need, propose it as its own change first.
 
 `cli/test/framework-boundaries.test.ts` fails when your framework id appears in shared CLI

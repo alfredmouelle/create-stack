@@ -72,6 +72,22 @@ const DETAILS = {
       ...PROJECT_FILES,
     ],
   },
+  rasengan: {
+    summary:
+      'Preview on Node with SSR, file-based routes, the shared quality profile, and an application-owned production server.',
+    monorepoOutputs: ['dist/**', '.rasengan/**'],
+    tree: [
+      ...PROFILE_TREE,
+      { path: 'src/', depth: 0 },
+      { path: 'app/_routes/index.page.tsx', depth: 1 },
+      { path: 'app/_api/auth/[action].route.ts', depth: 1, owner: 'auth · better-auth' },
+      { path: 'main.tsx', depth: 1 },
+      { path: 'template.tsx', depth: 1 },
+      { path: 'scripts/start.ts', depth: 0 },
+      { path: 'rasengan.config.js', depth: 0 },
+      ...PROJECT_FILES,
+    ],
+  },
   next: {
     summary:
       'App Router with SSR and routing. Supports every database, auth, API, mailer, formatter and linter option.',
@@ -99,13 +115,6 @@ const PLANNED: readonly PlannedFramework[] = [
     label: 'Remix',
     summary: 'Needs a framework module.',
     roadmapPosition: 1,
-  },
-  {
-    maturity: 'planned',
-    id: 'rasengan',
-    label: 'RasenganJS',
-    summary: 'Needs a framework module.',
-    roadmapPosition: 2,
   },
   {
     maturity: 'planned',

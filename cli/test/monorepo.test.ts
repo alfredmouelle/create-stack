@@ -7,10 +7,11 @@ import { readField, readJson } from './json.ts'
 
 afterAll(cleanup)
 
-const OUTPUT_TOKEN = { next: '.next/**', tanstack: '.output/**' } satisfies Record<
-  Framework,
-  string
->
+const OUTPUT_TOKEN = {
+  next: '.next/**',
+  tanstack: '.output/**',
+  rasengan: 'dist/**',
+} satisfies Record<Framework, string>
 
 type ToolConfig = Record<string, unknown>
 type Tool = Exclude<Monorepo, false>
@@ -58,7 +59,7 @@ const TOOLS = {
   },
 } satisfies Record<Tool, ToolSpec>
 
-for (const framework of ['tanstack', 'next'] as const) {
+for (const framework of ['tanstack', 'next', 'rasengan'] as const) {
   for (const tool of ['turborepo', 'nx'] as const) {
     const spec: ToolSpec = TOOLS[tool]
     for (const pm of ['pnpm', 'npm']) {
