@@ -48,7 +48,7 @@ describe.each(['next', 'tanstack'])('branded generated %s app', (framework) => {
     expect(config).toContain("name: 'project'")
     expect(shell).toContain('siteConfig.name')
     expect(shell).toContain('siteConfig.description')
-    expect(home).toContain('src="/logo192.png"')
+    expect(home).toContain('<BrandMark />')
     expect(home).toContain('siteConfig.name')
     expect(home).not.toContain('Everything&rsquo;s wired.')
     expect(home).not.toContain('create-stack my-app')

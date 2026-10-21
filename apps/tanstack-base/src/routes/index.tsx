@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { BrandMark } from '~/components/brand-mark'
+import { ServerAddress } from '~/components/server-address'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { siteConfig } from '~/lib/site-config'
 
@@ -14,14 +16,7 @@ function Home() {
             className="flex cursor-pointer items-center gap-3"
             href="/"
           >
-            <img
-              alt=""
-              aria-hidden="true"
-              className="size-8 rounded-lg"
-              height="32"
-              src="/logo192.png"
-              width="32"
-            />
+            <BrandMark />
             <span className="font-heading font-semibold tracking-tight">{siteConfig.name}</span>
           </a>
           <ThemeToggle />
@@ -31,7 +26,7 @@ function Home() {
       <div className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-20">
         <section className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:items-end">
           <div>
-            <p className="font-mono text-primary text-xs uppercase tracking-[0.16em]">
+            <p className="font-mono text-primary text-xs uppercase tracking-[0.08em]">
               Ready when you are
             </p>
             <h1 className="mt-4 max-w-3xl text-balance font-heading font-semibold font-stretch-88% text-5xl tracking-[-0.045em] sm:text-7xl">
@@ -50,9 +45,8 @@ function Home() {
             </p>
           </div>
 
-          <aside className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-            <div className="flex items-center justify-between font-mono text-muted-foreground text-xs uppercase tracking-[0.14em]">
+          <aside className="rounded-[12px] border border-border bg-card p-6">
+            <div className="flex items-center justify-between font-mono text-muted-foreground text-xs uppercase tracking-[0.08em]">
               <span>Start here</span>
               <span>01</span>
             </div>
@@ -62,9 +56,8 @@ function Home() {
             <p className="mt-3 text-muted-foreground text-sm leading-6">
               Keep this page, replace it, or use it as a quick check that the app is running.
             </p>
-            <div className="mt-8 flex items-center gap-3 border-border border-t pt-4">
-              <span className="size-2 rounded-full bg-primary" />
-              <code className="font-mono text-muted-foreground text-xs">localhost:3000</code>
+            <div className="mt-8 rounded-[10px] bg-[#0b0d0c] px-4 py-3 font-mono text-[#f6f7f6] text-xs">
+              <span className="text-[#3fb950]">✓</span> ready on <ServerAddress />
             </div>
           </aside>
         </section>
