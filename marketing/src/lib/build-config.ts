@@ -9,6 +9,7 @@ import {
   FRAMEWORKS,
   type Framework,
   type FrameworkSupportCatalog,
+  frameworkTitle,
   LINTERS,
   type Linter,
   MAILERS,
@@ -22,12 +23,17 @@ export const BUILD_SCHEMA_VERSION = '1'
 export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
 export type PackageManager = (typeof PACKAGE_MANAGERS)[number]
 
-export const IMPORT_ALIASES = [
-  { value: '~', label: '~ (default)', hint: '~/components/...' },
-  { value: '@', label: '@', hint: '@/components/...' },
-  { value: '#', label: '#', hint: '#/components/...' },
-] as const
-export type ImportAlias = (typeof IMPORT_ALIASES)[number]['value']
+export const DEFAULT_IMPORT_ALIAS = '~'
+const IMPORT_ALIAS_PATTERN = /^[@~#]?[\w-]*$/
+
+export function normalizeImportAlias(alias: string): string {
+  return alias.trim().replace(/\/+$/, '')
+}
+
+export function isValidImportAlias(alias: string): boolean {
+  const normalized = normalizeImportAlias(alias)
+  return normalized.length > 0 && IMPORT_ALIAS_PATTERN.test(normalized)
+}
 
 export const MONOREPOS = [
   { value: 'turbo', label: 'Turborepo' },
@@ -101,7 +107,7 @@ export interface BuildState {
   mailer?: Mailer
   formatter?: Formatter
   linter?: Linter
-  alias?: ImportAlias
+  alias?: string
   monorepo?: Monorepo
   capabilities: CapabilitySelection
 }
@@ -160,9 +166,11 @@ function shellQuote(value: string): string {
 
 function commandFor(state: BuildState, stackArgs: readonly string[]): string | null {
   if (!state.projectName.trim()) return null
+  if (state.alias !== undefined && !isValidImportAlias(state.alias)) return null
 
   const args = [...stackArgs]
-  if (state.alias && state.alias !== '~') args.push('--alias', state.alias)
+  const alias = state.alias === undefined ? DEFAULT_IMPORT_ALIAS : normalizeImportAlias(state.alias)
+  if (alias !== DEFAULT_IMPORT_ALIAS) args.push('--alias', alias)
   if (state.monorepo) args.push('--monorepo', state.monorepo)
 
   for (const capability of CAPABILITY_CATALOG) {
@@ -218,7 +226,9 @@ export function serializeBuildState(state: BuildState): string {
   if (state.mailer) params.set('mailer', state.mailer)
   if (state.formatter) params.set('formatter', state.formatter)
   if (state.linter) params.set('linter', state.linter)
-  if (state.alias && state.alias !== '~') params.set('alias', state.alias)
+  if (state.alias !== undefined && state.alias !== DEFAULT_IMPORT_ALIAS) {
+    params.set('alias', state.alias)
+  }
   if (state.monorepo) params.set('mono', state.monorepo)
 
   for (const capability of CAPABILITY_CATALOG) {
@@ -261,10 +271,10 @@ function parseTrpc(params: URLSearchParams, state: BuildState): void {
 function parseAlias(params: URLSearchParams, state: BuildState): void {
   const alias = params.get('alias')
   if (alias === null) return
-  if (!IMPORT_ALIASES.some((option) => option.value === alias)) {
+  if (!isValidImportAlias(alias)) {
     throw new Error(`Invalid import alias value "${alias}"`)
   }
-  state.alias = alias as ImportAlias
+  state.alias = alias
 }
 
 function parseMonorepo(params: URLSearchParams, state: BuildState): void {
@@ -307,4 +317,38 @@ export function parseBuildState(search: string): ParsedBuildState {
   if (error) return { kind: 'invalid', message: error }
 
   return { kind: 'current', state }
+}
+
+const MONOREPO_LABELS: Record<Monorepo, string> = { turbo: 'Turborepo', nx: 'Nx' }
+
+const orNone = (value: string): string => (value && value !== 'none' ? value : '(none)')
+
+export function creationPlanLines(state: BuildState, result: BuildStateResult): string[] {
+  const { configuration } = result
+  const reason = (axis: string) => {
+    const message = result.reasons.find((candidate) => candidate.axis === axis)?.message
+    return message ? `, ${message}` : ''
+  }
+  const capabilities = CAPABILITY_CATALOG.flatMap((capability) => {
+    const provider = state.capabilities[capability.name]
+    return provider === undefined ? [] : [`${capability.name} (${provider})`]
+  })
+  const alias = state.alias === undefined ? DEFAULT_IMPORT_ALIAS : normalizeImportAlias(state.alias)
+
+  return [
+    `Target: ${state.projectName.trim()}`,
+    `Framework: ${frameworkTitle(configuration.framework)}`,
+    `Monorepo: ${state.monorepo ? MONOREPO_LABELS[state.monorepo] : '(none)'}`,
+    `Package manager: ${state.packageManager}`,
+    `Import alias: ${alias}/`,
+    `Database: ${orNone(configuration.database)}${reason('database')}`,
+    `Auth: ${orNone(configuration.auth)}${reason('auth')}`,
+    `tRPC: ${configuration.trpc ? 'yes' : 'no'}${reason('trpc')}`,
+    `Mailer: ${orNone(configuration.mailer)}${reason('mailer')}`,
+    `Formatter: ${configuration.formatter}${reason('formatter')}`,
+    `Linter: ${configuration.linter}${reason('linter')}`,
+    `Capabilities: ${capabilities.join(', ') || '(none)'}${capabilities.length ? ', requested' : ''}`,
+    'Install and verify: yes',
+    'Initialize Git: yes (outside an existing repository)',
+  ]
 }

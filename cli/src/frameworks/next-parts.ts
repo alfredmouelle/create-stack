@@ -158,6 +158,8 @@ const skeleton = skeletonPart(
       'public/manifest.json',
       'src/app/globals.css',
       'src/app/page.tsx',
+      'src/components/brand-mark.tsx',
+      'src/components/server-address.tsx',
       'src/components/theme-provider.tsx',
       'src/components/theme-toggle.tsx',
       'src/components/ui/button.tsx',

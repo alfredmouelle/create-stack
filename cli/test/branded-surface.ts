@@ -53,8 +53,8 @@ export function customizeTheme(
   )
   const source = readFileSync(themePath, 'utf8')
   const customized = source
-    .replace('  --primary: #1858d1;', '  --primary: #7c3aed;')
-    .replace('  --radius: 0.5rem;', '  --radius: 1.25rem;')
+    .replace('  --primary: #1a7f37;', '  --primary: #7c3aed;')
+    .replace('  --radius: 0.375rem;', '  --radius: 1.25rem;')
   expect(customized).toContain('--primary: #7c3aed;')
   expect(customized).toContain('--radius: 1.25rem;')
   writeFileSync(themePath, customized)

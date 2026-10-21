@@ -1,0 +1,38 @@
+---
+import type { TreeEntry } from '../data/frameworks'
+
+interface Props {
+  root: string
+  entries: readonly TreeEntry[]
+  label: string
+}
+
+const { root, entries, label } = Astro.props
+
+function branch(index: number): string {
+  const entry = entries[index]
+  if (!entry) return ''
+  const isLast = !entries.slice(index + 1).some((next) => next.depth <= entry.depth)
+  const indent = '│  '.repeat(entry.depth)
+  return `${indent}${isLast ? '└─ ' : '├─ '}`
+}
+---
+
+<div aria-label={label} class="tree" role="group">
+  <span class="tree-row is-root">{root}</span>
+  {
+    entries.map((entry, index) => (
+      <span class="tree-row">
+        <span aria-hidden="true" class="tree-branch">
+          {branch(index)}
+        </span>
+        <span class="tree-path">{entry.path}</span>
+        {entry.owner ? (
+          <span class:list={['tree-owner', entry.owner === 'quality profile' && 'is-profile']}>
+            {entry.owner}
+          </span>
+        ) : null}
+      </span>
+    ))
+  }
+</div>

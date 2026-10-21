@@ -5,7 +5,7 @@ the base without the CLI, or let the CLI select and trim it for a new project.
 It includes:
 
 - **baseline**: `~/*` alias, typed `env.ts`, strict Biome, Tailwind v4 + shadcn
-  (Geist, dark mode)
+  (Instrument Sans and Commit Mono, dark mode)
 - **data**: Drizzle (Postgres) + drizzle-kit, faker seed harness
 - **auth**: better-auth (email/password + verification, optional Google) + a full
   auth UI (sign-in/up, forgot/reset, verify) with `@tanstack/react-form`

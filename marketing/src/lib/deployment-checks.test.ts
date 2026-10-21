@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { assertMarketingResponse } from '../../scripts/http-checks.ts'
 
 const html =
-  '<!doctype html><html><head><title>Create Stack. A real app wired around your choices</title></head></html>'
+  '<!doctype html><html><head><title>create-stack. Your first commit is green</title></head></html>'
 
 function response(body: string, status = 200, contentType = 'text/html') {
   return new Response(body, {
@@ -28,7 +28,7 @@ describe('marketing Worker response checks', () => {
     })
 
     expect(result.status).toBe(200)
-    expect(result.title).toBe('Create Stack. A real app wired around your choices')
+    expect(result.title).toBe('create-stack. Your first commit is green')
   })
 
   it('ignores Cloudflare-managed bot blocks when checking the public policy', async () => {

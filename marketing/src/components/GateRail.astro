@@ -1,0 +1,24 @@
+---
+import { GATE_STEPS } from '../data/landing'
+
+interface Props {
+  packageManager?: string
+}
+
+const { packageManager = 'pnpm' } = Astro.props
+---
+
+<ol aria-label="Verification gate" class="gate">
+  {
+    GATE_STEPS.map((step) => (
+      <li class="gate-step" data-status="passed">
+        <span aria-hidden="true" class="gate-glyph" />
+        <span class="gate-step-name">
+          {step.label}
+          <span class="gate-step-command">{step.command.replace(/^pnpm/, packageManager)}</span>
+        </span>
+        <span class="gate-step-status">{step.id === 'commit' ? 'after all four' : 'required'}</span>
+      </li>
+    ))
+  }
+</ol>

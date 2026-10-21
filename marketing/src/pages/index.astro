@@ -1,104 +1,333 @@
 ---
+import Badge from '../components/Badge.astro'
+import CommandLine from '../components/CommandLine.astro'
+import FileTree from '../components/FileTree.astro'
 import InstallCommand from '../components/InstallCommand'
+import SectionHead from '../components/SectionHead.astro'
 import Terminal from '../components/Terminal'
-import { features } from '../data/landing'
+import { REGISTERED_FRAMEWORKS, REGISTRY } from '../data/frameworks'
+import {
+  PORT_CAPABILITIES,
+  QUALITY_PROFILE_OPTIONS,
+  REFERENCE_PARTS,
+  SINGLE_PROVIDER_MODULES,
+} from '../data/landing'
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { installCommand } from '../lib/install-command'
+import { REPOSITORY_URL } from '../lib/site-metadata'
+
+const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tanstack')
 ---
 
 <BaseLayout>
   <main>
-    <div class="page-shell">
-      <section class="hero" aria-labelledby="hero-title">
-        <div>
-          <p class="eyebrow">A working project</p>
-          <h1 class="hero-title" id="hero-title">A real app, <em>wired</em> around your choices.</h1>
-          <p class="hero-copy">
-            Create Stack starts from a tested SaaS reference application. Choose the pieces you
-            need, and the CLI copies only those. It wires routes, providers, environment variables, and checks
-            before you make the first commit.
-          </p>
-          <div class="hero-meta" aria-label="Create Stack highlights">
-            <span>Next.js + TanStack Start</span>
-            <span>TypeScript-first</span>
-            <span>MIT licensed</span>
+    <section aria-labelledby="hero-title" class="hero shell">
+      <p class="t-label hero-label">
+        <Badge maturity="stable" />
+        {REGISTERED_FRAMEWORKS.map((framework) => framework.label).join(' · ')}
+      </p>
+      <h1 class="t-display" id="hero-title">Your first commit <br />is <em>green.</em></h1>
+      <p class="t-lead">
+        Pick a framework and a stack. create-stack assembles it from a tested reference
+        application, then commits only after install, format, typecheck and lint all pass.
+      </p>
+      <InstallCommand client:load />
+      <div class="actions">
+        <a class="button is-primary" href="/build">Build your stack →</a>
+        <a class="button is-ghost" href={REPOSITORY_URL} rel="noreferrer" target="_blank">GitHub</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="gate-title" class="section">
+      <div class="shell">
+        <SectionHead
+          id="gate-title"
+          question="Does the project actually run?"
+          title="Four checks pass, then one commit."
+        />
+        <Terminal client:visible />
+      </div>
+    </section>
+
+    <section aria-labelledby="assembly-title" class="section">
+      <div class="shell">
+        <SectionHead
+          id="assembly-title"
+          question="Will I inherit code I did not choose?"
+          title="Assembled from a reference app. Nothing is generated, then deleted."
+        />
+        <div class="split is-5-7">
+          <div class="stack">
+            <p class="t-label">TanStack Start reference application</p>
+            <dl class="parts">
+              {
+                REFERENCE_PARTS.map((group) => (
+                  <div class="parts-group">
+                    <dt>{group.axis}</dt>
+                    <dd>
+                      {group.parts.map((part) => (
+                        <span class:list={['part', part.selected && 'is-selected']}>
+                          <span class="sr-only">{part.selected ? 'selected: ' : 'not selected: '}</span>
+                          {part.name}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                ))
+              }
+            </dl>
+          </div>
+          <div class="stack">
+            <p class="t-label">Resulting tree</p>
+            {
+              tanstack ? (
+                <FileTree entries={tanstack.tree} label="Generated project tree" root="my-app/" />
+              ) : null
+            }
           </div>
         </div>
-        <InstallCommand client:load />
-      </section>
+      </div>
+    </section>
 
-      <section class="terminal-section section-rule" aria-labelledby="terminal-title">
-        <div class="terminal-wrap">
-          <div>
-            <p class="section-kicker">Watch it run</p>
-            <h2 class="section-title" id="terminal-title">The setup work is already done.</h2>
-            <p class="section-copy">
-              Pick a stack. The CLI writes the files, checks the result, and leaves you with a
-              project you can edit right away.
+    <section aria-labelledby="conflicts-title" class="section">
+      <div class="shell">
+        <SectionHead
+          id="conflicts-title"
+          question="What if my choices do not fit together?"
+          title="Conflicts are reported before a single file is written."
+        />
+        <div class="split is-7-5">
+          <div class="terminal">
+            <div class="terminal-body">
+              <span class="terminal-line is-command">
+                <span aria-hidden="true" class="terminal-prefix">$ </span>
+                {'pnpm dlx @alfredmouelle/create-stack@latest my-app --database convex --trpc'.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
+              </span>
+              <span class="terminal-line is-conflict">
+                <span aria-hidden="true" class="terminal-prefix">■ </span>Convex cannot be combined
+                with tRPC
+              </span>
+              <span class="terminal-line is-command">
+                <span aria-hidden="true" class="terminal-prefix">$ </span>ls my-app
+              </span>
+              <span class="terminal-line is-output">ls: my-app: No such file or directory</span>
+            </div>
+          </div>
+          <div class="stack">
+            <p class="t-body">
+              Each framework module declares what it supports. A choice outside that support is a
+              conflict, never a quiet swap for another provider.
             </p>
+            <p class="chips" aria-label="Conflicting choices">
+              <span class="chip is-conflict">convex</span>
+              <span class="chip is-conflict">trpc</span>
+            </p>
+            <p class="chip-reason is-conflict">Convex provides its own API layer.</p>
           </div>
-          <Terminal client:load />
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="features-section section-rule" id="why" aria-labelledby="features-title">
-        <div class="features-heading">
-          <div>
-            <p class="section-kicker">What the CLI gives you</p>
-            <h2 class="section-title" id="features-title">Start with the app already wired.</h2>
-          </div>
-          <p>
-            The generated project chooses the initial providers for you. You can still change
-            them as the product grows.
-          </p>
-        </div>
-        <div class="feature-grid">
-          {features.map((feature) => (
-            <article class="feature-card">
-              <span class="feature-label">{feature.label}</span>
-              <h3 class="feature-title">{feature.title}</h3>
-              <p class="feature-text">{feature.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section class="principles-section" aria-labelledby="principles-title">
-        <div>
-          <p class="section-kicker">How it works</p>
-          <h2 class="section-title" id="principles-title">
-            Choose what goes in. Keep providers replaceable.
-          </h2>
-          <p class="section-copy">
-            Create Stack gives you a useful default, then keeps each capability behind a clear
-            interface. When the product grows, you can replace a provider without rewriting its
-            callers.
-          </p>
-        </div>
-        <ul class="principles-list">
-          <li class="principle">
-            <span class="principle-mark">→</span>
+    <section aria-labelledby="profile-title" class="section">
+      <div class="shell">
+        <SectionHead
+          id="profile-title"
+          question="How strict is the baseline?"
+          title="The same quality profile in every project."
+        />
+        <ul class="checks">
+          <li class="check is-wide">
+            <span aria-hidden="true" class="tick"></span>
             <div>
-              <strong>Start with a working app</strong>
-              <span>You get an application first. Setup should not be the main project.</span>
+              <h3>Strict TypeScript, ten options on</h3>
+              <p>Every framework, no relaxed defaults. A framework can add options, never remove one.</p>
+              <p class="ts-options">
+                {QUALITY_PROFILE_OPTIONS.map((option) => <code>{option}</code>)}
+              </p>
             </div>
           </li>
-          <li class="principle">
-            <span class="principle-mark">→</span>
-            <div>
-              <strong>Swap providers without a rewrite</strong>
-              <span>Each capability has an interface, so replacing a provider stays local.</span>
-            </div>
+          <li class="check">
+            <span aria-hidden="true" class="tick"></span>
+            <div><h3>Formatter</h3><p>Biome (recommended) or Prettier</p></div>
           </li>
-          <li class="principle">
-            <span class="principle-mark">→</span>
-            <div>
-              <strong>Keep the project readable</strong>
-              <span>Create Stack generates ordinary files you can open, edit, and keep.</span>
-            </div>
+          <li class="check">
+            <span aria-hidden="true" class="tick"></span>
+            <div><h3>Linter</h3><p>Biome (recommended) or Oxlint, type-aware</p></div>
+          </li>
+          <li class="check">
+            <span aria-hidden="true" class="tick"></span>
+            <div><h3>Editor settings</h3><p>VS Code and Zed</p></div>
+          </li>
+          <li class="check">
+            <span aria-hidden="true" class="tick"></span>
+            <div><h3>pre-commit hook</h3><p>formats and lints staged files</p></div>
+          </li>
+          <li class="check">
+            <span aria-hidden="true" class="tick"></span>
+            <div><h3>pre-push hook</h3><p>runs typecheck and tests</p></div>
+          </li>
+          <li class="check">
+            <span aria-hidden="true" class="tick"></span>
+            <div><h3>Same gate, every project</h3><p>install · format · typecheck · lint</p></div>
           </li>
         </ul>
-      </section>
-    </div>
-  </main>
+      </div>
+    </section>
 
+    <section aria-labelledby="frameworks-title" class="section">
+      <div class="shell">
+        <SectionHead
+          id="frameworks-title"
+          question="Does it support my framework?"
+          title="Two stable today. The registry is open."
+        />
+        <ul class="registry">
+          {
+            REGISTRY.map((entry) => (
+              <li class={`registry-card is-${entry.maturity}`}>
+                <Badge maturity={entry.maturity} />
+                <a class="registry-name" href={`/frameworks/${entry.id}`}>
+                  {entry.label}
+                </a>
+                <p class="registry-foot">
+                  {entry.maturity === 'planned' ? entry.summary : `--framework ${entry.id}`}
+                </p>
+              </li>
+            ))
+          }
+          <li class="registry-card is-planned is-invite">
+            <a class="registry-name" href="/contribute">Your framework</a>
+            <p class="registry-foot">Read the contract →</p>
+          </li>
+        </ul>
+        <p class="legend">
+          <span><Badge maturity="stable" /> gate verified in CI</span>
+          <span><Badge maturity="preview" /> depends on prerelease upstream packages</span>
+          <span><Badge maturity="planned" /> on the roadmap, not installable</span>
+        </p>
+        <a class="button is-ghost is-small" href="/frameworks">All frameworks →</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="grow-title" class="section">
+      <div class="shell">
+        <SectionHead id="grow-title" question="What happens after day one?" title="Grow with create-stack add." />
+        <div class="split is-6-6">
+          <div class="stack">
+            <p class="t-lead">Add capabilities later. A batch is validated in full before any file changes.</p>
+            <div class="terminal">
+              <div class="terminal-body">
+                <span class="terminal-line is-command">
+                  <span aria-hidden="true" class="terminal-prefix">$ </span>
+                  {'pnpm dlx @alfredmouelle/create-stack@latest add --with storage=r2 cache=upstash logger'.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
+                </span>
+                <span class="terminal-line is-success">
+                  <span aria-hidden="true" class="terminal-prefix">+ </span>src/server/storage/port.ts
+                </span>
+                <span class="terminal-line is-success">
+                  <span aria-hidden="true" class="terminal-prefix">+ </span>src/server/storage/adapters/r2.ts
+                </span>
+                <span class="terminal-line is-success">
+                  <span aria-hidden="true" class="terminal-prefix">+ </span>src/server/cache/adapters/upstash.ts
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="stack">
+            <table class="data-table">
+              <caption class="sr-only">Port-based capabilities and their providers</caption>
+              <thead><tr><th scope="col">Port · swap the provider</th><th scope="col">Providers</th></tr></thead>
+              <tbody>
+                {
+                  PORT_CAPABILITIES.map((capability) => (
+                    <tr>
+                      <th scope="row">{capability.name}</th>
+                      <td>
+                        <span class="providers">
+                          {capability.providers.map((provider) => (
+                            <span class:list={['provider', provider === capability.recommended && 'is-default']}>
+                              {provider}
+                            </span>
+                          ))}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+            <table class="data-table">
+              <caption class="sr-only">Single-provider modules</caption>
+              <thead><tr><th scope="col">Single-provider module</th><th scope="col">Provider</th></tr></thead>
+              <tbody>
+                {
+                  SINGLE_PROVIDER_MODULES.map((module) => (
+                    <tr>
+                      <th scope="row">{module.name}</th>
+                      <td class="is-muted">{module.provider}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="agents-title" class="section">
+      <div class="shell">
+        <SectionHead id="agents-title" question="Can my agent run it?" title="Built for agents too." />
+        <div class="split is-5-7">
+          <dl class="facts">
+            <div>
+              <dt><code>--yes</code></dt>
+              <dd>Accepts every default without a prompt. Any stack flag also switches to non-interactive mode.</dd>
+            </div>
+            <div>
+              <dt>Same input, same plan</dt>
+              <dd>The creation plan prints every choice and why it was made: requested, recommended stack, or dependency completion.</dd>
+            </div>
+            <div>
+              <dt>Stop on conflict</dt>
+              <dd>A conflicting flag stops the run before a file is written. Nothing is substituted.</dd>
+            </div>
+            <div>
+              <dt><a href="/llms.txt">/llms.txt</a></dt>
+              <dd>Flags, values and defaults in one plain-text file for agents to read.</dd>
+            </div>
+          </dl>
+          <div class="terminal">
+            <div class="terminal-top"><span aria-hidden="true" class="terminal-dots"><i></i><i></i><i></i></span><span>agent · non-interactive</span></div>
+            <div class="terminal-body">
+              <span class="terminal-line is-command">
+                <span aria-hidden="true" class="terminal-prefix">$ </span>
+                {'pnpm dlx @alfredmouelle/create-stack@latest api --framework next --database prisma --auth clerk --no-mail --linter oxlint'.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
+              </span>
+              <span class="terminal-line is-success">
+                <span aria-hidden="true" class="terminal-prefix">◆ </span>typecheck + selected quality tools clean
+              </span>
+              <span class="terminal-line is-success">
+                <span aria-hidden="true" class="terminal-prefix">◆ </span>initial commit created
+              </span>
+              <span class="terminal-line is-success">
+                <span aria-hidden="true" class="terminal-prefix">└ </span>Created api
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="close-title" class="section is-closing">
+      <div class="shell stack is-loose">
+        <h2 class="t-display is-closing" id="close-title">Start green.</h2>
+        <CommandLine command={installCommand('pnpm')} />
+        <div class="actions">
+          <a class="button is-primary" href="/build">Build your stack →</a>
+          <a class="button is-ghost" href="/contribute">Add your framework</a>
+        </div>
+      </div>
+    </section>
+  </main>
 </BaseLayout>

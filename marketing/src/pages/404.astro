@@ -1,14 +1,40 @@
 ---
+import CommandLine from '../components/CommandLine.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { installCommand } from '../lib/install-command'
 ---
 
-<BaseLayout title="Page not found | Create Stack">
-  <main class="page-shell not-found">
-    <div>
-      <p class="eyebrow">Unknown route</p>
-      <h1>404</h1>
-      <p>This page is not part of the stack. Head back to the landing page and start from a working project.</p>
-      <a class="text-link" href="/">Return home →</a>
+<BaseLayout title="404 not found · create-stack">
+  <main class="shell not-found">
+    <div class="stack is-loose">
+      <p class="t-label is-conflict">■ gate failed at route</p>
+      <h1 class="t-h1">404 not found</h1>
+      <p class="t-lead">This page does not exist. Nothing was written, and your stack is still one command away.</p>
+      <CommandLine command={installCommand('pnpm')} />
+      <div class="actions">
+        <a class="button is-primary" href="/">Go home</a>
+        <a class="button is-ghost" href="/build">Build your stack</a>
+      </div>
+    </div>
+    <div class="stack">
+      <ol aria-label="Request steps" class="gate">
+        <li class="gate-step" data-status="passed">
+          <span aria-hidden="true" class="gate-glyph"></span>
+          <span class="gate-step-name">resolve<span class="gate-step-command">create-stack.alfredmouelle.com</span></span>
+          <span class="gate-step-status">ok</span>
+        </li>
+        <li class="gate-step" data-status="failed">
+          <span aria-hidden="true" class="gate-glyph"></span>
+          <span class="gate-step-name">route<span class="gate-step-command">this path</span></span>
+          <span class="gate-step-status">404</span>
+        </li>
+        <li class="gate-step" data-status="pending">
+          <span aria-hidden="true" class="gate-glyph"></span>
+          <span class="gate-step-name">render<span class="gate-step-command">skipped</span></span>
+          <span class="gate-step-status">skipped</span>
+        </li>
+      </ol>
+      <p class="t-label">The failing step is named, the rest is skipped. Same rule as the CLI.</p>
     </div>
   </main>
 </BaseLayout>

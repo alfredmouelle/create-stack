@@ -35,37 +35,27 @@ export default function ConsentBanner() {
   return (
     <>
       {isBannerVisible ? (
-        <aside aria-labelledby="consent-title" className="consent-banner" role="dialog">
-          <div className="consent-label">
-            <span aria-hidden="true" className="terminal-window">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span>create-stack / privacy</span>
-          </div>
-          <div className="consent-body">
-            <p className="consent-kicker">Your choice</p>
-            <h2 id="consent-title">Analytics, on your terms.</h2>
-            <p>
-              We use PostHog to learn which pages and copy actions help people start. It stays off
-              until you choose.
-            </p>
-            <a href="/privacy">Read the privacy page ↗</a>
-            <div className="consent-actions">
-              <button className="consent-refuse" onClick={() => choose('rejected')} type="button">
-                Refuse
-              </button>
-              <button className="consent-accept" onClick={() => choose('accepted')} type="button">
-                Accept analytics
-              </button>
-            </div>
+        <aside aria-labelledby="consent-title" className="consent" role="dialog">
+          <h2 className="consent-title" id="consent-title">
+            Analytics, on your terms.
+          </h2>
+          <p>
+            Allow anonymous analytics (PostHog, EU)? Nothing loads until you choose.{' '}
+            <a href="/privacy">Read the privacy page</a>
+          </p>
+          <div className="consent-actions">
+            <button className="consent-choice" onClick={() => choose('rejected')} type="button">
+              Decline
+            </button>
+            <button className="consent-choice" onClick={() => choose('accepted')} type="button">
+              Accept
+            </button>
           </div>
         </aside>
       ) : (
         <button
           aria-label="Open privacy settings"
-          className="consent-settings-trigger"
+          className="consent-trigger"
           onClick={() => setIsSettingsOpen(true)}
           type="button"
         >

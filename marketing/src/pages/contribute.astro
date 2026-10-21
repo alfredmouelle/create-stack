@@ -1,0 +1,133 @@
+---
+import { IMPLEMENTER_GUIDE_URL } from '../data/frameworks'
+import BaseLayout from '../layouts/BaseLayout.astro'
+
+const CONFORMANCE = [
+  'every reference application file has exactly one owning part',
+  'two selected parts never write the same path',
+  'no generated file imports a part that was not selected',
+  'assembles without deleting files in unselected parts',
+  'the quality profile is never relaxed',
+  'install, format, typecheck and lint commands are present',
+]
+
+interface StepFile {
+  path: string
+  note?: string
+}
+
+interface Step {
+  title: string
+  shared: boolean
+  body: string
+  files: StepFile[]
+}
+
+const steps: Step[] = [
+  {
+    title: 'Write a framework module',
+    shared: false,
+    body: 'A <code>FrameworkModule</code> value: detection, assembly, additions, gate commands and the quality profile.',
+    files: [
+      { path: 'cli/src/frameworks/<id>.ts' },
+      { path: '<id>-parts.ts' },
+      { path: '<id>-renderers.ts' },
+      { path: '<id>-additions.ts' },
+    ],
+  },
+  {
+    title: 'Provide a reference application',
+    shared: false,
+    body: 'A runnable, tested app with every part you support, in its recommended form. Generation copies parts and never deletes.',
+    files: [
+      { path: 'apps/<id>-base/' },
+      { path: 'cli/templates/<id>/', note: 'variants' },
+    ],
+  },
+  {
+    title: 'Register it',
+    shared: true,
+    body: 'Two shared entries. Help, prompts, the plan, the CI matrix and the stack builder derive from them.',
+    files: [
+      { path: 'packages/stack-config/src/index.ts', note: 'FRAMEWORKS, FRAMEWORK_SUPPORT' },
+      { path: 'cli/src/framework-registry.ts', note: 'frameworkModules' },
+    ],
+  },
+]
+---
+
+<BaseLayout
+  description="Add a framework to create-stack: write a framework module, provide a reference application, register it, and pass the conformance suite."
+  title="Add a framework · create-stack"
+>
+  <main class="shell">
+    <header class="page-head">
+      <p class="t-label">For framework owners</p>
+      <h1 class="t-h1">Add your framework. <br />Touch nothing shared.</h1>
+      <p class="t-lead">
+        A framework is three things you own and two lines you add. The engine, the quality profile
+        and the CLI stay unchanged.
+      </p>
+    </header>
+
+    <ol class="steps">
+      {steps.map((step, index) => (
+        <li class="step-card">
+          <p class="step-index">{String(index + 1).padStart(2, '0')}</p>
+          <h2 class="t-h3">{step.title}</h2>
+          <p set:html={step.body} />
+          <ul class="step-files">
+            {step.files.map((file) => (
+              <li>
+                <span aria-hidden="true" class:list={['step-mark', step.shared ? 'is-shared' : 'is-new']}>
+                  {step.shared ? '~' : '+'}
+                </span>
+                <span class="sr-only">{step.shared ? 'Edited shared file:' : 'New file:'}</span>
+                <code>{file.path}</code>
+                {file.note ? <span class="step-note">{file.note}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ol>
+    <p class="step-legend">
+      <span><span aria-hidden="true" class="step-mark is-new">+</span> new file you own</span>
+      <span><span aria-hidden="true" class="step-mark is-shared">~</span> shared file, one entry added</span>
+    </p>
+
+    <section aria-labelledby="conformance-title" class="section is-flush">
+      <div class="split is-5-7">
+        <div class="stack">
+          <p class="sec-question">What does the conformance suite prove?</p>
+          <h2 class="t-h2" id="conformance-title">Your module passes the same checks as the stable ones.</h2>
+          <p class="t-body is-muted">A boundary test also fails if your framework id appears in shared CLI code.</p>
+        </div>
+        <div class="terminal">
+          <div class="terminal-top"><span aria-hidden="true" class="terminal-dots"><i></i><i></i><i></i></span><span>conformance · &lt;id&gt;</span></div>
+          <div class="terminal-body">
+            {
+              CONFORMANCE.map((check) => (
+                <span class="terminal-line is-success">
+                  <span aria-hidden="true" class="terminal-prefix">✓ </span>
+                  {check}
+                </span>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="guide-title" class="section is-closing">
+      <div class="stack is-loose">
+        <h2 class="t-h2" id="guide-title">Read the contract, then open a draft PR.</h2>
+        <div class="actions">
+          <a class="button is-primary" href={IMPLEMENTER_GUIDE_URL} rel="noreferrer" target="_blank">Implementer guide on GitHub →</a>
+          <a class="button is-ghost" href="/frameworks">See planned frameworks</a>
+        </div>
+        <p class="t-label">docs/adding-a-framework.md</p>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

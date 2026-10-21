@@ -1,9 +1,15 @@
 ---
 import '../styles/global.css'
+import CommandLine from '../components/CommandLine.astro'
 import ConsentBanner from '../components/ConsentBanner'
+import Mark from '../components/Mark.astro'
+import { CHANGELOG_RELEASES } from '../lib/changelog'
+import { installCommand } from '../lib/install-command'
 import {
   getSiteMetadata,
+  NPM_URL,
   OG_IMAGE_ALT,
+  REPOSITORY_URL,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_TITLE,
@@ -14,22 +20,34 @@ interface Props {
   description?: string
 }
 
-const {
-  title = SITE_TITLE,
-  description = SITE_DESCRIPTION,
-} = Astro.props
+const { title = SITE_TITLE, description = SITE_DESCRIPTION } = Astro.props
 const metadata = getSiteMetadata()
 const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/'
+const latestVersion = CHANGELOG_RELEASES.find((release) => release.date)?.version
+const navigation = [
+  { href: '/build', label: 'Build' },
+  { href: '/frameworks', label: 'Frameworks' },
+  { href: '/contribute', label: 'Contribute' },
+  { href: '/changelog', label: 'Changelog' },
+]
+const themeChoices = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+]
+const isCurrent = (href: string) => currentPath === href || currentPath.startsWith(`${href}/`)
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#edf2ef" />
+    <meta name="theme-color" content="#f6f7f6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0d0c" media="(prefers-color-scheme: dark)" />
     <meta name="author" content="Alfred Mouelle" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -50,49 +68,155 @@ const canonical = new URL(Astro.url.pathname, metadata.canonicalUrl)
     <meta name="twitter:image" content={metadata.ogImageUrl} />
     <meta name="twitter:image:alt" content={OG_IMAGE_ALT} />
     <title>{title}</title>
+    <script is:inline>
+      try {
+        const theme = localStorage.getItem('create-stack.theme')
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+      } catch {}
+    </script>
   </head>
   <body>
+    <a class="skip-link" href="#content">Skip to content</a>
     <header class="site-header">
-      <div class="page-shell header-inner">
-        <a class="wordmark" href="/" aria-label="Create Stack home">
-          <img
-            class="wordmark-mark"
-            src="/favicon.svg"
-            alt=""
-            aria-hidden="true"
-            width="30"
-            height="30"
-          />
+      <div class="shell header-inner">
+        <a aria-label="Create Stack home" class="wordmark" href="/">
+          <Mark size={22} />
           <span>create-stack</span>
         </a>
-        <nav class="main-nav" aria-label="Main navigation">
-          <a href="/build">Build</a>
-          <a href="/changelog">Changelog</a>
-          <a href="/#why">Why Create Stack</a>
-          <a class="nav-github" href="https://github.com/alfredmouelle/create-stack">
-            GitHub <span aria-hidden="true">↗</span>
-          </a>
+        <nav aria-label="Main navigation" class="main-nav">
+          {
+            navigation.map((item) => (
+              <a aria-current={isCurrent(item.href) ? 'page' : undefined} href={item.href}>
+                {item.label}
+              </a>
+            ))
+          }
         </nav>
+        <div class="header-actions">
+          <a class="github-link" href={REPOSITORY_URL} rel="noreferrer" target="_blank">
+            <svg aria-hidden="true" height="15" viewBox="0 0 16 16" width="15">
+              <path
+                d="M8 0a8 8 0 0 0-2.5 15.6c.4 0 .5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.4.7 0-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 8 0z"
+                fill="currentColor"></path>
+            </svg>
+            <span>GitHub</span>
+          </a>
+          <div class="theme-control">
+            <button
+              aria-describedby="theme-tooltip"
+              aria-expanded="false"
+              aria-haspopup="menu"
+              aria-label="Switch theme"
+              class="icon-button"
+              data-theme-toggle
+              type="button"
+            >
+              <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16">
+                <circle cx="8" cy="8" fill="none" r="3.2" stroke="currentColor" stroke-width="1.5"
+                ></circle>
+                <path
+                  d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"
+                  stroke="currentColor"
+                  stroke-width="1.5"></path>
+              </svg>
+            </button>
+            <span class="theme-tooltip" id="theme-tooltip" role="tooltip">
+              Switch theme<span class="theme-tooltip-hint">Right-click for light, dark or system</span>
+            </span>
+            <div aria-label="Theme" class="theme-menu" data-theme-menu hidden role="menu">
+              {
+                themeChoices.map((choice) => (
+                  <button
+                    aria-checked="false"
+                    data-theme-choice={choice.value}
+                    role="menuitemradio"
+                    tabindex="-1"
+                    type="button"
+                  >
+                    {choice.label}
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+          <details class="mobile-menu">
+            <summary aria-label="Open menu" class="icon-button">
+              <svg aria-hidden="true" height="18" viewBox="0 0 18 18" width="18">
+                <path d="M2 5h14M2 9h14M2 13h14" stroke="currentColor" stroke-width="1.5"></path>
+              </svg>
+            </summary>
+            <div class="mobile-menu-panel">
+            <nav aria-label="Mobile navigation">
+              {
+                navigation.map((item) => (
+                  <a aria-current={isCurrent(item.href) ? 'page' : undefined} href={item.href}>
+                    {item.label}
+                    <span aria-hidden="true">→</span>
+                  </a>
+                ))
+              }
+              <a href={REPOSITORY_URL} rel="noreferrer" target="_blank">GitHub <span aria-hidden="true">↗</span></a>
+            </nav>
+            <div class="menu-theme">
+              <span id="mobile-theme-label">Theme</span>
+              <div aria-labelledby="mobile-theme-label" class="menu-theme-options" role="group">
+                {
+                  themeChoices.map((choice) => (
+                    <button aria-pressed="false" data-theme-choice={choice.value} type="button">
+                      {choice.label}
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
+            </div>
+          </details>
+        </div>
       </div>
     </header>
-    <slot />
-    <ConsentBanner client:load />
+    <div id="content">
+      <slot />
+    </div>
     <footer class="site-footer">
-      <div class="page-shell footer-inner">
-        <div>
-          <p>&gt;_ create-stack · made for the first useful commit</p>
-          <p class="footer-credit">
-            Open source (MIT) on <a href="https://github.com/alfredmouelle/create-stack">GitHub</a>.
-            Inspired by <a href="https://create.t3.gg">create-t3-app</a> by Theo Browne.
-          </p>
+      <div class="shell footer-inner">
+        <div class="footer-brand">
+          <a class="wordmark" href="/">
+            <Mark size={20} />
+            <span>create-stack</span>
+          </a>
+          <CommandLine command={installCommand('pnpm')} />
         </div>
         <div class="footer-links">
-          <a href="/changelog">Changelog ↗</a>
-          <a href="/privacy">Privacy ↗</a>
-          <a href="https://www.npmjs.com/package/@alfredmouelle/create-stack">npm ↗</a>
-          <a href="https://github.com/alfredmouelle/create-stack">GitHub ↗</a>
+          <div>
+            <h2>Product</h2>
+            <a href="/build">Build</a>
+            <a href="/frameworks">Frameworks</a>
+            <a href="/changelog">Changelog</a>
+          </div>
+          <div>
+            <h2>Contribute</h2>
+            <a href="/contribute">Add a framework</a>
+            <a href={REPOSITORY_URL} rel="noreferrer" target="_blank">GitHub</a>
+            <a href={NPM_URL} rel="noreferrer" target="_blank">npm</a>
+          </div>
+          <div>
+            <h2>Site</h2>
+            <a href="/llms.txt">llms.txt</a>
+            <a href="/privacy">Privacy</a>
+          </div>
+        </div>
+        <div class="footer-legal">
+          <span>MIT licence{latestVersion ? ` · v${latestVersion}` : ''}</span>
+          <span>
+            Built by <a href="https://alfredmouelle.com" rel="noreferrer" target="_blank">Alfred Mouelle</a>. Inspired by <a href="https://create.t3.gg" rel="noreferrer" target="_blank">create-t3-app</a>.
+          </span>
         </div>
       </div>
     </footer>
+    <ConsentBanner client:load />
+    <script>
+      import { setupPageControls } from '../lib/page-controls'
+      setupPageControls()
+    </script>
   </body>
 </html>

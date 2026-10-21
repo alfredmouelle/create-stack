@@ -4,6 +4,12 @@ import { installCommand, PACKAGE_MANAGERS, type PackageManager } from '../lib/in
 
 type CopyState = 'idle' | 'copied' | 'error'
 
+const STATUS_MESSAGES = {
+  idle: 'No account required. Change my-app before you run it.',
+  copied: 'Command copied to your clipboard.',
+  error: 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.',
+} as const satisfies Record<CopyState, string>
+
 export default function InstallCommand() {
   const commandInput = useRef<HTMLInputElement>(null)
   const [packageManager, setPackageManager] = useState<PackageManager>('pnpm')
@@ -34,10 +40,7 @@ export default function InstallCommand() {
 
       await navigator.clipboard.writeText(command)
       setCopyState('copied')
-      captureCommandCopied({
-        source: 'hero',
-        packageManager,
-      })
+      captureCommandCopied({ source: 'hero', packageManager })
     } catch {
       setCopyState('error')
       requestAnimationFrame(() => {
@@ -48,29 +51,31 @@ export default function InstallCommand() {
   }
 
   return (
-    <section aria-labelledby="install-heading" className="command-card">
-      <div className="command-label">
-        <span aria-hidden="true" className="terminal-window">
-          <i />
-          <i />
-          <i />
-        </span>
-        <span className="command-label-title" id="install-heading">
-          create-stack / install
-        </span>
-      </div>
-      <div className="command-body">
-        <p className="command-intro">Run this command to create the project.</p>
-        <label
-          className="command-line"
-          data-overflowing={isCommandOverflowing}
-          htmlFor="install-command"
-        >
-          <span aria-hidden="true" className="command-prompt">
-            ${' '}
+    <div className="install">
+      <div className="cmd">
+        <fieldset className="pm-switch">
+          <legend className="sr-only">Package manager</legend>
+          {PACKAGE_MANAGERS.map((manager) => (
+            <button
+              aria-pressed={packageManager === manager}
+              key={manager}
+              onClick={() => {
+                setPackageManager(manager)
+                setCopyState('idle')
+              }}
+              type="button"
+            >
+              {manager}
+            </button>
+          ))}
+        </fieldset>
+        <div className="cmd-line" data-overflowing={isCommandOverflowing}>
+          <span aria-hidden="true" className="cmd-prompt">
+            $
           </span>
           <input
             aria-label="Create Stack install command"
+            className="cmd-input"
             id="install-command"
             onFocus={(event) => event.currentTarget.select()}
             readOnly
@@ -78,46 +83,22 @@ export default function InstallCommand() {
             title="Scroll horizontally to inspect the full command"
             value={command}
           />
-          <span aria-hidden="true" className="command-scroll-cue">
+          <span aria-hidden="true" className="cmd-scroll-cue">
             ↔
           </span>
-        </label>
-        <div className="command-actions">
-          <fieldset aria-label="Package manager" className="manager-group">
-            <legend className="sr-only">Package manager</legend>
-            {PACKAGE_MANAGERS.map((manager) => (
-              <button
-                aria-pressed={packageManager === manager}
-                className="manager-button"
-                key={manager}
-                onClick={() => {
-                  setPackageManager(manager)
-                  setCopyState('idle')
-                }}
-                type="button"
-              >
-                {manager}
-              </button>
-            ))}
-          </fieldset>
           <button
             className="copy-button"
             data-state={copyState}
             onClick={copyCommand}
             type="button"
           >
-            <span aria-hidden="true">{copyState === 'copied' ? '✓' : '↗'}</span>
-            {copyState === 'copied' ? 'Copied' : 'Copy command'}
+            {copyState === 'copied' ? 'Copied ✓' : 'Copy command'}
           </button>
         </div>
-        <p aria-live="polite" className="copy-status" data-state={copyState} role="status">
-          {copyState === 'copied'
-            ? 'Command copied to your clipboard.'
-            : copyState === 'error'
-              ? 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.'
-              : 'No account required. Change my-app before you run it.'}
-        </p>
       </div>
-    </section>
+      <p aria-live="polite" className="install-status" data-state={copyState} role="status">
+        {STATUS_MESSAGES[copyState]}
+      </p>
+    </div>
   )
 }

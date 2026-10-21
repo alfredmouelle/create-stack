@@ -48,7 +48,7 @@ describe.each(['next', 'tanstack'])('branded generated %s app', (framework) => {
     expect(config).toContain("name: 'project'")
     expect(shell).toContain('siteConfig.name')
     expect(shell).toContain('siteConfig.description')
-    expect(home).toContain('src="/logo192.png"')
+    expect(home).toContain('<BrandMark />')
     expect(home).toContain('siteConfig.name')
     expect(home).not.toContain('Everything&rsquo;s wired.')
     expect(home).not.toContain('create-stack my-app')
@@ -59,8 +59,8 @@ describe.each(['next', 'tanstack'])('branded generated %s app', (framework) => {
       short_name: 'project',
       name: 'project',
       description: 'A working application, wired around your choices.',
-      theme_color: '#edf2ef',
-      background_color: '#edf2ef',
+      theme_color: '#f6f7f6',
+      background_color: '#f6f7f6',
     })
     for (const asset of ['favicon.svg', 'favicon.ico', 'logo192.png', 'logo512.png']) {
       expect(existsSync(join(fixture.app, 'public', asset))).toBe(true)
