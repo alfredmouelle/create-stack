@@ -171,7 +171,8 @@ Once your module is registered, these suites run against it without changes:
 
 Tool conformance runs in separate standalone, Turborepo, and Nx test files so Vitest
 can schedule each project shape independently. Each file iterates the framework registry.
-The CLI suite caps workers at four to bound concurrent compiler and linter subprocesses.
+The CLI suite caps workers at four locally and two in CI to bound concurrent compiler
+and linter subprocesses on hosted runners.
 
 Cover what only your framework does, such as detection fixtures and its component
 root, in your own `cli/test/<id>.test.ts`. The smoke and packed certification
