@@ -79,8 +79,8 @@ test.each(['next', 'tanstack'] as const)(
 
     const emailTheme = read(fixture.app, surface.emailTheme)
     expect(emailTheme).toContain("name: 'create-stack'")
-    expect(emailTheme).toContain("pageBg: '#edf2ef'")
-    expect(emailTheme).toContain("primary: '#1858d1'")
+    expect(emailTheme).toContain("pageBg: '#f6f7f6'")
+    expect(emailTheme).toContain("primary: '#1a7f37'")
 
     expect(read(fixture.app, surface.emailComponents)).toContain('colors.primary')
     for (const email of surface.emails) expect(read(fixture.app, email)).toContain('EmailFallback')

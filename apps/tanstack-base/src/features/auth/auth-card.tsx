@@ -16,7 +16,7 @@ export function AuthCard({ title, description, children, footer }: AuthCardProps
       <div aria-hidden="true" className="h-1 bg-primary" />
 
       <CardHeader className="px-8 pt-9 pb-0">
-        <CardTitle className="font-heading font-medium text-3xl tracking-[-0.04em]">
+        <CardTitle className="font-heading font-semibold font-stretch-92% text-3xl tracking-[-0.035em]">
           {title}
         </CardTitle>
         {hasDescription ? (

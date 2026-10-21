@@ -45,6 +45,8 @@ const baseline = {
 }
 
 const mailFilesChangedSinceBaseline: Record<string, string> = {
+  'src/emails/components/theme.ts':
+    '49287f4761a81e1f6ac5418152b66d5dc4cc4bb41cc44987ceeeefb43eee1540',
   'src/server/email/adapters/resend.ts':
     '6ae02bd2a254df846a48c507e1278edd42362baf0c8a912ba7b6b28629c47d9e',
   'src/server/email/address.ts': 'ba8403a8555b8efd0f955c375f6df8c537e6a791ee8cf3b53df67844dbbace55',

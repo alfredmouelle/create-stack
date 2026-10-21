@@ -143,7 +143,7 @@ Depending on your selections, the generated project can include:
 - tRPC v11 with SSR/RSC integration and a health router.
 - better-auth with email and password, verification, Google OAuth, and auth pages. Clerk provides hosted auth, middleware, sign-in and sign-up pages. Auth is optional.
 - Resend, Brevo, or SES behind one mailer interface with React Email templates.
-- Tailwind v4, shadcn, Geist, a theme toggle, strict quality tooling, typed `env.ts`, a Dockerfile, Git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
+- Tailwind v4, shadcn, Instrument Sans and Commit Mono, a theme toggle, strict quality tooling, typed `env.ts`, a Dockerfile, Git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
 
 The CLI copies only the files, dependencies, env keys, and wiring of the parts you select, so
 no generated file imports a part you left out. It then runs the selected formatter,

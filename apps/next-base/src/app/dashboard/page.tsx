@@ -5,7 +5,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="p-8">
-      <h1 className="font-heading font-medium text-2xl">Dashboard</h1>
+      <h1 className="font-heading font-semibold text-2xl">Dashboard</h1>
       <p className="mt-2 text-muted-foreground">Protected route.</p>
     </main>
   )

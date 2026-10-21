@@ -31,7 +31,7 @@ export default function Home() {
             <p className="font-mono text-primary text-xs uppercase tracking-[0.16em]">
               Ready when you are
             </p>
-            <h1 className="mt-4 max-w-3xl text-balance font-heading font-medium text-5xl tracking-[-0.05em] sm:text-7xl">
+            <h1 className="mt-4 max-w-3xl text-balance font-heading font-semibold font-stretch-88% text-5xl tracking-[-0.045em] sm:text-7xl">
               A clear place to start.
             </h1>
             <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground sm:text-xl">
@@ -53,7 +53,7 @@ export default function Home() {
               <span>Start here</span>
               <span>01</span>
             </div>
-            <h2 className="mt-10 font-heading font-medium text-2xl tracking-tight">
+            <h2 className="mt-10 font-heading font-semibold text-2xl tracking-tight">
               Make the first change.
             </h2>
             <p className="mt-3 text-muted-foreground text-sm leading-6">
