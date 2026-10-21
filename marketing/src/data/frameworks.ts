@@ -20,6 +20,7 @@ export type RegisteredFramework = {
   id: Framework
   label: string
   summary: string
+  documentationUrl: string
   recommended: boolean
   support: FrameworkSupport
   modulePath: string
@@ -33,12 +34,16 @@ export type PlannedFramework = {
   id: string
   label: string
   summary: string
+  documentationUrl: string
   roadmapPosition: number
 }
 
 export type RegistryEntry = RegisteredFramework | PlannedFramework
 
-type RegisteredDetails = Pick<RegisteredFramework, 'summary' | 'monorepoOutputs' | 'tree'>
+type RegisteredDetails = Pick<
+  RegisteredFramework,
+  'summary' | 'documentationUrl' | 'monorepoOutputs' | 'tree'
+>
 
 const PROFILE_TREE: readonly TreeEntry[] = [
   { path: '.githooks/pre-commit', depth: 0, owner: 'quality profile' },
@@ -55,6 +60,7 @@ const PROJECT_FILES: readonly TreeEntry[] = [
 
 const DETAILS = {
   tanstack: {
+    documentationUrl: 'https://tanstack.com/start/latest/docs/framework/react/overview',
     summary:
       'SSR and file-based routing. Supports every database, auth, API, mailer, formatter and linter option.',
     monorepoOutputs: ['.output/**', '.nitro/**', 'dist/**'],
@@ -73,6 +79,7 @@ const DETAILS = {
     ],
   },
   rasengan: {
+    documentationUrl: 'https://www.rasengan.dev/docs/getting-started/introduction',
     summary:
       'Preview on Node with SSR, file-based routes, the shared quality profile, and an application-owned production server.',
     monorepoOutputs: ['dist/**', '.rasengan/**'],
@@ -89,6 +96,7 @@ const DETAILS = {
     ],
   },
   next: {
+    documentationUrl: 'https://nextjs.org/docs',
     summary:
       'App Router with SSR and routing. Supports every database, auth, API, mailer, formatter and linter option.',
     monorepoOutputs: ['.next/**', '!.next/cache/**'],
@@ -113,6 +121,7 @@ const PLANNED: readonly PlannedFramework[] = [
     maturity: 'planned',
     id: 'remix',
     label: 'Remix',
+    documentationUrl: 'https://remix.run/docs',
     summary: 'Needs a framework module.',
     roadmapPosition: 1,
   },
@@ -120,6 +129,7 @@ const PLANNED: readonly PlannedFramework[] = [
     maturity: 'planned',
     id: 'vue',
     label: 'Vue',
+    documentationUrl: 'https://vuejs.org/guide/introduction.html',
     summary: 'Needs a framework module.',
     roadmapPosition: 2,
   },
@@ -127,6 +137,7 @@ const PLANNED: readonly PlannedFramework[] = [
     maturity: 'planned',
     id: 'nestjs',
     label: 'NestJS',
+    documentationUrl: 'https://docs.nestjs.com/',
     summary: 'Needs a framework module.',
     roadmapPosition: 3,
   },
@@ -134,6 +145,7 @@ const PLANNED: readonly PlannedFramework[] = [
     maturity: 'planned',
     id: 'php',
     label: 'PHP frameworks',
+    documentationUrl: 'https://www.php.net/manual/en/',
     summary: 'Needs an owner and a framework module.',
     roadmapPosition: 4,
   },
