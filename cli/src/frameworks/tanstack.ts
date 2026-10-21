@@ -1,4 +1,4 @@
-import { FRAMEWORK_SUPPORT, MONOREPO_OUTPUTS } from '../../../packages/stack-config/src/index.ts'
+import { FRAMEWORK_SUPPORT } from '../../../packages/stack-config/src/index.ts'
 import type { FrameworkModule } from '../framework-module.ts'
 import { declaresDependency } from '../javascript/package-manifest.ts'
 import { assembleProject } from '../javascript/project-assembly.ts'
@@ -7,9 +7,7 @@ import { packageScriptGate } from '../javascript/verification-gate.ts'
 import { tanstackAdditions } from './tanstack-additions.ts'
 import { tanstackReference } from './tanstack-parts.ts'
 
-const monorepoOutputs = MONOREPO_OUTPUTS.tanstack
-
-const { label, maturity } = FRAMEWORK_SUPPORT.tanstack
+const { label, maturity, monorepoOutputs } = FRAMEWORK_SUPPORT.tanstack
 
 export const tanstackModule: FrameworkModule = {
   id: 'tanstack',

@@ -1,5 +1,6 @@
 export {
   AUTHS,
+  CAPABILITY_CATALOG,
   DATABASES,
   FRAMEWORK_SUPPORT,
   frameworkTitle,

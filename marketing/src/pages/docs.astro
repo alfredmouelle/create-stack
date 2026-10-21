@@ -96,7 +96,7 @@ const STACK_FLAGS: readonly FlagRow[] = [
 ]
 
 const CAPABILITY_FLAGS: readonly FlagRow[] = CAPABILITY_CATALOG.map((capability) => ({
-  flags: capability.flags.map((flag) => `--${flag}`),
+  flags: [capability.flag, ...capability.aliases].map((flag) => `--${flag}`),
   values: capability.providers,
   defaultValue: capability.recommendedProvider,
   notes:

@@ -3,7 +3,6 @@ import {
   FRAMEWORKS,
   type Framework,
   type FrameworkSupport,
-  MONOREPO_OUTPUTS,
   RECOMMENDED_FRAMEWORK,
 } from '@alfredmouelle/stack-config'
 
@@ -26,7 +25,6 @@ export type RegisteredFramework = {
   support: FrameworkSupport
   modulePath: string
   referenceApplication: string
-  monorepoOutputs: readonly string[]
   tree: readonly TreeEntry[]
 }
 
@@ -157,7 +155,6 @@ const REGISTERED: readonly RegisteredFramework[] = FRAMEWORKS.map((id) => {
     support,
     modulePath: `cli/src/frameworks/${id}.ts`,
     referenceApplication: `apps/${id}-base`,
-    monorepoOutputs: MONOREPO_OUTPUTS[id],
   }
 }).toSorted((a, b) => Number(b.recommended) - Number(a.recommended))
 

@@ -224,8 +224,7 @@ const capabilityFacts = (cap: string) => CAPABILITY_CATALOG.find(({ name }) => n
 
 export const CAPABILITIES: readonly string[] = CAPABILITY_CATALOG.map(({ name }) => name)
 
-export const canonicalCapabilityName = (cap: string): string =>
-  capabilityFacts(cap)?.flags[0] ?? cap
+export const canonicalCapabilityName = (cap: string): string => capabilityFacts(cap)?.flag ?? cap
 
 function creationProvider(cap: string): string {
   const facts = capabilityFacts(cap)

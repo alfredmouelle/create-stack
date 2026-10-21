@@ -42,6 +42,7 @@ describe('marketing Worker delivery contract', () => {
     expect(workflow).toContain('marketing/**')
     expect(workflow).toContain('packages/stack-config/**')
     expect(workflow).toContain('packages/*/capability.json')
+    expect(workflow).toContain('cli/package.json')
     expect(workflow).toContain("inputs.worker_url || 'https://create-stack.alfredmouelle.com'")
     expect(workflow).toContain('group: deploy-marketing')
     expect(workflow).toContain('cancel-in-progress: true')

@@ -9,6 +9,7 @@ import {
   addableChoices,
   addCapability,
   CAPABILITIES,
+  CAPABILITY_CATALOG,
   CLI_VERSION,
   COMPONENT_CATALOG,
   COMPONENT_NAMES,
@@ -129,10 +130,11 @@ Flags:
   --no-install                     Skip install + verification
   -h, --help                       Show this help`
 
-const CREATION_CAPABILITY_OPTIONS = Object.fromEntries([
-  ...CAPABILITIES.map((capability) => [canonicalCapabilityName(capability), capability]),
-  ['error-tracking', 'error-tracking'],
-])
+const CREATION_CAPABILITY_OPTIONS = Object.fromEntries(
+  CAPABILITY_CATALOG.flatMap(({ name, flag, aliases }) =>
+    [flag, ...aliases].map((option) => [option, name]),
+  ),
+)
 
 const CREATION_OPTIONS = [
   'f',

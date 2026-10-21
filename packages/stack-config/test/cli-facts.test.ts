@@ -1,65 +1,50 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import cliPackage from '../../../cli/package.json' with { type: 'json' }
 import mailerManifest from '../../mailer/capability.json' with { type: 'json' }
 import {
   CAPABILITY_CATALOG,
-  DEFAULT_IMPORT_ALIAS,
   isValidImportAlias,
   MAILERS,
   MINIMUM_NODE_VERSION,
   normalizeImportAlias,
 } from '../src/index.js'
 
+const packagesRoot = join(dirname(fileURLToPath(import.meta.url)), '../..')
+
 describe('CLI facts', () => {
-  test('declares the minimum Node version the CLI package requires', () => {
-    expect(cliPackage.engines.node).toBe(`>=${MINIMUM_NODE_VERSION}`)
+  test('reads the minimum Node version from the CLI package engines', () => {
+    expect(`>=${MINIMUM_NODE_VERSION}`).toBe(cliPackage.engines.node)
   })
 
-  test('reads capability providers and recommendations from the capability manifests', () => {
-    expect(CAPABILITY_CATALOG).toEqual([
-      {
-        name: 'storage',
-        kind: 'port',
-        flags: ['storage'],
-        providers: ['s3', 'r2', 'gcs', 'local'],
-        recommendedProvider: 'r2',
-      },
-      {
-        name: 'cache',
-        kind: 'port',
-        flags: ['cache'],
-        providers: ['redis', 'upstash', 'memory'],
-        recommendedProvider: 'upstash',
-      },
-      {
-        name: 'logger',
-        kind: 'port',
-        flags: ['logger'],
-        providers: ['pino', 'console'],
-        recommendedProvider: 'pino',
-      },
-      {
-        name: 'analytics',
-        kind: 'port',
-        flags: ['analytics'],
-        providers: ['posthog', 'plausible', 'noop'],
-        recommendedProvider: 'posthog',
-      },
-      {
-        name: 'jobs',
-        kind: 'module',
-        flags: ['jobs'],
-        providers: ['inngest'],
-        recommendedProvider: 'inngest',
-      },
-      {
-        name: 'error-tracking',
-        kind: 'module',
-        flags: ['errors', 'error-tracking'],
-        providers: ['sentry'],
-        recommendedProvider: 'sentry',
-      },
+  test('declares the capability flags the CLI accepts', () => {
+    expect(
+      CAPABILITY_CATALOG.map(({ name, kind, flag, aliases }) => ({ name, kind, flag, aliases })),
+    ).toEqual([
+      { name: 'storage', kind: 'port', flag: 'storage', aliases: [] },
+      { name: 'cache', kind: 'port', flag: 'cache', aliases: [] },
+      { name: 'logger', kind: 'port', flag: 'logger', aliases: [] },
+      { name: 'analytics', kind: 'port', flag: 'analytics', aliases: [] },
+      { name: 'jobs', kind: 'module', flag: 'jobs', aliases: [] },
+      { name: 'error-tracking', kind: 'module', flag: 'errors', aliases: ['error-tracking'] },
     ])
+  })
+
+  test.each(CAPABILITY_CATALOG)('reads $name providers from its manifest', (capability) => {
+    const manifest = JSON.parse(
+      readFileSync(join(packagesRoot, capability.name, 'capability.json'), 'utf8'),
+    )
+    if (capability.kind === 'module') {
+      expect(capability.providers).toEqual([manifest.provider])
+      expect(capability.recommendedProvider).toBe(manifest.provider)
+      return
+    }
+    expect(capability.providers).toEqual(Object.keys(manifest.adapters))
+    expect(capability.recommendedProvider).toBe(
+      manifest.creationRecommendedProvider ?? manifest.defaultAdapter,
+    )
   })
 
   test('declares the mailers the mailer manifest provides', () => {
@@ -80,9 +65,5 @@ describe('import alias', () => {
 
   test('trims whitespace and trailing slashes', () => {
     expect(normalizeImportAlias(' @app// ')).toBe('@app')
-  })
-
-  test('defaults to the tilde prefix', () => {
-    expect(DEFAULT_IMPORT_ALIAS).toBe('~')
   })
 })

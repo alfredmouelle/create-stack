@@ -69,7 +69,7 @@ const FRAMEWORK_MATURITY = [
 const flag = (name: string, values: readonly string[]): string =>
   `\`--${name} ${values.join('|')}\``
 
-const CAPABILITY_FLAGS = CAPABILITY_CATALOG.map(({ flags }) => `\`--${flags[0]}\``).join(', ')
+const CAPABILITY_FLAGS = CAPABILITY_CATALOG.map(({ flag }) => `\`--${flag}\``).join(', ')
 
 const LLMS = (canonicalUrl: string) => `# Create Stack
 

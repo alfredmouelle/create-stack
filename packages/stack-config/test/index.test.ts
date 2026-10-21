@@ -9,6 +9,7 @@ import {
 const restrictedNext = {
   label: 'Next.js',
   maturity: 'preview',
+  monorepoOutputs: ['.next/**', '!.next/cache/**'],
   supports: {
     database: ['prisma', 'none'],
     auth: ['better-auth', 'clerk', 'none'],

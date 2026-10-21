@@ -5,7 +5,7 @@ import FileTree from '../components/FileTree.astro'
 import InstallCommand from '../components/InstallCommand'
 import SectionHead from '../components/SectionHead.astro'
 import Terminal from '../components/Terminal'
-import { REGISTERED_FRAMEWORKS, REGISTRY } from '../data/frameworks'
+import { maturityCounts, REGISTERED_FRAMEWORKS, REGISTRY } from '../data/frameworks'
 import {
   PORT_CAPABILITIES,
   QUALITY_PROFILE_OPTIONS,
@@ -17,6 +17,17 @@ import { installCommand } from '../lib/install-command'
 import { REPOSITORY_URL } from '../lib/site-metadata'
 
 const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tanstack')
+const previewLabels = REGISTERED_FRAMEWORKS.filter((framework) => framework.maturity === 'preview').map(
+  (framework) => framework.label,
+)
+const frameworksTitle = [
+  `${maturityCounts().stable} stable.`,
+  previewLabels.length > 0
+    ? `${new Intl.ListFormat('en', { type: 'conjunction' }).format(previewLabels)} in preview.`
+    : '',
+]
+  .filter(Boolean)
+  .join(' ')
 ---
 
 <BaseLayout>
@@ -180,7 +191,7 @@ const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tan
         <SectionHead
           id="frameworks-title"
           question="Does it support my framework?"
-          title="Two stable. RasenganJS in preview."
+          title={frameworksTitle}
         />
         <ul class="registry">
           {

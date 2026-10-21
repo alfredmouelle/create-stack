@@ -125,7 +125,7 @@ function commandFor(state: BuildState, stackArgs: readonly string[]): string | n
   for (const capability of CAPABILITY_CATALOG) {
     const provider = state.capabilities[capability.name]
     if (provider === undefined) continue
-    args.push(`--${capability.flags[0]}`, provider)
+    args.push(`--${capability.flag}`, provider)
   }
 
   return [...EXECUTORS[state.packageManager].split(' '), STACK_PACKAGE, state.projectName, ...args]

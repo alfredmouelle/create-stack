@@ -1,3 +1,4 @@
+import cliPackage from '../../../cli/package.json' with { type: 'json' }
 import analyticsManifest from '../../analytics/capability.json' with { type: 'json' }
 import cacheManifest from '../../cache/capability.json' with { type: 'json' }
 import errorTrackingManifest from '../../error-tracking/capability.json' with { type: 'json' }
@@ -29,7 +30,13 @@ export const QUALITY_TOOL_LABELS = {
   oxlint: 'Oxlint',
 } as const satisfies Readonly<Record<Formatter | Linter, string>>
 
-export const MINIMUM_NODE_VERSION = '24.19.0'
+function minimumVersion(range: string): string {
+  const version = /^>=(\d+\.\d+\.\d+)$/.exec(range)?.[1]
+  if (version === undefined) throw new Error(`Unsupported Node engine range: ${range}`)
+  return version
+}
+
+export const MINIMUM_NODE_VERSION = minimumVersion(cliPackage.engines.node)
 
 export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
 export type PackageManagerName = (typeof PACKAGE_MANAGERS)[number]
@@ -61,10 +68,11 @@ export const COMPONENTS = [
 ] as const
 export type ComponentName = (typeof COMPONENTS)[number]
 
-export type CapabilityFacts<Name extends string = string> = {
+export type CapabilityFacts<Name extends string> = {
   readonly name: Name
   readonly kind: 'port' | 'module'
-  readonly flags: readonly [string, ...string[]]
+  readonly flag: string
+  readonly aliases: readonly string[]
   readonly providers: readonly string[]
   readonly recommendedProvider: string
 }
@@ -81,7 +89,8 @@ function port<Name extends string>(name: Name, manifest: PortManifest): Capabili
   return {
     name,
     kind: 'port',
-    flags: [name],
+    flag: name,
+    aliases: [],
     providers: Object.keys(manifest.adapters),
     recommendedProvider: manifest.creationRecommendedProvider ?? manifest.defaultAdapter,
   }
@@ -90,12 +99,13 @@ function port<Name extends string>(name: Name, manifest: PortManifest): Capabili
 function singleProvider<Name extends string>(
   name: Name,
   manifest: ModuleManifest,
-  flags: readonly [string, ...string[]] = [name],
+  flag: string = name,
 ): CapabilityFacts<Name> {
   return {
     name,
     kind: 'module',
-    flags,
+    flag,
+    aliases: flag === name ? [] : [name],
     providers: [manifest.provider],
     recommendedProvider: manifest.provider,
   }
@@ -107,7 +117,7 @@ export const CAPABILITY_CATALOG = [
   port('logger', loggerManifest),
   port('analytics', analyticsManifest),
   singleProvider('jobs', jobsManifest),
-  singleProvider('error-tracking', errorTrackingManifest, ['errors', 'error-tracking']),
+  singleProvider('error-tracking', errorTrackingManifest, 'errors'),
 ] as const
 export type CapabilityName = (typeof CAPABILITY_CATALOG)[number]['name']
 
@@ -125,6 +135,7 @@ export type FrameworkMaturity = 'stable' | 'preview'
 export type FrameworkSupport = {
   readonly label: string
   readonly maturity: FrameworkMaturity
+  readonly monorepoOutputs: readonly string[]
   readonly supports: {
     readonly database: readonly Database[]
     readonly auth: readonly Auth[]
@@ -165,18 +176,27 @@ const FULL_STACK_SUPPORT = {
 } satisfies Pick<FrameworkSupport, 'supports' | 'recommendations'>
 
 export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
-  tanstack: { label: 'TanStack Start', maturity: 'stable', ...FULL_STACK_SUPPORT },
-  next: { label: 'Next.js', maturity: 'stable', ...FULL_STACK_SUPPORT },
-  rasengan: { label: 'RasenganJS', maturity: 'preview', ...FULL_STACK_SUPPORT },
+  tanstack: {
+    label: 'TanStack Start',
+    maturity: 'stable',
+    monorepoOutputs: ['.output/**', '.nitro/**', 'dist/**'],
+    ...FULL_STACK_SUPPORT,
+  },
+  next: {
+    label: 'Next.js',
+    maturity: 'stable',
+    monorepoOutputs: ['.next/**', '!.next/cache/**'],
+    ...FULL_STACK_SUPPORT,
+  },
+  rasengan: {
+    label: 'RasenganJS',
+    maturity: 'preview',
+    monorepoOutputs: ['dist/**', '.rasengan/**'],
+    ...FULL_STACK_SUPPORT,
+  },
 }
 
 export const RECOMMENDED_FRAMEWORK: Framework = 'tanstack'
-
-export const MONOREPO_OUTPUTS: Readonly<Record<Framework, readonly string[]>> = {
-  tanstack: ['.output/**', '.nitro/**', 'dist/**'],
-  next: ['.next/**', '!.next/cache/**'],
-  rasengan: ['dist/**', '.rasengan/**'],
-}
 
 export function frameworkTitle(framework: Framework): string {
   const { label, maturity } = FRAMEWORK_SUPPORT[framework]

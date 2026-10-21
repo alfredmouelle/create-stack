@@ -1,4 +1,4 @@
-import { FRAMEWORK_SUPPORT, MONOREPO_OUTPUTS } from '../../../packages/stack-config/src/index.ts'
+import { FRAMEWORK_SUPPORT } from '../../../packages/stack-config/src/index.ts'
 import type { FrameworkModule } from '../framework-module.ts'
 import { declaresDependency } from '../javascript/package-manifest.ts'
 import { assembleProject } from '../javascript/project-assembly.ts'
@@ -7,9 +7,7 @@ import { packageScriptGate } from '../javascript/verification-gate.ts'
 import { nextAdditions } from './next-additions.ts'
 import { nextReference } from './next-parts.ts'
 
-const monorepoOutputs = MONOREPO_OUTPUTS.next
-
-const { label, maturity } = FRAMEWORK_SUPPORT.next
+const { label, maturity, monorepoOutputs } = FRAMEWORK_SUPPORT.next
 
 export const nextModule: FrameworkModule = {
   id: 'next',

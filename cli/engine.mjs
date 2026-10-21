@@ -14,6 +14,7 @@ export const {
   addableChoices,
   addCapability,
   CAPABILITIES,
+  CAPABILITY_CATALOG,
   CLI_VERSION,
   COMPONENT_CATALOG,
   COMPONENT_NAMES,
