@@ -7,17 +7,10 @@ import {
   installedAdapters,
   vendorCapability,
   vendorPackageSrc,
-} from '#lib/capabilities.mjs'
-import { currentMailerAdapter, MAILER_ADAPTERS, vendorMailer } from '#lib/mailer.mjs'
-import { join } from '#lib/util.mjs'
-import type { AdditionWiring, CapabilityAddition } from '../framework-module.ts'
-
-type ModuleIntegration = {
-  readonly provider: string
-  readonly files: Readonly<Record<string, string>>
-  readonly dependencies?: Readonly<Record<string, string>>
-  readonly manualSteps?: readonly string[]
-}
+} from '#lib/capabilities.ts'
+import { join } from '#lib/util.ts'
+import type { AdditionWiring, CapabilityAddition, ModuleIntegration } from '../framework-module.ts'
+import { currentMailerAdapter, MAILER_ADAPTERS, vendorMailer } from './mailer.ts'
 
 const emptyResult = {
   addDeps: {},

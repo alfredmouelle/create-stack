@@ -2,14 +2,16 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { canonicalCapabilityName } from '#lib/capabilities.mjs'
+import { canonicalCapabilityName } from '#lib/capabilities.ts'
+import { isSqlDatabase } from '#lib/database.ts'
 import {
   type Formatter,
-  FRAMEWORK_SUPPORT,
   type Framework,
+  frameworkTitle,
   type Linter,
   type StackAxis,
 } from '../../packages/stack-config/src/index.ts'
+import { validateAdditions } from './additions.ts'
 import type {
   AssemblyRequest,
   CapabilitySelection,
@@ -38,13 +40,20 @@ type CreationPlan = AssemblyRequest &
     readonly module: FrameworkModule
   }
 
+export type CreationResult = {
+  readonly projectDir: string
+  readonly applicationDir: string
+  readonly initialCommit: boolean
+}
+
 export type GateOptions = {
   readonly cwd: string
   readonly packageManager: Pick<PackageManager, 'name'>
   readonly requireSuccess: boolean
 }
 
-const VERIFICATION_FAILED = 'Verification failed; the initial commit was skipped'
+const verificationFailed = (steps: readonly string[]): string =>
+  `Verification failed at ${steps.join(' and ')}; the initial commit was skipped`
 
 const MONOREPO_LABELS = { turborepo: 'Turborepo', nx: 'Nx' } as const
 
@@ -68,15 +77,14 @@ export function runVerificationGate(
       `${packageManager.name} install failed; verification and the initial commit were skipped`,
     )
   }
-  const formatted = runCommand(gate.format, cwd, 'ignore')
-  if (!formatted && requireSuccess) throw new Error(VERIFICATION_FAILED)
+  const failed = runCommand(gate.format, cwd, 'inherit') ? [] : ['format']
+  if (failed.length && requireSuccess) throw new Error(verificationFailed(failed))
   p.log.step('Verifying (typecheck + selected quality tools)')
-  const typechecked = runCommand(gate.typecheck, cwd, 'inherit')
-  const linted = runCommand(gate.lint, cwd, 'inherit')
-  const verified = typechecked && linted
-  if (!verified && requireSuccess) throw new Error(VERIFICATION_FAILED)
-  if (verified) p.log.success('typecheck + selected quality tools clean')
-  else p.log.warn('verify reported issues (see output above)')
+  if (!runCommand(gate.typecheck, cwd, 'inherit')) failed.push('typecheck')
+  if (!runCommand(gate.lint, cwd, 'inherit')) failed.push('lint')
+  if (failed.length && requireSuccess) throw new Error(verificationFailed(failed))
+  if (failed.length) p.log.warn(`${failed.join(' and ')} reported issues (see output above)`)
+  else p.log.success('typecheck + selected quality tools clean')
 }
 
 const isDirEmpty = (directory: string): boolean =>
@@ -85,7 +93,16 @@ const isDirEmpty = (directory: string): boolean =>
 function resolveCreationPlan(request: CreationRequest): CreationPlan {
   const projectDir = resolve(request.cwd, request.target)
   if (!isDirEmpty(projectDir)) throw new Error(`Target directory is not empty: ${projectDir}`)
-  return { ...request, projectDir, module: getFrameworkModule(request.framework) }
+  const module = getFrameworkModule(request.framework)
+  validateAdditions(
+    module,
+    Object.entries(request.capabilities).map(([cap, adapter]) => ({
+      type: 'capability',
+      cap,
+      adapter,
+    })),
+  )
+  return { ...request, projectDir, module }
 }
 
 const orNone = (value: string): string => (value && value !== 'none' ? value : '(none)')
@@ -103,7 +120,7 @@ function creationPlanLines(plan: CreationPlan): string[] {
     plan.selectionReasons[axis] ? `, ${plan.selectionReasons[axis]}` : ''
   return [
     `Target: ${plan.target}`,
-    `Framework: ${FRAMEWORK_SUPPORT[plan.framework].label}`,
+    `Framework: ${frameworkTitle(plan.framework)}`,
     `Monorepo: ${plan.monorepo ? MONOREPO_LABELS[plan.monorepo] : '(none)'}`,
     `Package manager: ${plan.packageManager.name}`,
     `Import alias: ${plan.alias}/`,
@@ -120,7 +137,7 @@ function creationPlanLines(plan: CreationPlan): string[] {
 }
 
 function localDatabaseSummaryLines(plan: CreationPlan): string[] {
-  if (plan.database !== 'drizzle' && plan.database !== 'prisma') return []
+  if (!isSqlDatabase(plan.database)) return []
   const lines = ['  ./start-database.sh  # start local PostgreSQL']
   if (plan.database === 'prisma' || plan.auth === 'better-auth') {
     const { name } = plan.packageManager
@@ -134,7 +151,7 @@ function localDatabaseSummaryLines(plan: CreationPlan): string[] {
 function summaryLines(plan: CreationPlan): string[] {
   const { packageManager } = plan
   const lines = [
-    `Framework: ${FRAMEWORK_SUPPORT[plan.framework].label}`,
+    `Framework: ${frameworkTitle(plan.framework)}`,
     `Monorepo: ${plan.monorepo ? `${MONOREPO_LABELS[plan.monorepo]} (app in apps/web)` : '(none)'}`,
     `Package manager: ${packageManager.name}`,
     `Import alias: ${plan.alias}/`,
@@ -180,7 +197,7 @@ function initGitRepository(projectDir: string): boolean {
   return true
 }
 
-function commitInitialBaseline(projectDir: string): void {
+function commitInitialBaseline(projectDir: string): boolean {
   runGit(['-C', projectDir, 'add', '-A'])
   const message = 'chore: initial commit from create-stack'
   const committed = runGit(
@@ -192,9 +209,10 @@ function commitInitialBaseline(projectDir: string): void {
       ? 'initial commit created'
       : 'set git user.name/email, then commit the generated baseline',
   )
+  return committed
 }
 
-export async function createProject(request: CreationRequest): Promise<void> {
+export async function createProject(request: CreationRequest): Promise<CreationResult> {
   const plan = resolveCreationPlan(request)
 
   p.note(creationPlanLines(plan).join('\n'), 'Creation plan')
@@ -215,25 +233,25 @@ export async function createProject(request: CreationRequest): Promise<void> {
     ...assembly
   } = plan
   const assembled = await module.assemble(assembly)
-  applyQualityProfile(
-    {
-      label: FRAMEWORK_SUPPORT[framework].label,
-      qualityProfileExceptions: module.qualityProfileExceptions,
-    },
-    { projectDir: assembly.projectDir, applicationDir: assembled.applicationDir },
-    { formatter, linter, alias: assembly.alias },
-  )
+  applyQualityProfile(module, {
+    projectDir: assembly.projectDir,
+    applicationDir: assembled.applicationDir,
+    formatter,
+    linter,
+    alias: assembly.alias,
+  })
   spinner.stop('Project scaffolded')
 
   const initializedGit = git && initGitRepository(assembly.projectDir)
 
+  let initialCommit = false
   if (install) {
     runVerificationGate(module.gate(assembly.packageManager), {
       cwd: assembly.projectDir,
       packageManager: assembly.packageManager,
       requireSuccess: true,
     })
-    if (initializedGit) commitInitialBaseline(assembly.projectDir)
+    if (initializedGit) initialCommit = commitInitialBaseline(assembly.projectDir)
   } else {
     p.log.warn('Installation and verification skipped; no automatic commit was created')
   }
@@ -241,4 +259,9 @@ export async function createProject(request: CreationRequest): Promise<void> {
   p.note(summaryLines(plan).join('\n'), 'Done')
   if (assembled.manualSteps.length) p.note(assembled.manualSteps.join('\n'), 'Finish by hand')
   p.outro(`Created ${name}`)
+  return {
+    projectDir: assembly.projectDir,
+    applicationDir: assembled.applicationDir,
+    initialCommit,
+  }
 }

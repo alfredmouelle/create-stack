@@ -1,4 +1,3 @@
-import { FRAMEWORK_SUPPORT } from '../../packages/stack-config/src/index.ts'
 import type {
   AdditionSelection,
   CapabilityAddition,
@@ -15,7 +14,7 @@ function requireCapability(
   const capability = module.additions.capabilities[cap]
   if (!capability?.providers.includes(adapter)) {
     throw new Error(
-      `${FRAMEWORK_SUPPORT[module.id].label} does not support addition ${cap}${adapter ? ` (${adapter})` : ''}`,
+      `${module.label} does not support addition ${cap}${adapter ? ` (${adapter})` : ''}`,
     )
   }
   return capability
@@ -29,7 +28,7 @@ export function validateAdditions(
     if (selection.type === 'capability') {
       requireCapability(module, selection.cap, selection.adapter)
     } else if (module.additions.componentRoot === null) {
-      throw new Error(`${FRAMEWORK_SUPPORT[module.id].label} does not support component additions`)
+      throw new Error(`${module.label} does not support component additions`)
     }
   }
 }

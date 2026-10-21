@@ -104,7 +104,7 @@ test.describe('stack configurator', () => {
     await openPage(page, '/build')
 
     await page.getByLabel('Project name').fill('orbit')
-    await page.getByRole('radio', { name: /Next\.js App Router/ }).check()
+    await page.getByRole('radio', { name: /^Next\.js/ }).check()
     await page.getByRole('radio', { name: /Convex realtime database/ }).check()
     await page.getByRole('radio', { name: /Clerk hosted authentication/ }).check()
     await page.getByRole('radio', { name: 'No tRPC' }).check()
@@ -165,7 +165,7 @@ test.describe('stack configurator', () => {
     })
     await openPage(page, '/build')
     await page.getByLabel('Project name').fill('shared-app')
-    await page.getByRole('radio', { name: /Next\.js App Router/ }).check()
+    await page.getByRole('radio', { name: /^Next\.js/ }).check()
     await page.getByRole('button', { name: 'bun', exact: true }).click()
     await page.getByRole('button', { name: 'Copy share link' }).click()
 
@@ -176,7 +176,7 @@ test.describe('stack configurator', () => {
     await page.reload()
 
     await expect(page.getByLabel('Project name')).toHaveValue('shared-app')
-    await expect(page.getByRole('radio', { name: /Next\.js App Router/ })).toBeChecked()
+    await expect(page.getByRole('radio', { name: /^Next\.js/ })).toBeChecked()
     await expect(page.getByRole('button', { name: 'bun', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -201,7 +201,7 @@ test.describe('stack configurator', () => {
   test('lets keyboard users change a stack choice', async ({ page }) => {
     await openPage(page, '/build')
 
-    const framework = page.getByRole('radio', { name: /Next\.js App Router/ })
+    const framework = page.getByRole('radio', { name: /^Next\.js/ })
     await framework.focus()
     await page.keyboard.press('Space')
 

@@ -1,5 +1,5 @@
 import { readdirSync } from 'node:fs'
-import { editFile, exists, join, read } from '#lib/util.mjs'
+import { editFile, exists, join, read } from '#lib/util.ts'
 import { frameworkAssetExcludes, frameworkModules } from '../framework-registry.ts'
 
 const REWRITE_EXTS = new Set([
@@ -13,12 +13,8 @@ const REWRITE_EXTS = new Set([
   '.cjs',
   '.json',
 ])
-const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  ...frameworkModules.flatMap(frameworkAssetExcludes),
-])
+const skippedDirectories = (): ReadonlySet<string> =>
+  new Set(['node_modules', '.git', 'dist', ...frameworkModules.flatMap(frameworkAssetExcludes)])
 
 const ALIAS_SPECIFIER = /(['"`])~\//g
 
@@ -27,10 +23,10 @@ const ext = (name: string): string => {
   return i < 0 ? '' : name.slice(i)
 }
 
-function* walk(dir: string): Generator<string> {
+function* walk(dir: string, skipped: ReadonlySet<string>): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (!SKIP_DIRS.has(entry.name)) yield* walk(join(dir, entry.name))
+      if (!skipped.has(entry.name)) yield* walk(join(dir, entry.name), skipped)
     } else if (REWRITE_EXTS.has(ext(entry.name))) {
       yield join(dir, entry.name)
     }
@@ -40,7 +36,7 @@ function* walk(dir: string): Generator<string> {
 export function rewriteAlias(dir: string, alias: string): number {
   if (!alias || alias === '~') return 0
   let changed = 0
-  for (const file of walk(dir)) {
+  for (const file of walk(dir, skippedDirectories())) {
     editFile(file, (src: string) => {
       const next = src.replace(ALIAS_SPECIFIER, (_, q) => `${q}${alias}/`)
       if (next === src) return null

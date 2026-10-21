@@ -6,5 +6,4 @@ export default defineConfig({
   dts: false,
   clean: true,
   outDir: '_stack/engine',
-  external: [/^#lib\//],
 })

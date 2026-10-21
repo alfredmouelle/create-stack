@@ -17,6 +17,7 @@ import {
   resolveStackConfiguration,
 } from '../../packages/stack-config/src/index.ts'
 import { frameworkModules } from '../src/framework-registry.ts'
+import { createProject, detectFrameworkModule } from '../src/index.ts'
 import {
   type ApplicationPart,
   assembleReference,
@@ -197,15 +198,24 @@ for (const module of frameworkModules) {
     test.each(combinations)(
       'generates only selected parts: $database, $auth, trpc=$trpc, $mailer',
       async (selection) => {
-        const projectDir = directory()
-        await module.assemble({
-          projectDir,
+        const { projectDir } = await createProject({
+          cwd: directory(),
+          target: 'storefront',
+          name: 'storefront',
+          framework: module.id,
           ...selection,
+          formatter: 'biome',
+          linter: 'biome',
+          selectionReasons: {},
           capabilities: {},
           alias: '~',
           monorepo: false,
           packageManager,
+          install: false,
+          git: false,
         })
+
+        expect(detectFrameworkModule(projectDir)?.id).toBe(module.id)
 
         const generated = new Set(
           reference.parts

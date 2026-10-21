@@ -4,51 +4,63 @@ import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import {
   ADDABLE,
+  AUTHS,
   adapterChoicesFor,
   addableChoices,
   addCapability,
-  currentTargetAdapter,
-  requireFrameworkModule,
-  resolveAdditionKind,
-  resolveTargetAdapter,
-  targetDir,
-} from './lib/add.mjs'
-import { isValidAlias, normalizeAlias, parseArgs, resolveMonorepo } from './lib/args.mjs'
-import { resolveAuth } from './lib/auth.mjs'
-import {
   CAPABILITIES,
+  CLI_VERSION,
+  COMPONENT_CATALOG,
+  COMPONENT_NAMES,
   canonicalCapabilityName,
   capabilityChoices,
+  createProject,
   creationProviderChoices,
-  resolveCreationProvider,
-} from './lib/capabilities.mjs'
-import { resolveDatabase } from './lib/database.mjs'
-import { createProject, runVerificationGate, validateAdditions } from './lib/engine.mjs'
-import {
+  currentTargetAdapter,
+  DATABASES,
   detectPackageManager,
   detectProjectPackageManager,
-  PM_NAMES,
-  resolveExplicitPackageManager,
-  resolvePackageManager,
-} from './lib/package-manager.mjs'
-import {
-  findCompatibleApplications,
-  relativeApplicationPath,
-  resolveApplicationPath,
-} from './lib/project-target.mjs'
-import { COMPONENT_CATALOG, COMPONENT_NAMES } from './lib/registry.mjs'
-import { installRegistryComponents, preflightRegistryComponents } from './lib/shadcn.mjs'
-import {
   FRAMEWORK_SUPPORT,
-  FRAMEWORKS,
+  findCompatibleApplications,
+  frameworkModules,
+  frameworkTitle,
+  installRegistryComponents,
+  isValidAlias,
+  MAILERS,
+  normalizeAlias,
+  PM_NAMES,
+  parseArgs,
+  preflightRegistryComponents,
+  QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,
+  relativeApplicationPath,
+  requireFrameworkModule,
+  resolveAdditionKind,
+  resolveApplicationPath,
+  resolveAuth,
   resolveCreationConfiguration,
-} from './lib/stack-config.mjs'
-import { CLI_VERSION } from './lib/version.mjs'
+  resolveCreationProvider,
+  resolveDatabase,
+  resolveExplicitPackageManager,
+  resolveMonorepo,
+  resolvePackageManager,
+  resolveTargetAdapter,
+  runVerificationGate,
+  targetDir,
+  validateAdditions,
+} from './engine.mjs'
 
 const detectedPm = detectPackageManager()
 
 const VERSION = CLI_VERSION
+
+const FRAMEWORK_IDS = frameworkModules.map(({ id }) => id)
+
+const PREVIEW_FRAMEWORKS = frameworkModules
+  .filter(({ maturity }) => maturity === 'preview')
+  .map(({ id }) => id)
+
+const disjunction = new Intl.ListFormat('en', { type: 'disjunction' })
 
 const HELP = `create-stack: assemble your selected stack from a tested reference application.
 
@@ -62,15 +74,15 @@ Run a command with no args for an interactive picker; pass a selection flag
 See \`add --help\` for its options.
 
 Scaffold flags:
-${`  -f, --framework [${FRAMEWORKS.join('|')}]`.padEnd(34)} Framework (bare/default = ${RECOMMENDED_FRAMEWORK})
+${`  -f, --framework [${FRAMEWORK_IDS.join('|')}]`.padEnd(34)} Framework (bare/default = ${RECOMMENDED_FRAMEWORK}${PREVIEW_FRAMEWORKS.length ? `; preview: ${PREVIEW_FRAMEWORKS.join(', ')}` : ''})
   --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
-  --db, --database [drizzle|prisma|convex|none] ORM the app ships (bare/default = drizzle)
-  --auth <better-auth|clerk|none>  Auth provider (default better-auth)
-  --mail, --mailer [resend|brevo|ses|none] Mail provider (bare/default = resend)
-  --formatter [biome|prettier]     Formatter (bare/default = biome; cannot be excluded)
-  --linter [biome|oxlint]          Linter (bare/default = biome; cannot be excluded)
+  --db, --database [${DATABASES.join('|')}] ORM the app ships (bare/default = framework recommendation)
+  --auth <${AUTHS.join('|')}>  Auth provider (default = framework recommendation)
+  --mail, --mailer [${MAILERS.join('|')}] Mail provider (bare/default = framework recommendation)
+  --formatter [biome|prettier]     Formatter (bare/default = framework recommendation; cannot be excluded)
+  --linter [biome|oxlint]          Linter (bare/default = framework recommendation; cannot be excluded)
   --minimal                        Start with the framework's smallest runnable project
   --trpc / --no-trpc               Include or explicitly exclude tRPC
   --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
@@ -305,9 +317,10 @@ function collectCapabilityFlags(flags) {
 function resolveFrameworkFlag(flags) {
   const value = flags.f ?? flags.framework
   if (value === true || value == null) return RECOMMENDED_FRAMEWORK
-  if (FRAMEWORKS.includes(value)) return value
-  const expected = new Intl.ListFormat('en', { type: 'disjunction' }).format(FRAMEWORKS)
-  throw new Error(`Invalid framework: ${JSON.stringify(value)} (expected ${expected})`)
+  if (FRAMEWORK_IDS.includes(value)) return value
+  throw new Error(
+    `Invalid framework: ${JSON.stringify(value)} (expected ${disjunction.format(FRAMEWORK_IDS)})`,
+  )
 }
 
 function resolvePackageManagerFlag(flags) {
@@ -319,9 +332,16 @@ function resolvePackageManagerFlag(flags) {
   )
 }
 
-function resolveDatabaseFlag(flags) {
+function recommendedChoice(framework, axis) {
+  const { label, recommendations } = FRAMEWORK_SUPPORT[framework]
+  const value = recommendations[axis].find((candidate) => candidate !== 'none')
+  if (!value) throw new Error(`${label} has no recommended ${axis}; pass a value`)
+  return value
+}
+
+function resolveDatabaseFlag(flags, framework) {
   const value = flags.db ?? flags.database
-  return resolveDatabase(value === true ? undefined : value)
+  return value === true ? recommendedChoice(framework, 'database') : resolveDatabase(value)
 }
 
 function resolveAuthFlag(flags) {
@@ -361,9 +381,9 @@ function collectFromFlags(args) {
 
 const has = (flags, name) => Object.hasOwn(flags, name)
 
-function explicitDatabaseChoice(flags) {
+function explicitDatabaseChoice(flags, framework) {
   if (has(flags, 'no-db')) return 'none'
-  if (has(flags, 'db') || has(flags, 'database')) return resolveDatabaseFlag(flags)
+  if (has(flags, 'db') || has(flags, 'database')) return resolveDatabaseFlag(flags, framework)
 }
 
 function explicitAuthChoice(flags) {
@@ -371,9 +391,10 @@ function explicitAuthChoice(flags) {
   if (has(flags, 'auth')) return resolveAuthFlag(flags)
 }
 
-function explicitMailerChoice(flags) {
+function explicitMailerChoice(flags, framework) {
   if (has(flags, 'no-mail')) return 'none'
-  if (has(flags, 'mail') || has(flags, 'mailer')) return resolveMailer(flags.mail ?? flags.mailer)
+  if (has(flags, 'mail') || has(flags, 'mailer'))
+    return resolveMailer(flags.mail ?? flags.mailer, framework)
 }
 
 function explicitTrpcChoice(flags) {
@@ -384,12 +405,13 @@ function explicitTrpcChoice(flags) {
 function explicitCreationChoices(flags) {
   const framework =
     has(flags, 'f') || has(flags, 'framework') ? resolveFrameworkFlag(flags) : undefined
-  const { recommendations } = FRAMEWORK_SUPPORT[framework ?? RECOMMENDED_FRAMEWORK]
+  const selected = framework ?? RECOMMENDED_FRAMEWORK
+  const { recommendations } = FRAMEWORK_SUPPORT[selected]
   return {
     framework,
-    database: explicitDatabaseChoice(flags),
+    database: explicitDatabaseChoice(flags, selected),
     auth: explicitAuthChoice(flags),
-    mailer: explicitMailerChoice(flags),
+    mailer: explicitMailerChoice(flags, selected),
     trpc: explicitTrpcChoice(flags),
     formatter: flags.formatter === true ? recommendations.formatter : flags.formatter,
     linter: flags.linter === true ? recommendations.linter : flags.linter,
@@ -403,13 +425,31 @@ function creationConfigurationInput(flags) {
   }
 }
 
-function resolveMailer(value) {
-  if (value === true || value == null || value === '') return 'resend'
-  if (value === 'none' || ['resend', 'brevo', 'ses'].includes(value)) return value
+function resolveMailer(value, framework) {
+  if (value === true || value == null || value === '') return recommendedChoice(framework, 'mailer')
+  if (MAILERS.includes(value)) return value
   throw new Error(
-    `Invalid mail provider: ${JSON.stringify(value)} (expected resend, brevo, ses, or none)`,
+    `Invalid mail provider: ${JSON.stringify(value)} (expected ${disjunction.format(MAILERS)})`,
   )
 }
+
+const DATABASE_CHOICES = {
+  drizzle: { label: 'Drizzle ORM', hint: 'Postgres + seed' },
+  prisma: { label: 'Prisma ORM', hint: 'Prisma 7 + Postgres' },
+  convex: { label: 'Convex', hint: 'realtime db + API (replaces tRPC)' },
+  none: { label: 'None', hint: 'no database' },
+}
+
+const AUTH_CHOICES = {
+  'better-auth': { label: 'better-auth', hint: 'email+password, needs a mailer' },
+  clerk: { label: 'Clerk', hint: 'hosted, no db/mailer needed' },
+  none: { label: 'None', hint: 'no auth' },
+}
+
+const MAILER_LABELS = { resend: 'Resend', brevo: 'Brevo', ses: 'Amazon SES', none: 'None' }
+
+const recommendedHint = (hint, recommended) =>
+  recommended ? (hint ? `${hint}, recommended` : 'recommended') : hint
 
 async function pickAdapters(caps) {
   const out = {}
@@ -445,9 +485,10 @@ async function collectFromPrompts(argDir) {
     await p.select({
       message: 'Framework',
       initialValue: RECOMMENDED_FRAMEWORK,
-      options: FRAMEWORKS.map((id) => ({ value: id, label: FRAMEWORK_SUPPORT[id].label })),
+      options: FRAMEWORK_IDS.map((id) => ({ value: id, label: frameworkTitle(id) })),
     }),
   )
+  const { supports, recommendations } = FRAMEWORK_SUPPORT[framework]
 
   const monorepoPick = cancelled(
     await p.select({
@@ -503,65 +544,64 @@ async function collectFromPrompts(argDir) {
     ),
   )
 
+  const recommendedDatabase = recommendations.database[0] ?? 'none'
   const database = cancelled(
     await p.select({
       message: 'Database',
-      initialValue: 'drizzle',
-      options: [
-        { value: 'drizzle', label: 'Drizzle ORM', hint: 'Postgres + seed (default)' },
-        { value: 'prisma', label: 'Prisma ORM', hint: 'Prisma 7 + Postgres' },
-        { value: 'convex', label: 'Convex', hint: 'realtime db + API (replaces tRPC)' },
-        { value: 'none', label: 'None', hint: 'no database' },
-      ],
+      initialValue: recommendedDatabase,
+      options: supports.database.map((value) => ({
+        value,
+        label: DATABASE_CHOICES[value].label,
+        hint: recommendedHint(DATABASE_CHOICES[value].hint, value === recommendedDatabase),
+      })),
     }),
   )
 
   const convex = database === 'convex'
 
-  const betterAuthOpt = {
-    value: 'better-auth',
-    label: 'better-auth',
-    hint: 'email+password, needs a mailer',
-  }
-  const authOptions = [
-    ...(database === 'none' || convex ? [] : [betterAuthOpt]),
-    { value: 'clerk', label: 'Clerk', hint: 'hosted, no db/mailer needed' },
-    { value: 'none', label: 'None', hint: 'no auth' },
-  ]
+  const authValues = supports.auth.filter(
+    (value) => value !== 'better-auth' || (database !== 'none' && !convex),
+  )
+  const recommendedAuth = recommendations.auth.find((value) => authValues.includes(value)) ?? 'none'
   const auth = cancelled(
     await p.select({
       message: 'Auth',
-      initialValue: database === 'none' || convex ? 'clerk' : 'better-auth',
-      options: authOptions,
+      initialValue: recommendedAuth,
+      options: authValues.map((value) => ({
+        value,
+        label: AUTH_CHOICES[value].label,
+        hint: recommendedHint(AUTH_CHOICES[value].hint, value === recommendedAuth),
+      })),
     }),
   )
 
-  const wantsTrpc = convex
-    ? false
-    : cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: true }))
+  const trpcValues = supports.trpc.filter((value) => !(convex && value))
+  const wantsTrpc =
+    trpcValues.length > 1
+      ? cancelled(await p.confirm({ message: 'Include tRPC?', initialValue: recommendations.trpc }))
+      : (trpcValues[0] ?? false)
   const mailerForced = auth === 'better-auth'
-  const mailerOpts = [
-    { value: 'resend', label: 'Resend' },
-    { value: 'brevo', label: 'Brevo' },
-    { value: 'ses', label: 'Amazon SES' },
-  ]
-  if (!mailerForced) mailerOpts.push({ value: 'none', label: 'None' })
+  const mailerValues = supports.mailer.filter((value) => !(mailerForced && value === 'none'))
+  const recommendedMailer = mailerForced
+    ? (recommendations.mailer.find((value) => mailerValues.includes(value)) ?? mailerValues[0])
+    : mailerValues.includes('none')
+      ? 'none'
+      : mailerValues[0]
   const mailer = cancelled(
     await p.select({
       message: mailerForced ? 'Mailer provider (required by better-auth)' : 'Mailer provider',
-      options: mailerOpts,
-      initialValue: mailerForced ? 'resend' : 'none',
+      options: mailerValues.map((value) => ({ value, label: MAILER_LABELS[value] })),
+      initialValue: recommendedMailer,
     }),
   )
 
-  const { supports, recommendations } = FRAMEWORK_SUPPORT[framework]
   const formatter = cancelled(
     await p.select({
       message: 'Formatter',
       initialValue: recommendations.formatter,
       options: supports.formatter.map((value) => ({
         value,
-        label: value === 'biome' ? 'Biome' : 'Prettier',
+        label: QUALITY_TOOL_LABELS[value],
         hint: value === recommendations.formatter ? 'recommended' : undefined,
       })),
     }),
@@ -572,7 +612,7 @@ async function collectFromPrompts(argDir) {
       initialValue: recommendations.linter,
       options: supports.linter.map((value) => ({
         value,
-        label: value === 'biome' ? 'Biome' : 'Oxlint',
+        label: QUALITY_TOOL_LABELS[value],
         hint: value === recommendations.linter ? 'recommended' : undefined,
       })),
     }),

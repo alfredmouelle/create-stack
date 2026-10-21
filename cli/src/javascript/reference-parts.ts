@@ -1,14 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PRISMA_VERSION } from '#lib/database.mjs'
-import { renderEnvironment } from '#lib/env.mjs'
-import { STACK_ROOT, TEMPLATES } from '#lib/paths.mjs'
+import { isSqlDatabase as isSqlDatabaseName, PRISMA_VERSION } from '#lib/database.ts'
+import { renderEnvironment } from '#lib/env.ts'
+import { STACK_ROOT, TEMPLATES } from '#lib/paths.ts'
 import type {
   ApplicationPart,
   PartFile,
   StackSelection,
   StringMap,
 } from '../reference-application.ts'
+import { MAILER_PROVIDERS, renderMailerIndex } from './mailer.ts'
 
 type ManifestField = 'dependencies' | 'devDependencies' | 'scripts'
 type Manifest = Readonly<Record<ManifestField, StringMap>>
@@ -65,7 +66,7 @@ export function javascriptReference(root: string): JavaScriptReference {
 }
 
 export const isSqlDatabase = (selection: StackSelection): boolean =>
-  selection.database === 'drizzle' || selection.database === 'prisma'
+  isSqlDatabaseName(selection.database)
 
 export const readTemplate = (path: string): string => readFileSync(join(TEMPLATES, path), 'utf8')
 
@@ -233,17 +234,6 @@ export const prismaAuthSchema: PartFile = {
       : null,
 }
 
-function renderMailer(selection: StackSelection): string {
-  const adapter = `${selection.mailer}Adapter`
-  return fillTemplate('javascript/mailer.txt', {
-    ADAPTER_IMPORT: `import { ${adapter} } from './adapters/${selection.mailer}'`,
-    ADAPTER:
-      selection.mailer === 'ses'
-        ? `${adapter}()`
-        : `${adapter}({ apiKey: env.${selection.mailer === 'resend' ? 'RESEND' : 'BREVO'}_API_KEY })`,
-  })
-}
-
 export function mailerParts(reference: JavaScriptReference): readonly ApplicationPart[] {
   const mailerPackage = readManifest(join(STACK_ROOT, 'packages/mailer/package.json'))
   return [
@@ -266,28 +256,27 @@ export function mailerParts(reference: JavaScriptReference): readonly Applicatio
           'src/server/email/factory.ts',
           'src/server/email/port.ts',
         ]),
-        rendered('src/server/email/index.ts', renderMailer),
+        rendered('src/server/email/index.ts', (selection) =>
+          selection.mailer === 'none' ? null : renderMailerIndex(selection.mailer),
+        ),
       ],
     },
     {
       id: 'mailer:resend',
       selected: (selection) => selection.mailer === 'resend',
-      dependencies: reference.pick('dependencies', ['resend']),
-      envKeys: ['RESEND_API_KEY'],
-      requiredEnvKeys: ['RESEND_API_KEY'],
+      dependencies: reference.pick('dependencies', [MAILER_PROVIDERS.resend.dependency]),
+      envKeys: MAILER_PROVIDERS.resend.envKeys,
+      requiredEnvKeys: MAILER_PROVIDERS.resend.requiredEnvKeys,
       files: reference.files(['src/server/email/adapters/resend.ts']),
     },
     ...(['brevo', 'ses'] as const).map((provider): ApplicationPart => {
-      const name = provider === 'brevo' ? '@getbrevo/brevo' : '@aws-sdk/client-sesv2'
+      const { dependency, envKeys, requiredEnvKeys } = MAILER_PROVIDERS[provider]
       return {
         id: `mailer:${provider}`,
         selected: (selection) => selection.mailer === provider,
-        dependencies: pick(mailerPackage.dependencies, [name]),
-        envKeys:
-          provider === 'brevo'
-            ? ['BREVO_API_KEY']
-            : ['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
-        requiredEnvKeys: provider === 'brevo' ? ['BREVO_API_KEY'] : [],
+        dependencies: pick(mailerPackage.dependencies, [dependency]),
+        envKeys,
+        requiredEnvKeys,
         files: [
           {
             path: `src/server/email/adapters/${provider}.ts`,

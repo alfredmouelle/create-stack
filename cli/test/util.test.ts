@@ -1,0 +1,67 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, describe, expect, test } from 'vitest'
+import { packageName } from '../src/lib/identity.ts'
+import { isDirEmpty, pkgAddDeps, pkgRemoveDeps } from '../src/lib/util.ts'
+
+const tmps: string[] = []
+const mkTmp = (): string => {
+  const d = mkdtempSync(join(tmpdir(), 'cs-util-'))
+  tmps.push(d)
+  return d
+}
+afterAll(() => {
+  for (const d of tmps) rmSync(d, { recursive: true, force: true })
+})
+
+describe('package.json helpers', () => {
+  test('pkgAddDeps adds into dependencies', () => {
+    const pkg: Record<string, unknown> = {}
+    pkgAddDeps(pkg, { resend: '4.0.0' })
+    expect(pkg.dependencies).toEqual({ resend: '4.0.0' })
+  })
+  test('pkgRemoveDeps strips from both dep fields', () => {
+    const pkg = { dependencies: { a: '1', b: '2' }, devDependencies: { a: '1', c: '3' } }
+    pkgRemoveDeps(pkg, ['a'])
+    expect(pkg.dependencies).toEqual({ b: '2' })
+    expect(pkg.devDependencies).toEqual({ c: '3' })
+  })
+})
+
+describe('packageName', () => {
+  test('a plain name is kept as is', () => {
+    expect(packageName('my-app')).toBe('my-app')
+  })
+  test('a path names the package after its last segment', () => {
+    expect(packageName('./apps/api')).toBe('api')
+    expect(packageName('/tmp/cs-r2-check/')).toBe('cs-r2-check')
+  })
+  test('npm-hostile characters are normalized away', () => {
+    expect(packageName('My App')).toBe('my-app')
+    expect(packageName('_hidden.')).toBe('hidden.')
+  })
+  test('falls back when nothing usable is left', () => {
+    expect(packageName('___')).toBe('app')
+  })
+})
+
+describe('isDirEmpty', () => {
+  test('absent dir is empty', () => {
+    expect(isDirEmpty(join(mkTmp(), 'nope'))).toBe(true)
+  })
+  test('protects targets containing OS or repository metadata', () => {
+    const d = mkTmp()
+    writeFileSync(join(d, '.DS_Store'), '')
+    expect(isDirEmpty(d)).toBe(false)
+
+    const repository = mkTmp()
+    mkdirSync(join(repository, '.git'))
+    expect(isDirEmpty(repository)).toBe(false)
+  })
+  test('real file makes it non-empty', () => {
+    const d = mkTmp()
+    writeFileSync(join(d, 'x.txt'), 'hi')
+    expect(isDirEmpty(d)).toBe(false)
+  })
+})

@@ -1,6 +1,6 @@
 import { type CreateEmailOptions, Resend } from 'resend'
 import { formatAddress } from '../address'
-import { type MailerAdapter, MailerError, type RenderedMessage } from '../port'
+import { type MailAttachment, type MailerAdapter, MailerError, type RenderedMessage } from '../port'
 
 export interface ResendClient {
   readonly emails: {
@@ -16,8 +16,37 @@ export interface ResendAdapterOptions {
   readonly client?: ResendClient | undefined
 }
 
-function toAttachmentContent(content: Uint8Array | string): Buffer | string {
-  return typeof content === 'string' ? content : Buffer.from(content)
+function toResendAttachment(attachment: MailAttachment) {
+  return {
+    filename: attachment.filename,
+    content:
+      typeof attachment.content === 'string' ? attachment.content : Buffer.from(attachment.content),
+    ...(attachment.contentType === undefined ? {} : { contentType: attachment.contentType }),
+  }
+}
+
+function recipientFields(message: RenderedMessage) {
+  return {
+    ...(message.replyTo === undefined ? {} : { replyTo: formatAddress(message.replyTo) }),
+    ...(message.cc === undefined
+      ? {}
+      : { cc: message.cc.map((address) => formatAddress(address)) }),
+    ...(message.bcc === undefined
+      ? {}
+      : { bcc: message.bcc.map((address) => formatAddress(address)) }),
+  }
+}
+
+function metadataFields(message: RenderedMessage) {
+  return {
+    ...(message.headers === undefined ? {} : { headers: { ...message.headers } }),
+    ...(message.tags === undefined
+      ? {}
+      : { tags: Object.entries(message.tags).map(([name, value]) => ({ name, value })) }),
+    ...(message.attachments === undefined
+      ? {}
+      : { attachments: message.attachments.map(toResendAttachment) }),
+  }
 }
 
 export function resendAdapter(options: ResendAdapterOptions): MailerAdapter {
@@ -33,28 +62,8 @@ export function resendAdapter(options: ResendAdapterOptions): MailerAdapter {
         subject: message.subject,
         html: message.html,
         text: message.text,
-        ...(message.replyTo === undefined ? {} : { replyTo: formatAddress(message.replyTo) }),
-        ...(message.cc === undefined
-          ? {}
-          : { cc: message.cc.map((address) => formatAddress(address)) }),
-        ...(message.bcc === undefined
-          ? {}
-          : { bcc: message.bcc.map((address) => formatAddress(address)) }),
-        ...(message.headers === undefined ? {} : { headers: { ...message.headers } }),
-        ...(message.tags === undefined
-          ? {}
-          : { tags: Object.entries(message.tags).map(([name, value]) => ({ name, value })) }),
-        ...(message.attachments === undefined
-          ? {}
-          : {
-              attachments: message.attachments.map((attachment) => ({
-                filename: attachment.filename,
-                content: toAttachmentContent(attachment.content),
-                ...(attachment.contentType === undefined
-                  ? {}
-                  : { contentType: attachment.contentType }),
-              })),
-            }),
+        ...recipientFields(message),
+        ...metadataFields(message),
       })
 
       if (error) throw new MailerError(error.message, { adapter: 'resend', cause: error })

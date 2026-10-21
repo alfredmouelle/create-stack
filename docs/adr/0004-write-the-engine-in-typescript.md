@@ -4,7 +4,7 @@ status: accepted
 
 # Write the engine and framework modules in TypeScript
 
-The framework module contract is the interface future integrators implement, so it is written in TypeScript together with the engine and the framework modules. Node runs that source directly in the repository and tests, but it refuses to strip types under `node_modules`, so the published CLI ships JavaScript compiled at pack time, following the existing bundled-or-source loading of `stack-config`. Remaining `.mjs` modules migrate when they are touched rather than in one conversion.
+The framework module contract is the interface future integrators implement, so it is written in TypeScript together with the engine and the framework modules. Node runs that source directly in the repository and tests, but it refuses to strip types under `node_modules`, so the published CLI ships JavaScript compiled at pack time, following the existing bundled-or-source loading of `stack-config`. The supporting modules under `cli/src/lib/` are TypeScript too and compile into the same bundle; only the command line entry (`cli/index.mjs`) and the loader that picks the bundle or the source (`cli/engine.mjs`) stay JavaScript.
 
 ## Considered Options
 

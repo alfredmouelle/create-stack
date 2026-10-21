@@ -21,3 +21,10 @@ export function getFrameworkModule(id: string): FrameworkModule {
 
 export const detectFrameworkModule = (applicationDir: string): FrameworkModule | undefined =>
   frameworkModules.find((module) => module.detect(applicationDir))
+
+export function requireFrameworkModule(applicationDir: string): FrameworkModule {
+  const module = detectFrameworkModule(applicationDir)
+  if (module) return module
+  const frameworks = frameworkModules.map(({ label }) => label).join(', ')
+  throw new Error(`Could not detect a registered framework (${frameworks}) in ${applicationDir}`)
+}

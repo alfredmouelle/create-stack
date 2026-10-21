@@ -56,13 +56,14 @@ function frameworkReferences(files: readonly string[]): string[] {
 test('shared CLI code keeps framework identifiers inside framework modules and registries', () => {
   const files = [
     join(cliRoot, 'index.mjs'),
-    ...['src', 'lib', 'scripts'].flatMap((directory) => sharedFiles(join(cliRoot, directory))),
+    join(cliRoot, 'engine.mjs'),
+    ...['src', 'scripts'].flatMap((directory) => sharedFiles(join(cliRoot, directory))),
   ].filter((file) => {
     const path = relative(cliRoot, file)
     return (
       !path.startsWith('src/frameworks/') &&
       path !== 'src/framework-registry.ts' &&
-      path !== 'lib/registry.mjs'
+      path !== 'src/lib/registry.ts'
     )
   })
   expect(frameworkReferences(files)).toEqual([])
@@ -73,9 +74,9 @@ test.each(frameworkModules)(
   ({ id }) => {
     const root = mkdtempSync(join(tmpdir(), 'create-stack-boundaries-'))
     try {
-      const directory = join(root, 'lib')
-      mkdirSync(directory)
-      const path = join(directory, 'scaffold.mjs')
+      const directory = join(root, 'src/lib')
+      mkdirSync(directory, { recursive: true })
+      const path = join(directory, 'scaffold.ts')
       for (const value of [
         id,
         `.${id}`,

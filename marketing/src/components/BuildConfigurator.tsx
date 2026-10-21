@@ -2,8 +2,8 @@ import {
   FORMATTERS,
   FRAMEWORK_SUPPORT,
   FRAMEWORKS,
-  type Framework,
   LINTERS,
+  QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,
 } from '@alfredmouelle/stack-config'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -90,14 +90,10 @@ function ChoiceGroup<Value extends string | boolean>({
   )
 }
 
-const frameworkHints: Partial<Record<Framework, string>> = {
-  [RECOMMENDED_FRAMEWORK]: 'recommended',
-  next: 'App Router',
-}
-
 const frameworkOptions = FRAMEWORKS.map((framework) => {
-  const { label } = FRAMEWORK_SUPPORT[framework]
-  const hint = frameworkHints[framework]
+  const { label, maturity } = FRAMEWORK_SUPPORT[framework]
+  const hint =
+    framework === RECOMMENDED_FRAMEWORK ? 'recommended' : maturity === 'preview' ? 'preview' : null
   return hint ? { value: framework, label, hint } : { value: framework, label }
 })
 
@@ -126,15 +122,9 @@ const trpcOptions = [
   { value: false, label: 'No tRPC' },
 ] as const
 
-const formatterOptions = FORMATTERS.map((value) => ({
-  value,
-  label: value === 'biome' ? 'Biome' : 'Prettier',
-}))
+const formatterOptions = FORMATTERS.map((value) => ({ value, label: QUALITY_TOOL_LABELS[value] }))
 
-const linterOptions = LINTERS.map((value) => ({
-  value,
-  label: value === 'biome' ? 'Biome' : 'Oxlint',
-}))
+const linterOptions = LINTERS.map((value) => ({ value, label: QUALITY_TOOL_LABELS[value] }))
 
 function reasonFor(result: BuildStateResult, axis: string) {
   const reason = result.reasons.find((candidate) => candidate.axis === axis)
@@ -504,7 +494,7 @@ function AdditionalPanel({ state, updateState }: { state: BuildState; updateStat
       <summary>
         <span>
           <span className="build-panel-index">03 / additional options</span>
-          <strong>Extend the project</strong>
+          <strong className="build-additional-title">Extend the project</strong>
         </span>
         <span aria-hidden="true" className="build-summary-arrow">
           ↘

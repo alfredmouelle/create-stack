@@ -2,13 +2,15 @@ import { execFileSync } from 'node:child_process'
 import { cpSync, mkdirSync, rmSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { generateRegistry } from '../lib/registry.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(process.env.CREATE_STACK_BUNDLE_ROOT || resolve(here, '..', '..'))
 const OUT = resolve(process.env.CREATE_STACK_BUNDLE_OUT || resolve(here, '..', '_stack'))
 const { frameworkAssetExcludes, frameworkModules }: typeof import('../src/framework-registry.ts') =
   await import(pathToFileURL(join(ROOT, 'cli/src/framework-registry.ts')).href)
+const { generateRegistry }: typeof import('../src/lib/registry.ts') = await import(
+  pathToFileURL(join(ROOT, 'cli/src/lib/registry.ts')).href
+)
 
 const APP_EXCLUDES = new Set([
   'node_modules',
@@ -30,14 +32,6 @@ const copyApp = (from: string, to: string): void =>
 
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })
-
-execFileSync('pnpm', ['--filter', '@alfredmouelle/stack-config', 'build'], {
-  cwd: ROOT,
-  stdio: 'inherit',
-})
-cpSync(join(ROOT, 'packages/stack-config/dist/index.mjs'), join(OUT, 'stack-config/index.mjs'), {
-  recursive: true,
-})
 
 execFileSync(
   'pnpm',

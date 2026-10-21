@@ -57,7 +57,7 @@ test('a failed format stops the required gate before typechecking', () => {
   const { gate, cwd, steps } = recordingGate('format')
 
   expect(() => runVerificationGate(gate, { cwd, packageManager, requireSuccess: true })).toThrow(
-    'Verification failed; the initial commit was skipped',
+    'Verification failed at format; the initial commit was skipped',
   )
   expect(steps()).toEqual(['install', 'format'])
 })
@@ -66,7 +66,7 @@ test.each<Step>(['typecheck', 'lint'])('a failed %s fails the required gate', (f
   const { gate, cwd, steps } = recordingGate(failing)
 
   expect(() => runVerificationGate(gate, { cwd, packageManager, requireSuccess: true })).toThrow(
-    'Verification failed; the initial commit was skipped',
+    `Verification failed at ${failing}; the initial commit was skipped`,
   )
   expect(steps()).toEqual(['install', 'format', 'typecheck', 'lint'])
 })

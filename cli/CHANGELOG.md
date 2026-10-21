@@ -23,6 +23,8 @@ refactors, and documentation-only changes wait for the next release that adds pr
   is always type-aware, with its strict rule categories as errors.
 - A choice the selected framework does not support is reported as a choice conflict
   before any file is written, and recommendations come from the selected framework.
+  Interactive prompts offer only the selected framework's supported values, and bare
+  `--db` and `--mail` select its recommendation.
 
 ### Changed
 
@@ -37,6 +39,9 @@ refactors, and documentation-only changes wait for the next release that adds pr
   `noImplicitOverride`, `noUnusedLocals`, `noUnusedParameters`,
   `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules`, and
   `noUncheckedSideEffectImports`. Generated code and capabilities pass them without casts.
+- A failed verification names the failing step (format, typecheck, or lint), and the
+  format step's output is shown.
+- `add mail` writes the same mailer module that project creation generates.
 - Monorepo projects receive their VS Code and Zed settings at the workspace root, next
   to the Biome configuration and Git hooks.
 - `add component date-picker` passes the calendar's optional `locale` only when it is

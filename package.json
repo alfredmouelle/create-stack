@@ -38,7 +38,7 @@
     "test:watch": "turbo run test:watch",
     "typecheck": "turbo run typecheck",
     "create-stack": "node cli/index.mjs",
-    "check": "biome check .",
+    "check": "biome check --error-on-warnings .",
     "check:write": "biome check --write .",
     "format": "biome format --write .",
     "link:skills": "./scripts/link-skills.sh --claude",

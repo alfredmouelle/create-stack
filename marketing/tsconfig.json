@@ -4,7 +4,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "noEmit": true,
-    "types": ["astro/client"]
+    "types": ["astro/client", "node"]
   },
   "include": [".astro/types.d.ts", "**/*"]
 }
