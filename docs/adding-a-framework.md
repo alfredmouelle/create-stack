@@ -54,7 +54,7 @@ reports a missing or mistyped field as you write it. `cli/src/frameworks/next.ts
 | `assemble(request)` | Write the project for a resolved configuration into `request.projectDir` and return the application directory and any manual steps. The contract does not mandate a strategy; the existing modules use `assembleProject` from `cli/src/javascript/project-assembly.ts`. |
 | `additions` | `componentRoot` (the file where callable components mount, or `null` when components are unsupported) and one `CapabilityAddition` per supported capability, listing its providers. `add` rejects anything absent here before it changes a file. JavaScript frameworks build this with `javascriptAdditions`. |
 | `gate(packageManager)` | The install, format, typecheck, and lint commands of the [verification gate](#verification-gate). |
-| `monorepoOutputs` | Build outputs and caches for Turborepo and Nx, for example `['.next/**', '!.next/cache/**']`. |
+| `monorepoOutputs` | Build outputs and caches for Turborepo and Nx, read from your `FRAMEWORK_SUPPORT` entry rather than repeated. |
 | `packagedAssets` | Repository paths copied into the published CLI, normally `['apps/<id>-base']`. |
 | `assetExcludes` | Generated file names left out of the package, such as `next-env.d.ts`. |
 | `qualityProfileExceptions` | Declared [quality profile exceptions](#quality-profile-exceptions), normally `[]`. |
@@ -68,6 +68,8 @@ reports a missing or mistyped field as you write it. `cli/src/frameworks/next.ts
 - `label`: the name shown in help, prompts, the plan, and the configurator.
 - `maturity`: `stable`, or `preview` while the framework depends on prerelease upstream
   packages.
+- `monorepoOutputs`: build outputs and caches for Turborepo and Nx, for example
+  `['.next/**', '!.next/cache/**']`. The website shows the same list.
 - `supports`: the values your framework implements for each stack axis (`database`,
   `auth`, `trpc`, `mailer`, `formatter`, `linter`).
 - `recommendations`: the values applied to axes the user leaves unchosen. They must be

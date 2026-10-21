@@ -1,11 +1,11 @@
 import { dirname, join, resolve } from 'node:path'
+import {
+  PACKAGE_MANAGERS,
+  type PackageManagerName,
+} from '../../../packages/stack-config/src/index.ts'
 import type { PackageManager } from '../framework-module.ts'
 import { isJsonObject, type JsonObject } from '../javascript/json.ts'
 import { exists, readJSON } from './util.ts'
-
-export const PM_NAMES = ['pnpm', 'npm', 'yarn', 'bun'] as const
-
-export type PackageManagerName = (typeof PM_NAMES)[number]
 
 export type EffectivePackageManager = {
   readonly name: PackageManagerName
@@ -15,9 +15,9 @@ export type EffectivePackageManager = {
 }
 
 export const isPackageManagerName = (value: unknown): value is PackageManagerName =>
-  PM_NAMES.some((name) => name === value)
+  PACKAGE_MANAGERS.some((name) => name === value)
 
-const PACKAGE_MANAGERS: Record<PackageManagerName, PackageManager> = {
+const PACKAGE_MANAGER_COMMANDS: Record<PackageManagerName, PackageManager> = {
   pnpm: {
     name: 'pnpm',
     exec: 'pnpm',
@@ -56,13 +56,15 @@ export const PM_VERSIONS: Record<PackageManagerName, string> = {
 }
 
 export const resolvePackageManager = (name: string | undefined): PackageManager =>
-  isPackageManagerName(name) ? PACKAGE_MANAGERS[name] : PACKAGE_MANAGERS.npm
+  isPackageManagerName(name) ? PACKAGE_MANAGER_COMMANDS[name] : PACKAGE_MANAGER_COMMANDS.npm
 
 export function resolveExplicitPackageManager(name: unknown): PackageManager {
   if (!isPackageManagerName(name)) {
-    throw new Error(`Invalid package manager: ${String(name)} (expected ${PM_NAMES.join(', ')})`)
+    throw new Error(
+      `Invalid package manager: ${String(name)} (expected ${PACKAGE_MANAGERS.join(', ')})`,
+    )
   }
-  return PACKAGE_MANAGERS[name]
+  return PACKAGE_MANAGER_COMMANDS[name]
 }
 
 export function detectPackageManager(): PackageManager {
@@ -137,7 +139,7 @@ export function detectProjectPackageManager(
   projectRoot: string,
   fallback: PackageManager = detectPackageManager(),
 ): PackageManager {
-  const matches = PM_NAMES.filter((name) =>
+  const matches = PACKAGE_MANAGERS.filter((name) =>
     LOCKFILES[name].some((lockfile) => exists(`${projectRoot}/${lockfile}`)),
   )
   if (matches.length > 1) {

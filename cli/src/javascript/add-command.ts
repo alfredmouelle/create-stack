@@ -5,10 +5,11 @@ import {
   capabilityChoices,
   capabilityDir,
   currentAdapter,
-  resolveAdapter,
+  resolveCreationProvider,
 } from '#lib/capabilities.ts'
 import { appendEnv } from '#lib/env.ts'
 import { pkgAddDeps, pkgRemoveDeps } from '#lib/util.ts'
+import { CAPABILITY_CATALOG } from '../../../packages/stack-config/src/index.ts'
 import { wireCapabilityAddition } from '../additions.ts'
 import { requireFrameworkModule } from '../framework-registry.ts'
 import { detectAlias, rewriteAlias } from './import-alias.ts'
@@ -22,11 +23,11 @@ type AdapterChoices = {
   readonly options: readonly { readonly value: string; readonly label: string }[]
 }
 
-const UNIQUE_PROVIDERS: Readonly<Record<string, string>> = {
-  jobs: 'inngest',
-  'error-tracking': 'sentry',
-}
-const RECOMMENDED_PROVIDERS: Readonly<Record<string, string>> = { storage: 'r2', cache: 'upstash' }
+const UNIQUE_PROVIDERS: Readonly<Record<string, string>> = Object.fromEntries(
+  CAPABILITY_CATALOG.filter(({ kind }) => kind === 'module').map(
+    ({ name, recommendedProvider }) => [name, recommendedProvider],
+  ),
+)
 
 const CANONICAL_NAMES: Readonly<Record<string, string>> = {
   mailer: 'mail',
@@ -103,8 +104,7 @@ export function resolveTargetAdapter(requested: string, value: RequestedProvider
   const cap = internalName(requested)
   const uniqueProvider = UNIQUE_PROVIDERS[cap]
   if (uniqueProvider) return resolveUniqueProvider(cap, value, uniqueProvider)
-  if (CAPABILITIES.includes(cap))
-    return resolveAdapter(cap, isUnset(value) ? RECOMMENDED_PROVIDERS[cap] : value)
+  if (CAPABILITIES.includes(cap)) return resolveCreationProvider(cap, value)
   if (cap === 'mailer') return resolveMailProvider(value)
   if (NO_ADAPTER.has(cap) && !isUnset(value)) throw new Error(`${cap} has no provider to choose`)
   return null

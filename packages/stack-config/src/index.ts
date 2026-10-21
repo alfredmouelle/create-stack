@@ -1,3 +1,11 @@
+import cliPackage from '../../../cli/package.json' with { type: 'json' }
+import analyticsManifest from '../../analytics/capability.json' with { type: 'json' }
+import cacheManifest from '../../cache/capability.json' with { type: 'json' }
+import errorTrackingManifest from '../../error-tracking/capability.json' with { type: 'json' }
+import jobsManifest from '../../jobs/capability.json' with { type: 'json' }
+import loggerManifest from '../../logger/capability.json' with { type: 'json' }
+import storageManifest from '../../storage/capability.json' with { type: 'json' }
+
 export const FRAMEWORKS = ['tanstack', 'next', 'rasengan'] as const
 export type Framework = (typeof FRAMEWORKS)[number]
 
@@ -22,6 +30,188 @@ export const QUALITY_TOOL_LABELS = {
   oxlint: 'Oxlint',
 } as const satisfies Readonly<Record<Formatter | Linter, string>>
 
+function minimumVersion(range: string): string {
+  const version = /^>=(\d+\.\d+\.\d+)$/.exec(range)?.[1]
+  if (version === undefined) throw new Error(`Unsupported Node engine range: ${range}`)
+  return version
+}
+
+export const MINIMUM_NODE_VERSION = minimumVersion(cliPackage.engines.node)
+
+export const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const
+export type PackageManagerName = (typeof PACKAGE_MANAGERS)[number]
+
+export const MONOREPO_ORCHESTRATORS = ['turbo', 'nx'] as const
+export type MonorepoOrchestrator = (typeof MONOREPO_ORCHESTRATORS)[number]
+
+export const DEFAULT_IMPORT_ALIAS = '~'
+const IMPORT_ALIAS_PATTERN = /^[@~#]?[\w-]*$/
+
+export function normalizeImportAlias(alias: string): string {
+  return alias.trim().replace(/\/+$/, '')
+}
+
+export function isValidImportAlias(alias: string): boolean {
+  const normalized = normalizeImportAlias(alias)
+  return normalized.length > 0 && IMPORT_ALIAS_PATTERN.test(normalized)
+}
+
+export const COMPONENTS = [
+  'date-picker',
+  'data-table',
+  'confirm',
+  'alert',
+  'prompt',
+  'choice',
+  'confirm-passphrase',
+  'confirm-otp',
+] as const
+export type ComponentName = (typeof COMPONENTS)[number]
+
+export type CapabilityFacts<Name extends string, Kind extends 'port' | 'module'> = {
+  readonly name: Name
+  readonly kind: Kind
+  readonly flag: string
+  readonly aliases: readonly string[]
+  readonly providers: readonly string[]
+  readonly recommendedProvider: string
+}
+
+type PortManifest = {
+  readonly adapters: object
+  readonly defaultAdapter: string
+  readonly creationRecommendedProvider?: string
+}
+
+type ModuleManifest = { readonly provider: string }
+
+function port<Name extends string>(
+  name: Name,
+  manifest: PortManifest,
+): CapabilityFacts<Name, 'port'> {
+  return {
+    name,
+    kind: 'port',
+    flag: name,
+    aliases: [],
+    providers: Object.keys(manifest.adapters),
+    recommendedProvider: manifest.creationRecommendedProvider ?? manifest.defaultAdapter,
+  }
+}
+
+function singleProvider<Name extends string>(
+  name: Name,
+  manifest: ModuleManifest,
+  flag: string = name,
+): CapabilityFacts<Name, 'module'> {
+  return {
+    name,
+    kind: 'module',
+    flag,
+    aliases: flag === name ? [] : [name],
+    providers: [manifest.provider],
+    recommendedProvider: manifest.provider,
+  }
+}
+
+export const CAPABILITY_CATALOG = [
+  port('storage', storageManifest),
+  port('cache', cacheManifest),
+  port('logger', loggerManifest),
+  port('analytics', analyticsManifest),
+  singleProvider('jobs', jobsManifest),
+  singleProvider('error-tracking', errorTrackingManifest, 'errors'),
+] as const
+type CapabilityEntry = (typeof CAPABILITY_CATALOG)[number]
+export type CapabilityName = CapabilityEntry['name']
+export type PortCapabilityName = Extract<CapabilityEntry, { readonly kind: 'port' }>['name']
+export type ModuleCapabilityName = Extract<CapabilityEntry, { readonly kind: 'module' }>['name']
+
+export type ScaffoldFlagValue =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'choice'; readonly choices: readonly string[] }
+  | { readonly kind: 'text'; readonly placeholder: string }
+
+export type ScaffoldFlag = {
+  readonly name: string
+  readonly aliases: readonly string[]
+  readonly negation?: string
+  readonly value: ScaffoldFlagValue
+  readonly section: 'stack' | 'capability' | 'project'
+}
+
+const noValue = { kind: 'none' } as const
+
+const choiceOf = (choices: readonly string[]): ScaffoldFlagValue => ({ kind: 'choice', choices })
+
+export const SCAFFOLD_FLAGS: readonly ScaffoldFlag[] = [
+  { name: 'framework', aliases: ['f'], value: choiceOf(FRAMEWORKS), section: 'stack' },
+  {
+    name: 'database',
+    aliases: ['db'],
+    negation: 'no-db',
+    value: choiceOf(DATABASES),
+    section: 'stack',
+  },
+  { name: 'auth', aliases: [], negation: 'no-auth', value: choiceOf(AUTHS), section: 'stack' },
+  { name: 'trpc', aliases: [], negation: 'no-trpc', value: noValue, section: 'stack' },
+  {
+    name: 'mailer',
+    aliases: ['mail'],
+    negation: 'no-mail',
+    value: choiceOf(MAILERS),
+    section: 'stack',
+  },
+  { name: 'formatter', aliases: [], value: choiceOf(FORMATTERS), section: 'stack' },
+  { name: 'linter', aliases: [], value: choiceOf(LINTERS), section: 'stack' },
+  { name: 'minimal', aliases: [], value: noValue, section: 'stack' },
+  ...CAPABILITY_CATALOG.map(({ flag, aliases, providers }) => ({
+    name: flag,
+    aliases,
+    value: choiceOf(providers),
+    section: 'capability' as const,
+  })),
+  {
+    name: 'monorepo',
+    aliases: ['mono'],
+    value: choiceOf(MONOREPO_ORCHESTRATORS),
+    section: 'project',
+  },
+  {
+    name: 'pm',
+    aliases: ['package-manager'],
+    value: choiceOf(PACKAGE_MANAGERS),
+    section: 'project',
+  },
+  {
+    name: 'alias',
+    aliases: [],
+    value: { kind: 'text', placeholder: 'prefix' },
+    section: 'project',
+  },
+  { name: 'no-install', aliases: [], value: noValue, section: 'project' },
+  { name: 'no-git', aliases: [], value: noValue, section: 'project' },
+  { name: 'yes', aliases: ['y'], value: noValue, section: 'project' },
+]
+
+export function scaffoldFlagSpellings({ name, aliases, negation }: ScaffoldFlag): string[] {
+  return negation === undefined ? [name, ...aliases] : [name, ...aliases, negation]
+}
+
+export function scaffoldFlagSwitches({ name, aliases, negation, value }: ScaffoldFlag): string[] {
+  const switches = value.kind === 'none' ? [name, ...aliases] : []
+  return negation === undefined ? switches : [...switches, negation]
+}
+
+export function scaffoldFlag(name: string): ScaffoldFlag {
+  const flag = SCAFFOLD_FLAGS.find((candidate) => candidate.name === name)
+  if (flag === undefined) throw new Error(`Unknown scaffold flag: ${name}`)
+  return flag
+}
+
+export const optionSpelling = (name: string): string =>
+  name.length === 1 ? `-${name}` : `--${name}`
+
 export type StackAxis =
   | 'framework'
   | 'database'
@@ -36,6 +226,7 @@ export type FrameworkMaturity = 'stable' | 'preview'
 export type FrameworkSupport = {
   readonly label: string
   readonly maturity: FrameworkMaturity
+  readonly monorepoOutputs: readonly string[]
   readonly supports: {
     readonly database: readonly Database[]
     readonly auth: readonly Auth[]
@@ -76,9 +267,24 @@ const FULL_STACK_SUPPORT = {
 } satisfies Pick<FrameworkSupport, 'supports' | 'recommendations'>
 
 export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
-  tanstack: { label: 'TanStack Start', maturity: 'stable', ...FULL_STACK_SUPPORT },
-  next: { label: 'Next.js', maturity: 'stable', ...FULL_STACK_SUPPORT },
-  rasengan: { label: 'RasenganJS', maturity: 'preview', ...FULL_STACK_SUPPORT },
+  tanstack: {
+    label: 'TanStack Start',
+    maturity: 'stable',
+    monorepoOutputs: ['.output/**', '.nitro/**', 'dist/**'],
+    ...FULL_STACK_SUPPORT,
+  },
+  next: {
+    label: 'Next.js',
+    maturity: 'stable',
+    monorepoOutputs: ['.next/**', '!.next/cache/**'],
+    ...FULL_STACK_SUPPORT,
+  },
+  rasengan: {
+    label: 'RasenganJS',
+    maturity: 'preview',
+    monorepoOutputs: ['dist/**', '.rasengan/**'],
+    ...FULL_STACK_SUPPORT,
+  },
 }
 
 export const RECOMMENDED_FRAMEWORK: Framework = 'tanstack'

@@ -1,4 +1,9 @@
 import { readdirSync, statSync } from 'node:fs'
+import {
+  CAPABILITY_CATALOG,
+  type ModuleCapabilityName,
+  type PortCapabilityName,
+} from '../../../packages/stack-config/src/index.ts'
 import type { ModuleIntegration } from '../framework-module.ts'
 import { isJsonObject, readJsonObject } from '../javascript/json.ts'
 import { STACK_ROOT } from './paths.ts'
@@ -16,7 +21,7 @@ type PortSpec = {
   >
 }
 
-type ModuleSpec = { readonly label: string; readonly dir: string; readonly provider: string }
+type ModuleSpec = { readonly label: string; readonly dir: string }
 
 type AdapterManifest = {
   readonly deps: readonly string[]
@@ -27,7 +32,6 @@ type AdapterManifest = {
 type PortManifest = {
   readonly kind: 'port'
   readonly defaultAdapter: string
-  readonly creationRecommendedProvider?: string
   readonly adapters: Readonly<Record<string, AdapterManifest>>
   readonly sharedFiles: readonly string[]
   readonly sharedDeps: readonly string[]
@@ -98,9 +102,6 @@ function parseManifest(path: string): CapabilityManifest {
   return {
     kind: 'port',
     defaultAdapter: raw.defaultAdapter,
-    ...(typeof raw.creationRecommendedProvider === 'string' && {
-      creationRecommendedProvider: raw.creationRecommendedProvider,
-    }),
     adapters: Object.fromEntries(
       Object.entries(raw.adapters).map(([name, adapter]) => [name, adapterManifest(adapter)]),
     ),
@@ -125,7 +126,7 @@ function moduleManifest(cap: string): ModuleManifest {
   return manifest
 }
 
-const PORTS: Readonly<Record<string, PortSpec>> = {
+const PORT_SPECS = {
   storage: {
     label: 'Storage',
     dir: 'src/server/storage',
@@ -214,29 +215,29 @@ const PORTS: Readonly<Record<string, PortSpec>> = {
       noop: { fn: 'noopAdapter', args: [] },
     },
   },
-}
+} satisfies Readonly<Record<PortCapabilityName, PortSpec>>
 
-const MODULES: Readonly<Record<string, ModuleSpec>> = {
-  jobs: { label: 'Background jobs', dir: 'src/server/jobs', provider: 'inngest' },
-  'error-tracking': {
-    label: 'Error tracking',
-    dir: 'src/server/error-tracking',
-    provider: 'sentry',
-  },
-}
+const MODULE_SPECS = {
+  jobs: { label: 'Background jobs', dir: 'src/server/jobs' },
+  'error-tracking': { label: 'Error tracking', dir: 'src/server/error-tracking' },
+} satisfies Readonly<Record<ModuleCapabilityName, ModuleSpec>>
 
-const SPEC: Readonly<Record<string, PortSpec | ModuleSpec>> = { ...PORTS, ...MODULES }
+const SPECS_BY_NAME = { ...PORT_SPECS, ...MODULE_SPECS }
 
-export const CAPABILITIES = Object.keys(SPEC)
+const PORTS: Readonly<Record<string, PortSpec>> = PORT_SPECS
+const MODULES: Readonly<Record<string, ModuleSpec>> = MODULE_SPECS
+const SPEC: Readonly<Record<string, PortSpec | ModuleSpec>> = SPECS_BY_NAME
 
-export const canonicalCapabilityName = (cap: string): string =>
-  cap === 'error-tracking' ? 'errors' : cap
+const capabilityFacts = (cap: string) => CAPABILITY_CATALOG.find(({ name }) => name === cap)
+
+export const CAPABILITIES: readonly string[] = CAPABILITY_CATALOG.map(({ name }) => name)
+
+export const canonicalCapabilityName = (cap: string): string => capabilityFacts(cap)?.flag ?? cap
 
 function creationProvider(cap: string): string {
-  const module = MODULES[cap]
-  if (module) return module.provider
-  const manifest = portManifest(cap)
-  return manifest.creationRecommendedProvider ?? manifest.defaultAdapter
+  const facts = capabilityFacts(cap)
+  if (!facts) throw new Error(`Unknown capability: ${cap}`)
+  return facts.recommendedProvider
 }
 
 export const hasAdapters = (cap: string): boolean => cap in PORTS
@@ -244,10 +245,10 @@ export const hasAdapters = (cap: string): boolean => cap in PORTS
 export const capabilityDir = (cap: string): string | undefined => SPEC[cap]?.dir
 
 export const capabilityChoices = (): CapabilityChoice[] =>
-  Object.entries(SPEC).map(([value, spec]) => ({
-    value,
-    label: spec.label,
-    hint: 'adapters' in spec ? Object.keys(spec.adapters).join(' / ') : spec.provider,
+  CAPABILITY_CATALOG.map(({ name, providers }) => ({
+    value: name,
+    label: SPECS_BY_NAME[name].label,
+    hint: providers.join(' / '),
   }))
 
 export const adapterChoices = (cap: string): AdapterChoices | null => {
@@ -270,7 +271,7 @@ export function resolveAdapter(cap: string, value: unknown): string | null {
     const module = MODULES[cap]
     if (!module) throw new Error(`Unknown capability: ${cap}`)
     if (value && value !== true) {
-      throw new Error(`${cap} has no adapter to choose: it always uses ${module.provider}`)
+      throw new Error(`${cap} has no adapter to choose: it always uses ${creationProvider(cap)}`)
     }
     return null
   }

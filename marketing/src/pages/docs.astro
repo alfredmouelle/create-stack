@@ -1,24 +1,12 @@
 ---
 import {
-  AUTHS,
-  DATABASES,
-  FORMATTERS,
-  FRAMEWORK_SUPPORT,
-  FRAMEWORKS,
-  LINTERS,
-  MAILERS,
-  RECOMMENDED_FRAMEWORK,
+  COMPONENTS,
+  type ComponentName,
+  MINIMUM_NODE_VERSION,
+  PACKAGE_MANAGERS,
 } from '@alfredmouelle/stack-config'
-import { PORT_CAPABILITIES } from '../data/landing'
 import BaseLayout from '../layouts/BaseLayout.astro'
-
-type FlagRow = {
-  flags: readonly string[]
-  values: readonly string[]
-  defaultValue: string
-  notes: string
-  link?: { href: string; label: string }
-}
+import { FLAG_TABLES } from '../lib/docs-flags'
 
 const CONTENTS = [
   { id: 'quick-start', title: 'Quick start' },
@@ -28,127 +16,20 @@ const CONTENTS = [
   { id: 'after-creation', title: 'After creating a project' },
 ] as const
 
-const recommended = FRAMEWORK_SUPPORT[RECOMMENDED_FRAMEWORK].recommendations
+const COMPONENT_PROVIDES: Readonly<Record<ComponentName, string>> = {
+  'date-picker': 'date picker and date range picker',
+  'data-table': 'sortable and infinite data tables',
+  confirm: 'waits for a yes or no answer',
+  alert: 'waits for an acknowledgement',
+  prompt: 'waits for text input',
+  choice: 'waits for a selection',
+  'confirm-passphrase': 'checks an exact phrase',
+  'confirm-otp': 'checks a one-time code',
+}
 
-const STACK_FLAGS: readonly FlagRow[] = [
-  {
-    flags: ['--framework'],
-    values: FRAMEWORKS,
-    defaultValue: RECOMMENDED_FRAMEWORK,
-    notes: 'Framework to generate. It decides the accepted stack options.',
-    link: { href: '/frameworks', label: 'Support per framework' },
-  },
-  {
-    flags: ['--database'],
-    values: DATABASES,
-    defaultValue: recommended.database[0] ?? 'none',
-    notes: 'prisma selects Prisma 7. convex provides a realtime database and API, so use Clerk or no auth.',
-  },
-  {
-    flags: ['--auth'],
-    values: AUTHS,
-    defaultValue: recommended.auth[0] ?? 'none',
-    notes: 'clerk is hosted and needs no database or mailer.',
-  },
-  {
-    flags: ['--trpc', '--no-trpc'],
-    values: [],
-    defaultValue: recommended.trpc ? 'on' : 'off',
-    notes: 'Include or exclude the tRPC API.',
-  },
-  {
-    flags: ['--mailer'],
-    values: MAILERS,
-    defaultValue: recommended.mailer[0] ?? 'none',
-    notes: 'Transactional email provider.',
-  },
-  {
-    flags: ['--formatter'],
-    values: FORMATTERS,
-    defaultValue: recommended.formatter,
-    notes: 'A bare flag selects Biome. --no-formatter and oxfmt are rejected.',
-  },
-  {
-    flags: ['--linter'],
-    values: LINTERS,
-    defaultValue: recommended.linter,
-    notes: 'A bare flag selects Biome. --no-linter and ESLint are rejected.',
-  },
-  {
-    flags: ['--minimal'],
-    values: [],
-    defaultValue: 'off',
-    notes: 'Smallest runnable, frontend-only project: no data, auth, tRPC, mail, or capabilities.',
-  },
-  {
-    flags: ['--no-db', '--no-auth', '--no-mail'],
-    values: [],
-    defaultValue: 'off',
-    notes: 'Explicitly exclude the database, authentication, or transactional email.',
-  },
-]
-
-const CAPABILITY_FLAGS: readonly FlagRow[] = [
-  ...PORT_CAPABILITIES.filter((capability) => capability.name !== 'mailer').map((capability) => ({
-    flags: [`--${capability.name}`],
-    values: capability.providers,
-    defaultValue: capability.recommended,
-    notes: 'Swappable provider behind a port.',
-  })),
-  { flags: ['--jobs'], values: ['inngest'], defaultValue: 'inngest', notes: 'Background jobs.' },
-  {
-    flags: ['--errors', '--error-tracking'],
-    values: ['sentry'],
-    defaultValue: 'sentry',
-    notes: 'Error reporting.',
-  },
-]
-
-const PROJECT_FLAGS: readonly FlagRow[] = [
-  {
-    flags: ['--monorepo'],
-    values: ['turbo', 'nx'],
-    defaultValue: 'standalone',
-    notes: 'Put the app in apps/web inside a Turborepo or Nx monorepo. A bare flag selects turbo.',
-  },
-  {
-    flags: ['--pm'],
-    values: ['pnpm', 'npm', 'yarn', 'bun'],
-    defaultValue: 'detected',
-    notes: 'Package manager for the generated project. Defaults to the one that ran the CLI.',
-  },
-  {
-    flags: ['--alias'],
-    values: ['<prefix>'],
-    defaultValue: '~',
-    notes: 'Import alias, such as @ or #. Imports matching <alias>/* resolve to src/*.',
-  },
-  {
-    flags: ['--no-install'],
-    values: [],
-    defaultValue: 'off',
-    notes: 'Skip dependency installation and verification. The project stays uncommitted.',
-  },
-  { flags: ['--no-git'], values: [], defaultValue: 'off', notes: 'Do not initialize Git.' },
-  { flags: ['--yes', '-y'], values: [], defaultValue: 'off', notes: 'Accept every default without a prompt.' },
-]
-
-const FLAG_TABLES = [
-  { caption: 'Stack flags', rows: STACK_FLAGS },
-  { caption: 'Capability flags', rows: CAPABILITY_FLAGS },
-  { caption: 'Project flags', rows: PROJECT_FLAGS },
-] as const
-
-const COMPONENTS = [
-  { name: 'date-picker', provides: 'date picker and date range picker' },
-  { name: 'data-table', provides: 'sortable and infinite data tables' },
-  { name: 'confirm', provides: 'waits for a yes or no answer' },
-  { name: 'alert', provides: 'waits for an acknowledgement' },
-  { name: 'prompt', provides: 'waits for text input' },
-  { name: 'choice', provides: 'waits for a selection' },
-  { name: 'confirm-passphrase', provides: 'checks an exact phrase' },
-  { name: 'confirm-otp', provides: 'checks a one-time code' },
-] as const
+const packageManagerList = new Intl.ListFormat('en', { type: 'disjunction' }).format(
+  PACKAGE_MANAGERS,
+)
 
 const SCAFFOLD_EXAMPLES = `# accept every default without prompts
 pnpm dlx @alfredmouelle/create-stack@latest my-app --yes
@@ -221,7 +102,7 @@ pnpm dev`
           <h2 id="quick-start">Quick start</h2>
           <pre><code>pnpm create @alfredmouelle/stack@latest my-app</code></pre>
           <p>
-            Requires <strong>Node 24.19.0 or later</strong>, a package manager (pnpm, npm, yarn, or bun), and <strong>git</strong> on <code>PATH</code>. With no flags the CLI asks for each choice. <strong>Any stack or capability flag switches to non-interactive mode</strong> for CI and scripts.
+            Requires <strong>Node {MINIMUM_NODE_VERSION} or later</strong>, a package manager ({packageManagerList}), and <strong>git</strong> on <code>PATH</code>. With no flags the CLI asks for each choice. <strong>Any stack or capability flag switches to non-interactive mode</strong> for CI and scripts.
           </p>
           <p>
             The <code>project</code> argument names the target directory and becomes the default
@@ -290,7 +171,7 @@ pnpm dev`
               <thead><tr><th scope="col">Component</th><th scope="col">Provides</th></tr></thead>
               <tbody>
                 {COMPONENTS.map((component) => (
-                  <tr><th scope="row">{component.name}</th><td>{component.provides}</td></tr>
+                  <tr><th scope="row">{component}</th><td>{COMPONENT_PROVIDES[component]}</td></tr>
                 ))}
               </tbody>
             </table>

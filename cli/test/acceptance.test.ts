@@ -777,21 +777,29 @@ test('accepts readable creation aliases with equals values', () => {
   expect(result.stdout).toContain('Mailer: ses')
 })
 
-test('rejects an unknown creation option with a suggestion before mutation', () => {
-  const fixture = createAcceptanceFixture('standalone')
+test.each([
+  { option: '--framwork=next', unknown: '--framwork', suggestion: '--framework' },
+  { option: '--maile=resend', unknown: '--maile', suggestion: '--mailer' },
+  { option: '--ye', unknown: '--ye', suggestion: '--yes' },
+  { option: '--g', unknown: '--g', suggestion: '-f' },
+])(
+  'rejects $unknown with a $suggestion suggestion before mutation',
+  ({ option, unknown, suggestion }) => {
+    const fixture = createAcceptanceFixture('standalone')
 
-  const result = runCli({
-    cwd: fixture.root,
-    target: fixture.project,
-    args: ['project', '--framwork=next'],
-  })
+    const result = runCli({
+      cwd: fixture.root,
+      target: fixture.project,
+      args: ['project', option],
+    })
 
-  expect(result.exitStatus).toBe(1)
-  expect(result.requestedInput).toBe(false)
-  expect(result.targetMutated).toBe(false)
-  expect(result.stdout).toContain('Unknown option: --framwork')
-  expect(result.stdout).toContain('Did you mean --framework?')
-})
+    expect(result.exitStatus).toBe(1)
+    expect(result.requestedInput).toBe(false)
+    expect(result.targetMutated).toBe(false)
+    expect(result.stdout).toContain(`Unknown option: ${unknown}`)
+    expect(result.stdout).toContain(`Did you mean ${suggestion}?`)
+  },
+)
 
 test('bare selectors choose their recommended creation values', () => {
   const fixture = createAcceptanceFixture('monorepo')

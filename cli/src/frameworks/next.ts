@@ -7,9 +7,7 @@ import { packageScriptGate } from '../javascript/verification-gate.ts'
 import { nextAdditions } from './next-additions.ts'
 import { nextReference } from './next-parts.ts'
 
-const monorepoOutputs = ['.next/**', '!.next/cache/**']
-
-const { label, maturity } = FRAMEWORK_SUPPORT.next
+const { label, maturity, monorepoOutputs } = FRAMEWORK_SUPPORT.next
 
 export const nextModule: FrameworkModule = {
   id: 'next',

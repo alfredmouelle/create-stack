@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { CAPABILITY_CATALOG } from '../../packages/stack-config/src/index.ts'
 import {
   adapterChoices,
   CAPABILITIES,
@@ -80,5 +81,12 @@ describe('choices', () => {
     expect(defaultAdapter).toBe('redis')
     expect(options.map((o) => o.value).sort()).toEqual(['memory', 'redis', 'upstash'])
     expect(creationProviderChoices('cache')?.defaultAdapter).toBe('upstash')
+  })
+  test('wires every provider the shared catalog declares', () => {
+    for (const { name, kind, providers } of CAPABILITY_CATALOG) {
+      if (kind === 'port') {
+        expect(adapterChoices(name)?.options.map(({ value }) => value)).toEqual(providers)
+      }
+    }
   })
 })

@@ -9,10 +9,10 @@ import {
   addableChoices,
   addCapability,
   CAPABILITIES,
+  CAPABILITY_CATALOG,
   CLI_VERSION,
   COMPONENT_CATALOG,
   COMPONENT_NAMES,
-  canonicalCapabilityName,
   capabilityChoices,
   createProject,
   creationProviderChoices,
@@ -28,7 +28,8 @@ import {
   isValidAlias,
   MAILERS,
   normalizeAlias,
-  PM_NAMES,
+  optionSpelling,
+  PACKAGE_MANAGERS,
   parseArgs,
   preflightRegistryComponents,
   QUALITY_TOOL_LABELS,
@@ -46,6 +47,10 @@ import {
   resolvePackageManager,
   resolveTargetAdapter,
   runVerificationGate,
+  SCAFFOLD_FLAGS,
+  scaffoldFlag,
+  scaffoldFlagSpellings,
+  scaffoldFlagSwitches,
   targetDir,
   validateAdditions,
 } from './engine.mjs'
@@ -62,6 +67,31 @@ const PREVIEW_FRAMEWORKS = frameworkModules
 
 const disjunction = new Intl.ListFormat('en', { type: 'disjunction' })
 
+const flagChoices = (name) => {
+  const { value } = scaffoldFlag(name)
+  return value.kind === 'choice' ? value.choices.join('|') : ''
+}
+
+const helpLine = (usage, description) => `${usage.padEnd(34)} ${description}`
+
+const PORT_CAPABILITIES = CAPABILITY_CATALOG.filter(({ kind }) => kind === 'port')
+const MODULE_CAPABILITIES = CAPABILITY_CATALOG.filter(({ kind }) => kind === 'module')
+
+const CAPABILITY_HELP = [
+  [PORT_CAPABILITIES.map(({ flag }) => `--${flag}`).join('  '), 'swappable behind a port'],
+  [
+    MODULE_CAPABILITIES.map(({ flag, providers }) => `--${flag} [${providers.join('|')}]`).join(
+      '  ',
+    ),
+    'single provider',
+  ],
+  ...CAPABILITY_CATALOG.flatMap(({ flag, aliases, providers }) =>
+    aliases.map((alias) => [`--${alias} [${providers.join('|')}]`, `readable alias for --${flag}`]),
+  ),
+]
+  .map(([usage, description]) => `  ${usage}`.padEnd(47) + description)
+  .join('\n')
+
 const HELP = `create-stack: assemble your selected stack from a tested reference application.
 
 Usage:
@@ -75,14 +105,15 @@ See \`add --help\` for its options.
 
 Scaffold flags:
 ${`  -f, --framework [${FRAMEWORK_IDS.join('|')}]`.padEnd(34)} Framework (bare/default = ${RECOMMENDED_FRAMEWORK}${PREVIEW_FRAMEWORKS.length ? `; preview: ${PREVIEW_FRAMEWORKS.join(', ')}` : ''})
-  --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
-  --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
+${helpLine(`  --mono, --monorepo [${flagChoices('monorepo')}]`, 'Scaffold into a monorepo, app in apps/web (bare = turbo)')}
+${helpLine(`  --pm <${flagChoices('pm')}>`, 'Package manager (default: auto-detected)')}
+  --package-manager <name>         Alias for --pm
   --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
   --db, --database [${DATABASES.join('|')}] ORM the app ships (bare/default = framework recommendation)
   --auth <${AUTHS.join('|')}>  Auth provider (default = framework recommendation)
   --mail, --mailer [${MAILERS.join('|')}] Mail provider (bare/default = framework recommendation)
-  --formatter [biome|prettier]     Formatter (bare/default = framework recommendation; cannot be excluded)
-  --linter [biome|oxlint]          Linter (bare/default = framework recommendation; cannot be excluded)
+${helpLine(`  --formatter [${flagChoices('formatter')}]`, 'Formatter (bare/default = framework recommendation; cannot be excluded)')}
+${helpLine(`  --linter [${flagChoices('linter')}]`, 'Linter (bare/default = framework recommendation; cannot be excluded)')}
   --minimal                        Start with the framework's smallest runnable project
   --trpc / --no-trpc               Include or explicitly exclude tRPC
   --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
@@ -93,9 +124,7 @@ ${`  -f, --framework [${FRAMEWORK_IDS.join('|')}]`.padEnd(34)} Framework (bare/d
   -v, --version                    Print version
 
 Capability flags (omit to skip; pass with no value for the default adapter):
-  --storage  --cache  --logger  --analytics    swappable behind a port
-  --jobs [inngest]  --errors [sentry]           single provider
-  --error-tracking [sentry]                     readable alias for --errors
+${CAPABILITY_HELP}
   Adapters are listed in the interactive picker, or run \`add --help\`.
 
 A choice the selected framework does not support is reported as a conflict
@@ -114,8 +143,8 @@ Run with no addition for an interactive picker. An explicit addition prints its
 resolved plan and runs without confirmation. Provider changes remove former
 provider files by default; --keep-files retains them.
 
-Swappable behind a port: storage, cache, logger, analytics, mail.
-Single provider: jobs (inngest), errors (sentry).
+Swappable behind a port: ${[...PORT_CAPABILITIES.map(({ flag }) => flag), 'mail'].join(', ')}.
+Single provider: ${MODULE_CAPABILITIES.map(({ flag, providers }) => `${flag} (${providers.join(', ')})`).join(', ')}.
 No provider at all: email-ui, http.
 Components: ${COMPONENT_NAMES.join(', ')}.
 
@@ -124,59 +153,27 @@ Flags:
   --keep-files                     Keep former provider files when changing provider
   --force                          Replace existing files for a selected component
   --app <relative-path>            Application target (required when ambiguous)
-  --pm <pnpm|npm|yarn|bun>         Override package manager detected from lockfile
+${helpLine(`  --pm <${flagChoices('pm')}>`, 'Override package manager detected from lockfile')}
   --package-manager <name>         Alias for --pm
   --no-install                     Skip install + verification
   -h, --help                       Show this help`
 
-const CREATION_CAPABILITY_OPTIONS = Object.fromEntries([
-  ...CAPABILITIES.map((capability) => [canonicalCapabilityName(capability), capability]),
-  ['error-tracking', 'error-tracking'],
-])
+const CREATION_CAPABILITY_OPTIONS = Object.fromEntries(
+  CAPABILITY_CATALOG.flatMap(({ name, flag, aliases }) =>
+    [flag, ...aliases].map((option) => [option, name]),
+  ),
+)
+
+const UNSUPPORTED_EXCLUSIONS = { formatter: 'no-formatter', linter: 'no-linter' }
 
 const CREATION_OPTIONS = [
-  'f',
-  'framework',
-  'db',
-  'database',
-  'auth',
-  'mail',
-  'mailer',
-  'formatter',
-  'linter',
-  'no-formatter',
-  'no-linter',
-  'mono',
-  'monorepo',
-  'pm',
-  'package-manager',
-  'alias',
-  'no-install',
-  'no-git',
-  'y',
-  'yes',
-  'minimal',
-  'trpc',
-  'no-trpc',
-  'no-db',
-  'no-auth',
-  'no-mail',
-  ...Object.keys(CREATION_CAPABILITY_OPTIONS),
+  ...SCAFFOLD_FLAGS.flatMap(scaffoldFlagSpellings),
+  ...Object.values(UNSUPPORTED_EXCLUSIONS),
 ]
 
 const BOOLEAN_CREATION_OPTIONS = new Set([
-  'y',
-  'yes',
-  'minimal',
-  'trpc',
-  'no-trpc',
-  'no-db',
-  'no-auth',
-  'no-mail',
-  'no-install',
-  'no-git',
-  'no-formatter',
-  'no-linter',
+  ...SCAFFOLD_FLAGS.flatMap(scaffoldFlagSwitches),
+  ...Object.values(UNSUPPORTED_EXCLUSIONS),
 ])
 
 function editDistance(left, right) {
@@ -207,36 +204,50 @@ function validateCreationOptionNames(flags) {
     const suggestion = CREATION_OPTIONS.reduce((best, candidate) =>
       editDistance(name, candidate) < editDistance(name, best) ? candidate : best,
     )
-    const hint = editDistance(name, suggestion) <= 3 ? ` Did you mean --${suggestion}?` : ''
+    const hint =
+      editDistance(name, suggestion) <= 3 ? ` Did you mean ${optionSpelling(suggestion)}?` : ''
     throw new Error(`Unknown option: --${name}.${hint}`)
   }
 }
 
-const CREATION_AXES = {
-  Framework: ['f', 'framework'],
-  Database: ['db', 'database', 'no-db'],
-  Auth: ['auth', 'no-auth'],
-  Mail: ['mail', 'mailer', 'no-mail'],
-  Formatter: ['formatter', 'no-formatter'],
-  Linter: ['linter', 'no-linter'],
-  tRPC: ['trpc', 'no-trpc'],
-  Monorepo: ['mono', 'monorepo'],
-  'Package manager': ['pm', 'package-manager'],
-  'Import alias': ['alias'],
-  'Recommended stack acceptance': ['y', 'yes'],
-  'Minimal project': ['minimal'],
-  ...Object.fromEntries(
-    CAPABILITIES.map((capability) => [
-      canonicalCapabilityName(capability)
+const AXIS_LABELS = {
+  framework: 'Framework',
+  database: 'Database',
+  auth: 'Auth',
+  mailer: 'Mail',
+  formatter: 'Formatter',
+  linter: 'Linter',
+  trpc: 'tRPC',
+  monorepo: 'Monorepo',
+  pm: 'Package manager',
+  alias: 'Import alias',
+  yes: 'Recommended stack acceptance',
+  minimal: 'Minimal project',
+}
+
+const axisLabel = ({ name, section }) =>
+  section === 'capability'
+    ? name
         .split('-')
         .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
-        .join(' '),
-      Object.entries(CREATION_CAPABILITY_OPTIONS)
-        .filter(([, internalName]) => internalName === capability)
-        .map(([option]) => option),
-    ]),
-  ),
-}
+        .join(' ')
+    : AXIS_LABELS[name]
+
+const CREATION_AXES = Object.fromEntries(
+  SCAFFOLD_FLAGS.filter((flag) => axisLabel(flag) !== undefined).map((flag) => [
+    axisLabel(flag),
+    [
+      ...scaffoldFlagSpellings(flag),
+      ...(UNSUPPORTED_EXCLUSIONS[flag.name] ? [UNSUPPORTED_EXCLUSIONS[flag.name]] : []),
+    ],
+  ]),
+)
+
+const STACK_OPTIONS = new Set(
+  SCAFFOLD_FLAGS.filter(
+    ({ name, section }) => (section !== 'project' && name !== 'minimal') || name === 'monorepo',
+  ).flatMap(scaffoldFlagSpellings),
+)
 
 function validateBooleanCreationOptions(options) {
   const invalid = options.find(
@@ -270,26 +281,7 @@ function validateCreationInvocation(args) {
   const yes = args.flags.y || args.flags.yes
   if (!yes) return
   if ('minimal' in args.flags) throw new Error('--yes cannot be combined with --minimal')
-  const stackOptions = new Set([
-    'f',
-    'framework',
-    'db',
-    'database',
-    'auth',
-    'mail',
-    'mailer',
-    'formatter',
-    'linter',
-    'mono',
-    'monorepo',
-    'trpc',
-    'no-trpc',
-    'no-db',
-    'no-auth',
-    'no-mail',
-    ...Object.keys(CREATION_CAPABILITY_OPTIONS),
-  ])
-  const conflict = args.options.find(({ name }) => stackOptions.has(name))
+  const conflict = args.options.find(({ name }) => STACK_OPTIONS.has(name))
   if (conflict) {
     throw new Error(`--yes cannot be combined with stack options (received --${conflict.name})`)
   }
@@ -326,9 +318,10 @@ function resolveFrameworkFlag(flags) {
 function resolvePackageManagerFlag(flags) {
   const value = flags.pm ?? flags['package-manager']
   if (value == null) return detectedPm
-  if (typeof value === 'string' && PM_NAMES.includes(value)) return resolvePackageManager(value)
+  if (typeof value === 'string' && PACKAGE_MANAGERS.includes(value))
+    return resolvePackageManager(value)
   throw new Error(
-    `Invalid package manager: ${JSON.stringify(value)} (expected ${PM_NAMES.join(', ')})`,
+    `Invalid package manager: ${JSON.stringify(value)} (expected ${PACKAGE_MANAGERS.join(', ')})`,
   )
 }
 
@@ -536,7 +529,7 @@ async function collectFromPrompts(argDir) {
       await p.select({
         message: 'Package manager',
         initialValue: detectedPm.name,
-        options: PM_NAMES.map((n) => ({
+        options: PACKAGE_MANAGERS.map((n) => ({
           value: n,
           label: n === detectedPm.name ? `${n} (detected)` : n,
         })),

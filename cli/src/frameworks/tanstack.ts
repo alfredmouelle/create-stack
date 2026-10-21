@@ -7,9 +7,7 @@ import { packageScriptGate } from '../javascript/verification-gate.ts'
 import { tanstackAdditions } from './tanstack-additions.ts'
 import { tanstackReference } from './tanstack-parts.ts'
 
-const monorepoOutputs = ['.output/**', '.nitro/**', 'dist/**']
-
-const { label, maturity } = FRAMEWORK_SUPPORT.tanstack
+const { label, maturity, monorepoOutputs } = FRAMEWORK_SUPPORT.tanstack
 
 export const tanstackModule: FrameworkModule = {
   id: 'tanstack',
