@@ -51,7 +51,7 @@ const PACKAGE_MANAGERS: Record<PackageManagerName, PackageManager> = {
 export const PM_VERSIONS: Record<PackageManagerName, string> = {
   pnpm: '11.1.3',
   npm: '11.0.0',
-  yarn: '4.6.0',
+  yarn: '4.18.1',
   bun: '1.2.0',
 }
 
