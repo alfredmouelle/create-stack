@@ -35,6 +35,8 @@ Its generated build integration uses `@sentry/vite-plugin@11.8.0`.
 | Clerk/Convex runtime | Combined production home rendered; anonymous and malformed sessions returned 401, and protected SSR redirected to sign-in. An installed Clerk project with independent tRPC passed TypeScript and Biome after the final renderer change. |
 | Inngest runtime | Development HTTP discovery exposed the registered function. Production rejected unsigned requests with a configured test signing key. |
 | Sentry runtime/build | Generated browser initialization captured an uncaught error into a local HTTP envelope collector. Generated Node instrumentation captured framework-caught API and SSR errors with debug IDs. Installed production builds generated hidden maps, injected client/server debug IDs and deleted maps, including without upload credentials. Map HTTP requests returned 404. Browser DSN appears in creation and addition environment files. |
+| Marketing browser coverage | All 40 Chromium tests passed against a production build on this checkout's isolated port. Coverage includes Rasengan selection/URL restoration, preview labels and consecutive roadmap positions. The obsolete two-framework assertion was reproduced before being replaced with the registered framework count. |
+| Docker runtime | Two generated pnpm images built and started on Linux arm64 with `node:24.19.0-alpine`, minimal without error tracking and minimal with Sentry. Home/health requests passed and compiled server requests returned 404. The Sentry image initialized the real Node SDK through its default container command. The regression failed on the old image with `instrumented: false` before the preload packaging fix. |
 
 The gated HTTP regression can be repeated after building the reference app:
 
@@ -43,6 +45,7 @@ pnpm --filter @alfredmouelle/rasengan-base build
 RUN_RASENGAN_RUNTIME=1 pnpm --filter @alfredmouelle/create-stack exec vitest run test/rasengan-runtime.test.ts test/rasengan-serving.test.ts
 RUN_SMOKE=1 SMOKE_FRAMEWORK=rasengan pnpm --filter @alfredmouelle/create-stack exec vitest run test/smoke.test.ts
 RUN_SMOKE=1 pnpm --filter @alfredmouelle/create-stack exec vitest run test/rasengan-sentry.test.ts
+RUN_RASENGAN_DOCKER=1 pnpm --filter @alfredmouelle/create-stack exec vitest run test/rasengan-docker.test.ts
 RUN_CERTIFICATION=1 pnpm --filter @alfredmouelle/create-stack exec vitest run test/certification.test.ts -t rasengan
 ```
 
@@ -78,7 +81,8 @@ reverse proxy and Better Auth's IP settings for production rate limiting. Withou
 IP, Better Auth falls back to a shared bucket. Development showed Radix ID hydration warnings;
 interactive theme and auth checks passed.
 
-Docker lockfile selection was reviewed, but an image build was not certified.
+Docker runtime checks covered pnpm minimal projects with and without Sentry; other
+package-manager images and non-minimal container configurations were not certified.
 Manager runtime checks used standalone projects; monorepo checks covered generated
 metadata and all quality profiles. The Safari extension messaging rejection was reported
 only in the normal Safari profile; it was absent in the clean preview/private profile.

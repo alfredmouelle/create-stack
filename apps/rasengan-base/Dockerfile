@@ -8,6 +8,7 @@ RUN if [ -f pnpm-lock.yaml ]; then corepack pnpm@11.1.3 install --frozen-lockfil
     elif [ -f yarn.lock ]; then corepack yarn@4.18.1 install --immutable && corepack yarn@4.18.1 run build; \
     elif [ -f bun.lock ] || [ -f bun.lockb ]; then npx --yes bun@1.2.0 install --frozen-lockfile && npx --yes bun@1.2.0 run build; \
     else echo "Install dependencies and commit the package manager lockfile before building the image" >&2; exit 1; fi
+RUN mkdir /instrumentation && if [ -f instrument.server.mjs ]; then cp instrument.server.mjs /instrumentation/; fi
 
 FROM node:24.19.0-alpine AS runner
 WORKDIR /app
@@ -17,6 +18,7 @@ COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/scripts/start.ts ./scripts/start.ts
 COPY --from=build --chown=node:node /app/package.json ./package.json
+COPY --from=build --chown=node:node /instrumentation/ ./
 USER node
 EXPOSE 3000
-CMD ["node", "scripts/start.ts"]
+CMD ["sh", "-c", "if [ -f instrument.server.mjs ]; then exec node --import ./instrument.server.mjs scripts/start.ts; else exec node scripts/start.ts; fi"]

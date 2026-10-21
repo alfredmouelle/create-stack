@@ -66,6 +66,7 @@ refactors, and documentation-only changes wait for the next release that adds pr
 
 - Callable components mount in Rasengan's `<Body>` template element.
 - Generated Prisma projects and Brevo/SES mail adapters pass the strict Oxlint profile.
+- Rasengan Docker images include and preload the optional Sentry server instrumentation.
 - TanStack Start projects with Clerk and tRPC typecheck again: they pin
   `@tanstack/query-core` with React Query, so the router's SSR query integration and
   React Query share one `QueryClient` type.
