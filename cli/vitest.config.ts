@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  test: { dir: 'test', maxWorkers: 2 },
+  test: { dir: 'test', maxWorkers: 4 },
 })
