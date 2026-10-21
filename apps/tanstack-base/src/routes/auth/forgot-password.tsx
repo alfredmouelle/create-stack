@@ -61,7 +61,7 @@ function ForgotPassword() {
             void form.handleSubmit()
           }}
         >
-          {formError !== null && formError !== '' ? <FormAlert>{formError}</FormAlert> : null}
+          {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
           <form.Field name="email">
             {(field) => (

@@ -60,7 +60,7 @@ export function SignUpForm() {
         <GoogleButton label="Sign up with Google" />
         <AuthDivider />
 
-        {formError !== null && formError !== '' ? <FormAlert>{formError}</FormAlert> : null}
+        {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
         <FormField
           control={form.control}

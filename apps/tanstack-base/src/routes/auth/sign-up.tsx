@@ -67,7 +67,7 @@ function SignUp() {
         <GoogleButton label="Sign up with Google" />
         <AuthDivider />
 
-        {formError !== null && formError !== '' ? <FormAlert>{formError}</FormAlert> : null}
+        {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
         <form.Field name="name">
           {(field) => (

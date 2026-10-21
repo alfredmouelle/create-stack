@@ -37,9 +37,7 @@ export function TextField({ field, label, description, ...inputProps }: TextFiel
       <Label htmlFor={field.name}>{label}</Label>
       <Input className="h-10" {...shared} />
       <FieldError field={field} />
-      {description !== undefined && description !== '' ? (
-        <p className="text-muted-foreground text-xs">{description}</p>
-      ) : null}
+      {Boolean(description) && <p className="text-muted-foreground text-xs">{description}</p>}
     </div>
   )
 }

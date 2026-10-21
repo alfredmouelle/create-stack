@@ -56,7 +56,7 @@ export function ForgotPasswordForm() {
           void onSubmit(event)
         }}
       >
-        {formError !== null && formError !== '' ? <FormAlert>{formError}</FormAlert> : null}
+        {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
         <FormField
           control={form.control}

@@ -71,7 +71,7 @@ function ResetPassword() {
             void form.handleSubmit()
           }}
         >
-          {formError !== null && formError !== '' ? <FormAlert>{formError}</FormAlert> : null}
+          {Boolean(formError) && <FormAlert>{formError}</FormAlert>}
 
           <form.Field name="password">
             {(field) => (
