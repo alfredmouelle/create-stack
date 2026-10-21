@@ -69,7 +69,7 @@ jobs:
       - run: pnpm --filter @alfredmouelle/create-stack test
 
   base-apps:
-    name: base apps (typecheck, tests)
+    name: reference applications (typecheck, tests)
     needs: changes
     if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-latest

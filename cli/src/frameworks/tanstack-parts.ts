@@ -73,7 +73,7 @@ const featureParts: readonly ApplicationPart[] = [
       'VITE_CLERK_PUBLISHABLE_KEY=pk_test_change_me',
       'CLERK_SECRET_KEY=sk_test_change_me',
     ],
-    files: variantFiles('auth/clerk/tanstack', [
+    files: variantFiles('tanstack/auth/clerk', [
       'src/routes/sign-in.$.tsx',
       'src/routes/sign-up.$.tsx',
       'src/routes/dashboard.tsx',
@@ -99,7 +99,7 @@ const featureParts: readonly ApplicationPart[] = [
         'convex/messages.ts',
         'convex/schema.ts',
       ]),
-      ...variantFiles('database/convex/tanstack', [
+      ...variantFiles('tanstack/database/convex', [
         'src/routes/convex-demo.tsx',
         'src/convex-env.d.ts',
       ]),

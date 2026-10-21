@@ -1,4 +1,3 @@
-import { getFrameworkModule } from './engine.mjs'
 import { renderProjectReadme } from './identity.mjs'
 import { PM_VERSIONS } from './package-manager.mjs'
 import { TEMPLATES } from './paths.mjs'
@@ -25,8 +24,7 @@ dist
 .env
 `
 
-function turboConfig(rootDir, framework) {
-  const outputs = getFrameworkModule(framework).monorepoOutputs
+function turboConfig(rootDir, outputs) {
   writeJSON(join(rootDir, 'turbo.json'), {
     $schema: 'https://turbo.build/schema.json',
     tasks: {
@@ -40,14 +38,17 @@ function turboConfig(rootDir, framework) {
   })
 }
 
-function nxConfig(rootDir, framework) {
-  const outputs = getFrameworkModule(framework).monorepoOutputs.map((o) =>
-    o.startsWith('!') ? `!{projectRoot}/${o.slice(1)}` : `{projectRoot}/${o}`,
-  )
+function nxConfig(rootDir, outputs) {
   writeJSON(join(rootDir, 'nx.json'), {
     $schema: './node_modules/nx/schemas/nx-schema.json',
     targetDefaults: {
-      build: { cache: true, dependsOn: ['^build'], outputs },
+      build: {
+        cache: true,
+        dependsOn: ['^build'],
+        outputs: outputs.map((o) =>
+          o.startsWith('!') ? `!{projectRoot}/${o.slice(1)}` : `{projectRoot}/${o}`,
+        ),
+      },
       typecheck: { cache: true, dependsOn: ['^build'] },
       check: { cache: true },
     },
@@ -98,7 +99,7 @@ export function wrapMonorepo({
   rootDir,
   appDir,
   projectName,
-  framework,
+  outputs,
   pm,
   tool,
   database,
@@ -136,7 +137,7 @@ export function wrapMonorepo({
   if (pm?.name === 'bun') rootPkg.trustedDependencies = nativeBuilds
   writeJSON(join(rootDir, 'package.json'), rootPkg)
 
-  spec.writeConfig(rootDir, framework)
+  spec.writeConfig(rootDir, outputs)
 
   if (isPnpm) write(join(rootDir, 'pnpm-workspace.yaml'), pnpmWorkspace(nativeBuilds))
 

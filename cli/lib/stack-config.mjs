@@ -9,8 +9,16 @@ const sharedModule = await import(
   pathToFileURL(existsSync(bundled) ? bundled : workspaceSource).href
 )
 
-export const { FRAMEWORK_SUPPORT, FRAMEWORKS, RECOMMENDED_FRAMEWORK, resolveStackConfiguration } =
-  sharedModule
+export const {
+  AUTHS,
+  DATABASES,
+  FRAMEWORK_SUPPORT,
+  frameworkTitle,
+  MAILERS,
+  QUALITY_TOOL_LABELS,
+  RECOMMENDED_FRAMEWORK,
+  resolveStackConfiguration,
+} = sharedModule
 
 export function resolveCreationConfiguration(input = {}) {
   const result = resolveStackConfiguration(input)

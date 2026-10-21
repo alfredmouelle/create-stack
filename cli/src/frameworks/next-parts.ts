@@ -78,7 +78,7 @@ const featureParts: readonly ApplicationPart[] = [
       'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_change_me',
       'CLERK_SECRET_KEY=sk_test_change_me',
     ],
-    files: variantFiles('auth/clerk/next', [
+    files: variantFiles('next/auth/clerk', [
       'src/app/dashboard/page.tsx',
       'src/app/sign-in/[[...sign-in]]/page.tsx',
       'src/app/sign-up/[[...sign-up]]/page.tsx',
@@ -104,12 +104,12 @@ const featureParts: readonly ApplicationPart[] = [
         'convex/messages.ts',
         'convex/schema.ts',
       ]),
-      ...variantFiles('database/convex/next', ['src/app/convex-demo/page.tsx']),
+      ...variantFiles('next/database/convex', ['src/app/convex-demo/page.tsx']),
       {
         path: 'src/app/convex-provider.tsx',
         source: (selection) =>
           readTemplate(
-            `database/convex/next/src/app/convex-provider.${selection.auth === 'clerk' ? 'clerk' : 'plain'}.tsx`,
+            `next/database/convex/src/app/convex-provider.${selection.auth === 'clerk' ? 'clerk' : 'plain'}.tsx`,
           ),
       },
     ],

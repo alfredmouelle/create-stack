@@ -1,13 +1,9 @@
-import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { isJsonObject, type JsonObject, readJsonObject } from './json.ts'
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-function readManifest(applicationDir: string): Record<string, unknown> | undefined {
+function readManifest(applicationDir: string): JsonObject | undefined {
   try {
-    const manifest: unknown = JSON.parse(readFileSync(join(applicationDir, 'package.json'), 'utf8'))
-    return isRecord(manifest) ? manifest : undefined
+    return readJsonObject(join(applicationDir, 'package.json'))
   } catch {
     return undefined
   }
@@ -17,6 +13,7 @@ export function declaresDependency(applicationDir: string, names: readonly strin
   const manifest = readManifest(applicationDir)
   if (!manifest) return false
   return [manifest.dependencies, manifest.devDependencies].some(
-    (dependencies) => isRecord(dependencies) && names.some((name) => Boolean(dependencies[name])),
+    (dependencies) =>
+      isJsonObject(dependencies) && names.some((name) => Boolean(dependencies[name])),
   )
 }

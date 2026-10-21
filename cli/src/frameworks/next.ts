@@ -1,19 +1,33 @@
+import { FRAMEWORK_SUPPORT } from '../../../packages/stack-config/src/index.ts'
 import type { FrameworkModule } from '../framework-module.ts'
 import { declaresDependency } from '../javascript/package-manifest.ts'
 import { assembleProject } from '../javascript/project-assembly.ts'
+import { applyJavaScriptQualityProfile } from '../javascript/quality-profile.ts'
 import { packageScriptGate } from '../javascript/verification-gate.ts'
 import { nextAdditions } from './next-additions.ts'
 import { nextReference } from './next-parts.ts'
 
+const monorepoOutputs = ['.next/**', '!.next/cache/**']
+
+const { label, maturity } = FRAMEWORK_SUPPORT.next
+
 export const nextModule: FrameworkModule = {
   id: 'next',
+  label,
+  maturity,
   detect: (applicationDir) => declaresDependency(applicationDir, ['next']),
-  assemble: assembleProject('next', nextReference),
+  assemble: (request) =>
+    assembleProject(request, {
+      reference: nextReference,
+      additions: nextAdditions,
+      monorepoOutputs,
+    }),
   additions: nextAdditions,
   gate: packageScriptGate,
-  monorepoOutputs: ['.next/**', '!.next/cache/**'],
+  monorepoOutputs,
   packagedAssets: ['apps/next-base'],
   assetExcludes: ['next-env.d.ts'],
   qualityProfileExceptions: [],
+  applyQualityProfile: applyJavaScriptQualityProfile,
   referenceApplication: nextReference,
 }

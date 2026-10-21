@@ -1,4 +1,12 @@
-import type { Auth, Database, Framework, Mailer } from '../../packages/stack-config/src/index.ts'
+import type {
+  Auth,
+  Database,
+  Formatter,
+  Framework,
+  FrameworkMaturity,
+  Linter,
+  Mailer,
+} from '../../packages/stack-config/src/index.ts'
 import type { QualityProfileException } from './quality-profile.ts'
 import type { ReferenceApplication } from './reference-application.ts'
 
@@ -73,8 +81,19 @@ export type AdditionWiring = {
   readonly capabilities: Readonly<Record<string, CapabilityAddition>>
 }
 
+export type QualityProfileRequest = {
+  readonly projectDir: string
+  readonly applicationDir: string
+  readonly formatter: Formatter
+  readonly linter: Linter
+  readonly alias: string
+  readonly framework: Pick<FrameworkModule, 'label' | 'qualityProfileExceptions'>
+}
+
 export type FrameworkModule = {
   readonly id: Framework
+  readonly label: string
+  readonly maturity: FrameworkMaturity
   readonly detect: (applicationDir: string) => boolean
   readonly assemble: (request: AssemblyRequest) => Promise<AssemblyResult>
   readonly additions: AdditionWiring
@@ -83,5 +102,6 @@ export type FrameworkModule = {
   readonly packagedAssets: readonly string[]
   readonly assetExcludes: readonly string[]
   readonly qualityProfileExceptions: readonly QualityProfileException[]
+  readonly applyQualityProfile: (request: QualityProfileRequest) => void
   readonly referenceApplication?: ReferenceApplication
 }

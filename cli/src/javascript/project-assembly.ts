@@ -1,22 +1,15 @@
 import { randomBytes } from 'node:crypto'
-import type { Framework } from '../../../packages/stack-config/src/index.ts'
-import { wireCapabilityAddition } from '../additions.ts'
-import type { AssemblyRequest, AssemblyResult } from '../framework-module.ts'
-import { getFrameworkModule } from '../framework-registry.ts'
+import type { AssemblyRequest, AssemblyResult, FrameworkModule } from '../framework-module.ts'
 import type { ReferenceApplication } from '../reference-application.ts'
 import { assembleReferenceParts } from './project-parts.ts'
 
-export function assembleProject(
-  framework: Framework,
-  reference: ReferenceApplication,
-): (request: AssemblyRequest) => Promise<AssemblyResult> {
-  return (request) => assembleJavaScriptProject(request, framework, reference)
+export type JavaScriptProject = Pick<FrameworkModule, 'additions' | 'monorepoOutputs'> & {
+  readonly reference: ReferenceApplication
 }
 
-async function assembleJavaScriptProject(
+export async function assembleProject(
   request: AssemblyRequest,
-  framework: Framework,
-  reference: ReferenceApplication,
+  { reference, additions, monorepoOutputs }: JavaScriptProject,
 ): Promise<AssemblyResult> {
   const [
     { rewriteAlias },
@@ -59,7 +52,7 @@ async function assembleJavaScriptProject(
   const hasDatabaseSchema = database === 'prisma' || (database === 'drizzle' && authUsesDb)
   const appDir = monorepo ? join(projectDir, 'apps', 'web') : projectDir
 
-  const initialized = assembleReferenceParts(reference)({
+  const initialized = assembleReferenceParts(reference, {
     applicationDir: appDir,
     projectName: monorepo ? 'web' : projectName,
     database,
@@ -74,15 +67,10 @@ async function assembleJavaScriptProject(
   const capEnvKeys: string[] = []
   const capRequiredEnvKeys: string[] = []
   const manualSteps: string[] = []
-  const module = getFrameworkModule(framework)
   for (const [cap, adapter] of Object.entries(capabilities)) {
-    const r = wireCapabilityAddition(module, {
-      projectDir: appDir,
-      projectName,
-      cap,
-      adapter,
-      keep: false,
-    })
+    const capability = additions.capabilities[cap]
+    if (!capability) throw new Error(`Unsupported capability: ${cap}`)
+    const r = capability.apply({ projectDir: appDir, projectName, adapter, keep: false })
     Object.assign(capAddDeps, r.addDeps)
     capEnvKeys.push(...r.envKeys)
     capRequiredEnvKeys.push(...r.requiredEnvKeys)
@@ -119,7 +107,7 @@ async function assembleJavaScriptProject(
       rootDir: projectDir,
       appDir,
       projectName,
-      framework,
+      outputs: monorepoOutputs,
       pm,
       tool: monorepo,
       database,

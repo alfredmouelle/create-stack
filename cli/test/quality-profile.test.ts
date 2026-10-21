@@ -12,6 +12,7 @@ process.env.CREATE_STACK_STACK_ROOT = REPO_ROOT
 
 const { createProject } = await import('../src/engine.ts')
 const { applyQualityProfile, QUALITY_PROFILE_OPTIONS } = await import('../src/quality-profile.ts')
+const { applyJavaScriptQualityProfile } = await import('../src/javascript/quality-profile.ts')
 const { frameworkModules } = await import('../src/framework-registry.ts')
 
 const roots: string[] = []
@@ -127,12 +128,22 @@ describe('applyQualityProfile', () => {
   const framework = (exceptions: readonly QualityProfileException[] = []) => ({
     label: 'Storefront Framework',
     qualityProfileExceptions: exceptions,
+    applyQualityProfile: applyJavaScriptQualityProfile,
   })
+
+  const target = (projectDir: string) =>
+    ({
+      projectDir,
+      applicationDir: projectDir,
+      formatter: 'biome',
+      linter: 'biome',
+      alias: '~',
+    }) as const
 
   test('adds the profile options a framework leaves out and keeps its own options', () => {
     const projectDir = application({ jsx: 'react-jsx', strict: true })
 
-    applyQualityProfile(framework(), { projectDir, applicationDir: projectDir })
+    applyQualityProfile(framework(), target(projectDir))
 
     expect(readField(join(projectDir, 'tsconfig.json'), 'compilerOptions')).toEqual({
       jsx: 'react-jsx',
@@ -143,9 +154,7 @@ describe('applyQualityProfile', () => {
   test('rejects a framework that relaxes a profile option without a declared exception', () => {
     const projectDir = application({ exactOptionalPropertyTypes: false })
 
-    expect(() =>
-      applyQualityProfile(framework(), { projectDir, applicationDir: projectDir }),
-    ).toThrow(
+    expect(() => applyQualityProfile(framework(), target(projectDir))).toThrow(
       'Storefront Framework relaxes the quality profile option exactOptionalPropertyTypes without a declared exception',
     )
   })
@@ -153,9 +162,7 @@ describe('applyQualityProfile', () => {
   test('rejects a framework that relaxes strict through one of its member options', () => {
     const projectDir = application({ strict: true, strictNullChecks: false })
 
-    expect(() =>
-      applyQualityProfile(framework(), { projectDir, applicationDir: projectDir }),
-    ).toThrow(
+    expect(() => applyQualityProfile(framework(), target(projectDir))).toThrow(
       'Storefront Framework relaxes the quality profile option strict through strictNullChecks without a declared exception',
     )
   })
@@ -167,7 +174,7 @@ describe('applyQualityProfile', () => {
       framework([
         { option: 'verbatimModuleSyntax', reason: 'The framework compiler emits CommonJS.' },
       ]),
-      { projectDir, applicationDir: projectDir },
+      target(projectDir),
     )
 
     expect(readField(join(projectDir, 'tsconfig.json'), 'compilerOptions')).toEqual({

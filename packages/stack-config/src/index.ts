@@ -16,6 +16,12 @@ export type Formatter = (typeof FORMATTERS)[number]
 export const LINTERS = ['biome', 'oxlint'] as const
 export type Linter = (typeof LINTERS)[number]
 
+export const QUALITY_TOOL_LABELS = {
+  biome: 'Biome',
+  prettier: 'Prettier',
+  oxlint: 'Oxlint',
+} as const satisfies Readonly<Record<Formatter | Linter, string>>
+
 export type StackAxis =
   | 'framework'
   | 'database'
@@ -76,6 +82,11 @@ export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
 
 export const RECOMMENDED_FRAMEWORK: Framework = 'tanstack'
 
+export function frameworkTitle(framework: Framework): string {
+  const { label, maturity } = FRAMEWORK_SUPPORT[framework]
+  return maturity === 'preview' ? `${label} (preview)` : label
+}
+
 export type ResolutionReasonKind = 'explicit' | 'recommended' | 'dependency' | 'minimal'
 
 export type StackChoiceValue = Framework | Database | Auth | Mailer | Formatter | Linter | boolean
@@ -121,20 +132,22 @@ export interface StackConfigurationResult {
   cliArgs: readonly string[]
 }
 
+const UNAVAILABLE_CHOICES: Partial<Record<StackAxis, Readonly<Record<string, string>>>> = {
+  formatter: { oxfmt: 'oxfmt is not supported until its 1.0 release; choose biome or prettier' },
+  linter: {
+    eslint:
+      'ESLint is not supported until typescript-eslint supports TypeScript 7; choose biome or oxlint',
+  },
+}
+
 function assertChoice<Value extends string>(
   value: unknown,
-  name: string,
+  name: StackAxis,
   choices: readonly Value[],
 ): Value | undefined {
   if (value === undefined) return undefined
-  if (name === 'formatter' && value === 'oxfmt') {
-    throw new Error('oxfmt is not supported until its 1.0 release; choose biome or prettier')
-  }
-  if (name === 'linter' && value === 'eslint') {
-    throw new Error(
-      'ESLint is not supported until typescript-eslint supports TypeScript 7; choose biome or oxlint',
-    )
-  }
+  const unavailable = typeof value === 'string' ? UNAVAILABLE_CHOICES[name]?.[value] : undefined
+  if (unavailable !== undefined) throw new Error(unavailable)
   const choice = choices.find((choice) => choice === value)
   if (choice === undefined) {
     throw new Error(`Invalid ${name}: ${JSON.stringify(value)} (expected ${choices.join(', ')})`)
@@ -195,14 +208,14 @@ function findUnsupportedChoices(
   })
 }
 
-type StackSelection = {
+type CompatibilitySelection = {
   readonly [Axis in 'database' | 'auth' | 'trpc' | 'mailer']?: StackConfiguration[Axis] | undefined
 }
 
 type CompatibilityRule = {
   readonly axes: readonly [StackAxis, StackAxis]
   readonly message: string
-  readonly violatedBy: (selection: StackSelection) => boolean
+  readonly violatedBy: (selection: CompatibilitySelection) => boolean
 }
 
 const COMPATIBILITY_RULES: readonly CompatibilityRule[] = [
@@ -228,7 +241,7 @@ const COMPATIBILITY_RULES: readonly CompatibilityRule[] = [
   },
 ]
 
-const fitsAxis = (axis: StackAxis, selection: StackSelection): boolean =>
+const fitsAxis = (axis: StackAxis, selection: CompatibilitySelection): boolean =>
   COMPATIBILITY_RULES.every((rule) => !rule.axes.includes(axis) || !rule.violatedBy(selection))
 
 function findConflicts(

@@ -1,5 +1,5 @@
 export { validateAdditions, wireCapabilityAddition } from './additions.ts'
-export type { CreationRequest, GateOptions } from './engine.ts'
+export type { CreationRequest, CreationResult, GateOptions } from './engine.ts'
 export { createProject, runVerificationGate } from './engine.ts'
 export type * from './framework-module.ts'
 export {

@@ -536,26 +536,29 @@ test('TanStack mail provider changes restore a previously removed provider', () 
 })
 
 test.each([
-  ['installation', 'install'],
-  ['verification', 'run check:write'],
-  ['verification', 'run typecheck'],
-  ['verification', 'run check'],
-])('a failed %s leaves the generated project without a baseline commit', (_step, command) => {
-  const fixture = createAcceptanceFixture('standalone')
-  const fake = fakePackageManager(fixture)
+  ['installation', 'install', 'npm install failed'],
+  ['format', 'run check:write', 'Verification failed at format'],
+  ['typecheck', 'run typecheck', 'Verification failed at typecheck'],
+  ['lint', 'run check', 'Verification failed at lint'],
+])(
+  'a failed %s leaves the generated project without a baseline commit',
+  (_step, command, message) => {
+    const fixture = createAcceptanceFixture('standalone')
+    const fake = fakePackageManager(fixture)
 
-  const result = runCli({
-    cwd: fixture.root,
-    target: fixture.project,
-    args: ['project', '--minimal', '--pm', 'npm'],
-    env: { ...fake.env, CREATE_STACK_FAIL_COMMAND: command },
-  })
+    const result = runCli({
+      cwd: fixture.root,
+      target: fixture.project,
+      args: ['project', '--minimal', '--pm', 'npm'],
+      env: { ...fake.env, CREATE_STACK_FAIL_COMMAND: command },
+    })
 
-  expect(result.exitStatus).toBe(1)
-  expect(result.stdout).toContain(command === 'install' ? 'install failed' : 'Verification failed')
-  expect(existsSync(`${fixture.project}/.git`)).toBe(true)
-  expectNoCommit(fixture.project)
-})
+    expect(result.exitStatus).toBe(1)
+    expect(result.stdout).toContain(message)
+    expect(existsSync(`${fixture.project}/.git`)).toBe(true)
+    expectNoCommit(fixture.project)
+  },
+)
 
 test('missing Git identity leaves a verified project without a baseline commit', () => {
   const fixture = createAcceptanceFixture('standalone')
