@@ -1,0 +1,309 @@
+---
+import {
+  AUTHS,
+  DATABASES,
+  FORMATTERS,
+  FRAMEWORK_SUPPORT,
+  FRAMEWORKS,
+  LINTERS,
+  MAILERS,
+  RECOMMENDED_FRAMEWORK,
+} from '@alfredmouelle/stack-config'
+import { PORT_CAPABILITIES } from '../data/landing'
+import BaseLayout from '../layouts/BaseLayout.astro'
+
+type FlagRow = {
+  flags: readonly string[]
+  values: readonly string[]
+  fallback: string
+  notes: string
+}
+
+const CONTENTS = [
+  { id: 'quick-start', title: 'Quick start' },
+  { id: 'flags', title: 'Scaffold flags' },
+  { id: 'add', title: 'Add to a project' },
+  { id: 'components', title: 'Components' },
+  { id: 'after-creation', title: 'After creating a project' },
+] as const
+
+const recommended = FRAMEWORK_SUPPORT[RECOMMENDED_FRAMEWORK].recommendations
+
+const STACK_FLAGS: readonly FlagRow[] = [
+  {
+    flags: ['--framework'],
+    values: FRAMEWORKS,
+    fallback: RECOMMENDED_FRAMEWORK,
+    notes: 'Framework to generate. Its support on the frameworks page decides the accepted stack options.',
+  },
+  {
+    flags: ['--database'],
+    values: DATABASES,
+    fallback: recommended.database[0] ?? 'none',
+    notes: 'prisma selects Prisma 7. convex provides a realtime database and API, so use Clerk or no auth.',
+  },
+  {
+    flags: ['--auth'],
+    values: AUTHS,
+    fallback: recommended.auth[0] ?? 'none',
+    notes: 'clerk is hosted and needs no database or mailer.',
+  },
+  {
+    flags: ['--trpc', '--no-trpc'],
+    values: [],
+    fallback: recommended.trpc ? 'on' : 'off',
+    notes: 'Include or exclude the tRPC API.',
+  },
+  {
+    flags: ['--mailer'],
+    values: MAILERS,
+    fallback: recommended.mailer[0] ?? 'none',
+    notes: 'Transactional email provider.',
+  },
+  {
+    flags: ['--formatter'],
+    values: FORMATTERS,
+    fallback: recommended.formatter,
+    notes: 'A bare flag selects Biome. --no-formatter and oxfmt are rejected.',
+  },
+  {
+    flags: ['--linter'],
+    values: LINTERS,
+    fallback: recommended.linter,
+    notes: 'A bare flag selects Biome. --no-linter and ESLint are rejected.',
+  },
+  {
+    flags: ['--minimal'],
+    values: [],
+    fallback: 'off',
+    notes: 'Smallest runnable, frontend-only project: no data, auth, tRPC, mail, or capabilities.',
+  },
+  {
+    flags: ['--no-db', '--no-auth', '--no-mail'],
+    values: [],
+    fallback: 'off',
+    notes: 'Explicitly exclude the database, authentication, or transactional email.',
+  },
+]
+
+const CAPABILITY_FLAGS: readonly FlagRow[] = [
+  ...PORT_CAPABILITIES.filter((capability) => capability.name !== 'mailer').map((capability) => ({
+    flags: [`--${capability.name}`],
+    values: capability.providers,
+    fallback: capability.recommended,
+    notes: 'Swappable provider behind a port.',
+  })),
+  { flags: ['--jobs'], values: ['inngest'], fallback: 'inngest', notes: 'Background jobs.' },
+  {
+    flags: ['--errors', '--error-tracking'],
+    values: ['sentry'],
+    fallback: 'sentry',
+    notes: 'Error reporting.',
+  },
+]
+
+const PROJECT_FLAGS: readonly FlagRow[] = [
+  {
+    flags: ['--monorepo'],
+    values: ['turbo', 'nx'],
+    fallback: 'standalone',
+    notes: 'Put the app in apps/web inside a Turborepo or Nx monorepo. A bare flag selects turbo.',
+  },
+  {
+    flags: ['--pm'],
+    values: ['pnpm', 'npm', 'yarn', 'bun'],
+    fallback: 'detected',
+    notes: 'Package manager for the generated project. Defaults to the one that ran the CLI.',
+  },
+  {
+    flags: ['--alias'],
+    values: ['<prefix>'],
+    fallback: '~',
+    notes: 'Import alias, such as @ or #. Imports matching <alias>/* resolve to src/*.',
+  },
+  {
+    flags: ['--no-install'],
+    values: [],
+    fallback: 'off',
+    notes: 'Skip dependency installation and verification. The project stays uncommitted.',
+  },
+  { flags: ['--no-git'], values: [], fallback: 'off', notes: 'Do not initialize Git.' },
+  { flags: ['--yes', '-y'], values: [], fallback: 'off', notes: 'Accept every default without a prompt.' },
+]
+
+const FLAG_TABLES = [
+  { caption: 'Stack flags', rows: STACK_FLAGS },
+  { caption: 'Capability flags', rows: CAPABILITY_FLAGS },
+  { caption: 'Project flags', rows: PROJECT_FLAGS },
+] as const
+
+const COMPONENTS = [
+  { name: 'date-picker', provides: 'date picker and date range picker' },
+  { name: 'data-table', provides: 'sortable and infinite data tables' },
+  { name: 'confirm', provides: 'waits for a yes or no answer' },
+  { name: 'alert', provides: 'waits for an acknowledgement' },
+  { name: 'prompt', provides: 'waits for text input' },
+  { name: 'choice', provides: 'waits for a selection' },
+  { name: 'confirm-passphrase', provides: 'checks an exact phrase' },
+  { name: 'confirm-otp', provides: 'checks a one-time code' },
+] as const
+
+const SCAFFOLD_EXAMPLES = `# accept every default without prompts
+pnpm dlx @alfredmouelle/create-stack@latest my-app --yes
+
+# Convex with Clerk auth
+pnpm dlx @alfredmouelle/create-stack@latest my-app --database convex --auth clerk
+
+# Nx monorepo with common capabilities
+pnpm dlx @alfredmouelle/create-stack@latest my-app --monorepo nx --storage --cache --jobs --errors`
+
+const ADD_EXAMPLES = `create-stack add                                      # grouped interactive picker
+create-stack add storage r2                           # one capability and provider
+create-stack add cache upstash                        # swap Redis for Upstash
+create-stack add --with storage=r2 --with jobs        # capability batch
+create-stack add --with jobs --with component=confirm # mixed batch`
+
+const DIALOG_EXAMPLE = `const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })
+if (ok) deleteProject()
+
+const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' })
+
+const destination = await Choice.call({
+  title: 'Move to',
+  options: [
+    { label: 'Inbox', value: 'inbox' },
+    { label: 'Archive', value: 'archive' },
+  ],
+})
+
+const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => api.checkOtp(code) })`
+
+const AFTER_CREATION = `cd my-app
+pnpm install     # only after --no-install
+pnpm dev`
+---
+
+<BaseLayout
+  description="create-stack CLI reference: scaffold flags, adding capabilities and components, callable dialogs, and what happens after creation."
+  title="Docs · create-stack"
+>
+  <main class="shell">
+    <header class="page-head">
+      <p class="t-label">Reference</p>
+      <h1 class="t-h1">CLI reference</h1>
+      <p class="t-lead">
+        Every flag, <code>create-stack add</code>, and what the first run leaves behind.
+      </p>
+    </header>
+
+    <div class="indexed-page">
+      <nav aria-label="On this page" class="section-index">
+        {
+          CONTENTS.map((entry) => (
+            <a data-spy-target={entry.id} href={`#${entry.id}`}>
+              <b>{entry.title}</b>
+            </a>
+          ))
+        }
+      </nav>
+      <article class="prose">
+        <section>
+          <h2 id="quick-start">Quick start</h2>
+          <pre><code>pnpm create @alfredmouelle/stack@latest my-app</code></pre>
+          <p>
+            Requires <strong>Node 24.19.0 or later</strong>, a package manager (pnpm, npm, yarn, or bun), and <strong>git</strong> on <code>PATH</code>. With no flags the CLI asks for each choice. <strong>Any stack or capability flag switches to non-interactive mode</strong> for CI and scripts.
+          </p>
+          <p>
+            The <code>project</code> argument names the target directory and becomes the default
+            package name. The directory <strong>must not exist, or must be empty</strong>.
+          </p>
+        </section>
+
+        <section>
+          <h2 id="flags">Scaffold flags</h2>
+          <p>
+            Capability flags are optional: <strong>a bare flag selects the recommended provider</strong>,
+            and leaving it out skips the capability. Pick the options visually in the <a href="/build">stack builder</a>, which prints the matching command.
+          </p>
+          {FLAG_TABLES.map((table) => (
+            <div class="docs-table">
+              <table class="data-table">
+                <caption>{table.caption}</caption>
+                <thead>
+                  <tr><th scope="col">Flag</th><th scope="col">Values</th><th scope="col">Default</th><th scope="col">Notes</th></tr>
+                </thead>
+                <tbody>
+                  {table.rows.map((row) => (
+                    <tr>
+                      <th scope="row">{row.flags.map((flag) => <span class="docs-flag">{flag}</span>)}</th>
+                      <td>{row.values.length ? row.values.join(' | ') : '-'}</td>
+                      <td>{row.fallback}</td>
+                      <td>{row.notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+          <p>When flags leave stack choices out, the CLI resolves them with these rules:</p>
+          <ul>
+            <li><code>--no-db</code> selects Clerk, keeps tRPC, and omits mail.</li>
+            <li>Better Auth adds Drizzle when the database is omitted and Resend when the mailer is omitted.</li>
+            <li>Explicit <code>--no-db</code> and <code>--no-mail</code> conflict with Better Auth.</li>
+            <li>Convex cannot be used with tRPC or Better Auth. Its omitted choices become Clerk, no tRPC, and no mail.</li>
+          </ul>
+          <p>
+            Conflicting or repeated choices, and choices the framework does not support, are reported <strong>before any file is written</strong>. Nothing is substituted.
+          </p>
+          <pre><code>{SCAFFOLD_EXAMPLES}</code></pre>
+        </section>
+
+        <section>
+          <h2 id="add">Add to a project</h2>
+          <p>
+            Run <code>create-stack add</code> inside a generated project to add a capability or a component. Adding a port with a different provider <strong>swaps it and removes the former provider's files</strong>; pass <code>--keep-files</code> to keep both. Repeat <code>--with</code> to apply several entries: <strong>the CLI checks every entry before it changes a file</strong>.
+          </p>
+          <pre><code>{ADD_EXAMPLES}</code></pre>
+        </section>
+
+        <section>
+          <h2 id="components">Components</h2>
+          <p>
+            Components install from a local shadcn registry, so the project's <code>components.json</code> controls aliases, styles, and icons. <strong>Existing files stay untouched</strong> unless you pass <code>--force</code>.
+          </p>
+          <div class="docs-table">
+            <table class="data-table">
+              <caption>Components</caption>
+              <thead><tr><th scope="col">Component</th><th scope="col">Provides</th></tr></thead>
+              <tbody>
+                {COMPONENTS.map((component) => (
+                  <tr><th scope="row">{component.name}</th><td>{component.provides}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p>
+            The dialogs use <a href="https://react-call.desko.dev" rel="noreferrer" target="_blank">react-call</a>.
+            The CLI mounts their root in the app shell, so you can await them from anywhere:
+          </p>
+          <pre><code>{DIALOG_EXAMPLE}</code></pre>
+        </section>
+
+        <section>
+          <h2 id="after-creation">After creating a project</h2>
+          <pre><code>{AFTER_CREATION}</code></pre>
+          <p>
+            The CLI writes <code>.env</code> with placeholders, installs dependencies, and runs the formatter, typecheck, and linter. Outside an existing repository it initializes Git and <strong>creates the first commit only after those checks pass</strong>. Without Git <code>user.name</code> or <code>user.email</code> it skips the commit, and <code>--no-install</code> leaves the project <strong>uncommitted</strong>.
+          </p>
+        </section>
+      </article>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  import { trackSectionIndex } from '../lib/section-spy'
+
+  const index = document.querySelector<HTMLElement>('.section-index')
+  if (index) trackSectionIndex(index)
+</script>
