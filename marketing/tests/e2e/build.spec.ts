@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openPage } from './navigation'
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -7,8 +8,36 @@ test.beforeEach(async ({ page }) => {
 })
 
 test.describe('stack configurator', () => {
+  test('selects quality tools and restores them from the URL', async ({ page }) => {
+    await openPage(page, '/build')
+
+    const formatter = page.getByRole('group', { name: 'Formatter', exact: true })
+    const linter = page.getByRole('group', { name: 'Linter', exact: true })
+    await expect(formatter.getByRole('radio', { name: 'Biome', exact: true })).toBeChecked()
+    await expect(linter.getByRole('radio', { name: 'Biome', exact: true })).toBeChecked()
+    await formatter.getByRole('radio', { name: 'Prettier', exact: true }).check()
+    await linter.getByRole('radio', { name: 'Oxlint', exact: true }).check()
+
+    await expect(page.getByRole('textbox', { name: 'Generated Create Stack command' })).toHaveValue(
+      'pnpm dlx @alfredmouelle/create-stack@latest my-app --formatter prettier --linter oxlint',
+    )
+    await expect(page).toHaveURL(/&formatter=prettier&linter=oxlint$/)
+    await page.reload()
+
+    await expect(formatter.getByRole('radio', { name: 'Prettier', exact: true })).toBeChecked()
+    await expect(linter.getByRole('radio', { name: 'Oxlint', exact: true })).toBeChecked()
+    await page.getByRole('button', { name: 'Reset to recommended' }).click()
+
+    await expect(formatter.getByRole('radio', { name: 'Biome', exact: true })).toBeChecked()
+    await expect(linter.getByRole('radio', { name: 'Biome', exact: true })).toBeChecked()
+    await expect(page.getByRole('textbox', { name: 'Generated Create Stack command' })).toHaveValue(
+      'pnpm dlx @alfredmouelle/create-stack@latest my-app',
+    )
+    await expect(page).toHaveURL(/\/build\?v=1&name=my-app&pm=pnpm$/)
+  })
+
   test('starts with the recommended stack and exposes its resolution reasons', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     await expect(page).toHaveURL(/\/build\?v=1&name=my-app&pm=pnpm$/)
     await expect(page.getByRole('textbox', { name: 'Generated Create Stack command' })).toHaveValue(
@@ -19,7 +48,7 @@ test.describe('stack configurator', () => {
   })
 
   test('keeps the complete command horizontally inspectable', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     const command = page.getByRole('textbox', { name: 'Generated Create Stack command' })
     await expect(command).toHaveValue('pnpm dlx @alfredmouelle/create-stack@latest my-app')
@@ -32,7 +61,7 @@ test.describe('stack configurator', () => {
   })
 
   test('keeps capability card geometry stable when toggling a provider', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     const capability = page.locator('.build-capability').first()
     const before = await capability.boundingBox()
@@ -50,7 +79,7 @@ test.describe('stack configurator', () => {
   })
 
   test('uses the branded checkbox treatment for capabilities', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     const checkbox = page.getByRole('checkbox', { name: /Analytics/ })
     await expect(checkbox).toHaveCSS('border-radius', '0px')
@@ -72,7 +101,7 @@ test.describe('stack configurator', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
       origin: 'http://127.0.0.1:4321',
     })
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     await page.getByLabel('Project name').fill('orbit')
     await page.getByRole('radio', { name: /Next\.js App Router/ }).check()
@@ -97,7 +126,7 @@ test.describe('stack configurator', () => {
   })
 
   test('lets users select an import alias and includes it in the command', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     const alias = page.getByRole('radio', { name: /^@/ })
     await expect(page.getByRole('radio', { name: /~ \(default\)/ })).toBeChecked()
@@ -111,7 +140,7 @@ test.describe('stack configurator', () => {
   })
 
   test('blocks generation and explains explicit conflicts', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     await page.getByRole('radio', { name: /Convex realtime database/ }).check()
     await page.getByRole('radio', { name: /Better Auth email \+ password/ }).check()
@@ -134,7 +163,7 @@ test.describe('stack configurator', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
       origin: 'http://127.0.0.1:4321',
     })
-    await page.goto('/build')
+    await openPage(page, '/build')
     await page.getByLabel('Project name').fill('shared-app')
     await page.getByRole('radio', { name: /Next\.js App Router/ }).check()
     await page.getByRole('button', { name: 'bun', exact: true }).click()
@@ -156,7 +185,7 @@ test.describe('stack configurator', () => {
   })
 
   test('offers a safe recovery for an unsupported schema version', async ({ page }) => {
-    await page.goto('/build?v=99&name=legacy')
+    await openPage(page, '/build?v=99&name=legacy')
 
     const recovery = page.getByRole('alert')
     await expect(recovery).toContainText('Version 99 is not understood')
@@ -170,7 +199,7 @@ test.describe('stack configurator', () => {
   })
 
   test('lets keyboard users change a stack choice', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     const framework = page.getByRole('radio', { name: /Next\.js App Router/ })
     await framework.focus()
@@ -187,7 +216,7 @@ test.describe('stack configurator mobile layout', () => {
   test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true })
 
   test('keeps the command and primary controls usable on a narrow viewport', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     await expect(
       page.getByRole('heading', { name: 'Choose the shape of your first useful commit.' }),
@@ -197,7 +226,7 @@ test.describe('stack configurator mobile layout', () => {
   })
 
   test('offers a back-to-top control after scrolling', async ({ page }) => {
-    await page.goto('/build')
+    await openPage(page, '/build')
 
     await page.evaluate(() =>
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' }),
@@ -211,7 +240,7 @@ test.describe('stack configurator mobile layout', () => {
 })
 
 test('uses pointer cursors for interactive controls', async ({ page }) => {
-  await page.goto('/build')
+  await openPage(page, '/build')
 
   await expect(page.locator('.build-choice').first()).toHaveCSS('cursor', 'pointer')
   await expect(page.locator('.build-capability-toggle').first()).toHaveCSS('cursor', 'pointer')
@@ -220,7 +249,7 @@ test('uses pointer cursors for interactive controls', async ({ page }) => {
   await expect(page.getByRole('combobox').first()).toHaveCSS('cursor', 'pointer')
   await expect(page.getByRole('button', { name: 'Copy command' })).toHaveCSS('cursor', 'pointer')
 
-  await page.goto('/')
+  await openPage(page, '/')
   await expect(page.locator('a').first()).toHaveCSS('cursor', 'pointer')
   await expect(page.getByRole('button', { name: 'Copy command' })).toHaveCSS('cursor', 'pointer')
 })

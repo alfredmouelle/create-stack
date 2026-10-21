@@ -1318,7 +1318,7 @@ input:disabled {
   font-size: 0.69rem;
 }
 
-.build-choice:hover .build-choice-copy {
+.build-choice:where(:not(:has(input:disabled))):hover .build-choice-copy {
   border-color: var(--blue);
   transform: translateY(-1px);
 }
@@ -1332,6 +1332,17 @@ input:disabled {
 .build-choice input:focus-visible + .build-choice-copy {
   outline: 3px solid var(--orange);
   outline-offset: 3px;
+}
+
+.build-choice:has(input:disabled) {
+  cursor: not-allowed;
+}
+
+.build-choice input:disabled + .build-choice-copy {
+  border-color: var(--line);
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.6;
 }
 
 .build-reason {

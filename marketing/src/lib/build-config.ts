@@ -3,8 +3,14 @@ import {
   type Auth,
   DATABASES,
   type Database,
+  FORMATTERS,
+  type Formatter,
+  FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   type Framework,
+  type FrameworkSupportCatalog,
+  LINTERS,
+  type Linter,
   MAILERS,
   type Mailer,
   resolveStackConfiguration,
@@ -93,6 +99,8 @@ export interface BuildState {
   auth?: Auth
   trpc?: boolean
   mailer?: Mailer
+  formatter?: Formatter
+  linter?: Linter
   alias?: ImportAlias
   monorepo?: Monorepo
   capabilities: CapabilitySelection
@@ -118,7 +126,7 @@ const STACK_PACKAGE = '@alfredmouelle/create-stack@latest'
 
 type StackChoice = keyof Pick<
   StackConfigurationInput,
-  'framework' | 'database' | 'auth' | 'trpc' | 'mailer'
+  'framework' | 'database' | 'auth' | 'mailer' | 'formatter' | 'linter'
 >
 
 export function defaultBuildState(): BuildState {
@@ -136,6 +144,8 @@ function stackInput(state: BuildState): StackConfigurationInput {
     auth: state.auth,
     trpc: state.trpc,
     mailer: state.mailer,
+    formatter: state.formatter,
+    linter: state.linter,
   }
 }
 
@@ -166,8 +176,11 @@ function commandFor(state: BuildState, stackArgs: readonly string[]): string | n
     .join(' ')
 }
 
-export function resolveBuildState(state: BuildState): BuildStateResult {
-  const result = resolveStackConfiguration(stackInput(state))
+export function resolveBuildState(
+  state: BuildState,
+  frameworkSupport: FrameworkSupportCatalog = FRAMEWORK_SUPPORT,
+): BuildStateResult {
+  const result = resolveStackConfiguration(stackInput(state), frameworkSupport)
   return {
     ...result,
     command: result.conflicts.length === 0 ? commandFor(state, result.cliArgs) : null,
@@ -178,18 +191,19 @@ export function buildCommand(state: BuildState): string | null {
   return resolveBuildState(state).command
 }
 
-function setChoice(
+function setChoice<Axis extends StackChoice>(
   state: BuildState,
   params: URLSearchParams,
-  key: StackChoice,
-  choices: readonly string[],
+  key: Axis,
+  choices: readonly NonNullable<BuildState[Axis]>[],
 ): void {
   const value = params.get(key)
   if (value === null) return
-  if (!choices.includes(value)) {
+  const choice = choices.find((choice) => choice === value)
+  if (choice === undefined) {
     throw new Error(`Invalid ${key} value "${value}"`)
   }
-  state[key] = value as never
+  state[key] = choice
 }
 
 export function serializeBuildState(state: BuildState): string {
@@ -202,6 +216,8 @@ export function serializeBuildState(state: BuildState): string {
   if (state.auth) params.set('auth', state.auth)
   if (state.trpc !== undefined) params.set('trpc', state.trpc ? '1' : '0')
   if (state.mailer) params.set('mailer', state.mailer)
+  if (state.formatter) params.set('formatter', state.formatter)
+  if (state.linter) params.set('linter', state.linter)
   if (state.alias && state.alias !== '~') params.set('alias', state.alias)
   if (state.monorepo) params.set('mono', state.monorepo)
 
@@ -267,6 +283,8 @@ function parseStateValues(params: URLSearchParams, state: BuildState): string | 
     setChoice(state, params, 'database', DATABASES)
     setChoice(state, params, 'auth', AUTHS)
     setChoice(state, params, 'mailer', MAILERS)
+    setChoice(state, params, 'formatter', FORMATTERS)
+    setChoice(state, params, 'linter', LINTERS)
     parseTrpc(params, state)
     parseAlias(params, state)
     parseMonorepo(params, state)
