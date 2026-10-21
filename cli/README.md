@@ -75,7 +75,3 @@ Inspired by [create-t3-app](https://create.t3.gg) and the work of [Theo Browne](
 ## Author
 
 [Alfred MOUELLE](https://alfredmouelle.com), full-stack developer.
-
-## RasenganJS preview
-
-Select `--framework rasengan`. The recommended stack uses Drizzle, Better Auth, tRPC and Resend; the global default remains TanStack Start. Rasengan and its Node runtime are pinned betas. The generated `scripts/start.ts` serves browser and public assets without publishing compiled server files. Use the generated build/start scripts for production. Keep private modules in API routes; page loaders use HTTP for session data. Hosted providers require configured credentials.
