@@ -275,11 +275,6 @@ ol {
   color: var(--ash);
 }
 
-.sec-question::before {
-  content: "? ";
-  color: var(--fg);
-}
-
 .split {
   display: grid;
   gap: var(--space-6);
