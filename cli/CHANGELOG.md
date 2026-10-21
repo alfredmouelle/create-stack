@@ -46,6 +46,8 @@ refactors, and documentation-only changes wait for the next release that adds pr
   to the Biome configuration and Git hooks.
 - `add component date-picker` passes the calendar's optional `locale` only when it is
   set, so the shadcn calendar typechecks under `exactOptionalPropertyTypes`.
+- The generated README links its CLI reference to the website docs
+  (https://create-stack.alfredmouelle.com/docs) instead of the CLI README.
 
 ### Removed
 

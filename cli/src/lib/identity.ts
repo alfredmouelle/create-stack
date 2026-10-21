@@ -92,7 +92,7 @@ function learnMoreSection(): string {
   return `## Learn more
 
 - [create-stack documentation](https://create-stack.alfredmouelle.com)
-- [create-stack CLI reference](https://github.com/alfredmouelle/create-stack/blob/main/cli/README.md)
+- [create-stack CLI reference](https://create-stack.alfredmouelle.com/docs)
 - [create-stack GitHub repository](https://github.com/alfredmouelle/create-stack)`
 }
 
