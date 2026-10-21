@@ -1,0 +1,41 @@
+create-stack: assemble your selected stack from a tested reference application.
+
+Usage:
+  create-stack [project] [flags]          Scaffold a new project
+  create-stack add <kind> [provider]      Add one capability or component
+  create-stack add --with <item> [...]    Add a validated batch
+
+Run a command with no args for an interactive picker; pass a selection flag
+(or --yes), or an addition name, for non-interactive mode.
+See `add --help` for its options.
+
+Scaffold flags:
+  -f, --framework [tanstack|next|rasengan] Framework (bare/default = tanstack; preview: rasengan)
+  --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
+  --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
+  --package-manager <name>         Alias for --pm
+  --alias <prefix>                 Import alias prefix, e.g. @ or # (default ~)
+  --db, --database [drizzle|prisma|convex|none] ORM the app ships (bare/default = framework recommendation)
+  --auth <better-auth|clerk|none>  Auth provider (default = framework recommendation)
+  --mail, --mailer [resend|brevo|ses|none] Mail provider (bare/default = framework recommendation)
+  --formatter [biome|prettier]     Formatter (bare/default = framework recommendation; cannot be excluded)
+  --linter [biome|oxlint]          Linter (bare/default = framework recommendation; cannot be excluded)
+  --minimal                        Start with the framework's smallest runnable project
+  --trpc / --no-trpc               Include or explicitly exclude tRPC
+  --no-db / --no-auth / --no-mail  Explicitly exclude a stack part
+  --no-install                     Skip install + verification
+  --no-git                         Do not initialize a Git repository
+  -y, --yes                        Non-interactive with all defaults
+  -h, --help                       Show this help
+  -v, --version                    Print version
+
+Capability flags (omit to skip; pass with no value for the default adapter):
+  --storage  --cache  --logger  --analytics    swappable behind a port
+  --jobs [inngest]  --errors [sentry]          single provider
+  --error-tracking [sentry]                    readable alias for --errors
+  Adapters are listed in the interactive picker, or run `add --help`.
+
+A choice the selected framework does not support is reported as a conflict
+before any file is written. Every project gets the strict quality profile
+(strict TypeScript, Git hooks, editor settings); the first commit is created
+only after install, format, typecheck, and lint pass.

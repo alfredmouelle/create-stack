@@ -1,31 +1,12 @@
 ---
 import {
-  AUTHS,
-  CAPABILITY_CATALOG,
   COMPONENTS,
   type ComponentName,
-  DATABASES,
-  DEFAULT_IMPORT_ALIAS,
-  FORMATTERS,
-  FRAMEWORK_SUPPORT,
-  FRAMEWORKS,
-  LINTERS,
-  MAILERS,
   MINIMUM_NODE_VERSION,
-  MONOREPO_ORCHESTRATORS,
   PACKAGE_MANAGERS,
-  RECOMMENDED_FRAMEWORK,
 } from '@alfredmouelle/stack-config'
 import BaseLayout from '../layouts/BaseLayout.astro'
-import { CAPABILITY_LABELS } from '../lib/build-config'
-
-type FlagRow = {
-  flags: readonly string[]
-  values: readonly string[]
-  defaultValue: string
-  notes: string
-  link?: { href: string; label: string }
-}
+import { FLAG_TABLES } from '../lib/docs-flags'
 
 const CONTENTS = [
   { id: 'quick-start', title: 'Quick start' },
@@ -33,111 +14,6 @@ const CONTENTS = [
   { id: 'add', title: 'Add to a project' },
   { id: 'components', title: 'Components' },
   { id: 'after-creation', title: 'After creating a project' },
-] as const
-
-const recommended = FRAMEWORK_SUPPORT[RECOMMENDED_FRAMEWORK].recommendations
-
-const STACK_FLAGS: readonly FlagRow[] = [
-  {
-    flags: ['--framework'],
-    values: FRAMEWORKS,
-    defaultValue: RECOMMENDED_FRAMEWORK,
-    notes: 'Framework to generate. It decides the accepted stack options.',
-    link: { href: '/frameworks', label: 'Support per framework' },
-  },
-  {
-    flags: ['--database'],
-    values: DATABASES,
-    defaultValue: recommended.database[0] ?? 'none',
-    notes: 'prisma selects Prisma 7. convex provides a realtime database and API, so use Clerk or no auth.',
-  },
-  {
-    flags: ['--auth'],
-    values: AUTHS,
-    defaultValue: recommended.auth[0] ?? 'none',
-    notes: 'clerk is hosted and needs no database or mailer.',
-  },
-  {
-    flags: ['--trpc', '--no-trpc'],
-    values: [],
-    defaultValue: recommended.trpc ? 'on' : 'off',
-    notes: 'Include or exclude the tRPC API.',
-  },
-  {
-    flags: ['--mailer'],
-    values: MAILERS,
-    defaultValue: recommended.mailer[0] ?? 'none',
-    notes: 'Transactional email provider.',
-  },
-  {
-    flags: ['--formatter'],
-    values: FORMATTERS,
-    defaultValue: recommended.formatter,
-    notes: 'A bare flag selects Biome. --no-formatter and oxfmt are rejected.',
-  },
-  {
-    flags: ['--linter'],
-    values: LINTERS,
-    defaultValue: recommended.linter,
-    notes: 'A bare flag selects Biome. --no-linter and ESLint are rejected.',
-  },
-  {
-    flags: ['--minimal'],
-    values: [],
-    defaultValue: 'off',
-    notes: 'Smallest runnable, frontend-only project: no data, auth, tRPC, mail, or capabilities.',
-  },
-  {
-    flags: ['--no-db', '--no-auth', '--no-mail'],
-    values: [],
-    defaultValue: 'off',
-    notes: 'Explicitly exclude the database, authentication, or transactional email.',
-  },
-]
-
-const CAPABILITY_FLAGS: readonly FlagRow[] = CAPABILITY_CATALOG.map((capability) => ({
-  flags: [capability.flag, ...capability.aliases].map((flag) => `--${flag}`),
-  values: capability.providers,
-  defaultValue: capability.recommendedProvider,
-  notes:
-    capability.kind === 'port'
-      ? 'Swappable provider behind a port.'
-      : `${CAPABILITY_LABELS[capability.name]}.`,
-}))
-
-const PROJECT_FLAGS: readonly FlagRow[] = [
-  {
-    flags: ['--monorepo'],
-    values: MONOREPO_ORCHESTRATORS,
-    defaultValue: 'standalone',
-    notes: 'Put the app in apps/web inside a Turborepo or Nx monorepo. A bare flag selects turbo.',
-  },
-  {
-    flags: ['--pm'],
-    values: PACKAGE_MANAGERS,
-    defaultValue: 'detected',
-    notes: 'Package manager for the generated project. Defaults to the one that ran the CLI.',
-  },
-  {
-    flags: ['--alias'],
-    values: ['<prefix>'],
-    defaultValue: DEFAULT_IMPORT_ALIAS,
-    notes: 'Import alias, such as @ or #. Imports matching <alias>/* resolve to src/*.',
-  },
-  {
-    flags: ['--no-install'],
-    values: [],
-    defaultValue: 'off',
-    notes: 'Skip dependency installation and verification. The project stays uncommitted.',
-  },
-  { flags: ['--no-git'], values: [], defaultValue: 'off', notes: 'Do not initialize Git.' },
-  { flags: ['--yes', '-y'], values: [], defaultValue: 'off', notes: 'Accept every default without a prompt.' },
-]
-
-const FLAG_TABLES = [
-  { caption: 'Stack flags', rows: STACK_FLAGS },
-  { caption: 'Capability flags', rows: CAPABILITY_FLAGS },
-  { caption: 'Project flags', rows: PROJECT_FLAGS },
 ] as const
 
 const COMPONENT_PROVIDES: Readonly<Record<ComponentName, string>> = {

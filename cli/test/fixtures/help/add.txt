@@ -1,0 +1,25 @@
+create-stack add: enrich an existing application.
+
+Usage:
+  create-stack add <capability> [provider] [flags]
+  create-stack add component <name> [flags]
+  create-stack add --with <kind>[=<provider>] [--with ...] [flags]
+
+Run with no addition for an interactive picker. An explicit addition prints its
+resolved plan and runs without confirmation. Provider changes remove former
+provider files by default; --keep-files retains them.
+
+Swappable behind a port: storage, cache, logger, analytics, mail.
+Single provider: jobs (inngest), errors (sentry).
+No provider at all: email-ui, http.
+Components: date-picker, prompt, choice, confirm-passphrase, confirm-otp, confirm, alert, data-table.
+
+Flags:
+  --with <kind>[=<provider>]        Add one item to a validated addition batch (repeatable)
+  --keep-files                     Keep former provider files when changing provider
+  --force                          Replace existing files for a selected component
+  --app <relative-path>            Application target (required when ambiguous)
+  --pm <pnpm|npm|yarn|bun>         Override package manager detected from lockfile
+  --package-manager <name>         Alias for --pm
+  --no-install                     Skip install + verification
+  -h, --help                       Show this help

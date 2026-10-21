@@ -4,6 +4,10 @@ import {
   MONOREPO_ORCHESTRATORS,
   type MonorepoOrchestrator,
   normalizeImportAlias,
+  SCAFFOLD_FLAGS,
+  scaffoldFlag,
+  scaffoldFlagSpellings,
+  scaffoldFlagSwitches,
 } from '../../../packages/stack-config/src/index.ts'
 import type { Monorepo } from '../framework-module.ts'
 
@@ -19,24 +23,26 @@ export type ParsedArgs = {
 
 type OptionSink = (name: string, value: OptionValue) => void
 
+const BOOLEAN_SCAFFOLD_OPTIONS = SCAFFOLD_FLAGS.flatMap(scaffoldFlagSwitches)
+
 const BOOLEAN_LONG_OPTIONS = new Set([
-  'yes',
+  ...BOOLEAN_SCAFFOLD_OPTIONS.filter((name) => name.length > 1),
   'help',
   'version',
-  'minimal',
-  'trpc',
-  'no-trpc',
-  'no-db',
-  'no-auth',
-  'no-mail',
   'no-formatter',
   'no-linter',
-  'no-install',
-  'no-git',
   'keep',
   'keep-files',
   'force',
 ])
+
+const BOOLEAN_SHORT_OPTIONS = new Set([
+  ...BOOLEAN_SCAFFOLD_OPTIONS.filter((name) => name.length === 1),
+  'h',
+  'v',
+])
+
+const MONOREPO_OPTIONS = scaffoldFlagSpellings(scaffoldFlag('monorepo'))
 
 const isMonorepoOrchestrator = (value: unknown): value is MonorepoOrchestrator =>
   MONOREPO_ORCHESTRATORS.some((orchestrator) => orchestrator === value)
@@ -50,7 +56,7 @@ function parseLongOption(argv: readonly string[], index: number, option: OptionS
   }
   const key = argument.slice(2)
   const next = argv[index + 1]
-  const isMonorepoOption = ['mono', 'monorepo'].includes(key)
+  const isMonorepoOption = MONOREPO_OPTIONS.includes(key)
   const hasExplicitMonorepoValue = isMonorepoOption && isMonorepoOrchestrator(next)
   if (
     !BOOLEAN_LONG_OPTIONS.has(key) &&
@@ -76,7 +82,7 @@ function parseShortOption(argv: readonly string[], index: number, option: Option
     throw new Error(`Grouped short options are not supported: ${argument}`)
   }
   const next = argv[index + 1]
-  if (!['y', 'h', 'v'].includes(key) && next && !next.startsWith('-')) {
+  if (!BOOLEAN_SHORT_OPTIONS.has(key) && next && !next.startsWith('-')) {
     option(key, next)
     return 1
   }

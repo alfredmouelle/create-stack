@@ -1,15 +1,9 @@
 import {
-  AUTHS,
-  CAPABILITY_CATALOG,
-  DATABASES,
-  FORMATTERS,
   FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   type FrameworkMaturity,
-  LINTERS,
-  MAILERS,
-  MONOREPO_ORCHESTRATORS,
-  PACKAGE_MANAGERS,
+  SCAFFOLD_FLAGS,
+  type ScaffoldFlag,
 } from '@alfredmouelle/stack-config'
 import { PLANNED_FRAMEWORKS } from '../data/frameworks'
 
@@ -66,10 +60,20 @@ const FRAMEWORK_MATURITY = [
   .filter(Boolean)
   .join(' ')
 
-const flag = (name: string, values: readonly string[]): string =>
-  `\`--${name} ${values.join('|')}\``
+function flagUsage({ name, negation, value }: ScaffoldFlag): string {
+  const usage =
+    value.kind === 'choice'
+      ? `--${name} ${value.choices.join('|')}`
+      : value.kind === 'text'
+        ? `--${name} <${value.placeholder}>`
+        : `--${name}`
+  return negation === undefined ? `\`${usage}\`` : `\`${usage}\` / \`--${negation}\``
+}
 
-const CAPABILITY_FLAGS = CAPABILITY_CATALOG.map(({ flag }) => `\`--${flag}\``).join(', ')
+const flagUsages = (section: ScaffoldFlag['section']): string =>
+  SCAFFOLD_FLAGS.filter((flag) => flag.section === section)
+    .map(flagUsage)
+    .join(', ')
 
 const LLMS = (canonicalUrl: string) => `# Create Stack
 
@@ -82,10 +86,9 @@ Start with \`pnpm dlx @alfredmouelle/create-stack@latest my-app\`.
 ## Non-interactive use
 
 - \`--yes\` accepts every default without a prompt. Any stack or capability flag also switches to non-interactive mode.
-- ${flag('framework', FRAMEWORKS)}, ${flag('database', DATABASES)}, ${flag('auth', AUTHS)}.
-- \`--trpc\` / \`--no-trpc\`, ${flag('mailer', MAILERS)}, ${flag('formatter', FORMATTERS)}, ${flag('linter', LINTERS)}.
-- ${flag('monorepo', MONOREPO_ORCHESTRATORS)}, \`--alias <prefix>\`, ${flag('pm', PACKAGE_MANAGERS)}, \`--no-install\`, \`--no-git\`.
-- Capabilities: ${CAPABILITY_FLAGS}.
+- Stack: ${flagUsages('stack')}.
+- Capabilities, where a bare flag selects the recommended provider: ${flagUsages('capability')}.
+- Project: ${flagUsages('project')}.
 - A choice the framework does not support is reported as a conflict before any file is written. Nothing is substituted.
 
 After creation, \`create-stack add --with kind[=provider] [...]\` adds capabilities as a validated batch.

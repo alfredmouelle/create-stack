@@ -32,6 +32,10 @@ capability providers and recommended providers from the
 `packages/*/capability.json` manifests, so a new adapter reaches the CLI and the
 website without other edits.
 
+`SCAFFOLD_FLAGS` declares every creation option: its name, aliases, negation,
+accepted values, and section. The CLI parser, validation, and help read it, and
+so do the website's flag tables and `llms.txt`.
+
 The module is pure TypeScript plus static JSON imports. It has no filesystem,
 CLI, framework, React, or browser-global dependency. Explicit conflicts leave `cliArgs` empty so callers
 must handle them before project generation.

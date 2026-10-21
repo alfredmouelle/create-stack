@@ -8,6 +8,10 @@ export {
   PACKAGE_MANAGERS,
   QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,
+  SCAFFOLD_FLAGS,
+  scaffoldFlag,
+  scaffoldFlagSpellings,
+  scaffoldFlagSwitches,
 } from '../../packages/stack-config/src/index.ts'
 export { validateAdditions, wireCapabilityAddition } from './additions.ts'
 export type { CreationConfiguration } from './creation-configuration.ts'
@@ -36,7 +40,6 @@ export { isValidAlias, normalizeAlias, parseArgs, resolveMonorepo } from './lib/
 export { resolveAuth } from './lib/auth.ts'
 export {
   CAPABILITIES,
-  canonicalCapabilityName,
   capabilityChoices,
   creationProviderChoices,
   resolveCreationProvider,

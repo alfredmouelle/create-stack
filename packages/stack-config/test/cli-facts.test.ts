@@ -10,6 +10,8 @@ import {
   MAILERS,
   MINIMUM_NODE_VERSION,
   normalizeImportAlias,
+  SCAFFOLD_FLAGS,
+  scaffoldFlagSpellings,
 } from '../src/index.js'
 
 const packagesRoot = join(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -65,5 +67,50 @@ describe('import alias', () => {
 
   test('trims whitespace and trailing slashes', () => {
     expect(normalizeImportAlias(' @app// ')).toBe('@app')
+  })
+})
+
+describe('scaffold flags', () => {
+  test('declares every creation option the CLI accepts, grouped by section', () => {
+    expect(
+      SCAFFOLD_FLAGS.map((flag) => ({
+        section: flag.section,
+        spellings: scaffoldFlagSpellings(flag),
+      })),
+    ).toEqual([
+      { section: 'stack', spellings: ['framework', 'f'] },
+      { section: 'stack', spellings: ['database', 'db', 'no-db'] },
+      { section: 'stack', spellings: ['auth', 'no-auth'] },
+      { section: 'stack', spellings: ['trpc', 'no-trpc'] },
+      { section: 'stack', spellings: ['mailer', 'mail', 'no-mail'] },
+      { section: 'stack', spellings: ['formatter'] },
+      { section: 'stack', spellings: ['linter'] },
+      { section: 'stack', spellings: ['minimal'] },
+      { section: 'capability', spellings: ['storage'] },
+      { section: 'capability', spellings: ['cache'] },
+      { section: 'capability', spellings: ['logger'] },
+      { section: 'capability', spellings: ['analytics'] },
+      { section: 'capability', spellings: ['jobs'] },
+      { section: 'capability', spellings: ['errors', 'error-tracking'] },
+      { section: 'project', spellings: ['monorepo', 'mono'] },
+      { section: 'project', spellings: ['pm', 'package-manager'] },
+      { section: 'project', spellings: ['alias'] },
+      { section: 'project', spellings: ['no-install'] },
+      { section: 'project', spellings: ['no-git'] },
+      { section: 'project', spellings: ['yes', 'y'] },
+    ])
+  })
+
+  test('takes accepted values from the shared stack facts', () => {
+    const values = Object.fromEntries(SCAFFOLD_FLAGS.map(({ name, value }) => [name, value]))
+    expect(values).toMatchObject({
+      framework: { kind: 'choice', choices: ['tanstack', 'next', 'rasengan'] },
+      monorepo: { kind: 'choice', choices: ['turbo', 'nx'] },
+      pm: { kind: 'choice', choices: ['pnpm', 'npm', 'yarn', 'bun'] },
+      storage: { kind: 'choice', choices: ['s3', 'r2', 'gcs', 'local'] },
+      alias: { kind: 'text', placeholder: 'prefix' },
+      trpc: { kind: 'none' },
+      yes: { kind: 'none' },
+    })
   })
 })

@@ -121,6 +121,91 @@ export const CAPABILITY_CATALOG = [
 ] as const
 export type CapabilityName = (typeof CAPABILITY_CATALOG)[number]['name']
 
+export type ScaffoldFlagValue =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'choice'; readonly choices: readonly string[] }
+  | { readonly kind: 'text'; readonly placeholder: string }
+
+export type ScaffoldFlag = {
+  readonly name: string
+  readonly aliases: readonly string[]
+  readonly negation?: string
+  readonly value: ScaffoldFlagValue
+  readonly section: 'stack' | 'capability' | 'project'
+}
+
+const noValue = { kind: 'none' } as const
+
+const choiceOf = (choices: readonly string[]): ScaffoldFlagValue => ({ kind: 'choice', choices })
+
+export const SCAFFOLD_FLAGS: readonly ScaffoldFlag[] = [
+  { name: 'framework', aliases: ['f'], value: choiceOf(FRAMEWORKS), section: 'stack' },
+  {
+    name: 'database',
+    aliases: ['db'],
+    negation: 'no-db',
+    value: choiceOf(DATABASES),
+    section: 'stack',
+  },
+  { name: 'auth', aliases: [], negation: 'no-auth', value: choiceOf(AUTHS), section: 'stack' },
+  { name: 'trpc', aliases: [], negation: 'no-trpc', value: noValue, section: 'stack' },
+  {
+    name: 'mailer',
+    aliases: ['mail'],
+    negation: 'no-mail',
+    value: choiceOf(MAILERS),
+    section: 'stack',
+  },
+  { name: 'formatter', aliases: [], value: choiceOf(FORMATTERS), section: 'stack' },
+  { name: 'linter', aliases: [], value: choiceOf(LINTERS), section: 'stack' },
+  { name: 'minimal', aliases: [], value: noValue, section: 'stack' },
+  ...CAPABILITY_CATALOG.map(({ flag, aliases, providers }) => ({
+    name: flag,
+    aliases,
+    value: choiceOf(providers),
+    section: 'capability' as const,
+  })),
+  {
+    name: 'monorepo',
+    aliases: ['mono'],
+    value: choiceOf(MONOREPO_ORCHESTRATORS),
+    section: 'project',
+  },
+  {
+    name: 'pm',
+    aliases: ['package-manager'],
+    value: choiceOf(PACKAGE_MANAGERS),
+    section: 'project',
+  },
+  {
+    name: 'alias',
+    aliases: [],
+    value: { kind: 'text', placeholder: 'prefix' },
+    section: 'project',
+  },
+  { name: 'no-install', aliases: [], value: noValue, section: 'project' },
+  { name: 'no-git', aliases: [], value: noValue, section: 'project' },
+  { name: 'yes', aliases: ['y'], value: noValue, section: 'project' },
+]
+
+export function scaffoldFlagSpellings({ name, aliases, negation }: ScaffoldFlag): string[] {
+  return negation === undefined ? [name, ...aliases] : [name, ...aliases, negation]
+}
+
+export function scaffoldFlagSwitches({ name, aliases, negation, value }: ScaffoldFlag): string[] {
+  const switches = value.kind === 'none' ? [name, ...aliases] : []
+  return negation === undefined ? switches : [...switches, negation]
+}
+
+export function scaffoldFlag(name: string): ScaffoldFlag {
+  const flag = SCAFFOLD_FLAGS.find((candidate) => candidate.name === name)
+  if (flag === undefined) throw new Error(`Unknown scaffold flag: ${name}`)
+  return flag
+}
+
+export const optionSpelling = (name: string): string =>
+  name.length === 1 ? `-${name}` : `--${name}`
+
 export type StackAxis =
   | 'framework'
   | 'database'
