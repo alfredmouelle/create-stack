@@ -15,8 +15,9 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 type FlagRow = {
   flags: readonly string[]
   values: readonly string[]
-  fallback: string
+  defaultValue: string
   notes: string
+  link?: { href: string; label: string }
 }
 
 const CONTENTS = [
@@ -33,55 +34,56 @@ const STACK_FLAGS: readonly FlagRow[] = [
   {
     flags: ['--framework'],
     values: FRAMEWORKS,
-    fallback: RECOMMENDED_FRAMEWORK,
-    notes: 'Framework to generate. Its support on the frameworks page decides the accepted stack options.',
+    defaultValue: RECOMMENDED_FRAMEWORK,
+    notes: 'Framework to generate. It decides the accepted stack options.',
+    link: { href: '/frameworks', label: 'Support per framework' },
   },
   {
     flags: ['--database'],
     values: DATABASES,
-    fallback: recommended.database[0] ?? 'none',
+    defaultValue: recommended.database[0] ?? 'none',
     notes: 'prisma selects Prisma 7. convex provides a realtime database and API, so use Clerk or no auth.',
   },
   {
     flags: ['--auth'],
     values: AUTHS,
-    fallback: recommended.auth[0] ?? 'none',
+    defaultValue: recommended.auth[0] ?? 'none',
     notes: 'clerk is hosted and needs no database or mailer.',
   },
   {
     flags: ['--trpc', '--no-trpc'],
     values: [],
-    fallback: recommended.trpc ? 'on' : 'off',
+    defaultValue: recommended.trpc ? 'on' : 'off',
     notes: 'Include or exclude the tRPC API.',
   },
   {
     flags: ['--mailer'],
     values: MAILERS,
-    fallback: recommended.mailer[0] ?? 'none',
+    defaultValue: recommended.mailer[0] ?? 'none',
     notes: 'Transactional email provider.',
   },
   {
     flags: ['--formatter'],
     values: FORMATTERS,
-    fallback: recommended.formatter,
+    defaultValue: recommended.formatter,
     notes: 'A bare flag selects Biome. --no-formatter and oxfmt are rejected.',
   },
   {
     flags: ['--linter'],
     values: LINTERS,
-    fallback: recommended.linter,
+    defaultValue: recommended.linter,
     notes: 'A bare flag selects Biome. --no-linter and ESLint are rejected.',
   },
   {
     flags: ['--minimal'],
     values: [],
-    fallback: 'off',
+    defaultValue: 'off',
     notes: 'Smallest runnable, frontend-only project: no data, auth, tRPC, mail, or capabilities.',
   },
   {
     flags: ['--no-db', '--no-auth', '--no-mail'],
     values: [],
-    fallback: 'off',
+    defaultValue: 'off',
     notes: 'Explicitly exclude the database, authentication, or transactional email.',
   },
 ]
@@ -90,14 +92,14 @@ const CAPABILITY_FLAGS: readonly FlagRow[] = [
   ...PORT_CAPABILITIES.filter((capability) => capability.name !== 'mailer').map((capability) => ({
     flags: [`--${capability.name}`],
     values: capability.providers,
-    fallback: capability.recommended,
+    defaultValue: capability.recommended,
     notes: 'Swappable provider behind a port.',
   })),
-  { flags: ['--jobs'], values: ['inngest'], fallback: 'inngest', notes: 'Background jobs.' },
+  { flags: ['--jobs'], values: ['inngest'], defaultValue: 'inngest', notes: 'Background jobs.' },
   {
     flags: ['--errors', '--error-tracking'],
     values: ['sentry'],
-    fallback: 'sentry',
+    defaultValue: 'sentry',
     notes: 'Error reporting.',
   },
 ]
@@ -106,29 +108,29 @@ const PROJECT_FLAGS: readonly FlagRow[] = [
   {
     flags: ['--monorepo'],
     values: ['turbo', 'nx'],
-    fallback: 'standalone',
+    defaultValue: 'standalone',
     notes: 'Put the app in apps/web inside a Turborepo or Nx monorepo. A bare flag selects turbo.',
   },
   {
     flags: ['--pm'],
     values: ['pnpm', 'npm', 'yarn', 'bun'],
-    fallback: 'detected',
+    defaultValue: 'detected',
     notes: 'Package manager for the generated project. Defaults to the one that ran the CLI.',
   },
   {
     flags: ['--alias'],
     values: ['<prefix>'],
-    fallback: '~',
+    defaultValue: '~',
     notes: 'Import alias, such as @ or #. Imports matching <alias>/* resolve to src/*.',
   },
   {
     flags: ['--no-install'],
     values: [],
-    fallback: 'off',
+    defaultValue: 'off',
     notes: 'Skip dependency installation and verification. The project stays uncommitted.',
   },
-  { flags: ['--no-git'], values: [], fallback: 'off', notes: 'Do not initialize Git.' },
-  { flags: ['--yes', '-y'], values: [], fallback: 'off', notes: 'Accept every default without a prompt.' },
+  { flags: ['--no-git'], values: [], defaultValue: 'off', notes: 'Do not initialize Git.' },
+  { flags: ['--yes', '-y'], values: [], defaultValue: 'off', notes: 'Accept every default without a prompt.' },
 ]
 
 const FLAG_TABLES = [
@@ -163,10 +165,15 @@ create-stack add cache upstash                        # swap Redis for Upstash
 create-stack add --with storage=r2 --with jobs        # capability batch
 create-stack add --with jobs --with component=confirm # mixed batch`
 
+const COMPONENT_EXAMPLES = `create-stack add component date-picker                       # one component
+create-stack add --with component=confirm --with component=prompt  # several components`
+
 const DIALOG_EXAMPLE = `const ok = await Confirm.call({ title: 'Delete project?', variant: 'destructive' })
 if (ok) deleteProject()
 
-const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' })
+await Alert.call({ title: 'Saved', description: 'Your changes are live.' })
+
+const name = await Prompt.call({ title: 'Rename', label: 'Name', defaultValue: 'my-app' }) // string | null
 
 const destination = await Choice.call({
   title: 'Move to',
@@ -174,12 +181,15 @@ const destination = await Choice.call({
     { label: 'Inbox', value: 'inbox' },
     { label: 'Archive', value: 'archive' },
   ],
-})
+}) // string | null
 
+const confirmed = await ConfirmPassphrase.call({ title: 'Delete repository?', phrase: repository.name })
+
+// Returning false keeps the dialog open with an error.
 const verified = await ConfirmOtp.call({ title: 'Enter code', verify: (code) => api.checkOtp(code) })`
 
 const AFTER_CREATION = `cd my-app
-pnpm install     # only after --no-install
+pnpm install     # only after --no-install; use your package manager
 pnpm dev`
 ---
 
@@ -235,10 +245,13 @@ pnpm dev`
                 <tbody>
                   {table.rows.map((row) => (
                     <tr>
-                      <th scope="row">{row.flags.map((flag) => <span class="docs-flag">{flag}</span>)}</th>
-                      <td>{row.values.length ? row.values.join(' | ') : '-'}</td>
-                      <td>{row.fallback}</td>
-                      <td>{row.notes}</td>
+                      <th scope="row">{row.flags.map((flag) => <code class="docs-flag">{flag}</code>)}</th>
+                      <td>{row.values.length ? row.values.map((value, index) => [index ? ' | ' : '', <code>{value}</code>]) : '-'}</td>
+                      <td><code>{row.defaultValue}</code></td>
+                      <td>
+                        {row.notes}
+                        {row.link ? [' ', <a href={row.link.href}>{row.link.label}</a>] : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -261,7 +274,7 @@ pnpm dev`
         <section>
           <h2 id="add">Add to a project</h2>
           <p>
-            Run <code>create-stack add</code> inside a generated project to add a capability or a component. Adding a port with a different provider <strong>swaps it and removes the former provider's files</strong>; pass <code>--keep-files</code> to keep both. Repeat <code>--with</code> to apply several entries: <strong>the CLI checks every entry before it changes a file</strong>.
+            Run <code>create-stack add</code> inside a generated project to add a capability or a component. Adding a port with a different provider <strong>swaps it and removes the former provider's files</strong>; pass <code>--keep-files</code> to keep both. Repeat <code>--with</code> to apply several entries: <strong>the CLI checks every entry before it changes a file</strong>. Re-adding a module copies it again.
           </p>
           <pre><code>{ADD_EXAMPLES}</code></pre>
         </section>
@@ -282,6 +295,7 @@ pnpm dev`
               </tbody>
             </table>
           </div>
+          <pre><code>{COMPONENT_EXAMPLES}</code></pre>
           <p>
             The dialogs use <a href="https://react-call.desko.dev" rel="noreferrer" target="_blank">react-call</a>.
             The CLI mounts their root in the app shell, so you can await them from anywhere:
@@ -293,7 +307,7 @@ pnpm dev`
           <h2 id="after-creation">After creating a project</h2>
           <pre><code>{AFTER_CREATION}</code></pre>
           <p>
-            The CLI writes <code>.env</code> with placeholders, installs dependencies, and runs the formatter, typecheck, and linter. Outside an existing repository it initializes Git and <strong>creates the first commit only after those checks pass</strong>. Without Git <code>user.name</code> or <code>user.email</code> it skips the commit, and <code>--no-install</code> leaves the project <strong>uncommitted</strong>.
+            The CLI writes <code>.env</code> with local defaults and <code>.env.example</code> with placeholders. In a monorepo both live in <code>apps/web</code>. It installs dependencies and runs the formatter, typecheck, and linter. Inside an existing repository it leaves Git alone; otherwise it initializes Git and <strong>creates the first commit only after those checks pass</strong>. Without Git <code>user.name</code> or <code>user.email</code> it skips the commit, and <code>--no-install</code> leaves the project <strong>uncommitted</strong>.
           </p>
         </section>
       </article>
@@ -304,6 +318,5 @@ pnpm dev`
 <script>
   import { trackSectionIndex } from '../lib/section-spy'
 
-  const index = document.querySelector<HTMLElement>('.section-index')
-  if (index) trackSectionIndex(index)
+  trackSectionIndex()
 </script>

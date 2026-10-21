@@ -2537,6 +2537,10 @@ html:has(.section-index) {
   list-style: disc;
 }
 
+.prose strong {
+  font-weight: 600;
+}
+
 .prose pre {
   overflow-x: auto;
   padding: 14px 16px;
@@ -2562,10 +2566,6 @@ html:has(.section-index) {
   overflow-x: auto;
 }
 
-.prose strong {
-  font-weight: 600;
-}
-
 .docs-table table {
   min-width: 560px;
 }
@@ -2578,9 +2578,18 @@ html:has(.section-index) {
   width: auto;
 }
 
+.prose .docs-table code {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
 .docs-flag {
   display: block;
-  white-space: nowrap;
+  width: fit-content;
+}
+
+.docs-flag + .docs-flag {
+  margin-top: 4px;
 }
 
 .docs-table caption {

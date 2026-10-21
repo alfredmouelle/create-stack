@@ -78,6 +78,5 @@ const anchor = (version: string) => `v-${version.toLowerCase().replaceAll('.', '
 <script>
   import { trackSectionIndex } from '../lib/section-spy'
 
-  const index = document.querySelector<HTMLElement>('.section-index')
-  if (index) trackSectionIndex(index)
+  trackSectionIndex()
 </script>

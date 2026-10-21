@@ -1,6 +1,11 @@
 const SIDEBAR_QUERY = '(min-width: 900px)'
 
-export function trackSectionIndex(index: HTMLElement) {
+export function trackSectionIndex(): void {
+  const index = document.querySelector<HTMLElement>('.section-index')
+  if (index) watchSectionIndex(index)
+}
+
+function watchSectionIndex(index: HTMLElement): void {
   const links = [...index.querySelectorAll<HTMLAnchorElement>('[data-spy-target]')]
   const sections = links.flatMap((link) => {
     const section = document.getElementById(link.dataset.spyTarget ?? '')
