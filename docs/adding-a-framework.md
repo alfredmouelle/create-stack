@@ -166,8 +166,13 @@ Once your module is registered, these suites run against it without changes:
 | `framework-boundaries.test.ts` | keep its id out of shared CLI code. |
 | `framework-conformance.test.ts` | satisfy the part ownership rules above for every supported combination when generated through the engine, detect its own generated projects, and assemble a minimal project without deleting existing files. |
 | `quality-profile.test.ts` | ship a reference `tsconfig.json` with the full profile, apply the profile, hooks, and editor settings in standalone, Turborepo, and Nx projects, and give every exception a reason. |
-| `quality-tools.test.ts` | pass every formatter and linter combination on the reference application, in every monorepo shape, with tool configurations at the correct level. |
+| `quality-tools*.test.ts` | pass every formatter and linter combination on the reference application, in every monorepo shape, with tool configurations at the correct level. |
 | `package-content.test.ts` | ship its packaged assets, including `package.json` and `src/lib/site-config.ts`, without generated or excluded files. |
+
+Tool conformance runs in separate standalone, Turborepo, and Nx test files so Vitest
+can schedule each project shape independently. Each file iterates the framework registry.
+The CLI suite caps workers at four locally and two in CI to bound concurrent compiler
+and linter subprocesses on hosted runners.
 
 Cover what only your framework does, such as detection fixtures and its component
 root, in your own `cli/test/<id>.test.ts`. The smoke and packed certification
