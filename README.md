@@ -31,17 +31,18 @@ pnpm create @alfredmouelle/stack@latest my-app
 pnpm dlx @alfredmouelle/create-stack@latest my-app
 ```
 
-The wizard asks for the framework, monorepo orchestrator, package manager, import alias,
-database, authentication, tRPC, mailer, and capabilities. The CLI forks the matching
-base app and applies those choices.
+Interactive creation asks for the framework, monorepo orchestrator, package manager,
+import alias, database, authentication, tRPC, mailer, formatter, linter, and capabilities. The CLI
+assembles the project from the parts of the framework's reference application that
+match those choices.
 
 ## Why
 
 Every new SaaS project needs the same early work: clean the boilerplate, configure
 the checks, install the common libraries, and wire the usual integrations. This
 repo keeps that work in one place. The defaults are opinionated, while the
-replaceable integrations stay behind adapters. Fork the base apps or change the
-defaults to fit your project.
+replaceable integrations stay behind adapters. Change the defaults or the generated
+code to fit your project.
 
 ## Capabilities
 
@@ -93,10 +94,13 @@ packages/
   mailer/  email-ui/  storage/  jobs/
   cache/  logger/  analytics/  error-tracking/  http/
 apps/
-  next-base/        # real Next.js (App Router) starter, fork for a new project
-  tanstack-base/    # real TanStack Start starter, fork for a new project
-cli/                # create-stack: the published installer that forks a base app
-  index.mjs  lib/  templates/   # (biome.jsonc + # Author footer + wiring variants)
+  next-base/        # Next.js (App Router) reference application
+  tanstack-base/    # TanStack Start reference application
+cli/                # create-stack: the published CLI
+  index.mjs  lib/   # command line, prompts, capabilities, components
+  src/              # engine, framework registry, quality profile
+  src/frameworks/   # one framework module per framework
+  templates/        # variant files, quality tool configurations, Git hooks
 skills/
   create-stack/     # run the published create-stack CLI to scaffold a project
   add-capability/   # add a capability into a project behind a port
@@ -105,11 +109,14 @@ scripts/
 capability.schema.json   # the manifest schema each capability.json follows
 ```
 
-`apps/*-base` are **real starter apps**. The CLI forks one of them for each new
-project. They carry the baseline, including strict Biome, the `~/*` alias, and
-typed `env.ts`, without application-specific code. `create-stack` selects the
-framework, monorepo orchestrator, package manager, import alias, and stack axes.
-`add-capability` adds tools after creation.
+`apps/*-base` are **reference applications**: runnable, tested apps containing
+every stack part their framework supports in its recommended form. Each file
+belongs to one part, and the CLI copies only the parts a configuration selects.
+Every generated project then receives the same quality profile: strict TypeScript
+options, Git hooks, and editor settings, with Biome or Prettier formatting and
+Biome or Oxlint linting. `add-capability` adds tools after creation.
+
+To add a framework, read [Adding a framework](./docs/adding-a-framework.md).
 
 ## Development
 
@@ -157,8 +164,9 @@ cover the local setup, the ports & adapters rules, and the commit convention.
 ## Conventions
 
 - **Package manager:** pnpm · **Tasks:** turbo · **Build:** tsdown · **Tests:** vitest
-- **Lint/format:** Biome v2, strict (no semicolons, single quotes, trailing
-  commas, `~/*` import alias)
+- **Lint/format (repository):** Biome v2, strict (no semicolons, single quotes,
+  trailing commas, `~/*` import alias). Generated projects choose Biome or
+  Prettier, and Biome or Oxlint.
 - **Schema validation (apps):** valibot · **Typed env:** `@t3-oss/env-core`
 - **Node:** >= 22
 

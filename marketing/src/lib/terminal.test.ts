@@ -23,7 +23,7 @@ describe('terminal playback', () => {
       visibleLineCount: terminalTranscript.lines.length,
       isPlaying: false,
     })
-    expect(terminalTranscript.lines.at(-1)?.text).toBe('✓ typecheck + biome clean')
+    expect(terminalTranscript.lines.at(-1)?.text).toBe('✓ typecheck + selected quality tools clean')
   })
 
   it('resolves to the useful final state for reduced-motion visitors', () => {

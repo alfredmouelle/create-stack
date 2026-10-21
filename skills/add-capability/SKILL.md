@@ -13,11 +13,12 @@ project.
 
 ## 1. Resolve the project and intent
 
-Locate the app root whose `package.json` contains `next` or
-`@tanstack/react-start`. In a generated monorepo this is normally `apps/web`,
-not the workspace root. Read the existing dependencies and capability files,
-record pre-existing working-tree changes, and determine whether the requested
-result is an addition, a swap, or coexistence.
+Locate the app root whose `package.json` declares a framework create-stack
+detects: `next`, `@tanstack/react-start`, or `@tanstack/react-router`. In a
+generated monorepo this is normally `apps/web`, not the workspace root. Read the
+existing dependencies and capability files, record pre-existing working-tree
+changes, and determine whether the requested result is an addition, a swap, or
+coexistence.
 
 **Done when:** the working directory is the framework app root, existing work is
 accounted for, and the intended add, swap, or coexist result is explicit.
@@ -27,7 +28,8 @@ accounted for, and the intended add, swap, or coexist result is explicit.
 Read [VENDOR.md](VENDOR.md) before running the CLI when the project has an
 unsupported layout or framework, divergent env conventions, an incompatible
 SDK major, or integration work that requires judgement. Follow that manual path
-instead.
+instead. Take the same path when `cs add` rejects the framework or the
+addition; it does so before changing any file.
 
 For a supported project, prefer `create-stack` on PATH. Otherwise resolve the
 published npm version explicitly and use `pnpm dlx`; `@latest` can resolve from

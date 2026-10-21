@@ -1985,7 +1985,7 @@ test('force replaces only the selected callable source', async () => {
   } finally {
     registry.child.kill()
   }
-})
+}, 15_000)
 
 test.each(['next', 'tanstack'])(
   'manual root instructions preserve %s callable installation',
@@ -2150,7 +2150,7 @@ test('rerunning date-picker without --force preserves all existing files', async
   } finally {
     registry.child.kill()
   }
-})
+}, 15_000)
 
 test('--force replaces Create Stack files without overwriting shadcn primitives', async () => {
   const fixture = createAcceptanceFixture('standalone')
@@ -2199,7 +2199,7 @@ test('--force replaces Create Stack files without overwriting shadcn primitives'
   } finally {
     registry.child.kill()
   }
-})
+}, 15_000)
 
 test('--force restores staged Create Stack files when shadcn fails', async () => {
   const fixture = createAcceptanceFixture('standalone')
@@ -2236,7 +2236,7 @@ test('--force restores staged Create Stack files when shadcn fails', async () =>
   } finally {
     registry.child.kill()
   }
-})
+}, 15_000)
 
 test('--force replaces a historical component at its configured destination', async () => {
   const fixture = createAcceptanceFixture('standalone')

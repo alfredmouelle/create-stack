@@ -97,7 +97,7 @@ test.describe('terminal playback', () => {
     await openPage(page, '/')
 
     const terminal = page.getByRole('region', { name: 'Example Create Stack terminal session' })
-    await expect(terminal).toContainText('✓ typecheck + biome clean')
+    await expect(terminal).toContainText('✓ typecheck + selected quality tools clean')
     await expect(page.getByRole('button', { name: 'Replay sequence' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Pause sequence' })).not.toBeVisible()
   })

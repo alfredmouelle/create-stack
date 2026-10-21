@@ -1,8 +1,8 @@
 <h1 align="center">create-stack</h1>
 
 <p align="center">
-  Pick a framework and the pieces your app needs. create-stack starts from a base
-  app, keeps your selections, and removes the rest.
+  Pick a framework and the pieces your app needs. create-stack assembles them from a
+  tested reference application.
   <br>
   <sub>Supports <strong>Next.js App Router</strong> and <strong>TanStack Start</strong>.</sub>
 </p>
@@ -26,10 +26,11 @@
 
 ---
 
-Choose a framework, then select a database, tRPC, auth, mailer, and optional capabilities.
-create-stack forks a base app, removes the pieces you did not select, writes the project
-identity and `.env`, installs dependencies, and runs the selected formatter, typecheck, and linter. With Git enabled,
-it creates the initial commit after those checks pass.
+Choose a framework, then select a database, tRPC, auth, mailer, formatter, linter, and
+optional capabilities. create-stack copies the matching parts of the framework's reference
+application, writes the project identity and `.env`, applies the strict quality profile,
+installs dependencies, and runs the selected formatter, typecheck, and linter. With Git
+enabled, it creates the initial commit after those checks pass.
 The supported frameworks are **Next.js App Router** and **TanStack Start**.
 
 > **Open source (MIT).** The source and issue tracker are on
@@ -43,7 +44,7 @@ pnpm dlx @alfredmouelle/create-stack@latest my-app
 pnpm create @alfredmouelle/stack@latest my-app
 ```
 
-With no flags, the CLI opens an **interactive wizard**. Any selection flag switches to
+With no flags, the CLI runs **interactive creation**. Any selection flag switches to
 **non-interactive** mode for CI and scripts.
 
 Requires **Node ≥ 24.19.0**, a package manager (**pnpm** / npm / yarn / bun), and **git** on
@@ -66,20 +67,20 @@ the installed version.
 
 | Flag | Values | Default | Notes |
 | --- | --- | --- | --- |
-| `--framework` | `tanstack` \| `next` | `tanstack` | Base app to use. |
+| `--framework` | `tanstack` \| `next` | `tanstack` | Framework to generate. Its [framework support](#framework-support) decides the accepted stack options. |
 | `--monorepo` | `turbo` \| `nx` | standalone | Put the app in `apps/web` inside a Turborepo or Nx monorepo. Bare `--monorepo` selects turbo; omit it for a standalone app. |
 | `--pm` | `pnpm` \| `npm` \| `yarn` \| `bun` | auto-detected | Package manager for the generated project. |
 | `--alias` | prefix, e.g. `@` \| `#` | `~` | Import alias. Rewrites imports matching `<alias>/*` to `src/*`. |
 | `--database` | `drizzle` \| `prisma` \| `convex` \| `none` | `drizzle` | Data layer. `prisma` selects Prisma 7. `convex` provides a realtime database and API, so use Clerk or no auth. `none` omits the database. |
 | `--auth` | `better-auth` \| `clerk` \| `none` | `better-auth` | Auth provider. `clerk` is hosted (needs no db/mailer); `none` = no auth. |
-| `--minimal` | - | - | Start with a frontend-only project and omit data, auth, tRPC, mail, and capabilities. |
+| `--minimal` | - | - | Start with the framework's smallest runnable project and omit data, auth, tRPC, mail, and capabilities. For Next.js and TanStack Start it is frontend-only. |
 | `--trpc` / `--no-trpc` | - | recommended | Explicitly include or exclude the tRPC API axis. |
 | `--no-db` | - | - | Explicitly exclude the data axis. |
 | `--no-auth` | - | - | Explicitly exclude authentication. |
 | `--no-mail` | - | - | Explicitly exclude transactional email. |
 | `--mailer` | `resend` \| `brevo` \| `ses` \| `none` | `resend` | Mailer provider. |
-| `--formatter` | `biome` \| `prettier` | `biome` | Required formatter axis. A bare flag selects the recommendation. |
-| `--linter` | `biome` \| `oxlint` | `biome` | Required linter axis. A bare flag selects the recommendation. |
+| `--formatter` | `biome` \| `prettier` | `biome` | Formatter. A bare flag selects Biome. `--no-formatter` and oxfmt are rejected. |
+| `--linter` | `biome` \| `oxlint` | `biome` | Linter. A bare flag selects Biome. `--no-linter` and ESLint are rejected; ESLint waits for typescript-eslint support of TypeScript 7. |
 | `--storage` | `s3` \| `r2` \| `gcs` \| `local` | `r2` | Object storage (omit to skip). |
 | `--cache` | `redis` \| `upstash` \| `memory` | `upstash` | Key/value cache (omit to skip). |
 | `--jobs` | `inngest` | `inngest` | Background jobs (omit to skip; bare selects Inngest). |
@@ -101,6 +102,22 @@ When flags omit stack choices, the CLI applies these rules:
 - Explicit `--no-db` and `--no-mail` conflict with Better Auth.
 - tRPC does not depend on the database or auth. Convex cannot be used with tRPC or Better Auth.
 - If Convex's related choices are omitted, the CLI uses Clerk, no tRPC, and no mail.
+
+Conflicting or repeated choices are reported before any file is written, never resolved by
+precedence.
+
+### Framework support
+
+Each framework declares the stack options it implements and its own recommendations.
+A choice outside that support is reported as a conflict before generation. It is never
+replaced by another provider.
+
+| Framework | Maturity | Stack options |
+| --- | --- | --- |
+| TanStack Start (`tanstack`, recommended) | stable | every database, auth, tRPC, mailer, formatter, and linter option |
+| Next.js App Router (`next`) | stable | every database, auth, tRPC, mailer, formatter, and linter option |
+
+A `preview` framework depends on prerelease upstream packages.
 
 ```bash
 # accept all defaults without prompts
@@ -128,8 +145,19 @@ Depending on your selections, the generated project can include:
 - Resend, Brevo, or SES behind one mailer interface with React Email templates.
 - Tailwind v4, shadcn, Geist, a theme toggle, strict quality tooling, typed `env.ts`, a Dockerfile, Git hooks, GitHub Actions CI, and generated `.gitignore` and `.env`.
 
-The CLI removes files, dependencies, env keys, and wiring for choices you leave out. It then
-runs the selected formatter, typecheck, and linter in the generated project.
+The CLI copies only the files, dependencies, env keys, and wiring of the parts you select, so
+no generated file imports a part you left out. It then runs the selected formatter,
+typecheck, and linter in the generated project.
+
+### Quality profile
+
+Every generated project, whatever its framework, enables `strict`,
+`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`,
+`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`,
+`verbatimModuleSyntax`, `isolatedModules`, and `noUncheckedSideEffectImports`. It also ships
+Git hooks for the selected tools (pre-commit formats and lints staged files; pre-push runs
+typecheck and tests) and VS Code and Zed settings. A framework adds its own options and
+never relaxes the profile, except through a declared exception that its tests cover.
 
 Biome is recommended for both formatting and linting. `--formatter=prettier` ships
 single quotes, no semicolons, trailing commas, width 100, and two-space indentation,
@@ -188,7 +216,7 @@ create-stack add --with jobs --with component=confirm # mixed batch
 
 ## Components
 
-These UI components are separate from the base app. `create-stack add` installs their local
+These UI components are separate from the reference application. `create-stack add` installs their local
 shadcn registry items, so the target application's `components.json` controls aliases, styles,
 icons, and official primitives. Existing Create Stack files stay untouched unless you pass
 `--force`; customized shadcn primitives remain untouched. The callable dialogs use

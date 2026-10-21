@@ -7,7 +7,8 @@ files in this directory and the linked skill changes with them.
 - **create-stack**: create a project with the published
   `@alfredmouelle/create-stack` CLI: pick a framework (Next.js / TanStack Start),
   an optional monorepo (Turborepo / Nx), database, authentication, tRPC, mailer,
-  and capabilities; it forks a base app, strips it to the selection,
+  formatter, linter, and capabilities; it assembles the selected parts of the
+  framework's reference application, applies the strict quality profile,
   installs, verifies, and initializes Git. The skill gathers the choices and runs
   the CLI with flags.
 - **publish**: decide whether the changes since the published npm version justify

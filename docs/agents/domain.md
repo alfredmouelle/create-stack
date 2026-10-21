@@ -2,7 +2,7 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-This repo is **single-context**: one `CONTEXT.md` and one `docs/adr/` at the root, covering the CLI, the base apps, the capability packages and the marketing site together.
+This repo is **single-context**: one `CONTEXT.md` and one `docs/adr/` at the root, covering the CLI, the reference applications, the capability packages and the marketing site together.
 
 ## Before exploring, read these
 

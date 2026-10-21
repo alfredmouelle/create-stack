@@ -85,7 +85,7 @@ that affect the shipped package or generated project.
 | A fix to generated output, templates, environment files, or generators | CI or workflow only |
 | A wizard, flag, prompt, default, validation rule, or CLI behavior change | Comments, formatting, or lint-only changes |
 | A dependency change that reaches generated projects | Documentation-only changes |
-| A base-app change shipped to generated projects | Internal refactoring with identical output |
+| A reference application change shipped to generated projects | Internal refactoring with identical output |
 
 Judge the effect, not the conventional-commit prefix. A `feat` that changes only tests
 does not qualify. A `refactor` that changes generated output can qualify. An ambiguous
@@ -126,7 +126,7 @@ pnpm --filter @alfredmouelle/create-stack test
 ```
 
 When any candidate touches generated output, templates, `cli/index.mjs`, `cli/lib/`,
-registry files, base apps, package manifests, bundling code, or the lockfile, also run:
+`cli/src/`, registry files, reference applications, package manifests, bundling code, or the lockfile, also run:
 
 ```bash
 pnpm --filter @alfredmouelle/create-stack test:smoke
