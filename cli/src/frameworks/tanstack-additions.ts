@@ -1,6 +1,6 @@
-import { sentryInit } from '#lib/capabilities.mjs'
-import { STACK_ROOT } from '#lib/paths.mjs'
-import { join } from '#lib/util.mjs'
+import { sentryInit } from '#lib/capabilities.ts'
+import { STACK_ROOT } from '#lib/paths.ts'
+import { join } from '#lib/util.ts'
 import { javascriptAdditions } from '../javascript/additions.ts'
 
 const TANSTACK_INNGEST_ROUTE = `import { createFileRoute } from '@tanstack/react-router'

@@ -1,0 +1,61 @@
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const here = resolve(fileURLToPath(new URL('.', import.meta.url)))
+const bundled = resolve(here, '_stack/engine/index.mjs')
+const source = resolve(here, 'src/index.ts')
+const engine = await import(pathToFileURL(existsSync(bundled) ? bundled : source).href)
+
+export const {
+  ADDABLE,
+  AUTHS,
+  adapterChoicesFor,
+  addableChoices,
+  addCapability,
+  CAPABILITIES,
+  CLI_VERSION,
+  COMPONENT_CATALOG,
+  COMPONENT_NAMES,
+  canonicalCapabilityName,
+  capabilityChoices,
+  createProject,
+  creationProviderChoices,
+  currentTargetAdapter,
+  DATABASES,
+  detectAlias,
+  detectFrameworkModule,
+  detectPackageManager,
+  detectProjectPackageManager,
+  FRAMEWORK_SUPPORT,
+  findCompatibleApplications,
+  frameworkModules,
+  frameworkTitle,
+  getFrameworkModule,
+  installRegistryComponents,
+  isValidAlias,
+  MAILERS,
+  normalizeAlias,
+  PM_NAMES,
+  parseArgs,
+  preflightRegistryComponents,
+  QUALITY_TOOL_LABELS,
+  RECOMMENDED_FRAMEWORK,
+  relativeApplicationPath,
+  requireFrameworkModule,
+  resolveAdditionKind,
+  resolveApplicationPath,
+  resolveAuth,
+  resolveCreationConfiguration,
+  resolveCreationProvider,
+  resolveDatabase,
+  resolveExplicitPackageManager,
+  resolveMonorepo,
+  resolvePackageManager,
+  resolveTargetAdapter,
+  rewriteAlias,
+  runVerificationGate,
+  targetDir,
+  validateAdditions,
+  wireCapabilityAddition,
+} = engine

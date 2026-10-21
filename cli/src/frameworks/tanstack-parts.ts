@@ -1,6 +1,6 @@
 import { join } from 'node:path'
-import { CONVEX_VERSION } from '#lib/database.mjs'
-import { STACK_ROOT, TEMPLATES } from '#lib/paths.mjs'
+import { CONVEX_VERSION } from '#lib/database.ts'
+import { STACK_ROOT, TEMPLATES } from '#lib/paths.ts'
 import {
   drizzleAuthSchema,
   javascriptReference,

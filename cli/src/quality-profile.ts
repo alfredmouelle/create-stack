@@ -1,6 +1,6 @@
 import { cpSync } from 'node:fs'
 import { join } from 'node:path'
-import { TEMPLATES } from '#lib/paths.mjs'
+import { TEMPLATES } from '#lib/paths.ts'
 import type { FrameworkModule, QualityProfileRequest } from './framework-module.ts'
 
 export const QUALITY_PROFILE_OPTIONS = [

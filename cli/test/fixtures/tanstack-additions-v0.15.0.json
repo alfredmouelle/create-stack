@@ -253,7 +253,7 @@
         "src/server/email/adapters/resend.ts": "8b85a5e03f14d6220b7ca62e0d4b2a45005fb72132e3ef5f147b3a79126f3607",
         "src/server/email/address.ts": "71108bf98cf3ca043175f8ce7db97bc8a63a81febca8597c7ba4d0b622779a72",
         "src/server/email/factory.ts": "ccd2368342893657b1745e321d307b54adb6ae4b5293714dba8db87811be5ba7",
-        "src/server/email/index.ts": "f36f918c11fa1987500b78c6f0d90f9d18ce1390bebadac57ea95902137aaa63",
+        "src/server/email/index.ts": "3baa9aedb64e1155dc9ba9343d419c22103dded8a78ef288bfa9f3412a6a4bb0",
         "src/server/email/port.ts": "f07a3beda0446ed935fbaf8bdc074df24b4f6f8b05bd537bf20114349f596c3f"
       },
       "dependencies": {
@@ -272,7 +272,7 @@
         "src/server/email/adapters/brevo.ts": "11bb6231ff0b69ecd9fbbcc72b4c405e1660559d2bf7222b1ac1b6dadfab0070",
         "src/server/email/address.ts": "71108bf98cf3ca043175f8ce7db97bc8a63a81febca8597c7ba4d0b622779a72",
         "src/server/email/factory.ts": "ccd2368342893657b1745e321d307b54adb6ae4b5293714dba8db87811be5ba7",
-        "src/server/email/index.ts": "a053fafae24bd6c7781b02acede6ad5485d8bd3864d2dedd9b2f6b4701007e51",
+        "src/server/email/index.ts": "3e6f0f100f28d505da29c00ba11abfeaeb4c685aaff17f86085b85c62dac4a2f",
         "src/server/email/port.ts": "f07a3beda0446ed935fbaf8bdc074df24b4f6f8b05bd537bf20114349f596c3f"
       },
       "dependencies": {
@@ -291,7 +291,7 @@
         "src/server/email/adapters/ses.ts": "5f439255b1400507b83c7177618742d0628fd16a5593400e752fe15c38896535",
         "src/server/email/address.ts": "71108bf98cf3ca043175f8ce7db97bc8a63a81febca8597c7ba4d0b622779a72",
         "src/server/email/factory.ts": "ccd2368342893657b1745e321d307b54adb6ae4b5293714dba8db87811be5ba7",
-        "src/server/email/index.ts": "b5c4d28352fe24acfe437378bb26c9777a511d92ac9417a8460de178ae03854e",
+        "src/server/email/index.ts": "4dbb6d8555ac26bde33b4c84e719948384a3b141748dc53e3a22798b25d45845",
         "src/server/email/port.ts": "f07a3beda0446ed935fbaf8bdc074df24b4f6f8b05bd537bf20114349f596c3f"
       },
       "dependencies": {

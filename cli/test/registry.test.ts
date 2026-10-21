@@ -1,0 +1,258 @@
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { registryItemSchema, registrySchema } from 'shadcn/schema'
+import { afterAll, describe, expect, test } from 'vitest'
+import { COMPONENT_CATALOG, generateRegistry } from '../src/lib/registry.ts'
+
+const REPO_ROOT = resolve(import.meta.dirname, '../..')
+const tempRoots: string[] = []
+
+afterAll(() => {
+  for (const root of tempRoots) rmSync(root, { recursive: true, force: true })
+})
+
+function outputDir(): string {
+  const root = mkdtempSync(join(tmpdir(), 'create-stack-registry-'))
+  tempRoots.push(root)
+  return root
+}
+
+type RegistryFileJson = { path: string; type: string; content: string }
+
+type RegistryJson = {
+  name: string
+  registryDependencies: string[]
+  dependencies: string[]
+  files: RegistryFileJson[]
+  items: { name: string }[]
+}
+
+function readJSON(path: string): RegistryJson {
+  return JSON.parse(readFileSync(path, 'utf8'))
+}
+
+describe('component registry generation', () => {
+  test('generates the dialog-based callable items with their own sources and roots', () => {
+    const destination = outputDir()
+    const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
+    const expected = {
+      prompt: {
+        registryDependencies: ['dialog', 'button', 'input', 'label'],
+        dependencies: ['react-call@2.0.2'],
+        root: { name: 'Prompt', module: 'components/ui/prompt' },
+      },
+      choice: {
+        registryDependencies: ['dialog', 'button'],
+        dependencies: ['react-call@2.0.2'],
+        root: { name: 'Choice', module: 'components/ui/choice' },
+      },
+      'confirm-passphrase': {
+        registryDependencies: ['dialog', 'button', 'input', 'label'],
+        dependencies: ['react-call@2.0.2'],
+        root: { name: 'ConfirmPassphrase', module: 'components/ui/confirm-passphrase' },
+      },
+      'confirm-otp': {
+        registryDependencies: ['dialog', 'button', 'input-otp'],
+        dependencies: ['react-call@2.0.2'],
+        root: { name: 'ConfirmOtp', module: 'components/ui/confirm-otp' },
+      },
+    }
+
+    expect(result.names).toEqual([
+      'date-picker',
+      ...Object.keys(expected),
+      'confirm',
+      'alert',
+      'data-table',
+    ])
+    for (const [name, contract] of Object.entries(expected)) {
+      const item = readJSON(join(destination, `${name}.json`))
+      expect(registryItemSchema.safeParse(item).success).toBe(true)
+      expect(item.registryDependencies).toEqual(contract.registryDependencies)
+      expect(item.dependencies).toEqual(contract.dependencies)
+      expect(result.metadata[name]?.root).toEqual(contract.root)
+      expect(item.files).toHaveLength(1)
+      expect(item.files[0]?.path).toBe(`ui/${name}.tsx`)
+      expect(item.files[0]?.content).toContain("import { createCallable } from 'react-call'")
+    }
+  })
+
+  test('generates a schema-valid date-picker item from the catalog', () => {
+    const destination = outputDir()
+    const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
+    const item = readJSON(join(destination, 'date-picker.json'))
+
+    expect(result.names).toEqual([
+      'date-picker',
+      'prompt',
+      'choice',
+      'confirm-passphrase',
+      'confirm-otp',
+      'confirm',
+      'alert',
+      'data-table',
+    ])
+    expect(registryItemSchema.safeParse(item).success).toBe(true)
+    expect(item.name).toBe('date-picker')
+    expect(item.registryDependencies).toEqual(['calendar', 'popover', 'button'])
+    expect(item.dependencies).toEqual([
+      'react-day-picker@10.0.2',
+      'date-fns@4.4.0',
+      'lucide-react@1.56.0',
+    ])
+    expect(item.files.map((file) => file.path)).toEqual([
+      'ui/date-picker.tsx',
+      'ui/date-range-picker.tsx',
+      'lib/date.ts',
+    ])
+    expect(item.files.find((file) => file.path === 'ui/date-picker.tsx')?.content).toContain(
+      "import { Button } from '@/components/ui/button'",
+    )
+
+    for (const [name, rootName] of [
+      ['confirm', 'Confirm'],
+      ['alert', 'Alert'],
+    ] as const) {
+      const callable = readJSON(join(destination, `${name}.json`))
+      expect(registryItemSchema.safeParse(callable).success).toBe(true)
+      expect(callable.registryDependencies).toEqual(['alert-dialog'])
+      expect(callable.dependencies).toEqual(['react-call@2.0.2'])
+      expect(callable.files.map((file) => file.path)).toEqual([`ui/${name}.tsx`])
+      expect(result.metadata[name]?.root).toEqual({
+        name: rootName,
+        module: `components/ui/${name}`,
+      })
+    }
+
+    const index = readJSON(join(destination, 'index.json'))
+    expect(registrySchema.safeParse(index).success).toBe(true)
+    expect(index.items.map((entry) => entry.name)).toEqual([
+      'date-picker',
+      'prompt',
+      'choice',
+      'confirm-passphrase',
+      'confirm-otp',
+      'confirm',
+      'alert',
+      'data-table',
+    ])
+  })
+
+  test('generates the complete data-table item with its direct and official dependencies', () => {
+    const destination = outputDir()
+    const result = generateRegistry({ rootDir: REPO_ROOT, outputDir: destination })
+    const item = readJSON(join(destination, 'data-table.json'))
+
+    expect(registryItemSchema.safeParse(item).success).toBe(true)
+    expect(item.registryDependencies).toEqual(['table', 'skeleton', 'button'])
+    expect(item.dependencies).toEqual(['@tanstack/react-table@8.21.3', 'lucide-react@1.56.0'])
+    expect(item.files.map((file) => file.path)).toEqual([
+      'components/data-table.tsx',
+      'components/infinite-data-table.tsx',
+      'components/sortable-header.tsx',
+      'hooks/use-data-table.tsx',
+    ])
+    expect(item.files.slice(0, 3).map((file) => file.type)).toEqual([
+      'registry:component',
+      'registry:component',
+      'registry:component',
+    ])
+    expect(item.files[3]?.type).toBe('registry:hook')
+    expect(result.metadata['data-table']?.destinations).toEqual([
+      'src/components/data-table.tsx',
+      'src/components/infinite-data-table.tsx',
+      'src/components/sortable-header.tsx',
+      'src/hooks/use-data-table.tsx',
+    ])
+  })
+
+  test('rejects invalid catalog data, missing sources, and unresolved package dependencies', () => {
+    const datePicker = COMPONENT_CATALOG['date-picker']
+
+    expect(() =>
+      generateRegistry({
+        rootDir: REPO_ROOT,
+        outputDir: outputDir(),
+        catalog: {
+          broken: { ...datePicker, name: 'broken', type: 'not-a-registry-type' },
+        },
+      }),
+    ).toThrow(/invalid registry item/i)
+
+    expect(() =>
+      generateRegistry({
+        rootDir: REPO_ROOT,
+        outputDir: outputDir(),
+        catalog: {
+          '../escaped': { ...datePicker, name: '../escaped' },
+        },
+      }),
+    ).toThrow(/safe.*filename/i)
+
+    expect(() =>
+      generateRegistry({
+        rootDir: REPO_ROOT,
+        outputDir: outputDir(),
+        catalog: {
+          index: { ...datePicker, name: 'index' },
+        },
+      }),
+    ).toThrow(/non-reserved filename/i)
+
+    expect(() =>
+      generateRegistry({
+        rootDir: REPO_ROOT,
+        outputDir: outputDir(),
+        catalog: {
+          broken: {
+            ...datePicker,
+            name: 'broken',
+            files: datePicker.files
+              .slice(0, 1)
+              .map((file) => ({ ...file, source: 'components/ui/missing.tsx' })),
+          },
+        },
+      }),
+    ).toThrow(/missing source/i)
+
+    expect(() =>
+      generateRegistry({
+        rootDir: REPO_ROOT,
+        outputDir: outputDir(),
+        catalog: {
+          broken: {
+            ...datePicker,
+            name: 'broken',
+            dependencies: ['package-that-is-not-installed'],
+          },
+        },
+      }),
+    ).toThrow(/unresolved declared dependency/i)
+  })
+
+  test('catalog entries retain destinations and optional callable root metadata', () => {
+    expect(COMPONENT_CATALOG['date-picker'].files[0]?.destination).toBe(
+      'src/components/ui/date-picker.tsx',
+    )
+    expect(COMPONENT_CATALOG['date-picker'].legacyFiles).toEqual([
+      'src/components/ui/calendar.tsx',
+      'src/components/ui/popover.tsx',
+    ])
+
+    const callable = {
+      ...COMPONENT_CATALOG['date-picker'],
+      name: 'example',
+      root: { name: 'Example', module: 'components/example' },
+    }
+    const result = generateRegistry({
+      rootDir: REPO_ROOT,
+      outputDir: outputDir(),
+      catalog: { example: callable },
+    })
+    expect(result.metadata.example?.root).toEqual({
+      name: 'Example',
+      module: 'components/example',
+    })
+  })
+})

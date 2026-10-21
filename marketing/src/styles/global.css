@@ -1380,7 +1380,7 @@ input:disabled {
   display: none;
 }
 
-.build-additional > summary strong {
+.build-additional-title {
   display: block;
   font-family: var(--display);
   font-size: clamp(1.55rem, 2.7vw, 2.35rem);
@@ -1983,7 +1983,7 @@ input:disabled {
   .build-reasons-heading h2,
   .build-share-panel h2,
   .build-conflicts h2,
-  .build-additional > summary strong {
+  .build-additional-title {
     font-size: 1.8rem;
   }
 

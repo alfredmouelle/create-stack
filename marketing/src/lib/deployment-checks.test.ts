@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assertMarketingResponse } from '../../scripts/http-checks.mjs'
+import { assertMarketingResponse } from '../../scripts/http-checks.ts'
 
 const html =
   '<!doctype html><html><head><title>Create Stack. A real app wired around your choices</title></head></html>'

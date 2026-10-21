@@ -55,6 +55,13 @@ export type AdditionSelection =
   | { readonly type: 'capability'; readonly cap: string; readonly adapter: string | null }
   | { readonly type: 'component'; readonly name: string }
 
+export type ModuleIntegration = {
+  readonly provider: string
+  readonly files: Readonly<Record<string, string>>
+  readonly dependencies?: Readonly<Record<string, string>>
+  readonly manualSteps?: readonly string[]
+}
+
 export type CapabilityAdditionRequest = {
   readonly projectDir: string
   readonly projectName: string

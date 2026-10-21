@@ -1,9 +1,9 @@
 import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { TEMPLATES } from '#lib/paths.mjs'
+import { TEMPLATES } from '#lib/paths.ts'
 import type { Formatter, Linter } from '../../../packages/stack-config/src/index.ts'
 import type { QualityProfileRequest } from '../framework-module.ts'
-import { isJsonObject, readJsonObject, writeJsonObject } from './json.ts'
+import { isJsonObject, type JsonObject, readJsonObject, writeJsonObject } from './json.ts'
 
 export type QualityTools = Pick<QualityProfileRequest, 'formatter' | 'linter' | 'alias'>
 
@@ -42,37 +42,59 @@ function configureManifest(
   writeJsonObject(path, { ...manifest, scripts, devDependencies: dependencies })
 }
 
-function qualityCommand(
-  { formatter, linter }: QualityTools,
+const flag = (fix: boolean, value: string): string => (fix ? ` ${value}` : '')
+
+function formatCommand(
+  formatter: Formatter,
   fix: boolean,
   { projectDir, applicationDir }: QualityToolsTarget,
 ): string {
-  if (formatter === 'biome' && linter === 'biome') return `biome check${fix ? ' --write' : ''} .`
-  const format =
-    formatter === 'prettier'
-      ? `prettier --${fix ? 'write' : 'check'} .${applicationDir === projectDir ? '' : ` --ignore-path ${relative(applicationDir, projectDir)}/.prettierignore`}`
-      : `biome check${fix ? ' --write' : ''} .`
-  const lint =
-    linter === 'oxlint'
-      ? `oxlint --type-aware${fix ? ' --fix' : ''} .`
-      : `biome lint${fix ? ' --write' : ''} .`
-  return `${format} && ${lint}`
+  if (formatter === 'biome') return `biome check${flag(fix, '--write')} .`
+  const ignorePath =
+    applicationDir === projectDir
+      ? ''
+      : ` --ignore-path ${relative(applicationDir, projectDir)}/.prettierignore`
+  return `prettier --${fix ? 'write' : 'check'} .${ignorePath}`
+}
+
+const lintCommand = (linter: Linter, fix: boolean): string =>
+  linter === 'oxlint'
+    ? `oxlint --type-aware${flag(fix, '--fix')} .`
+    : `biome lint${flag(fix, '--write')} .`
+
+function qualityCommand(
+  { formatter, linter }: QualityTools,
+  fix: boolean,
+  target: QualityToolsTarget,
+): string {
+  const format = formatCommand(formatter, fix, target)
+  if (formatter === 'biome' && linter === 'biome') return format
+  return `${format} && ${lintCommand(linter, fix)}`
+}
+
+function enableBiomeRoles(section: unknown, enabled: Readonly<Record<string, boolean>>): void {
+  if (!isJsonObject(section)) return
+  for (const [role, value] of Object.entries(enabled)) {
+    const settings = section[role]
+    if (isJsonObject(settings)) settings.enabled = value
+  }
+}
+
+function disableSortedClasses(config: JsonObject): void {
+  const rules = isJsonObject(config.linter) ? config.linter.rules : undefined
+  if (isJsonObject(rules) && isJsonObject(rules.nursery)) rules.nursery.useSortedClasses = 'off'
 }
 
 function configureBiome(projectDir: string, { formatter, linter }: QualityTools): void {
   const config = readJsonObject(join(TEMPLATES, 'biome.jsonc'))
-  const enabled = { formatter: formatter === 'biome', linter: linter === 'biome' }
-  for (const section of [config, config.html, config.javascript, config.css]) {
-    if (!isJsonObject(section)) continue
-    for (const role of ['formatter', 'linter', 'assist'] as const) {
-      if (isJsonObject(section[role]))
-        section[role].enabled = role === 'assist' ? enabled.formatter : enabled[role]
-    }
+  const enabled = {
+    formatter: formatter === 'biome',
+    linter: linter === 'biome',
+    assist: formatter === 'biome',
   }
-  if (formatter === 'prettier' && isJsonObject(config.linter)) {
-    const rules = config.linter.rules
-    if (isJsonObject(rules) && isJsonObject(rules.nursery)) rules.nursery.useSortedClasses = 'off'
-  }
+  for (const section of [config, config.html, config.javascript, config.css])
+    enableBiomeRoles(section, enabled)
+  if (formatter === 'prettier') disableSortedClasses(config)
   writeJsonObject(join(projectDir, 'biome.jsonc'), config)
 }
 
@@ -96,34 +118,37 @@ function configureHook(projectDir: string, { formatter, linter }: QualityTools):
   )
 }
 
-function configureEditors(projectDir: string, linter: Linter): void {
-  const vscodePath = join(projectDir, '.vscode/settings.json')
-  const vscode = readJsonObject(vscodePath)
+function configureVscode(projectDir: string): void {
+  const path = join(projectDir, '.vscode/settings.json')
+  const vscode = readJsonObject(path)
   for (const section of Object.values(vscode)) {
     if (isJsonObject(section) && section['editor.defaultFormatter'] === 'biomejs.biome')
       section['editor.defaultFormatter'] = 'esbenp.prettier-vscode'
   }
   vscode['editor.codeActionsOnSave'] = {}
-  writeJsonObject(vscodePath, vscode)
+  writeJsonObject(path, vscode)
+}
 
-  const zedPath = join(projectDir, '.zed/settings.json')
-  const zed = readJsonObject(zedPath)
-  if (linter !== 'biome') delete zed.lsp
-  if (isJsonObject(zed.languages)) {
-    for (const language of Object.values(zed.languages)) {
-      if (!isJsonObject(language)) continue
-      language.formatter = {
-        external: {
-          command: 'npx',
-          arguments: ['--no-install', 'prettier', '--stdin-filepath', '{buffer_path}'],
-        },
-      }
-      if (linter === 'biome' && isJsonObject(language.code_actions_on_format))
-        delete language.code_actions_on_format['source.organizeImports.biome']
-      else delete language.code_actions_on_format
-    }
+function formatZedLanguageWithPrettier(language: JsonObject, linter: Linter): void {
+  language.formatter = {
+    external: {
+      command: 'npx',
+      arguments: ['--no-install', 'prettier', '--stdin-filepath', '{buffer_path}'],
+    },
   }
-  writeJsonObject(zedPath, zed)
+  const actions = language.code_actions_on_format
+  if (linter === 'biome' && isJsonObject(actions)) delete actions['source.organizeImports.biome']
+  else delete language.code_actions_on_format
+}
+
+function configureZed(projectDir: string, linter: Linter): void {
+  const path = join(projectDir, '.zed/settings.json')
+  const zed = readJsonObject(path)
+  if (linter !== 'biome') delete zed.lsp
+  const languages = isJsonObject(zed.languages) ? Object.values(zed.languages) : []
+  for (const language of languages.filter(isJsonObject))
+    formatZedLanguageWithPrettier(language, linter)
+  writeJsonObject(path, zed)
 }
 
 export function applyQualityTools(
@@ -135,7 +160,8 @@ export function applyQualityTools(
   if (applicationDir !== projectDir) configureManifest(applicationDir, tools, target)
   configureHook(projectDir, tools)
   if (tools.formatter === 'prettier') {
-    configureEditors(projectDir, tools.linter)
+    configureVscode(projectDir)
+    configureZed(projectDir, tools.linter)
     const config = readJsonObject(join(TEMPLATES, 'quality-profile/.prettierrc.json'))
     const alias = tools.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     config.importOrder = ['<BUILTIN_MODULES>', '<THIRD_PARTY_MODULES>', `^${alias}/`, '^[.]']

@@ -8,5 +8,5 @@
     "checkJs": false,
     "types": ["node"]
   },
-  "include": ["src", "scripts/**/*.ts", "test/**/*.ts", "tsdown.config.ts"]
+  "include": ["src", "scripts/**/*.ts", "test/**/*.ts", "tsdown.config.ts", "vitest.config.ts"]
 }

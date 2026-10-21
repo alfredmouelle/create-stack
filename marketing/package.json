@@ -6,14 +6,14 @@
     "dev": "astro dev --mode public",
     "build": "astro build --mode public",
     "build:public": "astro build --mode public",
-    "deploy": "node scripts/deploy.mjs",
+    "deploy": "node scripts/deploy.ts",
     "preview": "astro preview",
-    "smoke": "node scripts/smoke.mjs",
+    "smoke": "node scripts/smoke.ts",
     "test": "vitest run src",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "typecheck": "astro check && tsc --noEmit",
-    "verify:deployment": "node scripts/verify-deployment.mjs",
+    "verify:deployment": "node scripts/verify-deployment.ts",
     "check": "biome check ."
   },
   "dependencies": {
@@ -30,6 +30,7 @@
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "typescript": "6.0.3",

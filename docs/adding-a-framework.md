@@ -29,7 +29,7 @@ You add exactly two shared entries:
 Everything else is shared and stays unchanged in your framework change: the engine
 (`cli/src/engine.ts`), the contract (`cli/src/framework-module.ts`), the quality profile
 (`cli/src/quality-profile.ts`), the assembly toolkit (`cli/src/reference-application.ts`,
-`cli/src/javascript/`), the CLI (`cli/index.mjs`, `cli/lib/`), packaging
+`cli/src/javascript/`), the CLI (`cli/index.mjs`, `cli/engine.mjs`, `cli/src/lib/`), packaging
 (`cli/scripts/bundle.ts`), CI workflows, the marketing configurator, and the conformance
 tests in `cli/test/`. The shared template directories (`cli/templates/database/`,
 `testing/`, `javascript/`, `quality-profile/`) and the shared JavaScript parts in
@@ -151,7 +151,7 @@ exceptions.
 the published package. It leaves out `node_modules`, `dist`, `.turbo`, `start-database.sh`,
 `.env` files, `*.tsbuildinfo`, your `assetExcludes`, and the first path segment of each
 `monorepoOutputs` entry that does not start with `!`. At runtime, the
-module reads its reference application through `STACK_ROOT` (`cli/lib/paths.mjs`), which
+module reads its reference application through `STACK_ROOT` (`cli/src/lib/paths.ts`), which
 resolves to the bundle when the CLI is packed and to the repository otherwise. Read
 reference files through `STACK_ROOT` and variant files through `TEMPLATES`, never through
 paths relative to your module.
@@ -167,10 +167,10 @@ Once your module is registered, these suites run against it without changes:
 | `framework-conformance.test.ts` | satisfy the part ownership rules above for every supported combination when generated through the engine, detect its own generated projects, and assemble a minimal project without deleting existing files. |
 | `quality-profile.test.ts` | ship a reference `tsconfig.json` with the full profile, apply the profile, hooks, and editor settings in standalone, Turborepo, and Nx projects, and give every exception a reason. |
 | `quality-tools.test.ts` | pass every formatter and linter combination on the reference application, in every monorepo shape, with tool configurations at the correct level. |
-| `package-content.test.mjs` | ship its packaged assets, including `package.json` and `src/lib/site-config.ts`, without generated or excluded files. |
+| `package-content.test.ts` | ship its packaged assets, including `package.json` and `src/lib/site-config.ts`, without generated or excluded files. |
 
 Cover what only your framework does, such as detection fixtures and its component
 root, in your own `cli/test/<id>.test.ts`. The smoke and packed certification
 suites build real projects; run them before you mark your framework `stable`. They hold
 framework-specific expectations keyed by id: add your entry to `SHADCN_CONFIGURATIONS`
-in `cli/test/smoke.test.mjs` and your themed surface to `cli/test/branded-surface.mjs`.
+in `cli/test/smoke.test.ts` and your themed surface to `cli/test/branded-surface.ts`.

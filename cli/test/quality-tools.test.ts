@@ -268,6 +268,46 @@ test.each(
   60_000,
 )
 
+function expectBiomeConfiguration(projectDir: string, formatter: Formatter, linter: Linter): void {
+  const config = readJson(join(projectDir, 'biome.jsonc'))
+  expect(config).toMatchObject({
+    formatter: { enabled: formatter === 'biome' },
+    linter: { enabled: linter === 'biome' },
+    assist: { enabled: formatter === 'biome' },
+  })
+  if (formatter === 'prettier')
+    expect(config).toHaveProperty('linter.rules.nursery.useSortedClasses', 'off')
+  for (const language of ['javascript', 'css']) {
+    expect(config[language]).toMatchObject({
+      formatter: { enabled: formatter === 'biome' },
+      linter: { enabled: linter === 'biome' },
+    })
+  }
+}
+
+function expectPrettierZedSettings(projectDir: string, linter: Linter): void {
+  const zed = readJson(join(projectDir, '.zed/settings.json'))
+  expect(zed).toHaveProperty('languages.TypeScript.formatter.external.command', 'npx')
+  const languages = readField(join(projectDir, '.zed/settings.json'), 'languages')
+  if (linter === 'biome') {
+    expect(zed.lsp).toHaveProperty('biome')
+    expect(languages.TypeScript).toHaveProperty('code_actions_on_format', {
+      'source.fixAll.biome': true,
+    })
+  } else {
+    expect(zed.lsp).toBeUndefined()
+    expect(languages.TypeScript).not.toHaveProperty('code_actions_on_format')
+  }
+}
+
+function expectNoApplicationTools(applicationDir: string): void {
+  for (const path of ['biome.jsonc', '.prettierrc.json', '.oxlintrc.json'])
+    expect(existsSync(join(applicationDir, path))).toBe(false)
+  const application = readField(join(applicationDir, 'package.json'), 'devDependencies')
+  for (const dependency of ['@biomejs/biome', 'prettier', 'oxlint'])
+    expect(application[dependency]).toBeUndefined()
+}
+
 test.each(
   frameworkModules.flatMap(({ id: framework }) =>
     shapes.flatMap((monorepo) => combinations.map((tools) => ({ framework, monorepo, ...tools }))),
@@ -281,22 +321,7 @@ test.each(
     expect(existsSync(join(projectDir, 'biome.jsonc'))).toBe(biome)
     expect(existsSync(join(projectDir, '.prettierrc.json'))).toBe(formatter === 'prettier')
     expect(existsSync(join(projectDir, '.oxlintrc.json'))).toBe(linter === 'oxlint')
-    if (biome) {
-      const config = readJson(join(projectDir, 'biome.jsonc'))
-      expect(config).toMatchObject({
-        formatter: { enabled: formatter === 'biome' },
-        linter: { enabled: linter === 'biome' },
-        assist: { enabled: formatter === 'biome' },
-      })
-      if (formatter === 'prettier')
-        expect(config).toHaveProperty('linter.rules.nursery.useSortedClasses', 'off')
-      for (const language of ['javascript', 'css']) {
-        expect(config[language]).toMatchObject({
-          formatter: { enabled: formatter === 'biome' },
-          linter: { enabled: linter === 'biome' },
-        })
-      }
-    }
+    if (biome) expectBiomeConfiguration(projectDir, formatter, linter)
     const dependencies = readField(join(projectDir, 'package.json'), 'devDependencies')
     expect(Boolean(dependencies['@biomejs/biome'])).toBe(biome)
     expect(Boolean(dependencies.prettier)).toBe(formatter === 'prettier')
@@ -305,26 +330,7 @@ test.each(
     expect(editor['editor.defaultFormatter']).toBe(
       formatter === 'prettier' ? 'esbenp.prettier-vscode' : 'biomejs.biome',
     )
-    if (formatter === 'prettier') {
-      const zed = readJson(join(projectDir, '.zed/settings.json'))
-      expect(zed).toHaveProperty('languages.TypeScript.formatter.external.command', 'npx')
-      const languages = readField(join(projectDir, '.zed/settings.json'), 'languages')
-      if (linter === 'biome') {
-        expect(zed.lsp).toHaveProperty('biome')
-        expect(languages.TypeScript).toHaveProperty('code_actions_on_format', {
-          'source.fixAll.biome': true,
-        })
-      } else {
-        expect(zed.lsp).toBeUndefined()
-        expect(languages.TypeScript).not.toHaveProperty('code_actions_on_format')
-      }
-    }
-    if (monorepo) {
-      for (const path of ['biome.jsonc', '.prettierrc.json', '.oxlintrc.json'])
-        expect(existsSync(join(applicationDir, path))).toBe(false)
-      const application = readField(join(applicationDir, 'package.json'), 'devDependencies')
-      for (const dependency of ['@biomejs/biome', 'prettier', 'oxlint'])
-        expect(application[dependency]).toBeUndefined()
-    }
+    if (formatter === 'prettier') expectPrettierZedSettings(projectDir, linter)
+    if (monorepo) expectNoApplicationTools(applicationDir)
   },
 )

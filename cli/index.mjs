@@ -4,56 +4,51 @@ import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import {
   ADDABLE,
+  AUTHS,
   adapterChoicesFor,
   addableChoices,
   addCapability,
-  currentTargetAdapter,
-  requireFrameworkModule,
-  resolveAdditionKind,
-  resolveTargetAdapter,
-  targetDir,
-} from './lib/add.mjs'
-import { isValidAlias, normalizeAlias, parseArgs, resolveMonorepo } from './lib/args.mjs'
-import { resolveAuth } from './lib/auth.mjs'
-import {
   CAPABILITIES,
+  CLI_VERSION,
+  COMPONENT_CATALOG,
+  COMPONENT_NAMES,
   canonicalCapabilityName,
   capabilityChoices,
-  creationProviderChoices,
-  resolveCreationProvider,
-} from './lib/capabilities.mjs'
-import { resolveDatabase } from './lib/database.mjs'
-import {
   createProject,
-  frameworkModules,
-  runVerificationGate,
-  validateAdditions,
-} from './lib/engine.mjs'
-import {
+  creationProviderChoices,
+  currentTargetAdapter,
+  DATABASES,
   detectPackageManager,
   detectProjectPackageManager,
-  PM_NAMES,
-  resolveExplicitPackageManager,
-  resolvePackageManager,
-} from './lib/package-manager.mjs'
-import {
-  findCompatibleApplications,
-  relativeApplicationPath,
-  resolveApplicationPath,
-} from './lib/project-target.mjs'
-import { COMPONENT_CATALOG, COMPONENT_NAMES } from './lib/registry.mjs'
-import { installRegistryComponents, preflightRegistryComponents } from './lib/shadcn.mjs'
-import {
-  AUTHS,
-  DATABASES,
   FRAMEWORK_SUPPORT,
+  findCompatibleApplications,
+  frameworkModules,
   frameworkTitle,
+  installRegistryComponents,
+  isValidAlias,
   MAILERS,
+  normalizeAlias,
+  PM_NAMES,
+  parseArgs,
+  preflightRegistryComponents,
   QUALITY_TOOL_LABELS,
   RECOMMENDED_FRAMEWORK,
+  relativeApplicationPath,
+  requireFrameworkModule,
+  resolveAdditionKind,
+  resolveApplicationPath,
+  resolveAuth,
   resolveCreationConfiguration,
-} from './lib/stack-config.mjs'
-import { CLI_VERSION } from './lib/version.mjs'
+  resolveCreationProvider,
+  resolveDatabase,
+  resolveExplicitPackageManager,
+  resolveMonorepo,
+  resolvePackageManager,
+  resolveTargetAdapter,
+  runVerificationGate,
+  targetDir,
+  validateAdditions,
+} from './engine.mjs'
 
 const detectedPm = detectPackageManager()
 

@@ -38,14 +38,14 @@
     "create-stack": "./index.mjs"
   },
   "imports": {
-    "#lib/*": "./lib/*"
+    "#lib/*": "./src/lib/*"
   },
   "engines": {
     "node": ">=24.19.0"
   },
   "files": [
     "index.mjs",
-    "lib",
+    "engine.mjs",
     "templates",
     "_stack",
     "README.md",
@@ -57,8 +57,8 @@
     "prepack": "node scripts/bundle.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:smoke": "RUN_SMOKE=1 vitest run test/smoke.test.mjs",
-    "test:certification": "RUN_CERTIFICATION=1 vitest run test/certification.test.mjs",
+    "test:smoke": "RUN_SMOKE=1 vitest run test/smoke.test.ts",
+    "test:certification": "RUN_CERTIFICATION=1 vitest run test/certification.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "publishConfig": {

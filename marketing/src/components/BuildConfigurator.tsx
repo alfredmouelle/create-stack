@@ -494,7 +494,7 @@ function AdditionalPanel({ state, updateState }: { state: BuildState; updateStat
       <summary>
         <span>
           <span className="build-panel-index">03 / additional options</span>
-          <strong>Extend the project</strong>
+          <strong className="build-additional-title">Extend the project</strong>
         </span>
         <span aria-hidden="true" className="build-summary-arrow">
           ↘

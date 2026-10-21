@@ -28,9 +28,9 @@ describe('marketing Worker delivery contract', () => {
   })
 
   it('uses one package deployment script and a pinned local Wrangler', () => {
-    expect(packageJson.scripts.deploy).toBe('node scripts/deploy.mjs')
-    expect(packageJson.scripts.smoke).toBe('node scripts/smoke.mjs')
-    expect(packageJson.scripts['verify:deployment']).toBe('node scripts/verify-deployment.mjs')
+    expect(packageJson.scripts.deploy).toBe('node scripts/deploy.ts')
+    expect(packageJson.scripts.smoke).toBe('node scripts/smoke.ts')
+    expect(packageJson.scripts['verify:deployment']).toBe('node scripts/verify-deployment.ts')
     expect(packageJson.devDependencies.wrangler).toMatch(/^\d+\.\d+\.\d+$/)
   })
 

@@ -1,15 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isSqlDatabase as isSqlDatabaseName, PRISMA_VERSION } from '#lib/database.mjs'
-import { renderEnvironment } from '#lib/env.mjs'
-import { MAILER_PROVIDERS, renderMailerIndex } from '#lib/mailer.mjs'
-import { STACK_ROOT, TEMPLATES } from '#lib/paths.mjs'
+import { isSqlDatabase as isSqlDatabaseName, PRISMA_VERSION } from '#lib/database.ts'
+import { renderEnvironment } from '#lib/env.ts'
+import { STACK_ROOT, TEMPLATES } from '#lib/paths.ts'
 import type {
   ApplicationPart,
   PartFile,
   StackSelection,
   StringMap,
 } from '../reference-application.ts'
+import { MAILER_PROVIDERS, renderMailerIndex } from './mailer.ts'
 
 type ManifestField = 'dependencies' | 'devDependencies' | 'scripts'
 type Manifest = Readonly<Record<ManifestField, StringMap>>

@@ -1,5 +1,5 @@
-import { configurePrismaRuntime } from '#lib/database.mjs'
-import { makeStandalone } from '#lib/scaffold.mjs'
+import { configurePrismaRuntime } from '#lib/database.ts'
+import { makeStandalone } from '#lib/scaffold.ts'
 import type { Monorepo, PackageManager } from '../framework-module.ts'
 import {
   assembleReference,

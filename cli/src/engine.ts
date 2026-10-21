@@ -2,8 +2,8 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as p from '@clack/prompts'
-import { canonicalCapabilityName } from '#lib/capabilities.mjs'
-import { isSqlDatabase } from '#lib/database.mjs'
+import { canonicalCapabilityName } from '#lib/capabilities.ts'
+import { isSqlDatabase } from '#lib/database.ts'
 import {
   type Formatter,
   type Framework,

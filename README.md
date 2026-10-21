@@ -97,8 +97,10 @@ apps/
   next-base/        # Next.js (App Router) reference application
   tanstack-base/    # TanStack Start reference application
 cli/                # create-stack: the published CLI
-  index.mjs  lib/   # command line, prompts, capabilities, components
+  index.mjs         # command line and prompts
+  engine.mjs        # loads the compiled engine or its TypeScript source
   src/              # engine, framework registry, quality profile
+  src/lib/          # capabilities, components, package managers, environment
   src/frameworks/   # one framework module per framework
   templates/        # variant files, quality tool configurations, Git hooks
 skills/
