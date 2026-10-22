@@ -27,7 +27,10 @@ export function assembleReferenceParts(
 ): JavaScriptAssemblyResult {
   const { applicationDir, projectName, monorepo, packageManager } = request
   const parts = assembleReference(reference, request, applicationDir)
-  makeStandalone(applicationDir, projectName, packageManager, { monorepo: !!monorepo })
+  makeStandalone(applicationDir, projectName, packageManager, {
+    monorepo: !!monorepo,
+    nativeBuilds: parts.flatMap((part) => part.nativeBuilds ?? []),
+  })
   if (request.database === 'prisma') configurePrismaRuntime(applicationDir)
   return {
     envKeys: parts.flatMap((part) => part.envKeys ?? []),
