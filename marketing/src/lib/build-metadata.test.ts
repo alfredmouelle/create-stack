@@ -60,18 +60,22 @@ describe('marketing metadata builds', () => {
     const robots = readBuildFile(publicBuild, 'robots.txt')
     const sitemap = readBuildFile(publicBuild, 'sitemap.xml')
     const llms = readBuildFile(publicBuild, 'llms.txt')
+    const ogImage = readFileSync(join(publicBuild, 'og-image.png'))
 
     expect(html).toContain('<meta name="robots" content="index, follow">')
     expect(html).not.toContain('noindex')
     expect(html).toContain(
       '<meta name="description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
     )
-    expect(html).toContain('<title>create-stack. Your first commit is green</title>')
+    expect(html).toContain('<title>create-stack. Your most useful day one commit</title>')
     expect(html).toContain('<link rel="canonical" href="https://create-stack.alfredmouelle.com/">')
     expect(html).toContain('<link rel="icon" href="/favicon.svg" type="image/svg+xml">')
     expect(html).toContain('<link rel="icon" href="/favicon.ico" sizes="48x48">')
     expect(html).toContain(
-      '<meta property="og:title" content="create-stack. Your first commit is green">',
+      '<meta property="og:title" content="create-stack. Your most useful day one commit">',
+    )
+    expect(html).toContain(
+      '<meta property="og:image:alt" content="create-stack. Your most useful day one commit">',
     )
     expect(html).toContain(
       '<meta property="og:description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
@@ -83,9 +87,16 @@ describe('marketing metadata builds', () => {
     expect(html).toContain(
       '<meta property="og:image" content="https://create-stack.alfredmouelle.com/og-image.png">',
     )
+    expect(html).toContain(`<meta property="og:image:width" content="${ogImage.readUInt32BE(16)}">`)
+    expect(html).toContain(
+      `<meta property="og:image:height" content="${ogImage.readUInt32BE(20)}">`,
+    )
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image">')
     expect(html).toContain(
-      '<meta name="twitter:title" content="create-stack. Your first commit is green">',
+      '<meta name="twitter:title" content="create-stack. Your most useful day one commit">',
+    )
+    expect(html).toContain(
+      '<meta name="twitter:image:alt" content="create-stack. Your most useful day one commit">',
     )
     expect(html).toContain(
       '<meta name="twitter:description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',

@@ -248,13 +248,17 @@ test('numbers the remaining planned frameworks consecutively', async ({ page }) 
   )
 })
 
-test('groups hero frameworks by maturity and identifies previews on the roadmap', async ({
-  page,
-}) => {
+test('shows the hero tagline, grouped frameworks and preview roadmap status', async ({ page }) => {
   await openPage(page, '/')
+  await expect(page).toHaveTitle('create-stack. Your most useful day one commit')
+  const heading = page.getByRole('heading', { level: 1 })
   const hero = page.locator('.hero-label')
   for (const width of [375, 1280]) {
     await page.setViewportSize({ width, height: 900 })
+    await expect(heading).toHaveText('Your most useful day one commit')
+    expect(await heading.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
     await expect(hero.getByText('stable', { exact: true })).toHaveCount(1)
     await expect(hero.getByText('preview', { exact: true })).toHaveCount(1)
     const stable = hero.locator(':scope > span').filter({ hasText: 'stable' })

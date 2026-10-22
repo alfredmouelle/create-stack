@@ -14,6 +14,7 @@ import {
 } from '../data/landing'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { installCommand } from '../lib/install-command'
+import { SITE_TAGLINE } from '../lib/site-identity'
 import { REPOSITORY_URL } from '../lib/site-metadata'
 
 const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tanstack')
@@ -46,7 +47,7 @@ const frameworksTitle = [
           <span><Badge maturity={group.maturity} /> <span>{group.labels}</span></span>
         ))}
       </p>
-      <h1 class="t-display" id="hero-title">Your first commit <br />is <em>green.</em></h1>
+      <h1 class="t-display" id="hero-title">{SITE_TAGLINE.lead} <br /><em>{SITE_TAGLINE.emphasis}</em></h1>
       <p class="t-lead">
         Pick a framework and a stack. create-stack assembles it from a tested reference
         application, then commits only after install, format, typecheck and lint all pass.

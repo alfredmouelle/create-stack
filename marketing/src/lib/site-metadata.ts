@@ -6,17 +6,18 @@ import {
   type ScaffoldFlag,
 } from '@alfredmouelle/stack-config'
 import { PLANNED_FRAMEWORKS } from '../data/frameworks'
+import { SITE_NAME, SITE_TITLE } from './site-identity'
+
+export { SITE_NAME, SITE_TITLE }
 
 export const PUBLIC_SITE_ORIGIN = 'https://create-stack.alfredmouelle.com'
 export const REPOSITORY_URL = 'https://github.com/alfredmouelle/create-stack'
 export const NPM_URL = 'https://www.npmjs.com/package/@alfredmouelle/create-stack'
 
-export const SITE_TITLE = 'create-stack. Your first commit is green'
 export const SITE_DESCRIPTION =
   'create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.'
-export const SITE_NAME = 'create-stack'
 export const OG_IMAGE_PATH = '/og-image.png'
-export const OG_IMAGE_ALT = 'create-stack. Your first commit is green'
+export const OG_IMAGE_ALT = SITE_TITLE
 
 export const SITE_PAGES = [
   '/',

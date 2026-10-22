@@ -1,4 +1,4 @@
-const EXPECTED_TITLE = 'create-stack. Your first commit is green'
+import { SITE_TITLE } from '../src/lib/site-identity.ts'
 
 function normalizeUrl(rawUrl: string) {
   let url: URL
@@ -72,7 +72,7 @@ export async function assertMarketingResponse(
   const homepage = await readResponse(homepageUrl, fetchImpl)
   assertSuccessfulResponse(homepageUrl, homepage.response, 'text/html')
 
-  if (!homepage.body.includes(`<title>${EXPECTED_TITLE}</title>`)) {
+  if (!homepage.body.includes(`<title>${SITE_TITLE}</title>`)) {
     throw new Error(
       `Worker response at ${homepageUrl} did not contain the expected marketing title`,
     )
@@ -93,7 +93,7 @@ export async function assertMarketingResponse(
 
   return {
     status: homepage.response.status,
-    title: EXPECTED_TITLE,
+    title: SITE_TITLE,
     url: homepageUrl.href,
   }
 }
