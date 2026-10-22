@@ -49,8 +49,7 @@ and [Adding a framework](./docs/adding-a-framework.md) to add one.
 
 Remix 3 uses native components and browser entries, with isolated React email rendering.
 Production runs on Node and compiles public assets at runtime. Generated READMEs contain
-provider setup and commands for the selected package manager. See the
-[Remix validation record](./docs/remix-validation.md) for tested behavior and hosted-provider limits.
+provider setup and commands for the selected package manager.
 
 ## Credits
 
