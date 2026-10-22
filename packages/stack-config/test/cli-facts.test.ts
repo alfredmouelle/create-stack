@@ -104,7 +104,7 @@ describe('scaffold flags', () => {
   test('takes accepted values from the shared stack facts', () => {
     const values = Object.fromEntries(SCAFFOLD_FLAGS.map(({ name, value }) => [name, value]))
     expect(values).toMatchObject({
-      framework: { kind: 'choice', choices: ['tanstack', 'next', 'rasengan'] },
+      framework: { kind: 'choice', choices: ['tanstack', 'next', 'rasengan', 'remix'] },
       monorepo: { kind: 'choice', choices: ['turbo', 'nx'] },
       pm: { kind: 'choice', choices: ['pnpm', 'npm', 'yarn', 'bun'] },
       storage: { kind: 'choice', choices: ['s3', 'r2', 'gcs', 'local'] },

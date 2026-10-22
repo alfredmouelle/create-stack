@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict'
+import { spawn } from 'node:child_process'
+import { randomBytes } from 'node:crypto'
+import { once } from 'node:events'
+import { setTimeout } from 'node:timers/promises'
+
+for (const trustProxy of ['0', '1']) {
+  const child = spawn(process.execPath, ['--env-file=.env', '--import', './scripts/aliases.ts', '--import', 'remix/node-tsx', 'src/server.ts'], {
+    env: { ...process.env, NODE_ENV: 'production', PORT: '3098', HOST: '127.0.0.1', TRUST_PROXY: trustProxy, BETTER_AUTH_URL: 'https://portal.example.com', BETTER_AUTH_SECRET: randomBytes(32).toString('base64url'), RESEND_API_KEY: 'local-mailer-validation' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  let output = ''
+  child.stdout.on('data', chunk => { output += chunk.toString() })
+  child.stderr.on('data', chunk => { output += chunk.toString() })
+  try {
+    let ready = false
+    for (let attempt = 0; attempt < 150; attempt++) {
+      if (child.exitCode !== null) throw new Error(output)
+      try { if ((await fetch('http://127.0.0.1:3098/api/health')).ok) { ready = true; break } } catch {}
+      await setTimeout(100)
+    }
+    assert.ok(ready, output)
+    const headers = { origin: 'https://portal.example.com', 'x-forwarded-proto': 'https', 'x-forwarded-host': 'portal.example.com' }
+    const response = await fetch('http://127.0.0.1:3098/auth/sign-up', { method: 'POST', headers, body: new URLSearchParams({ name: '', email: '', password: '' }) })
+    assert.equal(response.status, trustProxy === '1' ? 422 : 403, await response.text())
+    assert.equal(response.headers.has('set-cookie'), false)
+    const crossOrigin = await fetch('http://127.0.0.1:3098/auth/sign-up', { method: 'POST', headers: { ...headers, origin: 'https://example.com' }, body: new URLSearchParams({ name: '', email: '', password: '' }) })
+    assert.equal(crossOrigin.status, 403)
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill('SIGTERM')
+      await Promise.race([once(child, 'exit'), setTimeout(3000)])
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
+    }
+  }
+}

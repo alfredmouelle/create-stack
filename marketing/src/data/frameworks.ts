@@ -55,6 +55,23 @@ const PROJECT_FILES: readonly TreeEntry[] = [
 ]
 
 const DETAILS = {
+  remix: {
+    documentationUrl: 'https://guides.remix.run/',
+    summary:
+      'Native Remix 3 components, SSR and browser entries on Node, with the shared quality profile and runtime assets.',
+    tree: [
+      ...PROFILE_TREE,
+      { path: 'src/', depth: 0 },
+      { path: 'pages/home.tsx', depth: 1 },
+      { path: 'router.tsx', depth: 1 },
+      { path: 'server.ts', depth: 1 },
+      { path: 'client/entry.ts', depth: 1 },
+      { path: 'server/better-auth/routes.tsx', depth: 1, owner: 'auth · better-auth' },
+      { path: 'server/api/routes.ts', depth: 1, owner: 'api · trpc' },
+      { path: 'assets.ts', depth: 1 },
+      ...PROJECT_FILES,
+    ],
+  },
   tanstack: {
     documentationUrl: 'https://tanstack.com/start/latest/docs/framework/react/overview',
     summary:
@@ -112,19 +129,11 @@ const DETAILS = {
 const PLANNED: readonly PlannedFramework[] = [
   {
     maturity: 'planned',
-    id: 'remix',
-    label: 'Remix',
-    documentationUrl: 'https://remix.run/docs',
-    summary: 'Needs a framework module.',
-    roadmapPosition: 1,
-  },
-  {
-    maturity: 'planned',
     id: 'vue',
     label: 'Vue',
     documentationUrl: 'https://vuejs.org/guide/introduction.html',
     summary: 'Needs a framework module.',
-    roadmapPosition: 2,
+    roadmapPosition: 1,
   },
   {
     maturity: 'planned',
@@ -132,7 +141,7 @@ const PLANNED: readonly PlannedFramework[] = [
     label: 'NestJS',
     documentationUrl: 'https://docs.nestjs.com/',
     summary: 'Needs a framework module.',
-    roadmapPosition: 3,
+    roadmapPosition: 2,
   },
   {
     maturity: 'planned',
@@ -140,7 +149,7 @@ const PLANNED: readonly PlannedFramework[] = [
     label: 'PHP frameworks',
     documentationUrl: 'https://www.php.net/manual/en/',
     summary: 'Needs an owner and a framework module.',
-    roadmapPosition: 4,
+    roadmapPosition: 3,
   },
 ]
 

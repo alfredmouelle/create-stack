@@ -5,7 +5,7 @@ here, then the link script exposes them in the user-level configuration. Edit th
 files in this directory and the linked skill changes with them.
 
 - **create-stack**: create a project with the published
-  `@alfredmouelle/create-stack` CLI: pick a framework (Next.js / TanStack Start),
+  `@alfredmouelle/create-stack` CLI: pick a framework (Next.js / TanStack Start / Remix preview / RasenganJS preview),
   an optional monorepo (Turborepo / Nx), database, authentication, tRPC, mailer,
   formatter, linter, and capabilities; it assembles the selected parts of the
   framework's reference application, applies the strict quality profile,

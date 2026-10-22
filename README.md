@@ -1,7 +1,7 @@
 # create-stack
 
-> create-stack assembles a SaaS project for Next.js, TanStack Start or RasenganJS
-> preview from a tested reference application, then makes the first commit only
+> create-stack assembles a SaaS project for Next.js, TanStack Start, Remix preview, or
+> RasenganJS preview from a tested reference application, then makes the first commit only
 > after install, format, typecheck and lint pass.
 
 [![npm](https://img.shields.io/npm/v/@alfredmouelle/create-stack?color=cb3837&logo=npm&label=create-stack)](https://www.npmjs.com/package/@alfredmouelle/create-stack)
@@ -44,6 +44,13 @@ pnpm check
 
 Read the [Contributing Guidelines](./CONTRIBUTING.md) before opening an issue or PR,
 and [Adding a framework](./docs/adding-a-framework.md) to add one.
+
+## Remix preview
+
+Remix 3 uses native components and browser entries, with isolated React email rendering.
+Production runs on Node and compiles public assets at runtime. Generated READMEs contain
+provider setup and commands for the selected package manager. See the
+[Remix validation record](./docs/remix-validation.md) for tested behavior and hosted-provider limits.
 
 ## Credits
 

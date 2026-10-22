@@ -11,7 +11,7 @@ describe('llms.txt', () => {
   })
 
   it.each([
-    '`--framework tanstack|next|rasengan`',
+    '`--framework tanstack|next|rasengan|remix`',
     '`--trpc` / `--no-trpc`',
     '`--database drizzle|prisma|convex|none` / `--no-db`',
     '`--errors sentry`',
@@ -23,7 +23,7 @@ describe('llms.txt', () => {
 
   it('states framework maturity from the shared support catalog', () => {
     expect(llms).toContain(
-      'TanStack Start and Next.js are stable. RasenganJS is in preview. Remix, Vue, NestJS, and PHP frameworks are planned, not installable.',
+      'TanStack Start and Next.js are stable. RasenganJS and Remix are in preview. Vue, NestJS, and PHP frameworks are planned, not installable.',
     )
   })
 })

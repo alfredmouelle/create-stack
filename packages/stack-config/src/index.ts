@@ -6,7 +6,7 @@ import jobsManifest from '../../jobs/capability.json' with { type: 'json' }
 import loggerManifest from '../../logger/capability.json' with { type: 'json' }
 import storageManifest from '../../storage/capability.json' with { type: 'json' }
 
-export const FRAMEWORKS = ['tanstack', 'next', 'rasengan'] as const
+export const FRAMEWORKS = ['tanstack', 'next', 'rasengan', 'remix'] as const
 export type Framework = (typeof FRAMEWORKS)[number]
 
 export const DATABASES = ['drizzle', 'prisma', 'convex', 'none'] as const
@@ -277,6 +277,12 @@ export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
     label: 'Next.js',
     maturity: 'stable',
     monorepoOutputs: ['.next/**', '!.next/cache/**'],
+    ...FULL_STACK_SUPPORT,
+  },
+  remix: {
+    label: 'Remix',
+    maturity: 'preview',
+    monorepoOutputs: [],
     ...FULL_STACK_SUPPORT,
   },
   rasengan: {

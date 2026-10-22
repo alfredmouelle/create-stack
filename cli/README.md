@@ -4,7 +4,7 @@
   Pick a framework and the pieces your app needs. create-stack assembles them from a
   tested reference application.
   <br>
-  <sub>Supports <strong>Next.js App Router</strong>, <strong>TanStack Start</strong>, and <strong>RasenganJS preview</strong>.</sub>
+  <sub>Supports <strong>Next.js App Router</strong>, <strong>TanStack Start</strong>, <strong>Remix preview</strong>, and <strong>RasenganJS preview</strong>.</sub>
 </p>
 
 <p align="center">

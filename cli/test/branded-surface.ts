@@ -12,6 +12,7 @@ export function assertBrandedSurface(
     join(
       projectDir,
       {
+        remix: 'src/pages/home.tsx',
         next: 'src/app/page.tsx',
         tanstack: 'src/routes/index.tsx',
         rasengan: 'src/app/_routes/index.page.tsx',
@@ -19,12 +20,25 @@ export function assertBrandedSurface(
     ),
     'utf8',
   )
-  const toggle = readFileSync(join(projectDir, 'src/components/theme-toggle.tsx'), 'utf8')
-  const provider = readFileSync(join(projectDir, 'src/components/theme-provider.tsx'), 'utf8')
+  const toggle = readFileSync(
+    join(
+      projectDir,
+      framework === 'remix' ? 'src/client/theme.tsx' : 'src/components/theme-toggle.tsx',
+    ),
+    'utf8',
+  )
+  const provider = readFileSync(
+    join(
+      projectDir,
+      framework === 'remix' ? 'src/client/theme.tsx' : 'src/components/theme-provider.tsx',
+    ),
+    'utf8',
+  )
   const shell = readFileSync(
     join(
       projectDir,
       {
+        remix: 'src/components/document.tsx',
         next: 'src/app/layout.tsx',
         tanstack: 'src/routes/__root.tsx',
         rasengan: 'src/template.tsx',
@@ -41,9 +55,15 @@ export function assertBrandedSurface(
   expect(home).toContain('bg-background')
   expect(home).toContain('bg-card')
   expect(home).toContain('text-primary')
-  expect(toggle).toContain("setTheme('light')")
-  expect(toggle).toContain("setTheme('dark')")
-  expect(toggle).toContain("setTheme('system')")
+  if (framework === 'remix') {
+    expect(toggle).toContain("['light', 'dark', 'system']")
+    expect(toggle).toContain('clientEntry')
+    expect(toggle).toContain('document.documentElement.classList.toggle')
+  } else {
+    expect(toggle).toContain("setTheme('light')")
+    expect(toggle).toContain("setTheme('dark')")
+    expect(toggle).toContain("setTheme('system')")
+  }
   expect(theme).toContain('--primary:')
   expect(theme).toContain('--radius:')
   if (framework === 'next') {

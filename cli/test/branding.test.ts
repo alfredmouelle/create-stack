@@ -22,7 +22,7 @@ const creationArgs = (framework: string) => [
 const read = (root: string, relativePath: string): string =>
   readFileSync(join(root, relativePath), 'utf8')
 
-describe.each(['next', 'tanstack', 'rasengan'] as const)(
+describe.each(['next', 'tanstack', 'rasengan', 'remix'] as const)(
   'branded generated %s app',
   (framework) => {
     test('keeps app identity local and gives the first screen a starter focus', () => {
@@ -38,6 +38,7 @@ describe.each(['next', 'tanstack', 'rasengan'] as const)(
       const shell = read(
         fixture.app,
         {
+          remix: 'src/components/document.tsx',
           next: 'src/app/layout.tsx',
           tanstack: 'src/routes/__root.tsx',
           rasengan: 'src/template.tsx',
@@ -46,6 +47,7 @@ describe.each(['next', 'tanstack', 'rasengan'] as const)(
       const home = read(
         fixture.app,
         {
+          remix: 'src/pages/home.tsx',
           next: 'src/app/page.tsx',
           tanstack: 'src/routes/index.tsx',
           rasengan: 'src/app/_routes/index.page.tsx',

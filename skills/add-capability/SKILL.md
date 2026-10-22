@@ -14,7 +14,7 @@ project.
 ## 1. Resolve the project and intent
 
 Locate the app root whose `package.json` declares a framework create-stack
-detects: `next`, `@tanstack/react-start`, `@tanstack/react-router`, or `rasengan`. In a
+detects: `next`, `@tanstack/react-start`, `@tanstack/react-router`, or `rasengan`, or current `remix@3` (preview). In a
 generated monorepo this is normally `apps/web`, not the workspace root. Read the
 existing dependencies and capability files, record pre-existing working-tree
 changes, and determine whether the requested result is an addition, a swap, or
@@ -85,3 +85,7 @@ each step handed to the user.
 
 **Done when:** every printed step is completed or explicitly handed off and all
 remaining env values are named.
+
+### Native Remix additions
+
+For `remix@3`, use the generated native document and `src/client` entries for callable roots and browser UI. Wire HTTP modules through the native router factory. Read the application README for Clerk/Convex configuration, isolated React email rendering, and Sentry Node preload setup. Detection rejects legacy Remix and React Router packages.

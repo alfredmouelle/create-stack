@@ -76,3 +76,7 @@ the user has the exact env path, remaining values, and next commands.
 ### RasenganJS preview
 
 Select `--framework rasengan` through the registered module. Keep private environment, database and auth imports in API routes; page loaders fetch session data over HTTP. Use the generated `scripts/start.ts` for Node production serving. Hosted integrations require provider credentials.
+
+### Remix preview
+
+Select `--framework remix` for Remix 3 (`remix/component`). Follow the generated README for native component handles, browser entries, provider setup, and Node production serving. Browser source lives in `src/client`; private code stays in `src/server`. Transactional email rendering uses isolated React calls. Runtime asset compilation produces no build directory. Native callable additions mount in the document; React/shadcn page components require native equivalents. Hosted login, mail, and observability require provider configuration.

@@ -1,0 +1,56 @@
+import { existsSync, realpathSync } from 'node:fs'
+import { dirname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createAssetServer } from 'remix/assets'
+import { captureServerError } from './server/observability.ts'
+
+export const applicationRoot = fileURLToPath(new URL('../', import.meta.url))
+
+function dependencyRoot(directory: string): string {
+  if (
+    ['pnpm-workspace.yaml', 'pnpm-lock.yaml', 'package-lock.json', 'yarn.lock', 'bun.lock'].some(
+      (name) => existsSync(join(directory, name)),
+    )
+  )
+    return directory
+  const parent = dirname(directory)
+  if (parent === directory) throw new Error('Install dependencies before starting the application.')
+  return dependencyRoot(parent)
+}
+
+const rootDir = dependencyRoot(applicationRoot)
+const sourceRoot = relative(rootDir, join(applicationRoot, 'src')).replaceAll('\\', '/')
+const localModules = join(applicationRoot, 'node_modules')
+const applicationModules =
+  existsSync(localModules) &&
+  !realpathSync(localModules).startsWith(realpathSync(join(rootDir, 'node_modules')))
+    ? { dependencies: relative(rootDir, realpathSync(localModules)).replaceAll('\\', '/') }
+    : {}
+
+export const assets = createAssetServer({
+  rootDir,
+  basePath: '/assets',
+  mounts: {
+    app: sourceRoot,
+    npm: 'node_modules',
+    ...applicationModules,
+  },
+  allowFiles: [`${sourceRoot}/client/**`],
+  allowPackages: [
+    'remix',
+    '@fontsource-variable/instrument-sans',
+    '@fontsource/commit-mono',
+    '@trpc/client',
+    '@trpc/server',
+    'superjson',
+  ],
+  denyFiles: ['**/*.test.*', `${sourceRoot}/server/**`, '**/env.*', '**/.env*'],
+  watch: process.env.NODE_ENV !== 'production',
+  fingerprint: process.env.NODE_ENV === 'production',
+  minify: process.env.NODE_ENV === 'production',
+  onError(error) {
+    captureServerError(error)
+    return new Response('Unable to load the application asset.', { status: 500 })
+  },
+  files: { extensions: ['.woff2', '.woff', '.svg', '.png'] },
+})

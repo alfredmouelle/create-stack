@@ -69,7 +69,6 @@ test.describe('stack configurator', () => {
     await openPage(page, '/build')
 
     const framework = axis(page, 'Framework')
-    await expect(framework.getByText('Remix · planned')).toHaveAttribute('aria-disabled', 'true')
     await expect(framework.getByRole('radio')).toHaveCount(FRAMEWORKS.length)
     await expect(axis(page, 'Formatter').getByText('oxfmt', { exact: true })).toHaveAttribute(
       'aria-disabled',
@@ -79,6 +78,19 @@ test.describe('stack configurator', () => {
       'aria-disabled',
       'true',
     )
+  })
+
+  test('selects Remix preview and restores it from the URL', async ({ page }) => {
+    await openPage(page, '/build')
+    const remix = axis(page, 'Framework').getByRole('radio', { name: /^Remix/ })
+    await remix.check()
+    await expect(generatedCommand(page)).toHaveText(
+      'pnpm dlx @alfredmouelle/create-stack@latest my-app --framework remix',
+    )
+    await expect(page).toHaveURL(/&framework=remix$/)
+    await page.reload()
+    await expect(remix).toBeChecked()
+    await expect(axis(page, 'Framework')).not.toContainText('Remix · planned')
   })
 
   test('selects Rasengan preview and restores it from the URL', async ({ page }) => {

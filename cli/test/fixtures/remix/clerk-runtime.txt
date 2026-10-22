@@ -1,0 +1,87 @@
+import assert from 'node:assert/strict'
+import { generateKeyPairSync, sign } from 'node:crypto'
+
+const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
+const origin = 'http://localhost:3078'
+process.env.REMIX_CLERK_PUBLISHABLE_KEY = `pk_test_${Buffer.from('clerk.example.com$').toString('base64')}`
+process.env.CLERK_SECRET_KEY = 'sk_test_local_runtime_verification'
+process.env.CLERK_JWT_KEY = publicKey.export({ type: 'spki', format: 'pem' }).toString()
+process.env.CLERK_AUTHORIZED_PARTIES = origin
+const { authenticate } = await import('./src/server/clerk/auth.ts')
+const now = Math.floor(Date.now() / 1000)
+function token(user, overrides = {}) {
+  const encoded = [
+    Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: 'local-runtime' })).toString(
+      'base64url',
+    ),
+    Buffer.from(
+      JSON.stringify({
+        sub: user,
+        sid: 'sess_runtime',
+        iss: 'https://clerk.example.com',
+        azp: origin,
+        iat: now,
+        nbf: now - 5,
+        exp: now + 300,
+        ...overrides,
+      }),
+    ).toString('base64url'),
+  ].join('.')
+  return `${encoded}.${sign('RSA-SHA256', Buffer.from(encoded), privateKey).toString('base64url')}`
+}
+const ids = ['user_casey', 'user_morgan']
+assert.deepEqual(
+  (
+    await Promise.all(
+      ids.map((user) =>
+        authenticate(
+          new Request(`${origin}/api/session`, {
+            headers: { authorization: `Bearer ${token(user)}` },
+          }),
+        ),
+      ),
+    )
+  ).map((identity) => identity.userId),
+  ids,
+)
+assert.equal((await authenticate(new Request(`${origin}/dashboard`))).userId, null)
+for (const jwt of [
+  token(ids[0], { exp: now - 300 }),
+  token(ids[0], { azp: 'https://example.com' }),
+  token(ids[0]).slice(0, -8) + 'tampered',
+])
+  assert.equal(
+    (
+      await authenticate(
+        new Request(`${origin}/api/session`, { headers: { authorization: `Bearer ${jwt}` } }),
+      )
+    ).userId,
+    null,
+  )
+const { router } = await import('./src/router.tsx')
+const convexToken = await router.fetch(`${origin}/api/convex-token`)
+assert.equal(convexToken.status, process.env.EXPECT_CONVEX_TOKEN === '1' ? 200 : 404)
+if (convexToken.status === 200) assert.deepEqual(await convexToken.json(), { token: null })
+else
+  assert.equal(
+    (
+      await router.fetch(
+        new Request(`${origin}/api/convex-token`, {
+          headers: { authorization: `Bearer ${token(ids[0])}` },
+        }),
+      )
+    ).status,
+    404,
+  )
+const response = await router.fetch(
+  new Request(`${origin}/api/session`, { headers: { authorization: `Bearer ${token(ids[0])}` } }),
+)
+assert.deepEqual(await response.json(), { userId: ids[0] })
+assert.equal((await router.fetch(`${origin}/dashboard`)).status, 303)
+const protectedPage = await router.fetch(
+  new Request(`${origin}/dashboard`, { headers: { authorization: `Bearer ${token(ids[0])}` } }),
+)
+assert.equal(protectedPage.status, 200)
+assert.ok((await protectedPage.text()).includes('Your account'))
+const { assets } = await import('./src/assets.ts')
+await assets.close()

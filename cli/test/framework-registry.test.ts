@@ -41,10 +41,13 @@ describe('framework registry', () => {
 
   test('looks a module up by framework id', () => {
     expect(getFrameworkModule('next').id).toBe('next')
-    expect(() => getFrameworkModule('remix')).toThrow('Unknown framework: remix')
+    expect(getFrameworkModule('remix').id).toBe('remix')
+    expect(() => getFrameworkModule('unknown')).toThrow('Unknown framework: unknown')
   })
 
   test.each([
+    ['remix', { dependencies: { remix: '3.0.0' } }],
+    ['remix', { dependencies: { remix: '3.0.0', '@remix-run/component': '1.0.0' } }],
     ['next', { dependencies: { next: '16.2.0', react: '19.2.0' } }],
     ['tanstack', { dependencies: { '@tanstack/react-start': '1.140.0' } }],
     ['tanstack', { devDependencies: { '@tanstack/react-router': '1.140.0' } }],
@@ -53,6 +56,35 @@ describe('framework registry', () => {
   })
 
   test.each([
+    ['legacy Remix', manifest({ dependencies: { '@remix-run/react': '2.17.0' } })],
+    [
+      'legacy Remix compiler',
+      manifest({
+        dependencies: { remix: '3.0.0' },
+        devDependencies: { '@remix-run/dev': '2.17.0' },
+      }),
+    ],
+    [
+      'legacy Remix server tooling',
+      manifest({ dependencies: { remix: '3.0.0', '@remix-run/serve': '2.17.0' } }),
+    ],
+    ['an obsolete Remix package', manifest({ dependencies: { remix: '2.17.0' } })],
+    ['React Router', manifest({ dependencies: { 'react-router': '8.3.0' } })],
+    [
+      'mixed Remix and React Router',
+      manifest({ dependencies: { remix: '3.0.0', 'react-router': '8.3.0' } }),
+    ],
+    [
+      'mixed Remix and React Router DOM',
+      manifest({ dependencies: { remix: '3.0.0', 'react-router-dom': '8.3.0' } }),
+    ],
+    [
+      'mixed Remix and React Router tooling',
+      manifest({
+        dependencies: { remix: '3.0.0' },
+        devDependencies: { '@react-router/node': '8.3.0' },
+      }),
+    ],
     ['an unrecognized application', manifest({ dependencies: { express: '5.1.0' } })],
     ['an invalid manifest', '{ "name": '],
     ['a manifest that is not an object', '["next"]'],

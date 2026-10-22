@@ -20,6 +20,7 @@ import {
 } from '#lib/shadcn.ts'
 import { validateAdditions } from '../additions.ts'
 import { runVerificationGate } from '../engine.ts'
+import type { FrameworkModule } from '../framework-module.ts'
 import { requireFrameworkModule } from '../framework-registry.ts'
 import {
   ADDABLE,
@@ -304,6 +305,22 @@ async function selectApplication(
   )
 }
 
+function installComponents(
+  module: FrameworkModule,
+  projectDir: string,
+  components: readonly ComponentAddition[],
+  force: boolean,
+  preflight: RegistryPreflight | null,
+): ReadonlyMap<string, ComponentResult> {
+  if (components.length === 0) return new Map()
+  if (module.additions.components.kind === 'registry') return installRegistryResults(preflight)
+  return module.additions.components.install({
+    projectDir,
+    names: components.map(({ name }) => name),
+    force,
+  })
+}
+
 export async function runAddition(args: ParsedArgs): Promise<void> {
   validateAdditionInvocation(args)
   const projectRoot = resolve(process.cwd())
@@ -383,16 +400,13 @@ export async function runAddition(args: ParsedArgs): Promise<void> {
   ]
   p.note(plan.join('\n'), 'Addition plan')
 
-  const componentResults =
-    components.length === 0
-      ? new Map<string, ComponentResult>()
-      : module.additions.components.kind === 'native'
-        ? module.additions.components.install({
-            projectDir,
-            names: components.map(({ name }) => name),
-            force,
-          })
-        : installRegistryResults(registryPreflight)
+  const componentResults = installComponents(
+    module,
+    projectDir,
+    components,
+    force,
+    registryPreflight,
+  )
   const added = selections.map((selection) =>
     addSelection({ selection, projectDir, keepFiles, componentResults }),
   )

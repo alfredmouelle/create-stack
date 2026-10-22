@@ -227,13 +227,14 @@ test('copies static commands from the page', async ({ context, page, baseURL }) 
     .toBe(canonicalPnpmCommand)
 })
 
-test('shows planned frameworks as not installable', async ({ page }) => {
+test('shows Remix preview as installable', async ({ page }) => {
   await openPage(page, '/frameworks/remix')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Remix' })).toBeVisible()
-  await expect(page.getByText('Not installable yet', { exact: false })).toBeVisible()
-  await expect(page.locator('.badge.is-planned').first()).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toHaveCount(0)
+  await expect(page.getByText('Not installable yet', { exact: false })).toHaveCount(0)
+  await expect(page.locator('.badge.is-preview').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toBeEnabled()
+  await expect(page.locator('main')).toContainText('--framework remix')
 })
 
 test('numbers the remaining planned frameworks consecutively', async ({ page }) => {
@@ -255,7 +256,7 @@ test('identifies Rasengan as preview on the homepage and planned framework roadm
   await expect(hero.getByText('preview', { exact: true })).toBeVisible()
   await expect(hero.getByText('stable', { exact: true })).toHaveCount(0)
 
-  await openPage(page, '/frameworks/remix')
+  await openPage(page, '/frameworks/vue')
   const roadmap = page.locator('.roadmap .is-done').filter({ hasText: 'RasenganJS' })
   await expect(roadmap.getByText('preview', { exact: true })).toBeVisible()
   await expect(roadmap.getByText('stable', { exact: true })).toHaveCount(0)

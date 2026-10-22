@@ -106,6 +106,7 @@ function createBundleFixture() {
 }
 
 const GENERATED_FILES = {
+  remix: ['.remix/runtime.js', '.cache/styles.css', '.data/messages.json'],
   rasengan: ['.rasengan/cache/config.js', '.data/messages.json', 'dist/server/private.js'],
   next: ['next-env.d.ts', '.next/server/chunk.js'],
   tanstack: [

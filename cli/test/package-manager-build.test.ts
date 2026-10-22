@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from 'vitest'
-import { build, cleanup, exists, readJSON } from './helpers.ts'
+import { build, cleanup, exists, read, readJSON } from './helpers.ts'
 
 afterAll(cleanup)
 
@@ -22,3 +22,26 @@ describe('package manager wiring', () => {
     expect(readJSON(`${dir}/package.json`).trustedDependencies).toBeUndefined()
   })
 })
+
+test.each(['pnpm', 'bun'])(
+  'applies selected native build permissions in standalone %s projects',
+  async (pm) => {
+    const { dir } = await build({
+      name: 'customer-portal',
+      framework: 'remix',
+      database: 'none',
+      auth: 'clerk',
+      mailer: 'none',
+      trpc: false,
+      pm,
+    })
+    if (pm === 'pnpm') {
+      expect(read(`${dir}/pnpm-workspace.yaml`)).toContain('  browser-tabs-lock: true')
+      expect(read(`${dir}/pnpm-workspace.yaml`)).toContain('  core-js: true')
+    } else {
+      expect(readJSON(`${dir}/package.json`).trustedDependencies).toEqual(
+        expect.arrayContaining(['browser-tabs-lock', 'core-js']),
+      )
+    }
+  },
+)
