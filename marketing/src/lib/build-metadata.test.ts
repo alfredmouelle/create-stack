@@ -65,7 +65,7 @@ describe('marketing metadata builds', () => {
     expect(html).toContain('<meta name="robots" content="index, follow">')
     expect(html).not.toContain('noindex')
     expect(html).toContain(
-      '<meta name="description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
+      '<meta name="description" content="Start with a working app in the stack you choose. Strict TypeScript, formatting and linting are configured from day one.">',
     )
     expect(html).toContain('<title>create-stack. Your most useful day one commit</title>')
     expect(html).toContain('<link rel="canonical" href="https://create-stack.alfredmouelle.com/">')
@@ -78,7 +78,7 @@ describe('marketing metadata builds', () => {
       '<meta property="og:image:alt" content="create-stack. Your most useful day one commit">',
     )
     expect(html).toContain(
-      '<meta property="og:description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
+      '<meta property="og:description" content="Start with a working app in the stack you choose. Strict TypeScript, formatting and linting are configured from day one.">',
     )
     expect(html).toContain(
       '<meta property="og:url" content="https://create-stack.alfredmouelle.com/">',
@@ -99,7 +99,7 @@ describe('marketing metadata builds', () => {
       '<meta name="twitter:image:alt" content="create-stack. Your most useful day one commit">',
     )
     expect(html).toContain(
-      '<meta name="twitter:description" content="create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.">',
+      '<meta name="twitter:description" content="Start with a working app in the stack you choose. Strict TypeScript, formatting and linting are configured from day one.">',
     )
     expect(html).toContain(
       '<meta name="twitter:image" content="https://create-stack.alfredmouelle.com/og-image.png">',

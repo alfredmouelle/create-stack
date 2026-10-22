@@ -15,7 +15,7 @@ export const REPOSITORY_URL = 'https://github.com/alfredmouelle/create-stack'
 export const NPM_URL = 'https://www.npmjs.com/package/@alfredmouelle/create-stack'
 
 export const SITE_DESCRIPTION =
-  'create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.'
+  'Start with a working app in the stack you choose. Strict TypeScript, formatting and linting are configured from day one.'
 export const OG_IMAGE_PATH = '/og-image.png'
 export const OG_IMAGE_ALT = SITE_TITLE
 

@@ -6,7 +6,7 @@ import { installCommand } from '../lib/install-command'
 type CopyState = 'idle' | 'copied' | 'error'
 
 const STATUS_MESSAGES = {
-  idle: 'No account required. Change my-app before you run it.',
+  idle: 'Replace my-app with your project name.',
   copied: 'Command copied to your clipboard.',
   error: 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.',
 } as const satisfies Record<CopyState, string>

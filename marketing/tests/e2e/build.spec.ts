@@ -56,6 +56,42 @@ test.describe('stack configurator', () => {
     await expect(page.getByRole('button', { name: 'Copy command' })).toBeEnabled()
   })
 
+  test('recommends one compatible auth provider independently of the selected provider', async ({
+    page,
+  }) => {
+    await openPage(page, '/build')
+
+    const auth = axis(page, 'Authentication')
+    const recommendation = auth.locator('.chip').filter({ hasText: 'recommended' })
+    await expect(recommendation).toHaveCount(1)
+    await expect(recommendation).toContainText('Better Auth')
+    await auth.getByRole('radio', { name: 'Clerk', exact: true }).check()
+    await expect(recommendation).toContainText('Better Auth')
+
+    await axis(page, 'Database')
+      .getByRole('radio', { name: /^Convex/ })
+      .check()
+    await expect(recommendation).toHaveCount(1)
+    await expect(recommendation).toContainText('Clerk')
+    await expect(axis(page, 'API').getByRole('radio', { name: /^No tRPC/ })).toBeChecked()
+    await expect(generatedCommand(page)).toContainText('--database convex --auth clerk')
+    await page.reload()
+    await expect(recommendation).toContainText('Clerk')
+    await auth.getByRole('radio', { name: 'Better Auth', exact: true }).check()
+    await expect(auth.getByRole('radio', { name: 'Better Auth', exact: true })).toBeChecked()
+    await expect(recommendation).toContainText('Clerk')
+    await expect(page.getByRole('button', { name: 'Copy command' })).toBeDisabled()
+
+    await page.getByRole('button', { name: 'Reset to recommended' }).click()
+    await expect(recommendation).toContainText('Better Auth')
+    await axis(page, 'Database').getByRole('radio', { name: /^none/ }).check()
+    await expect(recommendation).toContainText('Clerk')
+
+    await page.getByRole('button', { name: 'Reset to recommended' }).click()
+    await axis(page, 'Mailer').getByRole('radio', { name: /^none/ }).check()
+    await expect(recommendation).toContainText('Clerk')
+  })
+
   test('prints the creation plan in the CLI format', async ({ page }) => {
     await openPage(page, '/build')
 

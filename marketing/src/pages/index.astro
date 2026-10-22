@@ -48,10 +48,15 @@ const frameworksTitle = [
         ))}
       </p>
       <h1 class="t-display" id="hero-title">{SITE_TAGLINE.lead} <br /><em>{SITE_TAGLINE.emphasis}</em></h1>
-      <p class="t-lead">
-        Pick a framework and a stack. create-stack assembles it from a tested reference
-        application, then commits only after install, format, typecheck and lint all pass.
-      </p>
+      <div class="stack is-tight">
+        <p class="t-lead">
+          Pick your framework and tools, then start with a working app, waiting for your first feature.
+        </p>
+        <a class="hero-quality" href="#profile-title">
+          <span aria-hidden="true" class="tick"></span>
+          Strict TypeScript. Linting built in.
+        </a>
+      </div>
       <InstallCommand client:load />
       <div class="actions">
         <a class="button is-primary" href="/build">Build your stack →</a>
@@ -75,7 +80,7 @@ const frameworksTitle = [
         <SectionHead
           id="assembly-title"
           question="Will I inherit code I did not choose?"
-          title="Assembled from a reference app. Nothing is generated, then deleted."
+          title="Only the code your stack needs."
         />
         <div class="split is-5-7">
           <div class="stack">
@@ -154,7 +159,7 @@ const frameworksTitle = [
         <SectionHead
           id="profile-title"
           question="How strict is the baseline?"
-          title="The same quality profile in every project."
+          title="Strict TypeScript and linting in every project."
         />
         <ul class="checks">
           <li class="check is-wide">
@@ -173,7 +178,7 @@ const frameworksTitle = [
           </li>
           <li class="check">
             <span aria-hidden="true" class="tick"></span>
-            <div><h3>Linter</h3><p>Biome (recommended) or Oxlint, type-aware</p></div>
+            <div><h3>Linting enabled by default</h3><p>Biome rules, or type-aware Oxlint.</p></div>
           </li>
           <li class="check">
             <span aria-hidden="true" class="tick"></span>
@@ -298,9 +303,17 @@ const frameworksTitle = [
 
     <section aria-labelledby="agents-title" class="section">
       <div class="shell">
-        <SectionHead id="agents-title" question="Can my agent run it?" title="Built for agents too." />
+        <SectionHead
+          id="agents-title"
+          question="Can my agent work here?"
+          title="Your AI agents will love working on these foundations."
+        />
         <div class="split is-5-7">
           <dl class="facts">
+            <div>
+              <dt>Types and lint rules</dt>
+              <dd>Pre-commit hooks format and lint staged files. Pre-push hooks run typecheck and tests.</dd>
+            </div>
             <div>
               <dt><code>--yes</code></dt>
               <dd>Accepts every default without a prompt. Any stack flag also switches to non-interactive mode.</dd>

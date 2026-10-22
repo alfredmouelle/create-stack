@@ -274,6 +274,36 @@ test('shows the hero tagline, grouped frameworks and preview roadmap status', as
   await expect(roadmap.getByText('stable', { exact: true })).toHaveCount(0)
 })
 
+test('links the hero quality promise to the strict profile and explains agent workflows', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await openPage(page, '/')
+
+  const hero = page.getByRole('region', { name: 'Your most useful day one commit' })
+  await expect(hero).toContainText(
+    'Pick your framework and tools, then start with a working app, waiting for your first feature.',
+  )
+  await hero.getByRole('link', { name: 'Strict TypeScript. Linting built in.' }).click()
+  await expect(page).toHaveURL(/\/#profile-title$/)
+  const profile = page.getByRole('region', {
+    name: 'Strict TypeScript and linting in every project.',
+  })
+  await expect(
+    profile.getByRole('heading', { name: 'Strict TypeScript, ten options on' }),
+  ).toBeVisible()
+  await expect(profile.locator('.ts-options code')).toHaveCount(10)
+  await expect(profile).toContainText('Biome rules, or type-aware Oxlint.')
+  await expect(
+    page.getByRole('heading', {
+      name: 'Your AI agents will love working on these foundations.',
+    }),
+  ).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
+})
+
 test('makes a long install command horizontally inspectable', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await openPage(page, '/')
