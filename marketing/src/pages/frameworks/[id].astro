@@ -23,6 +23,7 @@ interface Props {
 }
 
 const { entry } = Astro.props
+const command = isRegistered(entry) ? frameworkCommand(entry.id) : null
 const AXES = [
   ['database', 'database'],
   ['auth', 'auth'],
@@ -38,9 +39,9 @@ const displayRecommendation = (value: string | boolean | readonly string[]) =>
 ---
 
 <BaseLayout
-  description={isRegistered(entry)
+  description={command && isRegistered(entry)
     ? `${entry.label} on create-stack: supported stack options, recommended command, generated tree and gate commands.`
-    : `${entry.label} is planned for create-stack. See what is missing and how to own it.`}
+    : isRegistered(entry) ? `${entry.label} is implemented in create-stack and awaiting npm publication. Coming in the next release.` : `${entry.label} is planned for create-stack. See what is missing and how to own it.`}
   title={`${entry.label} · create-stack`}
 >
   <main class="shell">
@@ -54,12 +55,16 @@ const displayRecommendation = (value: string | boolean | readonly string[]) =>
         isRegistered(entry) ? (
           <>
             <p class="t-lead">{entry.summary}</p>
-            <CommandLine command={frameworkCommand(entry.id)} label={`Copy the ${entry.label} command`} />
+            {command ? (
+              <CommandLine command={command} label={`Copy the ${entry.label} command`} />
+            ) : (
+              <p class="t-body">Coming in the next release. Implemented in the repository, awaiting npm publication.</p>
+            )}
           </>
         ) : (
           <p class="t-lead">
             Not installable yet. <code>--framework {entry.id}</code> is not an accepted value today. It
-            becomes one when a module passes the conformance suite.
+            becomes one after its module passes the checks and ships on npm.
           </p>
         )
       }
@@ -72,7 +77,7 @@ const displayRecommendation = (value: string | boolean | readonly string[]) =>
       isRegistered(entry) ? (
         <div class="detail-grid">
           <section aria-labelledby="matrix-title" class="stack">
-            <h2 class="t-label" id="matrix-title">Support matrix</h2>
+            <h2 class="t-label" id="matrix-title">{command ? 'Support matrix' : 'Upcoming support matrix'}</h2>
             <table class="data-table">
               <thead>
                 <tr>
@@ -138,7 +143,7 @@ const displayRecommendation = (value: string | boolean | readonly string[]) =>
             <h2 class="t-label" id="roadmap-title">Roadmap position</h2>
             <ol class="roadmap">
               {REGISTERED_FRAMEWORKS.map((framework) => (
-                <li class="is-done"><span aria-hidden="true" class="tick"></span><span>{framework.label}</span><Badge maturity={framework.maturity} /></li>
+                <li class:list={{ 'is-done': framework.availability === 'released' }}><span aria-hidden="true" class={framework.availability === 'released' ? 'tick' : 'hollow'}></span><span>{framework.label}{framework.availability === 'unreleased' ? <small>awaiting npm publication</small> : null}</span><Badge maturity={framework.maturity} /></li>
               ))}
               {PLANNED_FRAMEWORKS.map((planned) => (
                 <li class:list={[planned.id === entry.id && 'is-current']}>

@@ -495,7 +495,7 @@ describe('resolveStackConfiguration', () => {
     },
   )
 
-  test('declares stable Next.js and TanStack Start support, with RasenganJS in preview', () => {
+  test('declares stable Next.js and TanStack Start support, with RasenganJS and Remix in preview', () => {
     expect(
       Object.entries(FRAMEWORK_SUPPORT).map(([id, { label, maturity }]) => ({
         id,
@@ -505,6 +505,7 @@ describe('resolveStackConfiguration', () => {
     ).toEqual([
       { id: 'tanstack', label: 'TanStack Start', maturity: 'stable' },
       { id: 'next', label: 'Next.js', maturity: 'stable' },
+      { id: 'remix', label: 'Remix', maturity: 'preview' },
       { id: 'rasengan', label: 'RasenganJS', maturity: 'preview' },
     ])
   })

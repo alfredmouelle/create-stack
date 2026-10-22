@@ -1,5 +1,6 @@
 import { FRAMEWORKS } from '@alfredmouelle/stack-config'
 import { expect, type Page, test } from '@playwright/test'
+import { CLI_PACKAGE, CLI_RELEASE } from '../../src/lib/cli-release'
 import { openPage } from './navigation'
 
 test.beforeEach(async ({ page }) => {
@@ -28,7 +29,7 @@ test.describe('stack configurator', () => {
     await linter.getByRole('radio', { name: 'Oxlint', exact: true }).check()
 
     await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app --formatter prettier --linter oxlint',
+      `pnpm dlx ${CLI_PACKAGE} my-app --formatter prettier --linter oxlint`,
     )
     await expect(page).toHaveURL(/&formatter=prettier&linter=oxlint$/)
     await page.reload()
@@ -39,9 +40,7 @@ test.describe('stack configurator', () => {
 
     await expect(formatter.getByRole('radio', { name: /^Biome/ })).toBeChecked()
     await expect(linter.getByRole('radio', { name: /^Biome/ })).toBeChecked()
-    await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app',
-    )
+    await expect(generatedCommand(page)).toHaveText(`pnpm dlx ${CLI_PACKAGE} my-app`)
     await expect(page).toHaveURL(/\/build\?v=1&name=my-app&pm=pnpm$/)
   })
 
@@ -49,11 +48,45 @@ test.describe('stack configurator', () => {
     await openPage(page, '/build')
 
     await expect(page).toHaveURL(/\/build\?v=1&name=my-app&pm=pnpm$/)
-    await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app',
-    )
+    await expect(generatedCommand(page)).toHaveText(`pnpm dlx ${CLI_PACKAGE} my-app`)
     await expect(axis(page, 'Database')).toContainText('↳ recommended stack')
     await expect(page.getByRole('button', { name: 'Copy command' })).toBeEnabled()
+  })
+
+  test('recommends one compatible auth provider independently of the selected provider', async ({
+    page,
+  }) => {
+    await openPage(page, '/build')
+
+    const auth = axis(page, 'Authentication')
+    const recommendation = auth.locator('.chip').filter({ hasText: 'recommended' })
+    await expect(recommendation).toHaveCount(1)
+    await expect(recommendation).toContainText('Better Auth')
+    await auth.getByRole('radio', { name: 'Clerk', exact: true }).check()
+    await expect(recommendation).toContainText('Better Auth')
+
+    await axis(page, 'Database')
+      .getByRole('radio', { name: /^Convex/ })
+      .check()
+    await expect(recommendation).toHaveCount(1)
+    await expect(recommendation).toContainText('Clerk')
+    await expect(axis(page, 'API').getByRole('radio', { name: /^No tRPC/ })).toBeChecked()
+    await expect(generatedCommand(page)).toContainText('--database convex --auth clerk')
+    await page.reload()
+    await expect(recommendation).toContainText('Clerk')
+    await auth.getByRole('radio', { name: 'Better Auth', exact: true }).check()
+    await expect(auth.getByRole('radio', { name: 'Better Auth', exact: true })).toBeChecked()
+    await expect(recommendation).toContainText('Clerk')
+    await expect(page.getByRole('button', { name: 'Copy command' })).toBeDisabled()
+
+    await page.getByRole('button', { name: 'Reset to recommended' }).click()
+    await expect(recommendation).toContainText('Better Auth')
+    await axis(page, 'Database').getByRole('radio', { name: /^none/ }).check()
+    await expect(recommendation).toContainText('Clerk')
+
+    await page.getByRole('button', { name: 'Reset to recommended' }).click()
+    await axis(page, 'Mailer').getByRole('radio', { name: /^none/ }).check()
+    await expect(recommendation).toContainText('Clerk')
   })
 
   test('prints the creation plan in the CLI format', async ({ page }) => {
@@ -69,7 +102,6 @@ test.describe('stack configurator', () => {
     await openPage(page, '/build')
 
     const framework = axis(page, 'Framework')
-    await expect(framework.getByText('Remix · planned')).toHaveAttribute('aria-disabled', 'true')
     await expect(framework.getByRole('radio')).toHaveCount(FRAMEWORKS.length)
     await expect(axis(page, 'Formatter').getByText('oxfmt', { exact: true })).toHaveAttribute(
       'aria-disabled',
@@ -81,20 +113,45 @@ test.describe('stack configurator', () => {
     )
   })
 
+  test('allows Remix only when the verified CLI release includes it', async ({ page }) => {
+    await openPage(page, '/build')
+    const remix = axis(page, 'Framework').getByRole('radio', { name: /^Remix/ })
+    if (CLI_RELEASE.frameworks.remix === undefined) {
+      await expect(remix).toBeDisabled()
+      await expect(axis(page, 'Framework')).toContainText('coming soon')
+      await openPage(page, '/build?v=1&name=orbit&framework=remix')
+      await expect(page.getByRole('alert')).toContainText('Remix is coming in the next release')
+      await expect(page.getByRole('button', { name: 'Copy command' })).toHaveCount(0)
+      await expect(generatedCommand(page)).toHaveCount(0)
+      await page.getByRole('button', { name: 'Use the current recommended stack' }).click()
+      await expect(generatedCommand(page)).toHaveText(`pnpm dlx ${CLI_PACKAGE} my-app`)
+      return
+    }
+    await expect(remix).toBeEnabled()
+    await remix.check()
+    await expect(generatedCommand(page)).toHaveText(
+      `pnpm dlx ${CLI_PACKAGE} my-app --framework remix`,
+    )
+    await expect(page).toHaveURL(/&framework=remix$/)
+    await page.reload()
+    await expect(remix).toBeChecked()
+    await expect(axis(page, 'Framework')).not.toContainText('Remix · planned')
+  })
+
   test('selects Rasengan preview and restores it from the URL', async ({ page }) => {
     await openPage(page, '/build')
 
     const rasengan = axis(page, 'Framework').getByRole('radio', { name: /^RasenganJS/ })
     await rasengan.check()
     await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app --framework rasengan',
+      `pnpm dlx ${CLI_PACKAGE} my-app --framework rasengan`,
     )
     await expect(page).toHaveURL(/&framework=rasengan$/)
     await page.reload()
 
     await expect(rasengan).toBeChecked()
     await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app --framework rasengan',
+      `pnpm dlx ${CLI_PACKAGE} my-app --framework rasengan`,
     )
   })
 
@@ -108,9 +165,7 @@ test.describe('stack configurator', () => {
 
     await gcs.click()
     await expect(gcs).toHaveAttribute('aria-pressed', 'true')
-    await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app --storage gcs',
-    )
+    await expect(generatedCommand(page)).toHaveText(`pnpm dlx ${CLI_PACKAGE} my-app --storage gcs`)
 
     await r2.click()
     await expect(gcs).toHaveAttribute('aria-pressed', 'false')
@@ -118,9 +173,7 @@ test.describe('stack configurator', () => {
 
     await r2.click()
     await expect(r2).toHaveAttribute('aria-pressed', 'false')
-    await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app',
-    )
+    await expect(generatedCommand(page)).toHaveText(`pnpm dlx ${CLI_PACKAGE} my-app`)
   })
 
   test('renders a valid explicit selection and updates the shareable URL', async ({
@@ -155,7 +208,7 @@ test.describe('stack configurator', () => {
     await axis(page, 'Package manager').getByRole('radio', { name: 'npm', exact: true }).check()
 
     await expect(generatedCommand(page)).toHaveText(
-      'npx @alfredmouelle/create-stack@latest orbit --framework next --database convex --monorepo nx --storage r2',
+      `npx ${CLI_PACKAGE} orbit --framework next --database convex --monorepo nx --storage r2`,
     )
     await expect(page).toHaveURL(
       /\/build\?v=1&name=orbit&pm=npm&framework=next&database=convex&mono=nx&cap=storage%3Dr2$/,
@@ -165,7 +218,7 @@ test.describe('stack configurator', () => {
     await expect
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
       .toBe(
-        'npx @alfredmouelle/create-stack@latest orbit --framework next --database convex --monorepo nx --storage r2',
+        `npx ${CLI_PACKAGE} orbit --framework next --database convex --monorepo nx --storage r2`,
       )
   })
 
@@ -176,9 +229,7 @@ test.describe('stack configurator', () => {
     await expect(alias).toHaveValue('~')
     await alias.fill('@app')
 
-    await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app --alias @app',
-    )
+    await expect(generatedCommand(page)).toHaveText(`pnpm dlx ${CLI_PACKAGE} my-app --alias @app`)
     await expect(page).toHaveURL(/\/build\?v=1&name=my-app&pm=pnpm&alias=%40app$/)
 
     await alias.fill('app.lib')
@@ -263,7 +314,7 @@ test.describe('stack configurator', () => {
 
     await expect(axis(page, 'Framework').getByRole('radio', { name: /^Next\.js/ })).toBeChecked()
     await expect(generatedCommand(page)).toHaveText(
-      'pnpm dlx @alfredmouelle/create-stack@latest my-app --framework next',
+      `pnpm dlx ${CLI_PACKAGE} my-app --framework next`,
     )
   })
 })

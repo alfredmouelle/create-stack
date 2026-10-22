@@ -1,5 +1,7 @@
 # Adding a framework
 
+Framework registration describes repository support. Public installation availability comes from the manifest in the npm-published CLI. Packing generates `_stack/release.json`; marketing refreshes its verified snapshot before deployment and pins commands to that version. A newly registered framework stays marked as coming soon until a successful npm publication includes it. See [Marketing Worker delivery](runbooks/marketing-worker.md#published-cli-availability).
+
 This guide is for the owner of a new framework module, such as Remix or RasenganJS.
 It names the files you create, the two shared lines you add, and the checks your
 framework must pass. Read [CONTEXT.md](../CONTEXT.md) for the vocabulary and
@@ -118,6 +120,14 @@ The rules the conformance suite enforces:
 skeleton (which renders `package.json` and `src/env.ts`), the SQL database parts, the
 mailer parts, and the testing part.
 
+A framework with its own component runtime supplies `additions.components.kind: 'native'`,
+`additions.components.names`, and `additions.components.install`. The CLI validates the entire addition batch
+before calling this installer. It receives the application directory, requested
+component names, and replacement flag, and returns each component's copied and
+preserved paths, dependencies, root mounting result, and manual steps. It runs only
+when components were requested. Registry-backed frameworks explicitly supply
+`components: { kind: 'registry' }` to use the existing shadcn installer.
+
 ## Verification gate
 
 Before the automatic first commit, the engine runs `install`, then `format` (with fixes),
@@ -136,6 +146,12 @@ tools, hook preparation, and editor settings. Your reference application's
 `tsconfig.json` enables every profile option itself and adds only framework options
 (JSX, paths, plugins, types). Generation fails when a generated `tsconfig.json` sets a
 profile option, or a member of `strict`, to `false`.
+
+A framework without shadcn can pass `tailwindStylesheet` to
+`applyJavaScriptQualityProfile` in its `applyQualityProfile` implementation. The path
+is relative to `applicationDir`; the toolkit resolves it from the project-level
+Prettier configuration, including in monorepos. When omitted, the toolkit reads
+`tailwind.css` from the application's `components.json` as before.
 
 When an upstream framework forces a relaxation, declare it:
 

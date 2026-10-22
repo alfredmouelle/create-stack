@@ -6,7 +6,7 @@ import jobsManifest from '../../jobs/capability.json' with { type: 'json' }
 import loggerManifest from '../../logger/capability.json' with { type: 'json' }
 import storageManifest from '../../storage/capability.json' with { type: 'json' }
 
-export const FRAMEWORKS = ['tanstack', 'next', 'rasengan'] as const
+export const FRAMEWORKS = ['tanstack', 'next', 'rasengan', 'remix'] as const
 export type Framework = (typeof FRAMEWORKS)[number]
 
 export const DATABASES = ['drizzle', 'prisma', 'convex', 'none'] as const
@@ -279,6 +279,12 @@ export const FRAMEWORK_SUPPORT: FrameworkSupportCatalog = {
     monorepoOutputs: ['.next/**', '!.next/cache/**'],
     ...FULL_STACK_SUPPORT,
   },
+  remix: {
+    label: 'Remix',
+    maturity: 'preview',
+    monorepoOutputs: [],
+    ...FULL_STACK_SUPPORT,
+  },
   rasengan: {
     label: 'RasenganJS',
     maturity: 'preview',
@@ -478,6 +484,7 @@ function resolveConfiguration(
   choices: ReturnType<typeof explicitChoices>,
   framework: FrameworkSupport,
   minimal: boolean,
+  recommendedFramework: Framework,
 ): StackConfiguration {
   const { recommendations } = framework
   const database =
@@ -501,7 +508,7 @@ function resolveConfiguration(
       fitsAxis('mailer', { ...choices, database, auth, trpc, mailer }),
     )
   return {
-    framework: choices.framework ?? RECOMMENDED_FRAMEWORK,
+    framework: choices.framework ?? recommendedFramework,
     database,
     auth,
     trpc,
@@ -629,18 +636,19 @@ function cliArgsFor(input: StackConfigurationInput): readonly string[] {
 export function resolveStackConfiguration(
   input: StackConfigurationInput = {},
   frameworkSupport: FrameworkSupportCatalog = FRAMEWORK_SUPPORT,
+  recommendedFramework: Framework = RECOMMENDED_FRAMEWORK,
 ): StackConfigurationResult {
   validateBoolean(input.trpc, 'trpc')
   validateBoolean(input.minimal, 'minimal')
 
   const choices = explicitChoices(input)
-  const framework = frameworkSupport[choices.framework ?? RECOMMENDED_FRAMEWORK]
+  const framework = frameworkSupport[choices.framework ?? recommendedFramework]
   const conflicts = findConflicts(choices, framework)
   const minimal = input.minimal === true
   const hasExplicitChoice = Object.values(choices).some((value) => value !== undefined)
   const recommendationMessage =
     !minimal && !hasExplicitChoice ? 'recommended stack' : 'applicable recommendation'
-  const configuration = resolveConfiguration(choices, framework, minimal)
+  const configuration = resolveConfiguration(choices, framework, minimal, recommendedFramework)
   const reasons = createReasons(choices, configuration, minimal, recommendationMessage)
   completeDependencyReasons(choices, configuration, reasons)
 

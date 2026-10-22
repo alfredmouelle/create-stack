@@ -1,5 +1,6 @@
-import { optionSpelling, SCAFFOLD_FLAGS, scaffoldFlagSpellings } from '@alfredmouelle/stack-config'
+import { optionSpelling, scaffoldFlagSpellings } from '@alfredmouelle/stack-config'
 import { describe, expect, it } from 'vitest'
+import { RELEASE_FLAGS as SCAFFOLD_FLAGS } from './cli-release'
 import { FLAG_TABLES } from './docs-flags'
 
 const rows = FLAG_TABLES.flatMap((table) => table.rows)

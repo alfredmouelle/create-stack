@@ -1,12 +1,13 @@
-import { PACKAGE_MANAGERS, type PackageManagerName } from '@alfredmouelle/stack-config'
+import type { PackageManagerName } from '@alfredmouelle/stack-config'
 import { useEffect, useRef, useState } from 'react'
 import { captureCommandCopied } from '../lib/analytics'
+import { RELEASE_PACKAGE_MANAGERS as PACKAGE_MANAGERS } from '../lib/cli-release'
 import { installCommand } from '../lib/install-command'
 
 type CopyState = 'idle' | 'copied' | 'error'
 
 const STATUS_MESSAGES = {
-  idle: 'No account required. Change my-app before you run it.',
+  idle: 'Replace my-app with your project name.',
   copied: 'Command copied to your clipboard.',
   error: 'Copy unavailable. Select the command, then press Ctrl+C or Cmd+C.',
 } as const satisfies Record<CopyState, string>

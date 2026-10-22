@@ -4,3 +4,5 @@ apps/tanstack-base/.env.local
 apps/tanstack-base/.env.test.local
 apps/rasengan-base/.env.local
 apps/rasengan-base/.env.test.local
+apps/remix-base/.env.local
+apps/remix-base/.env.test.local

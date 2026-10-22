@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process'
-import { cpSync, mkdirSync, rmSync } from 'node:fs'
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { createCliRelease } from '@alfredmouelle/stack-config/release'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(process.env.CREATE_STACK_BUNDLE_ROOT || resolve(here, '..', '..'))
@@ -33,6 +34,19 @@ const copyApp = (from: string, to: string): void =>
 
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })
+const packageMetadata: unknown = JSON.parse(readFileSync(join(ROOT, 'cli/package.json'), 'utf8'))
+if (
+  typeof packageMetadata !== 'object' ||
+  packageMetadata === null ||
+  !('version' in packageMetadata) ||
+  typeof packageMetadata.version !== 'string'
+) {
+  throw new Error('The CLI package version is missing')
+}
+writeFileSync(
+  join(OUT, 'release.json'),
+  `${JSON.stringify(createCliRelease(packageMetadata.version), null, 2)}\n`,
+)
 
 execFileSync(
   'pnpm',

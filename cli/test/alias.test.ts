@@ -64,3 +64,13 @@ for (const framework of ['tanstack', 'next'] as const) {
     })
   })
 }
+
+test('adds capabilities without corrupting an inline tsconfig paths object', async () => {
+  const { dir } = await build({ name: 'customer-portal', framework: 'next' })
+  writeFileSync(join(dir, 'tsconfig.json'), '{"compilerOptions":{"paths":{"@/*":["./src/*"]}}}\n')
+  expect(detectAlias(dir)).toBe('@')
+  addCapability({ projectDir: dir, cap: 'logger', adapter: 'console', keep: false })
+  expect(readField(join(dir, 'tsconfig.json'), 'compilerOptions')).toEqual({
+    paths: { '@/*': ['./src/*'] },
+  })
+})

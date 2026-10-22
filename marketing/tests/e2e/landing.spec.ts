@@ -1,7 +1,8 @@
 import { devices, expect, test } from '@playwright/test'
+import { CLI_PACKAGE, CLI_RELEASE } from '../../src/lib/cli-release'
 import { openPage } from './navigation'
 
-const canonicalPnpmCommand = 'pnpm dlx @alfredmouelle/create-stack@latest my-app'
+const canonicalPnpmCommand = `pnpm dlx ${CLI_PACKAGE} my-app`
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -24,9 +25,9 @@ test.describe('install command', () => {
     await expect(command).toHaveValue(canonicalPnpmCommand)
 
     for (const [manager, expected] of [
-      ['npm', 'npx @alfredmouelle/create-stack@latest my-app'],
-      ['yarn', 'yarn dlx @alfredmouelle/create-stack@latest my-app'],
-      ['bun', 'bunx @alfredmouelle/create-stack@latest my-app'],
+      ['npm', `npx ${CLI_PACKAGE} my-app`],
+      ['yarn', `yarn dlx ${CLI_PACKAGE} my-app`],
+      ['bun', `bunx ${CLI_PACKAGE} my-app`],
       ['pnpm', canonicalPnpmCommand],
     ]) {
       await page.getByRole('button', { name: manager, exact: true }).click()
@@ -90,7 +91,7 @@ test.describe('terminal playback', () => {
     })
     await page.getByRole('button', { name: 'Replay sequence' }).click()
     await expect(page.getByRole('button', { name: 'Pause sequence' })).toBeVisible()
-    await expect(terminal).toContainText('pnpm dlx @alfredmouelle/create-stack@latest my-app --yes')
+    await expect(terminal).toContainText(`pnpm dlx ${CLI_PACKAGE} my-app --yes`)
   })
 
   test('marks each gate step as the transcript reaches it', async ({ page }) => {
@@ -138,7 +139,7 @@ test.describe('mobile keyboard experience', () => {
     await expect(page.getByRole('button', { name: 'npm', exact: true })).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('textbox', { name: 'Create Stack install command' })).toHaveValue(
-      'npx @alfredmouelle/create-stack@latest my-app',
+      `npx ${CLI_PACKAGE} my-app`,
     )
 
     const copy = page.getByRole('button', { name: 'Copy command' })
@@ -153,7 +154,7 @@ test.describe('mobile keyboard experience', () => {
     await expect(pause).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('button', { name: 'Resume sequence' })).toBeVisible()
-    await expect(terminal).toContainText('pnpm dlx @alfredmouelle/create-stack@latest my-app --yes')
+    await expect(terminal).toContainText(`pnpm dlx ${CLI_PACKAGE} my-app --yes`)
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeHidden()
@@ -227,13 +228,20 @@ test('copies static commands from the page', async ({ context, page, baseURL }) 
     .toBe(canonicalPnpmCommand)
 })
 
-test('shows planned frameworks as not installable', async ({ page }) => {
+test('shows Remix installation only after npm publication', async ({ page }) => {
   await openPage(page, '/frameworks/remix')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Remix' })).toBeVisible()
-  await expect(page.getByText('Not installable yet', { exact: false })).toBeVisible()
-  await expect(page.locator('.badge.is-planned').first()).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toHaveCount(0)
+  await expect(page.getByText('Not installable yet', { exact: false })).toHaveCount(0)
+  await expect(page.locator('.badge.is-preview').first()).toBeVisible()
+  if (CLI_RELEASE.frameworks.remix === undefined) {
+    await expect(page.locator('main')).toContainText('Coming in the next release')
+    await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toHaveCount(0)
+    await expect(page.locator('main')).not.toContainText('--framework remix')
+    return
+  }
+  await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toBeEnabled()
+  await expect(page.locator('main')).toContainText('--framework remix')
 })
 
 test('numbers the remaining planned frameworks consecutively', async ({ page }) => {
@@ -247,18 +255,65 @@ test('numbers the remaining planned frameworks consecutively', async ({ page }) 
   )
 })
 
-test('identifies Rasengan as preview on the homepage and planned framework roadmap', async ({
-  page,
-}) => {
+test('shows the hero tagline, grouped frameworks and preview roadmap status', async ({ page }) => {
   await openPage(page, '/')
-  const hero = page.locator('.hero-label > span').filter({ hasText: 'RasenganJS' })
-  await expect(hero.getByText('preview', { exact: true })).toBeVisible()
-  await expect(hero.getByText('stable', { exact: true })).toHaveCount(0)
+  await expect(page).toHaveTitle('create-stack. Your most useful day one commit')
+  const heading = page.getByRole('heading', { level: 1 })
+  const hero = page.locator('.hero-label')
+  for (const width of [375, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect(heading).toHaveText('Your most useful day one commit')
+    expect(await heading.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    )
+    await expect(hero.getByText('stable', { exact: true })).toHaveCount(1)
+    await expect(hero.getByText('preview', { exact: true })).toHaveCount(1)
+    const stable = hero.locator(':scope > span').filter({ hasText: 'stable' })
+    const preview = hero.locator(':scope > span').filter({ hasText: 'preview' })
+    await expect(stable).toContainText('TanStack Start · Next.js')
+    await expect(preview).toContainText('RasenganJS')
+    if (CLI_RELEASE.frameworks.remix === undefined) {
+      await expect(hero).not.toContainText('Remix')
+    } else {
+      await expect(preview).toContainText('Remix')
+    }
+    expect(await hero.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+  }
 
-  await openPage(page, '/frameworks/remix')
+  await openPage(page, '/frameworks/vue')
   const roadmap = page.locator('.roadmap .is-done').filter({ hasText: 'RasenganJS' })
   await expect(roadmap.getByText('preview', { exact: true })).toBeVisible()
   await expect(roadmap.getByText('stable', { exact: true })).toHaveCount(0)
+})
+
+test('links the hero quality promise to the strict profile and explains agent workflows', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await openPage(page, '/')
+
+  const hero = page.getByRole('region', { name: 'Your most useful day one commit' })
+  await expect(hero).toContainText(
+    'Pick your framework and tools, then start with a working app, waiting for your first feature.',
+  )
+  await hero.getByRole('link', { name: 'Strict TypeScript. Linting built in.' }).click()
+  await expect(page).toHaveURL(/\/#profile-title$/)
+  const profile = page.getByRole('region', {
+    name: 'Strict TypeScript and linting in every project.',
+  })
+  await expect(
+    profile.getByRole('heading', { name: 'Strict TypeScript, ten options on' }),
+  ).toBeVisible()
+  await expect(profile.locator('.ts-options code')).toHaveCount(10)
+  await expect(profile).toContainText('Biome rules, or type-aware Oxlint.')
+  await expect(
+    page.getByRole('heading', {
+      name: 'Your AI agents will love working on these foundations.',
+    }),
+  ).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  )
 })
 
 test('makes a long install command horizontally inspectable', async ({ page }) => {

@@ -8,6 +8,7 @@ import { readField, readJson } from './json.ts'
 afterAll(cleanup)
 
 const OUTPUT_TOKEN = {
+  remix: '',
   next: '.next/**',
   tanstack: '.output/**',
   rasengan: 'dist/**',
@@ -59,7 +60,7 @@ const TOOLS = {
   },
 } satisfies Record<Tool, ToolSpec>
 
-for (const framework of ['tanstack', 'next', 'rasengan'] as const) {
+for (const framework of ['tanstack', 'next', 'rasengan', 'remix'] as const) {
   for (const tool of ['turborepo', 'nx'] as const) {
     const spec: ToolSpec = TOOLS[tool]
     for (const pm of ['pnpm', 'npm']) {
@@ -96,9 +97,11 @@ for (const framework of ['tanstack', 'next', 'rasengan'] as const) {
           expect(rootDevDependencies[spec.dep], `${spec.dep} devDep`).toBeTruthy()
 
           const cfg = readJson(`${dir}/${spec.config}`)
-          expect(spec.outputs(cfg).join(' '), 'framework build outputs').toContain(
-            OUTPUT_TOKEN[framework],
-          )
+          if (framework === 'remix') expect(spec.outputs(cfg)).toEqual([])
+          else
+            expect(spec.outputs(cfg).join(' '), 'framework build outputs').toContain(
+              OUTPUT_TOKEN[framework],
+            )
           spec.assertCheckWriteUncached(cfg)
           expect(spec.typecheckDeps(cfg), 'typecheck dependsOn ^build').toEqual(['^build'])
 

@@ -48,14 +48,7 @@ export type RegistryInstallRequest = {
   readonly force?: boolean
 }
 
-export type ComponentResult = {
-  readonly copied: string[]
-  readonly skipped: string[]
-  readonly addDeps: Record<string, string>
-  readonly mounted: boolean | null
-  readonly rootName: string | null
-  readonly manualSteps: string[]
-}
+export type ComponentResult = import('../framework-module.ts').ComponentAdditionResult
 
 type RootMount = Pick<ComponentResult, 'mounted' | 'rootName' | 'manualSteps'>
 

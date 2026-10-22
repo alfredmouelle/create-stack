@@ -1,22 +1,23 @@
+import type { FrameworkMaturity, ScaffoldFlag } from '@alfredmouelle/stack-config'
+import { PLANNED_FRAMEWORKS, UNRELEASED_FRAMEWORKS } from '../data/frameworks'
 import {
-  FRAMEWORK_SUPPORT,
-  FRAMEWORKS,
-  type FrameworkMaturity,
-  SCAFFOLD_FLAGS,
-  type ScaffoldFlag,
-} from '@alfredmouelle/stack-config'
-import { PLANNED_FRAMEWORKS } from '../data/frameworks'
+  RELEASE_FRAMEWORK_SUPPORT as FRAMEWORK_SUPPORT,
+  RELEASED_FRAMEWORKS as FRAMEWORKS,
+  RELEASE_FLAGS as SCAFFOLD_FLAGS,
+} from './cli-release'
+import { installCommand } from './install-command'
+import { SITE_NAME, SITE_TITLE } from './site-identity'
+
+export { SITE_NAME, SITE_TITLE }
 
 export const PUBLIC_SITE_ORIGIN = 'https://create-stack.alfredmouelle.com'
 export const REPOSITORY_URL = 'https://github.com/alfredmouelle/create-stack'
 export const NPM_URL = 'https://www.npmjs.com/package/@alfredmouelle/create-stack'
 
-export const SITE_TITLE = 'create-stack. Your first commit is green'
 export const SITE_DESCRIPTION =
-  'create-stack assembles your project from a tested reference application, then makes the first commit only after install, format, typecheck and lint pass.'
-export const SITE_NAME = 'create-stack'
+  'Start with a working app in the stack you choose. Strict TypeScript, formatting and linting are configured from day one.'
 export const OG_IMAGE_PATH = '/og-image.png'
-export const OG_IMAGE_ALT = 'create-stack. Your first commit is green'
+export const OG_IMAGE_ALT = SITE_TITLE
 
 export const SITE_PAGES = [
   '/',
@@ -53,6 +54,10 @@ const FRAMEWORK_MATURITY = [
   maturitySentence(frameworkLabels('stable'), 'stable'),
   maturitySentence(frameworkLabels('preview'), 'in preview'),
   maturitySentence(
+    UNRELEASED_FRAMEWORKS.map(({ label }) => label),
+    'coming in the next release, not installable',
+  ),
+  maturitySentence(
     PLANNED_FRAMEWORKS.map(({ label }) => label),
     'planned, not installable',
   ),
@@ -81,7 +86,7 @@ Create Stack assembles a project from the selected parts of a framework's tested
 Before the first Git commit it runs install, format, typecheck and lint, and it commits only when all four pass.
 ${FRAMEWORK_MATURITY}
 
-Start with \`pnpm dlx @alfredmouelle/create-stack@latest my-app\`.
+Start with \`${installCommand('pnpm')}\`.
 
 ## Non-interactive use
 

@@ -1,21 +1,16 @@
 import {
   type Auth,
-  CAPABILITY_CATALOG,
   type Database,
   DEFAULT_IMPORT_ALIAS,
   FORMATTERS,
   type Formatter,
-  FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   type Framework,
   isValidImportAlias,
   LINTERS,
   type Linter,
   type Mailer,
-  MONOREPO_ORCHESTRATORS,
-  PACKAGE_MANAGERS,
   QUALITY_TOOL_LABELS,
-  RECOMMENDED_FRAMEWORK,
   type StackAxis,
 } from '@alfredmouelle/stack-config'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
@@ -33,6 +28,14 @@ import {
   resolveBuildState,
   serializeBuildState,
 } from '../lib/build-config'
+import {
+  RELEASE_CAPABILITIES as CAPABILITY_CATALOG,
+  CLI_RELEASE,
+  RELEASE_FRAMEWORK_SUPPORT as FRAMEWORK_SUPPORT,
+  RELEASE_MONOREPOS as MONOREPO_ORCHESTRATORS,
+  RELEASE_PACKAGE_MANAGERS as PACKAGE_MANAGERS,
+  RELEASED_FRAMEWORKS,
+} from '../lib/cli-release'
 
 type CopyState = 'idle' | 'copied' | 'error'
 
@@ -82,16 +85,11 @@ const linterOptions: readonly ChoiceOption<Linter>[] = LINTERS.map((value) => ({
 
 const frameworkOptions: readonly ChoiceOption<Framework>[] = FRAMEWORKS.map((value) => ({
   value,
-  label: FRAMEWORK_SUPPORT[value].label,
+  label:
+    CLI_RELEASE.frameworks[value] === undefined
+      ? `${FRAMEWORK_SUPPORT[value].label} · coming soon`
+      : FRAMEWORK_SUPPORT[value].label,
 }))
-
-function isRecommended(framework: Framework, axis: StackAxis, value: string | boolean): boolean {
-  if (axis === 'framework') return value === RECOMMENDED_FRAMEWORK
-  const recommendations: Readonly<Record<string, unknown>> =
-    FRAMEWORK_SUPPORT[framework].recommendations
-  const recommended = recommendations[axis]
-  return Array.isArray(recommended) ? recommended.includes(value) : recommended === value
-}
 
 function reasonFor(result: BuildStateResult, axis: StackAxis) {
   return result.reasons.find((reason) => reason.axis === axis)
@@ -135,6 +133,7 @@ function ChoiceChips<Value extends string | boolean>({
   options,
   result,
   selectedValue,
+  state,
   supportedValues,
   onChange,
 }: {
@@ -142,10 +141,11 @@ function ChoiceChips<Value extends string | boolean>({
   options: readonly ChoiceOption<Value>[]
   result: BuildStateResult
   selectedValue: Value
+  state: BuildState
   supportedValues?: readonly Value[]
   onChange: (value: Value) => void
 }) {
-  const framework = result.configuration.framework
+  const recommended = resolveBuildState({ ...state, [axis]: undefined }).configuration[axis]
   const conflicted = result.conflicts.some((conflict) => conflict.axes.includes(axis))
   const reason = reasonFor(result, axis)
 
@@ -156,7 +156,7 @@ function ChoiceChips<Value extends string | boolean>({
           const unsupported =
             supportedValues !== undefined && !supportedValues.includes(option.value)
           const selected = selectedValue === option.value
-          const state = unsupported
+          const chipState = unsupported
             ? 'unsupported'
             : selected && conflicted
               ? 'conflict'
@@ -164,7 +164,7 @@ function ChoiceChips<Value extends string | boolean>({
                 ? 'selected'
                 : 'idle'
           return (
-            <label className="chip" data-state={state} key={String(option.value)}>
+            <label className="chip" data-state={chipState} key={String(option.value)}>
               <input
                 checked={selected}
                 className="chip-input"
@@ -175,7 +175,7 @@ function ChoiceChips<Value extends string | boolean>({
                 value={String(option.value)}
               />
               {option.label}
-              {isRecommended(framework, axis, option.value) ? (
+              {!unsupported && option.value === recommended ? (
                 <span className="chip-mark">recommended</span>
               ) : null}
             </label>
@@ -325,6 +325,8 @@ function StackChoices({
           options={frameworkOptions}
           result={result}
           selectedValue={state.framework ?? result.configuration.framework}
+          state={state}
+          supportedValues={RELEASED_FRAMEWORKS}
         />
         <div className="chips">
           {PLANNED_FRAMEWORKS.slice(0, 1).map((framework) => (
@@ -346,6 +348,7 @@ function StackChoices({
           options={databaseOptions}
           result={result}
           selectedValue={state.database ?? result.configuration.database}
+          state={state}
           supportedValues={supports.database}
         />
       </Axis>
@@ -357,6 +360,7 @@ function StackChoices({
           options={authOptions}
           result={result}
           selectedValue={state.auth ?? result.configuration.auth}
+          state={state}
           supportedValues={supports.auth}
         />
       </Axis>
@@ -368,6 +372,7 @@ function StackChoices({
           options={trpcOptions}
           result={result}
           selectedValue={state.trpc ?? result.configuration.trpc}
+          state={state}
           supportedValues={supports.trpc}
         />
       </Axis>
@@ -379,6 +384,7 @@ function StackChoices({
           options={mailerOptions}
           result={result}
           selectedValue={state.mailer ?? result.configuration.mailer}
+          state={state}
           supportedValues={supports.mailer}
         />
       </Axis>
@@ -390,6 +396,7 @@ function StackChoices({
           options={formatterOptions}
           result={result}
           selectedValue={state.formatter ?? result.configuration.formatter}
+          state={state}
           supportedValues={supports.formatter}
         />
         <div className="chips">
@@ -407,6 +414,7 @@ function StackChoices({
           options={linterOptions}
           result={result}
           selectedValue={state.linter ?? result.configuration.linter}
+          state={state}
           supportedValues={supports.linter}
         />
         <div className="chips">
@@ -726,6 +734,7 @@ export default function BuildConfigurator() {
         <div className="stack is-tight">
           <p className="t-label">Stack builder</p>
           <h1 className="t-h1">Build your stack</h1>
+          <p className="is-muted">Available in CLI {CLI_RELEASE.version}.</p>
         </div>
         <button
           className="button is-quiet"

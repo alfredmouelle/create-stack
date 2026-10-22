@@ -10,7 +10,7 @@ Run a command with no args for an interactive picker; pass a selection flag
 See `add --help` for its options.
 
 Scaffold flags:
-  -f, --framework [tanstack|next|rasengan] Framework (bare/default = tanstack; preview: rasengan)
+  -f, --framework [tanstack|next|rasengan|remix] Framework (bare/default = tanstack; preview: rasengan, remix)
   --mono, --monorepo [turbo|nx]    Scaffold into a monorepo, app in apps/web (bare = turbo)
   --pm <pnpm|npm|yarn|bun>         Package manager (default: auto-detected)
   --package-manager <name>         Alias for --pm

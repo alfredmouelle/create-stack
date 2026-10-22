@@ -1,0 +1,32 @@
+import { initTRPC, TRPCError } from '@trpc/server'
+import superjson from 'superjson'
+import { flatten, ValiError } from 'valibot'
+__IMPORTS__
+type TRPCContext = {
+__CONTEXT_FIELDS__}
+
+export async function createTRPCContext({
+  request,
+}: {
+  readonly request: Request
+}): Promise<TRPCContext> {
+__CONTEXT__
+}
+
+const t = initTRPC.context<typeof createTRPCContext>().create({
+  transformer: superjson,
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        validationError: error.cause instanceof ValiError ? flatten(error.cause.issues) : null,
+      },
+    }
+  },
+})
+
+export const createCallerFactory = t.createCallerFactory
+export const createTRPCRouter = t.router
+export const publicProcedure = t.procedure
+__PROTECTED__

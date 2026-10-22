@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import type { QualityProfileRequest } from '../framework-module.ts'
 import { QUALITY_PROFILE_OPTIONS } from '../quality-profile.ts'
 import { isJsonObject, type JsonObject, readJsonObject, writeJsonObject } from './json.ts'
-import { applyQualityTools } from './quality-tools.ts'
+import { applyQualityTools, type QualityTools } from './quality-tools.ts'
 
 type ProfiledFramework = QualityProfileRequest['framework']
 
@@ -60,11 +60,9 @@ export function applyJavaScriptQualityProfile({
   framework,
   projectDir,
   applicationDir,
-  formatter,
-  linter,
-  alias,
-}: QualityProfileRequest): void {
+  ...tools
+}: QualityProfileRequest & Pick<QualityTools, 'tailwindStylesheet'>): void {
   applyCompilerOptions(framework, applicationDir)
   prepareHooks(projectDir)
-  applyQualityTools({ projectDir, applicationDir }, { formatter, linter, alias })
+  applyQualityTools({ projectDir, applicationDir }, tools)
 }

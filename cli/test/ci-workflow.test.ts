@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from 'vitest'
+import { frameworkModules } from '../src/framework-registry.ts'
 
 const workflow = readFileSync(
   join(import.meta.dirname, '../../.github/workflows/ci.yml'),
@@ -59,6 +60,24 @@ test('reference application and marketing checks remain enforced', () => {
   expect(job('base-apps')).toContain('run: pnpm --filter "./apps/*" test')
   expect(job('marketing')).toContain('run: pnpm --filter @alfredmouelle/marketing typecheck')
   expect(job('marketing')).toContain('run: pnpm --filter @alfredmouelle/marketing test')
+})
+
+test('reference application tests use separate PostgreSQL ports when run in parallel', () => {
+  const bindings = new Map<string, string>()
+  for (const framework of frameworkModules) {
+    const reference = framework.referenceApplication
+    if (!reference) continue
+    const source = readFileSync(join(reference.root, '.env.test'), 'utf8')
+    const databaseUrl = source.match(/^DATABASE_URL=(.+)$/m)?.[1]
+    if (!databaseUrl) throw new Error(`Missing test database URL for ${framework.id}`)
+    const { hostname, port } = new URL(databaseUrl)
+    const binding = `${hostname}:${port}`
+    expect(
+      bindings.get(binding),
+      `${framework.id} test database conflicts with another reference application on ${binding}`,
+    ).toBeUndefined()
+    bindings.set(binding, framework.id)
+  }
 })
 
 test.each([

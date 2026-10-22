@@ -2,7 +2,7 @@
   "name": "@alfredmouelle/create-stack",
   "version": "0.16.0",
   "type": "module",
-  "description": "Framework-agnostic, deterministic installer that bootstraps a real, fully-wired app for your favorite framework (Next.js, TanStack Start, and RasenganJS preview) and assembles your selected stack parts.",
+  "description": "Framework-agnostic, deterministic installer that bootstraps a real, fully-wired app for your favorite framework (Next.js, TanStack Start, Remix preview, and RasenganJS preview) and assembles your selected stack parts.",
   "author": {
     "name": "Alfred MOUELLE",
     "email": "alfredmouelle@gmail.com",
@@ -33,7 +33,8 @@
     "trpc",
     "better-auth",
     "clerk",
-    "rasengan"
+    "rasengan",
+    "remix"
   ],
   "bin": {
     "create-stack": "./index.mjs"

@@ -18,7 +18,8 @@ import type { Framework } from '@alfredmouelle/stack-config'
 import { afterAll, describe, expect, test } from 'vitest'
 import { frameworkModules, getFrameworkModule } from '../src/framework-registry.ts'
 import { assertBrandedSurface, customizeTheme } from './branded-surface.ts'
-import { readJson } from './json.ts'
+import { readField, readJson } from './json.ts'
+import { verifyRemixProduction } from './remix-runtime.ts'
 
 const testDirectory = dirname(fileURLToPath(import.meta.url))
 const cliRoot = resolve(testDirectory, '..')
@@ -65,7 +66,19 @@ function runCli(args: readonly string[], cwd: string): void {
 function verify(projectDir: string, { build = false }: { build?: boolean } = {}): void {
   expect(run('pnpm', ['run', 'typecheck'], projectDir), 'installed project typecheck').toBe(0)
   expect(run('pnpm', ['run', 'check'], projectDir), 'installed project format check').toBe(0)
-  if (build) expect(run('pnpm', ['run', 'build'], projectDir), 'installed project build').toBe(0)
+  if (build && 'build' in readField(join(projectDir, 'package.json'), 'scripts'))
+    expect(run('pnpm', ['run', 'build'], projectDir), 'installed project build').toBe(0)
+}
+
+function verifyNativeComponents(projectDir: string): void {
+  customizeTheme(projectDir, 'remix', expect)
+  runCli(['add', '--with', 'component=date-picker', '--with', 'component=data-table'], projectDir)
+  for (const file of ['date-picker', 'date-range-picker', 'data-table', 'infinite-data-table']) {
+    expect(readFileSync(join(projectDir, `src/client/ui/${file}.tsx`), 'utf8')).toContain(
+      'remix/component',
+    )
+  }
+  verify(projectDir)
 }
 
 function visitFiles(root: string, visit: (path: string, entry: Dirent) => void): void {
@@ -170,7 +183,7 @@ type ShadcnConfiguration = {
   primitiveImport: string
 }
 
-const SHADCN_CONFIGURATIONS: Record<Framework, ShadcnConfiguration> = {
+const SHADCN_CONFIGURATIONS: Record<Exclude<Framework, 'remix'>, ShadcnConfiguration> = {
   rasengan: {
     style: 'radix-luma',
     rsc: false,
@@ -233,10 +246,12 @@ describe.skipIf(process.env.RUN_SMOKE !== '1')('installed CLI smoke matrix', () 
     for (const workflow of CREATION_WORKFLOWS) {
       test(
         `${framework}/${workflow.name}`,
-        () => {
+        async () => {
           const { projectDir } = scaffold(framework, workflow.name, workflow.options)
           if (workflow.name === 'minimal') assertBrandedSurface(projectDir, framework, expect)
           verify(projectDir, { build: workflow.name === 'minimal' })
+          if (framework === 'remix' && workflow.name === 'minimal')
+            await verifyRemixProduction(projectDir)
         },
         TIMEOUT,
       )
@@ -291,18 +306,27 @@ describe.skipIf(process.env.RUN_SMOKE !== '1')('installed CLI smoke matrix', () 
           expect(root).toContain(`<${name} />`)
         }
         const prompt = readFileSync(`${projectDir}/src/components/ui/prompt.tsx`, 'utf8')
-        expect(prompt.includes("'use client'") || prompt.includes('"use client"')).toBe(
-          SHADCN_CONFIGURATIONS[framework].rsc,
-        )
+        if (framework === 'remix') {
+          expect(readFileSync(join(projectDir, 'src/client/ui/prompt.tsx'), 'utf8')).toContain(
+            'remix/component',
+          )
+        } else
+          expect(prompt.includes("'use client'") || prompt.includes('"use client"')).toBe(
+            SHADCN_CONFIGURATIONS[framework].rsc,
+          )
         verify(projectDir)
       },
       TIMEOUT,
     )
 
     test(
-      `${framework}/shadcn-compatibility`,
+      `${framework}/component-compatibility`,
       () => {
         const { projectDir } = scaffold(framework, 'shadcn-compatibility', ['--minimal'])
+        if (framework === 'remix') {
+          verifyNativeComponents(projectDir)
+          return
+        }
         const configuration = SHADCN_CONFIGURATIONS[framework]
         configureShadcn(projectDir, { ...configuration, aliases: CUSTOM_ALIASES })
         const buttonPath = join(projectDir, 'src/design/primitives/button.tsx')

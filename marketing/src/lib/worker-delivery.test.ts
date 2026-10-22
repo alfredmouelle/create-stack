@@ -16,6 +16,7 @@ const workflow = readFileSync(
   'utf8',
 )
 const runbook = readFileSync(resolve(repositoryRoot, 'docs/runbooks/marketing-worker.md'), 'utf8')
+const deployScript = readFileSync(resolve(marketingRoot, 'scripts/deploy.ts'), 'utf8')
 
 describe('marketing Worker delivery contract', () => {
   it('keeps the Worker configuration isolated from the retired root deployment', () => {
@@ -73,5 +74,17 @@ describe('marketing Worker delivery contract', () => {
 
     expect(runbook).not.toMatch(/\/Users\/|[A-Za-z]:\\/)
     expect(runbook).not.toMatch(/CLOUDFLARE_(API_TOKEN|ACCOUNT_ID)\s*:\s*[^$\s`]+/)
+  })
+
+  it('verifies the npm release before building or deploying', () => {
+    const verification = deployScript.indexOf("['run', 'release:refresh']")
+    const build = deployScript.indexOf("['run', 'build:public']")
+    const deployment = deployScript.indexOf("'deploying with the workspace Wrangler'")
+    expect(verification).toBeGreaterThanOrEqual(0)
+    expect(build).toBeGreaterThan(verification)
+    expect(deployment).toBeGreaterThan(build)
+    expect(workflow).toContain('workflow_call:')
+    expect(workflow).toContain(`EXPECTED_CLI_VERSION: \${{ inputs.cli_version }}`)
+    expect(workflow).toContain('ref: main')
   })
 })

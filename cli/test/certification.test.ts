@@ -18,6 +18,7 @@ import { afterAll, describe, expect, test } from 'vitest'
 import type { FrameworkModule } from '../src/framework-module.ts'
 import { frameworkAssetExcludes, frameworkModules } from '../src/framework-registry.ts'
 import { assertBrandedSurface, customizeTheme } from './branded-surface.ts'
+import { verifyRemixProduction } from './remix-runtime.ts'
 
 const testDirectory = dirname(fileURLToPath(import.meta.url))
 const cliRoot = resolve(testDirectory, '..')
@@ -198,7 +199,8 @@ function assetSignature(root: string, module: FrameworkModule): Record<string, s
 }
 
 function verifyProject(projectDir: string): void {
-  for (const script of ['typecheck', 'check', 'build']) {
+  const manifest = JSON.parse(readFileSync(join(projectDir, 'package.json'), 'utf8'))
+  for (const script of ['typecheck', 'check', ...('build' in manifest.scripts ? ['build'] : [])]) {
     const result = runCommand('pnpm', ['run', script], projectDir)
     expect(
       result.status,
@@ -210,7 +212,7 @@ function verifyProject(projectDir: string): void {
 describe.skipIf(process.env.RUN_CERTIFICATION !== '1')('branded CLI certification', () => {
   test.each(frameworkModules)(
     'keeps the $id generated branded surface equivalent after packing',
-    (module) => {
+    async (module) => {
       const framework = module.id
       const repositoryRoot = mkdtempSync(
         join(tmpdir(), `create-stack-cert-repository-${framework}-`),
@@ -232,7 +234,10 @@ describe.skipIf(process.env.RUN_CERTIFICATION !== '1')('branded CLI certificatio
 
       const installed = runCommand('pnpm', ['install'], packedProject)
       expect(installed.status, installed.stderr || installed.stdout).toBe(0)
-      const buttonPath = join(packedProject, 'src/components/ui/button.tsx')
+      const buttonPath = join(
+        packedProject,
+        framework === 'remix' ? 'src/client/ui-styles.ts' : 'src/components/ui/button.tsx',
+      )
       const buttonBeforeThemeChange = readFileSync(buttonPath, 'utf8')
       customizeTheme(packedProject, framework, expect)
       const addition = runCli(join(packedCli, 'index.mjs'), packedProject, [
@@ -245,9 +250,18 @@ describe.skipIf(process.env.RUN_CERTIFICATION !== '1')('branded CLI certificatio
       expect(readFileSync(buttonPath, 'utf8')).toContain('bg-primary')
       expect(readFileSync(buttonPath, 'utf8')).toContain('rounded-4xl')
       expect(
-        readFileSync(join(packedProject, 'src/components/ui/date-picker.tsx'), 'utf8'),
+        readFileSync(
+          join(
+            packedProject,
+            framework === 'remix'
+              ? 'src/client/ui/date-picker.tsx'
+              : 'src/components/ui/date-picker.tsx',
+          ),
+          'utf8',
+        ),
       ).toContain('text-muted-foreground')
       verifyProject(packedProject)
+      if (framework === 'remix') await verifyRemixProduction(packedProject)
     },
     TIMEOUT,
   )

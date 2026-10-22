@@ -47,7 +47,7 @@ export function rewriteAlias(dir: string, alias: string): number {
   return changed
 }
 
-const PATHS_KEY = /["'](.+?)\/\*["']\s*:\s*\[/
+const PATHS_KEY = /["']([^"'\r\n]+)\/\*["']\s*:\s*\[/
 
 export function detectAlias(projectDir: string): string {
   const tsconfig = join(projectDir, 'tsconfig.json')

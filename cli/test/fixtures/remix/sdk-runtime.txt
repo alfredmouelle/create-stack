@@ -1,0 +1,84 @@
+import assert from 'node:assert/strict'
+import { createHmac } from 'node:crypto'
+import { createServer } from 'node:http'
+import * as Sentry from '@sentry/node'
+import { createRequestListener } from 'remix/node-fetch-server'
+
+const envelopes = []
+const collector = createServer(async (req, res) => {
+  let body = ''
+  for await (const chunk of req) body += chunk
+  envelopes.push(body)
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Headers', '*')
+  res.end('{}')
+})
+await new Promise((resolve) => collector.listen(3094, '127.0.0.1', resolve))
+process.env.NODE_ENV = 'production'
+process.env.INNGEST_EVENT_KEY = 'local-runtime-event-key'
+process.env.INNGEST_SIGNING_KEY = 'signkey-test-' + 'ab'.repeat(32)
+process.env.SENTRY_DSN = 'http://public@127.0.0.1:3094/1'
+process.env.REMIX_SENTRY_DSN = process.env.SENTRY_DSN
+Sentry.init({ dsn: process.env.SENTRY_DSN, defaultIntegrations: false })
+const { router } = await import('./src/router.tsx')
+const application = createServer(createRequestListener((request) => router.fetch(request)))
+await new Promise((resolve) => application.listen(3095, '127.0.0.1', resolve))
+const { captureServerError } = await import('./src/server/observability.ts')
+captureServerError(new Error('Native server integration review'))
+assert.equal(await Sentry.flush(5000), true)
+assert.ok(envelopes.some((body) => body.includes('Native server integration review')))
+const config = await fetch('http://127.0.0.1:3095/api/client-config')
+assert.equal((await config.json()).sentryDsn, process.env.REMIX_SENTRY_DSN)
+const info = await fetch('http://127.0.0.1:3095/api/inngest')
+assert.equal(info.status, 401)
+const payload = JSON.stringify({
+  event: {
+    name: 'app/example',
+    data: { id: 'customer-review-2026' },
+    ts: Date.now(),
+    id: 'event_review',
+  },
+  events: [],
+  steps: {},
+  ctx: {
+    run_id: '00000000-0000-0000-0000-000000000001',
+    attempt: 0,
+    stack: { stack: [], current: 0 },
+    disable_immediate_execution: false,
+    use_api: false,
+  },
+})
+const timestamp = String(Math.floor(Date.now() / 1000))
+const key = 'ab'.repeat(32)
+const canonicalize = (value) =>
+  Array.isArray(value)
+    ? value.map(canonicalize)
+    : value && typeof value === 'object'
+      ? Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map((key) => [key, canonicalize(value[key])]),
+        )
+      : value
+const signature = createHmac('sha256', key)
+  .update(JSON.stringify(canonicalize(JSON.parse(payload))))
+  .update(timestamp)
+  .digest('hex')
+const signed = await fetch(
+  'http://127.0.0.1:3095/api/inngest?fnId=customer-portal-example&stepId=step',
+  {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-inngest-signature': `t=${timestamp}&s=${signature}`,
+    },
+    body: payload,
+  },
+)
+const body = await signed.text()
+assert.equal(signed.status, 206)
+assert.ok(body.includes('customer-review-2026'))
+await (await import('./src/assets.ts')).assets.close()
+await Sentry.close(1000)
+await new Promise((resolve) => application.close(resolve))
+await new Promise((resolve) => collector.close(resolve))

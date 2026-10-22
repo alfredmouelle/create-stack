@@ -1,14 +1,16 @@
 import {
-  CAPABILITY_CATALOG,
   DEFAULT_IMPORT_ALIAS,
-  FRAMEWORK_SUPPORT,
   optionSpelling,
   QUALITY_TOOL_LABELS,
-  RECOMMENDED_FRAMEWORK,
-  SCAFFOLD_FLAGS,
   type ScaffoldFlag,
 } from '@alfredmouelle/stack-config'
 import { CAPABILITY_LABELS } from './build-config'
+import {
+  RELEASE_CAPABILITIES as CAPABILITY_CATALOG,
+  CLI_RELEASE,
+  RELEASE_FRAMEWORK_SUPPORT as FRAMEWORK_SUPPORT,
+  RELEASE_FLAGS as SCAFFOLD_FLAGS,
+} from './cli-release'
 
 export type FlagRow = {
   readonly flags: readonly string[]
@@ -20,6 +22,7 @@ export type FlagRow = {
 
 type FlagDetails = Omit<FlagRow, 'flags' | 'values'>
 
+const RECOMMENDED_FRAMEWORK = CLI_RELEASE.recommendedFramework
 const recommended = FRAMEWORK_SUPPORT[RECOMMENDED_FRAMEWORK].recommendations
 
 const FLAG_DETAILS: Readonly<Record<string, FlagDetails>> = {

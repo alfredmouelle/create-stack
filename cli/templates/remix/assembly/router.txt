@@ -1,0 +1,25 @@
+import { createRouter, type Router } from 'remix/router'
+import { assets } from './assets.ts'
+__PUBLIC_API_IMPORT__import { Home } from './pages/home.tsx'
+import { servePublicFile } from './public-files.ts'
+import { renderPage } from './render.tsx'
+import { routes } from './routes.ts'
+__SERVER_API_IMPORT____AUTH_IMPORTS__import { serveStyles } from './stylesheet.ts'
+
+export function createApplication(__PARAMETERS__): Router {
+  const router = createRouter()
+__INTEGRATIONS__  router.get('/styles.css', serveStyles)
+
+  router.get(routes.home, ({ request }) => renderPage(request, 'Welcome', <Home />))
+  router.get(routes.health, () => Response.json({ status: 'ok' }))
+  router.get(
+    '/assets/*path',
+    async ({ request }) =>
+      (await assets.fetch(request)) ?? new Response('Not found', { status: 404 }),
+  )
+  router.get('/*path', ({ request }) => servePublicFile(request))
+
+  return router
+}
+
+export const router = createApplication()

@@ -1,4 +1,5 @@
 import { FRAMEWORK_SUPPORT, type FrameworkSupport } from '@alfredmouelle/stack-config'
+import { createCliRelease } from '@alfredmouelle/stack-config/release'
 import { describe, expect, it } from 'vitest'
 import {
   type BuildState,
@@ -9,8 +10,80 @@ import {
   resolveBuildState,
   serializeBuildState,
 } from './build-config'
+import { CLI_PACKAGE } from './cli-release'
 
 describe('build configurator state', () => {
+  it('blocks an implemented framework until the published CLI includes it', () => {
+    const release = createCliRelease('0.16.0')
+    delete release.frameworks.remix
+    release.flags = release.flags.map((flag) =>
+      flag.name === 'framework' && flag.value.kind === 'choice'
+        ? {
+            ...flag,
+            value: { kind: 'choice', choices: flag.value.choices.filter((id) => id !== 'remix') },
+          }
+        : flag,
+    )
+    const result = resolveBuildState({ ...defaultBuildState(), framework: 'remix' }, release)
+
+    expect(result.command).toBeNull()
+    expect(result.conflicts).toContainEqual({
+      axes: ['framework'],
+      message: 'Remix is coming in the next release. It is unavailable in CLI 0.16.0.',
+    })
+    expect(parseBuildState('?v=1&framework=remix', release)).toEqual({
+      kind: 'invalid',
+      message: 'Remix is coming in the next release. It is unavailable in CLI 0.16.0.',
+    })
+  })
+
+  it('activates Remix and pins its command when the published manifest includes it', () => {
+    const release = createCliRelease('0.17.0')
+    const state = { ...defaultBuildState(), framework: 'remix' as const }
+    expect(resolveBuildState(state, release).command).toBe(
+      'pnpm dlx @alfredmouelle/create-stack@0.17.0 my-app --framework remix',
+    )
+    expect(parseBuildState('?v=1&framework=remix', release)).toMatchObject({
+      kind: 'current',
+      state: { framework: 'remix' },
+    })
+  })
+
+  it('blocks capability providers and flags absent from the published manifest', () => {
+    const release = createCliRelease('0.17.0')
+    release.capabilities = release.capabilities.map((capability) =>
+      capability.name === 'storage'
+        ? {
+            ...capability,
+            providers: capability.providers.filter((provider) => provider !== 'gcs'),
+          }
+        : capability,
+    )
+    release.flags = release.flags.filter(({ name }) => name !== 'monorepo')
+    expect(
+      resolveBuildState({ ...defaultBuildState(), capabilities: { storage: 'gcs' } }, release)
+        .command,
+    ).toBeNull()
+    expect(parseBuildState('?v=1&cap=storage%3Dgcs', release).kind).toBe('invalid')
+    expect(
+      resolveBuildState({ ...defaultBuildState(), monorepo: 'nx' }, release).command,
+    ).toBeNull()
+    expect(parseBuildState('?v=1&mono=nx', release).kind).toBe('invalid')
+  })
+
+  it('uses the published default framework without marking it as an explicit choice', () => {
+    const release = { ...createCliRelease('0.17.0'), recommendedFramework: 'next' as const }
+    const result = resolveBuildState(defaultBuildState(), release)
+    expect(result.configuration.framework).toBe('next')
+    expect(result.reasons).toContainEqual({
+      axis: 'framework',
+      value: 'next',
+      kind: 'recommended',
+      message: 'recommended stack',
+    })
+    expect(result.command).toBe('pnpm dlx @alfredmouelle/create-stack@0.17.0 my-app')
+  })
+
   it('starts from the shared recommended stack and a deterministic command', () => {
     const result = resolveBuildState(defaultBuildState())
 
@@ -25,7 +98,7 @@ describe('build configurator state', () => {
       minimal: false,
     })
     expect(result.conflicts).toEqual([])
-    expect(result.command).toBe('pnpm dlx @alfredmouelle/create-stack@latest my-app')
+    expect(result.command).toBe(`pnpm dlx ${CLI_PACKAGE} my-app`)
   })
 
   it.each([
@@ -42,7 +115,7 @@ describe('build configurator state', () => {
     expect(result.configuration).toMatchObject(tools)
     expect(result.conflicts).toEqual([])
     expect(result.command).toBe(
-      `pnpm dlx @alfredmouelle/create-stack@latest my-app --formatter ${tools.formatter} --linter ${tools.linter}`,
+      `pnpm dlx ${CLI_PACKAGE} my-app --formatter ${tools.formatter} --linter ${tools.linter}`,
     )
   })
 
@@ -67,7 +140,7 @@ describe('build configurator state', () => {
 
     expect(result.conflicts).toEqual([])
     expect(result.command).toBe(
-      'npx @alfredmouelle/create-stack@latest orbit --framework next --database convex --auth clerk --no-trpc --mailer none --monorepo nx --storage r2 --jobs inngest',
+      `npx ${CLI_PACKAGE} orbit --framework next --database convex --auth clerk --no-trpc --mailer none --monorepo nx --storage r2 --jobs inngest`,
     )
   })
 
@@ -140,7 +213,7 @@ describe('build configurator state', () => {
         formatter: 'biome',
         linter: 'biome',
       },
-      { ...FRAMEWORK_SUPPORT, next: restrictedNext },
+      { ...createCliRelease('0.17.0'), frameworks: { ...FRAMEWORK_SUPPORT, next: restrictedNext } },
     )
 
     expect(result.command).toBeNull()
@@ -210,7 +283,7 @@ describe('build configurator state', () => {
     expect(serializeBuildState(parsed.state)).toBe('?v=1&name=orbit&pm=pnpm&framework=next')
     expect(resolveBuildState(parsed.state)).toMatchObject({
       configuration: { formatter: 'biome', linter: 'biome' },
-      command: 'pnpm dlx @alfredmouelle/create-stack@latest orbit --framework next',
+      command: `pnpm dlx ${CLI_PACKAGE} orbit --framework next`,
     })
   })
 
@@ -258,7 +331,7 @@ describe('build configurator state', () => {
 
   it('quotes project names that need shell protection', () => {
     expect(buildCommand({ ...defaultBuildState(), projectName: "Ada's app" })).toBe(
-      "pnpm dlx @alfredmouelle/create-stack@latest 'Ada'\\''s app'",
+      `pnpm dlx ${CLI_PACKAGE} 'Ada'\\''s app'`,
     )
   })
 })

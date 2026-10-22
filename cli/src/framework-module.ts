@@ -83,10 +83,35 @@ export type CapabilityAddition = {
   readonly apply: (request: CapabilityAdditionRequest) => CapabilityAdditionResult
 }
 
-export type AdditionWiring = {
-  readonly componentRoot: string | null
-  readonly capabilities: Readonly<Record<string, CapabilityAddition>>
+export type ComponentAdditionResult = {
+  readonly copied: readonly string[]
+  readonly skipped: readonly string[]
+  readonly addDeps: Readonly<Record<string, string>>
+  readonly mounted: boolean | null
+  readonly rootName: string | null
+  readonly manualSteps: readonly string[]
 }
+
+export type AdditionWiring = {
+  readonly capabilities: Readonly<Record<string, CapabilityAddition>>
+} & (
+  | {
+      readonly componentRoot: string | null
+      readonly components: { readonly kind: 'registry' }
+    }
+  | {
+      readonly componentRoot: string
+      readonly components: {
+        readonly kind: 'native'
+        readonly names: readonly string[]
+        readonly install: (request: {
+          readonly projectDir: string
+          readonly names: readonly string[]
+          readonly force: boolean
+        }) => ReadonlyMap<string, ComponentAdditionResult>
+      }
+    }
+)
 
 export type QualityProfileRequest = {
   readonly projectDir: string

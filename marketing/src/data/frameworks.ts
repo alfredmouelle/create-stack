@@ -1,10 +1,6 @@
-import {
-  FRAMEWORK_SUPPORT,
-  FRAMEWORKS,
-  type Framework,
-  type FrameworkSupport,
-  RECOMMENDED_FRAMEWORK,
-} from '@alfredmouelle/stack-config'
+import { FRAMEWORKS, type Framework, type FrameworkSupport } from '@alfredmouelle/stack-config'
+import { CLI_RELEASE, RELEASE_FRAMEWORK_SUPPORT } from '../lib/cli-release'
+import { installCommand } from '../lib/install-command'
 
 export const IMPLEMENTER_GUIDE_URL =
   'https://github.com/alfredmouelle/create-stack/blob/main/docs/adding-a-framework.md'
@@ -16,6 +12,7 @@ export type TreeEntry = {
 }
 
 export type RegisteredFramework = {
+  availability: 'released' | 'unreleased'
   maturity: FrameworkSupport['maturity']
   id: Framework
   label: string
@@ -55,6 +52,23 @@ const PROJECT_FILES: readonly TreeEntry[] = [
 ]
 
 const DETAILS = {
+  remix: {
+    documentationUrl: 'https://guides.remix.run/',
+    summary:
+      'Native Remix 3 components, SSR and browser entries on Node, with the shared quality profile and runtime assets.',
+    tree: [
+      ...PROFILE_TREE,
+      { path: 'src/', depth: 0 },
+      { path: 'pages/home.tsx', depth: 1 },
+      { path: 'router.tsx', depth: 1 },
+      { path: 'server.ts', depth: 1 },
+      { path: 'client/entry.ts', depth: 1 },
+      { path: 'server/better-auth/routes.tsx', depth: 1, owner: 'auth · better-auth' },
+      { path: 'server/api/routes.ts', depth: 1, owner: 'api · trpc' },
+      { path: 'assets.ts', depth: 1 },
+      ...PROJECT_FILES,
+    ],
+  },
   tanstack: {
     documentationUrl: 'https://tanstack.com/start/latest/docs/framework/react/overview',
     summary:
@@ -112,19 +126,11 @@ const DETAILS = {
 const PLANNED: readonly PlannedFramework[] = [
   {
     maturity: 'planned',
-    id: 'remix',
-    label: 'Remix',
-    documentationUrl: 'https://remix.run/docs',
-    summary: 'Needs a framework module.',
-    roadmapPosition: 1,
-  },
-  {
-    maturity: 'planned',
     id: 'vue',
     label: 'Vue',
     documentationUrl: 'https://vuejs.org/guide/introduction.html',
     summary: 'Needs a framework module.',
-    roadmapPosition: 2,
+    roadmapPosition: 1,
   },
   {
     maturity: 'planned',
@@ -132,7 +138,7 @@ const PLANNED: readonly PlannedFramework[] = [
     label: 'NestJS',
     documentationUrl: 'https://docs.nestjs.com/',
     summary: 'Needs a framework module.',
-    roadmapPosition: 3,
+    roadmapPosition: 2,
   },
   {
     maturity: 'planned',
@@ -140,18 +146,19 @@ const PLANNED: readonly PlannedFramework[] = [
     label: 'PHP frameworks',
     documentationUrl: 'https://www.php.net/manual/en/',
     summary: 'Needs an owner and a framework module.',
-    roadmapPosition: 4,
+    roadmapPosition: 3,
   },
 ]
 
-const REGISTERED: readonly RegisteredFramework[] = FRAMEWORKS.map((id) => {
-  const support = FRAMEWORK_SUPPORT[id]
+const REGISTERED: readonly RegisteredFramework[] = FRAMEWORKS.map((id): RegisteredFramework => {
+  const support = RELEASE_FRAMEWORK_SUPPORT[id]
   return {
     ...DETAILS[id],
+    availability: CLI_RELEASE.frameworks[id] === undefined ? 'unreleased' : 'released',
     maturity: support.maturity,
     id,
     label: support.label,
-    recommended: id === RECOMMENDED_FRAMEWORK,
+    recommended: id === CLI_RELEASE.recommendedFramework,
     support,
     modulePath: `cli/src/frameworks/${id}.ts`,
     referenceApplication: `apps/${id}-base`,
@@ -163,6 +170,12 @@ export const REGISTRY: readonly RegistryEntry[] = [...REGISTERED, ...PLANNED]
 export const PLANNED_FRAMEWORKS = PLANNED
 
 export const REGISTERED_FRAMEWORKS = REGISTERED
+export const AVAILABLE_FRAMEWORKS = REGISTERED.filter(
+  ({ availability }) => availability === 'released',
+)
+export const UNRELEASED_FRAMEWORKS = REGISTERED.filter(
+  ({ availability }) => availability === 'unreleased',
+)
 
 export function isRegistered(entry: RegistryEntry): entry is RegisteredFramework {
   return entry.maturity !== 'planned'
@@ -170,13 +183,23 @@ export function isRegistered(entry: RegistryEntry): entry is RegisteredFramework
 
 export function maturityCounts(entries: readonly RegistryEntry[] = REGISTRY) {
   return {
-    stable: entries.filter((entry) => entry.maturity === 'stable').length,
-    preview: entries.filter((entry) => entry.maturity === 'preview').length,
+    stable: entries.filter(
+      (entry) =>
+        entry.maturity === 'stable' && isRegistered(entry) && entry.availability === 'released',
+    ).length,
+    preview: entries.filter(
+      (entry) =>
+        entry.maturity === 'preview' && isRegistered(entry) && entry.availability === 'released',
+    ).length,
+    unreleased: entries.filter(
+      (entry) => isRegistered(entry) && entry.availability === 'unreleased',
+    ).length,
     planned: entries.filter((entry) => entry.maturity === 'planned').length,
   }
 }
 
-export function frameworkCommand(id: Framework): string {
-  const flag = id === RECOMMENDED_FRAMEWORK ? '' : ` --framework ${id}`
-  return `pnpm dlx @alfredmouelle/create-stack@latest my-app${flag}`
+export function frameworkCommand(id: Framework): string | null {
+  if (CLI_RELEASE.frameworks[id] === undefined) return null
+  const flag = id === CLI_RELEASE.recommendedFramework ? '' : ` --framework ${id}`
+  return `${installCommand('pnpm')}${flag}`
 }

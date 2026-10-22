@@ -1,0 +1,318 @@
+{
+  "integrity": "sha512-NNrEeiJuSiBTTuNgm5QdW1fL551vnUMuMmr+Qd1xOXaNO1+PhWtu8/U86MKbw5zUuPuuLTy5cv6xvDsWNhsYCw==",
+  "manifest": {
+    "schemaVersion": 1,
+    "packageName": "@alfredmouelle/create-stack",
+    "version": "0.16.0",
+    "minimumNodeVersion": "24.19.0",
+    "recommendedFramework": "tanstack",
+    "frameworks": {
+      "tanstack": {
+        "label": "TanStack Start",
+        "maturity": "stable",
+        "monorepoOutputs": [".output/**", ".nitro/**", "dist/**"],
+        "supports": {
+          "database": ["drizzle", "prisma", "convex", "none"],
+          "auth": ["better-auth", "clerk", "none"],
+          "trpc": [true, false],
+          "mailer": ["resend", "brevo", "ses", "none"],
+          "formatter": ["biome", "prettier"],
+          "linter": ["biome", "oxlint"]
+        },
+        "recommendations": {
+          "database": ["drizzle"],
+          "auth": ["better-auth", "clerk"],
+          "trpc": true,
+          "mailer": ["resend"],
+          "formatter": "biome",
+          "linter": "biome"
+        }
+      },
+      "next": {
+        "label": "Next.js",
+        "maturity": "stable",
+        "monorepoOutputs": [".next/**", "!.next/cache/**"],
+        "supports": {
+          "database": ["drizzle", "prisma", "convex", "none"],
+          "auth": ["better-auth", "clerk", "none"],
+          "trpc": [true, false],
+          "mailer": ["resend", "brevo", "ses", "none"],
+          "formatter": ["biome", "prettier"],
+          "linter": ["biome", "oxlint"]
+        },
+        "recommendations": {
+          "database": ["drizzle"],
+          "auth": ["better-auth", "clerk"],
+          "trpc": true,
+          "mailer": ["resend"],
+          "formatter": "biome",
+          "linter": "biome"
+        }
+      },
+      "rasengan": {
+        "label": "RasenganJS",
+        "maturity": "preview",
+        "monorepoOutputs": ["dist/**", ".rasengan/**"],
+        "supports": {
+          "database": ["drizzle", "prisma", "convex", "none"],
+          "auth": ["better-auth", "clerk", "none"],
+          "trpc": [true, false],
+          "mailer": ["resend", "brevo", "ses", "none"],
+          "formatter": ["biome", "prettier"],
+          "linter": ["biome", "oxlint"]
+        },
+        "recommendations": {
+          "database": ["drizzle"],
+          "auth": ["better-auth", "clerk"],
+          "trpc": true,
+          "mailer": ["resend"],
+          "formatter": "biome",
+          "linter": "biome"
+        }
+      }
+    },
+    "capabilities": [
+      {
+        "name": "storage",
+        "kind": "port",
+        "flag": "storage",
+        "aliases": [],
+        "providers": ["s3", "r2", "gcs", "local"],
+        "recommendedProvider": "r2"
+      },
+      {
+        "name": "cache",
+        "kind": "port",
+        "flag": "cache",
+        "aliases": [],
+        "providers": ["redis", "upstash", "memory"],
+        "recommendedProvider": "upstash"
+      },
+      {
+        "name": "logger",
+        "kind": "port",
+        "flag": "logger",
+        "aliases": [],
+        "providers": ["pino", "console"],
+        "recommendedProvider": "pino"
+      },
+      {
+        "name": "analytics",
+        "kind": "port",
+        "flag": "analytics",
+        "aliases": [],
+        "providers": ["posthog", "plausible", "noop"],
+        "recommendedProvider": "posthog"
+      },
+      {
+        "name": "jobs",
+        "kind": "module",
+        "flag": "jobs",
+        "aliases": [],
+        "providers": ["inngest"],
+        "recommendedProvider": "inngest"
+      },
+      {
+        "name": "error-tracking",
+        "kind": "module",
+        "flag": "errors",
+        "aliases": ["error-tracking"],
+        "providers": ["sentry"],
+        "recommendedProvider": "sentry"
+      }
+    ],
+    "flags": [
+      {
+        "name": "framework",
+        "aliases": ["f"],
+        "section": "stack",
+        "value": {
+          "kind": "choice",
+          "choices": ["tanstack", "next", "rasengan"]
+        }
+      },
+      {
+        "name": "database",
+        "aliases": ["db"],
+        "negation": "no-db",
+        "section": "stack",
+        "value": {
+          "kind": "choice",
+          "choices": ["drizzle", "prisma", "convex", "none"]
+        }
+      },
+      {
+        "name": "auth",
+        "aliases": [],
+        "negation": "no-auth",
+        "section": "stack",
+        "value": {
+          "kind": "choice",
+          "choices": ["better-auth", "clerk", "none"]
+        }
+      },
+      {
+        "name": "trpc",
+        "aliases": [],
+        "negation": "no-trpc",
+        "section": "stack",
+        "value": {
+          "kind": "none"
+        }
+      },
+      {
+        "name": "mailer",
+        "aliases": ["mail"],
+        "negation": "no-mail",
+        "section": "stack",
+        "value": {
+          "kind": "choice",
+          "choices": ["resend", "brevo", "ses", "none"]
+        }
+      },
+      {
+        "name": "formatter",
+        "aliases": [],
+        "section": "stack",
+        "value": {
+          "kind": "choice",
+          "choices": ["biome", "prettier"]
+        }
+      },
+      {
+        "name": "linter",
+        "aliases": [],
+        "section": "stack",
+        "value": {
+          "kind": "choice",
+          "choices": ["biome", "oxlint"]
+        }
+      },
+      {
+        "name": "minimal",
+        "aliases": [],
+        "section": "stack",
+        "value": {
+          "kind": "none"
+        }
+      },
+      {
+        "name": "storage",
+        "aliases": [],
+        "section": "capability",
+        "value": {
+          "kind": "choice",
+          "choices": ["s3", "r2", "gcs", "local"]
+        }
+      },
+      {
+        "name": "cache",
+        "aliases": [],
+        "section": "capability",
+        "value": {
+          "kind": "choice",
+          "choices": ["redis", "upstash", "memory"]
+        }
+      },
+      {
+        "name": "logger",
+        "aliases": [],
+        "section": "capability",
+        "value": {
+          "kind": "choice",
+          "choices": ["pino", "console"]
+        }
+      },
+      {
+        "name": "analytics",
+        "aliases": [],
+        "section": "capability",
+        "value": {
+          "kind": "choice",
+          "choices": ["posthog", "plausible", "noop"]
+        }
+      },
+      {
+        "name": "jobs",
+        "aliases": [],
+        "section": "capability",
+        "value": {
+          "kind": "choice",
+          "choices": ["inngest"]
+        }
+      },
+      {
+        "name": "errors",
+        "aliases": ["error-tracking"],
+        "section": "capability",
+        "value": {
+          "kind": "choice",
+          "choices": ["sentry"]
+        }
+      },
+      {
+        "name": "monorepo",
+        "aliases": ["mono"],
+        "section": "project",
+        "value": {
+          "kind": "choice",
+          "choices": ["turbo", "nx"]
+        }
+      },
+      {
+        "name": "pm",
+        "aliases": ["package-manager"],
+        "section": "project",
+        "value": {
+          "kind": "choice",
+          "choices": ["pnpm", "npm", "yarn", "bun"]
+        }
+      },
+      {
+        "name": "alias",
+        "aliases": [],
+        "section": "project",
+        "value": {
+          "kind": "text",
+          "placeholder": "prefix"
+        }
+      },
+      {
+        "name": "no-install",
+        "aliases": [],
+        "section": "project",
+        "value": {
+          "kind": "none"
+        }
+      },
+      {
+        "name": "no-git",
+        "aliases": [],
+        "section": "project",
+        "value": {
+          "kind": "none"
+        }
+      },
+      {
+        "name": "yes",
+        "aliases": ["y"],
+        "section": "project",
+        "value": {
+          "kind": "none"
+        }
+      }
+    ],
+    "components": [
+      "date-picker",
+      "data-table",
+      "confirm",
+      "alert",
+      "prompt",
+      "choice",
+      "confirm-passphrase",
+      "confirm-otp"
+    ],
+    "packageManagers": ["pnpm", "npm", "yarn", "bun"],
+    "monorepoOrchestrators": ["turbo", "nx"]
+  }
+}

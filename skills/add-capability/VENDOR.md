@@ -34,7 +34,7 @@ Parse the request (and any skill args like `mailer resend`):
 Detect by reading, not guessing:
 
 - **Package manager**: lockfile (`pnpm-lock.yaml` / `package-lock.json` / `yarn.lock` / `bun.lockb`).
-- **Framework**: `next`, `@tanstack/react-start` / `@tanstack/react-router`, or `rasengan`. Read the capability README
+- **Framework**: `next`, `@tanstack/react-start` / `@tanstack/react-router`, or `rasengan`, or native `remix@3` (preview). Read the capability README
   (and the matching `$STACK/apps/*-base` when it has an HTTP surface) before wiring.
 - **Source root + alias**: whatever `tsconfig` paths already use.
 - **Env style**: typed `env.ts` (`@t3-oss/env-core`) or raw `process.env`. Match it.

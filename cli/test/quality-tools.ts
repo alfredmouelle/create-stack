@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import type { Formatter, Linter } from '@alfredmouelle/stack-config'
 import { afterAll, expect, test } from 'vitest'
 import { createProject } from '../src/engine.ts'
@@ -76,7 +76,12 @@ export function linkDependencies(destination: string, source: string): void {
   if (existsSync(join(source, '.bin')))
     linkDependencies(join(destination, '.bin'), join(source, '.bin'))
   for (const name of readdirSync(source).filter((name) => !name.startsWith('.'))) {
-    if (name.startsWith('@')) linkDependencies(join(destination, name), join(source, name))
+    if (basename(source) === '.bin') {
+      const executable = join(source, name).replaceAll("'", "'\\''")
+      writeFileSync(join(destination, name), `#!/bin/sh\nexec '${executable}' "$@"\n`, {
+        mode: 0o755,
+      })
+    } else if (name.startsWith('@')) linkDependencies(join(destination, name), join(source, name))
     else if (!existsSync(join(destination, name)))
       symlinkSync(join(source, name), join(destination, name))
   }

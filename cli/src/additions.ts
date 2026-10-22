@@ -29,6 +29,11 @@ export function validateAdditions(
       requireCapability(module, selection.cap, selection.adapter)
     } else if (module.additions.componentRoot === null) {
       throw new Error(`${module.label} does not support component additions`)
+    } else if (
+      module.additions.components.kind === 'native' &&
+      !module.additions.components.names.includes(selection.name)
+    ) {
+      throw new Error(`${module.label} does not support component ${selection.name}`)
     }
   }
 }

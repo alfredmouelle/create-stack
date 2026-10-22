@@ -1,10 +1,21 @@
-import { accessSync, constants, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import {
+  accessSync,
+  constants,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
 import type { FrameworkModule, Monorepo } from '../src/framework-module.ts'
 import type { QualityProfileException } from '../src/quality-profile.ts'
-import { readField } from './json.ts'
+import { readField, readJson } from './json.ts'
+import { linkDependencies } from './quality-tools.ts'
 
 const REPO_ROOT = resolve(import.meta.dirname, '..', '..')
 
@@ -149,6 +160,102 @@ describe('applyQualityProfile', () => {
       jsx: 'react-jsx',
       ...enabledProfile,
     })
+  })
+
+  test.each([
+    { monorepo: false, stylesheet: 'src/styles/storefront.css' },
+    { monorepo: 'turborepo', stylesheet: 'apps/web/src/styles/storefront.css' },
+    { monorepo: 'nx', stylesheet: 'apps/web/src/styles/storefront.css' },
+  ])(
+    'configures a framework stylesheet without components.json (monorepo: $monorepo)',
+    ({ monorepo, stylesheet }) => {
+      const projectDir = application({ jsx: 'react-jsx', jsxImportSource: 'remix/component' })
+      const applicationDir = monorepo ? join(projectDir, 'apps/web') : projectDir
+      if (monorepo) {
+        mkdirSync(applicationDir, { recursive: true })
+        writeFileSync(join(applicationDir, 'package.json'), JSON.stringify({ name: 'storefront' }))
+        writeFileSync(
+          join(applicationDir, 'tsconfig.json'),
+          JSON.stringify({ compilerOptions: { jsxImportSource: 'remix/component' } }),
+        )
+      }
+
+      applyQualityProfile(
+        {
+          ...framework(),
+          applyQualityProfile: (request) =>
+            applyJavaScriptQualityProfile({
+              ...request,
+              tailwindStylesheet: 'src/styles/storefront.css',
+            }),
+        },
+        { ...target(projectDir), applicationDir, formatter: 'prettier' },
+      )
+
+      expect(readJson(join(projectDir, '.prettierrc.json'))).toHaveProperty(
+        'tailwindStylesheet',
+        stylesheet,
+      )
+      expect(readField(join(applicationDir, 'tsconfig.json'), 'compilerOptions')).toHaveProperty(
+        'jsxImportSource',
+        'remix/component',
+      )
+      expect(existsSync(join(applicationDir, 'components.json'))).toBe(false)
+
+      mkdirSync(join(applicationDir, 'src/styles'), { recursive: true })
+      writeFileSync(
+        join(applicationDir, 'src/styles/storefront.css'),
+        '@import "tailwindcss";\n@theme { --color-storefront: #134e4a; }\n',
+      )
+      const page = join(applicationDir, 'src/checkout.html')
+      writeFileSync(page, '<main class="p-4 bg-storefront flex"></main>\n')
+      linkDependencies(join(projectDir, 'node_modules'), join(REPO_ROOT, 'node_modules'))
+      linkDependencies(
+        join(applicationDir, 'node_modules'),
+        join(REPO_ROOT, 'apps/next-base/node_modules'),
+      )
+
+      const formatted = spawnSync(
+        join(REPO_ROOT, 'node_modules/.bin/prettier'),
+        ['--write', page],
+        { cwd: projectDir, encoding: 'utf8', timeout: 30_000 },
+      )
+
+      expect(formatted.status, formatted.stdout + formatted.stderr).toBe(0)
+      expect(readFileSync(page, 'utf8')).toBe('<main class="flex bg-storefront p-4"></main>\n')
+    },
+  )
+
+  test.each([
+    {
+      name: 'discovers the stylesheet from components.json for existing callers',
+      options: {},
+      stylesheet: 'src/styles/catalog.css',
+    },
+    {
+      name: 'prefers the framework stylesheet over components.json',
+      options: { tailwindStylesheet: 'src/styles/storefront.css' },
+      stylesheet: 'src/styles/storefront.css',
+    },
+  ])('$name', ({ options, stylesheet }) => {
+    const projectDir = application({ jsx: 'react-jsx' })
+    writeFileSync(
+      join(projectDir, 'components.json'),
+      JSON.stringify({ tailwind: { css: 'src/styles/catalog.css' } }),
+    )
+
+    applyQualityProfile(
+      {
+        ...framework(),
+        applyQualityProfile: (request) => applyJavaScriptQualityProfile({ ...request, ...options }),
+      },
+      { ...target(projectDir), formatter: 'prettier' },
+    )
+
+    expect(readJson(join(projectDir, '.prettierrc.json'))).toHaveProperty(
+      'tailwindStylesheet',
+      stylesheet,
+    )
   })
 
   test('rejects a framework that relaxes a profile option without a declared exception', () => {

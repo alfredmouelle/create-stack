@@ -1,0 +1,12 @@
+node_modules
+.DS_Store
+*.local
+.env
+dist
+coverage
+.turbo
+.nx
+.remix
+.convex
+.data
+.cache
