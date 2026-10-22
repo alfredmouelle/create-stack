@@ -1,12 +1,14 @@
 ---
 import {
-  COMPONENTS,
   type ComponentName,
-  MINIMUM_NODE_VERSION,
-  PACKAGE_MANAGERS,
 } from '@alfredmouelle/stack-config'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { FLAG_TABLES } from '../lib/docs-flags'
+import { CLI_RELEASE, RELEASE_PACKAGE_MANAGERS as PACKAGE_MANAGERS } from '../lib/cli-release'
+import { installCommand } from '../lib/install-command'
+
+const MINIMUM_NODE_VERSION = CLI_RELEASE.minimumNodeVersion
+const COMPONENTS = CLI_RELEASE.components
 
 const CONTENTS = [
   { id: 'quick-start', title: 'Quick start' },
@@ -32,13 +34,13 @@ const packageManagerList = new Intl.ListFormat('en', { type: 'disjunction' }).fo
 )
 
 const SCAFFOLD_EXAMPLES = `# accept every default without prompts
-pnpm dlx @alfredmouelle/create-stack@latest my-app --yes
+${installCommand('pnpm')} --yes
 
 # Convex with Clerk auth
-pnpm dlx @alfredmouelle/create-stack@latest my-app --database convex --auth clerk
+${installCommand('pnpm')} --database convex --auth clerk
 
 # Nx monorepo with common capabilities
-pnpm dlx @alfredmouelle/create-stack@latest my-app --monorepo nx --storage --cache --jobs --errors`
+${installCommand('pnpm')} --monorepo nx --storage --cache --jobs --errors`
 
 const ADD_EXAMPLES = `create-stack add                                      # grouped interactive picker
 create-stack add storage r2                           # one capability and provider
@@ -100,7 +102,8 @@ pnpm dev`
       <article class="prose">
         <section>
           <h2 id="quick-start">Quick start</h2>
-          <pre><code>pnpm create @alfredmouelle/stack@latest my-app</code></pre>
+          <p>Commands and options on this site target CLI {CLI_RELEASE.version}.</p>
+          <pre><code>{installCommand('pnpm')}</code></pre>
           <p>
             Requires <strong>Node {MINIMUM_NODE_VERSION} or later</strong>, a package manager ({packageManagerList}), and <strong>git</strong> on <code>PATH</code>. With no flags the CLI asks for each choice. <strong>Any stack or capability flag switches to non-interactive mode</strong> for CI and scripts.
           </p>
@@ -163,8 +166,9 @@ pnpm dev`
         <section>
           <h2 id="components">Components</h2>
           <p>
-            Components install from a local shadcn registry, so the project's <code>components.json</code> controls aliases, styles, and icons. <strong>Existing files stay untouched</strong> unless you pass <code>--force</code>.
+            React projects install components from a local shadcn registry, so the project's <code>components.json</code> controls aliases, styles, and icons. <strong>Existing files stay untouched</strong> unless you pass <code>--force</code>.
           </p>
+          {CLI_RELEASE.frameworks.remix ? <p>Remix installs native components without shadcn or <code>components.json</code>.</p> : null}
           <div class="docs-table">
             <table class="data-table">
               <caption>Components</caption>
@@ -178,7 +182,7 @@ pnpm dev`
           </div>
           <pre><code>{COMPONENT_EXAMPLES}</code></pre>
           <p>
-            The dialogs use <a href="https://react-call.desko.dev" rel="noreferrer" target="_blank">react-call</a>.
+            React dialogs use <a href="https://react-call.desko.dev" rel="noreferrer" target="_blank">react-call</a>.
             The CLI mounts their root in the app shell, so you can await them from anywhere:
           </p>
           <pre><code>{DIALOG_EXAMPLE}</code></pre>

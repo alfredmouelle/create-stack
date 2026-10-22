@@ -146,6 +146,7 @@ test('published package includes the local registry and its executable shadcn ru
   expect(contents.status, contents.stderr).toBe(0)
   expect(contents.stdout).toContain('package/_stack/registry/date-picker.json')
   expect(contents.stdout).toContain('package/_stack/engine/index.mjs')
+  expect(contents.stdout).toContain('package/_stack/release.json')
   expect(contents.stdout).toContain('package/engine.mjs')
   expect(contents.stdout).not.toContain('package/src/')
   expect(contents.stdout).not.toContain('package/_stack/stack-config/')
@@ -203,6 +204,13 @@ test('published package includes the local registry and its executable shadcn ru
 
   const packageJson = parseObject(
     spawnSync('tar', ['-xOf', archive, 'package/package.json'], { encoding: 'utf8' }).stdout,
+  )
+  const release = parseObject(
+    spawnSync('tar', ['-xOf', archive, 'package/_stack/release.json'], { encoding: 'utf8' }).stdout,
+  )
+  expect(release.version).toBe(packageJson.version)
+  expect(Object.keys(objectField(release, 'frameworks')).sort()).toEqual(
+    frameworkModules.map(({ id }) => id).sort(),
   )
   expect(objectField(packageJson, 'dependencies').shadcn).toBe('4.21.4')
   expect({

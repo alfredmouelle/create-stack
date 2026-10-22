@@ -68,3 +68,15 @@ jobs:
       - name: Publish
         working-directory: cli
         run: npm publish --access public
+
+      - name: Verify published CLI manifest
+        run: pnpm --filter @alfredmouelle/marketing run release:refresh
+        env:
+          EXPECTED_CLI_VERSION: ${{ github.ref_name }}
+
+  deploy-marketing:
+    needs: publish
+    uses: ./.github/workflows/deploy-marketing.yml
+    with:
+      cli_version: ${{ github.ref_name }}
+    secrets: inherit

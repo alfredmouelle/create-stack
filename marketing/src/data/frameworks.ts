@@ -1,10 +1,6 @@
-import {
-  FRAMEWORK_SUPPORT,
-  FRAMEWORKS,
-  type Framework,
-  type FrameworkSupport,
-  RECOMMENDED_FRAMEWORK,
-} from '@alfredmouelle/stack-config'
+import { FRAMEWORKS, type Framework, type FrameworkSupport } from '@alfredmouelle/stack-config'
+import { CLI_RELEASE, RELEASE_FRAMEWORK_SUPPORT } from '../lib/cli-release'
+import { installCommand } from '../lib/install-command'
 
 export const IMPLEMENTER_GUIDE_URL =
   'https://github.com/alfredmouelle/create-stack/blob/main/docs/adding-a-framework.md'
@@ -16,6 +12,7 @@ export type TreeEntry = {
 }
 
 export type RegisteredFramework = {
+  availability: 'released' | 'unreleased'
   maturity: FrameworkSupport['maturity']
   id: Framework
   label: string
@@ -153,14 +150,15 @@ const PLANNED: readonly PlannedFramework[] = [
   },
 ]
 
-const REGISTERED: readonly RegisteredFramework[] = FRAMEWORKS.map((id) => {
-  const support = FRAMEWORK_SUPPORT[id]
+const REGISTERED: readonly RegisteredFramework[] = FRAMEWORKS.map((id): RegisteredFramework => {
+  const support = RELEASE_FRAMEWORK_SUPPORT[id]
   return {
     ...DETAILS[id],
+    availability: CLI_RELEASE.frameworks[id] === undefined ? 'unreleased' : 'released',
     maturity: support.maturity,
     id,
     label: support.label,
-    recommended: id === RECOMMENDED_FRAMEWORK,
+    recommended: id === CLI_RELEASE.recommendedFramework,
     support,
     modulePath: `cli/src/frameworks/${id}.ts`,
     referenceApplication: `apps/${id}-base`,
@@ -172,6 +170,12 @@ export const REGISTRY: readonly RegistryEntry[] = [...REGISTERED, ...PLANNED]
 export const PLANNED_FRAMEWORKS = PLANNED
 
 export const REGISTERED_FRAMEWORKS = REGISTERED
+export const AVAILABLE_FRAMEWORKS = REGISTERED.filter(
+  ({ availability }) => availability === 'released',
+)
+export const UNRELEASED_FRAMEWORKS = REGISTERED.filter(
+  ({ availability }) => availability === 'unreleased',
+)
 
 export function isRegistered(entry: RegistryEntry): entry is RegisteredFramework {
   return entry.maturity !== 'planned'
@@ -179,13 +183,23 @@ export function isRegistered(entry: RegistryEntry): entry is RegisteredFramework
 
 export function maturityCounts(entries: readonly RegistryEntry[] = REGISTRY) {
   return {
-    stable: entries.filter((entry) => entry.maturity === 'stable').length,
-    preview: entries.filter((entry) => entry.maturity === 'preview').length,
+    stable: entries.filter(
+      (entry) =>
+        entry.maturity === 'stable' && isRegistered(entry) && entry.availability === 'released',
+    ).length,
+    preview: entries.filter(
+      (entry) =>
+        entry.maturity === 'preview' && isRegistered(entry) && entry.availability === 'released',
+    ).length,
+    unreleased: entries.filter(
+      (entry) => isRegistered(entry) && entry.availability === 'unreleased',
+    ).length,
     planned: entries.filter((entry) => entry.maturity === 'planned').length,
   }
 }
 
-export function frameworkCommand(id: Framework): string {
-  const flag = id === RECOMMENDED_FRAMEWORK ? '' : ` --framework ${id}`
-  return `pnpm dlx @alfredmouelle/create-stack@latest my-app${flag}`
+export function frameworkCommand(id: Framework): string | null {
+  if (CLI_RELEASE.frameworks[id] === undefined) return null
+  const flag = id === CLI_RELEASE.recommendedFramework ? '' : ` --framework ${id}`
+  return `${installCommand('pnpm')}${flag}`
 }

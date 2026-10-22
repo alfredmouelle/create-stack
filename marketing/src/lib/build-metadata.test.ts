@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { CLI_PACKAGE } from './cli-release'
 
 const publicOrigin = 'https://create-stack.alfredmouelle.com'
 const requiredPublicAssets = [
@@ -108,7 +109,7 @@ describe('marketing metadata builds', () => {
     expect(robots).not.toContain('Disallow: /')
     expect(robots).toContain(`Sitemap: ${publicOrigin}/sitemap.xml`)
     expect(sitemap).toContain(`<loc>${publicOrigin}/</loc>`)
-    expect(llms).toContain('pnpm dlx @alfredmouelle/create-stack@latest my-app')
+    expect(llms).toContain(`pnpm dlx ${CLI_PACKAGE} my-app`)
     expect(llms).toContain(`Website: ${publicOrigin}/`)
     expect(llms).not.toContain('Inspired by')
 

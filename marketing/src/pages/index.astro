@@ -5,7 +5,7 @@ import FileTree from '../components/FileTree.astro'
 import InstallCommand from '../components/InstallCommand'
 import SectionHead from '../components/SectionHead.astro'
 import Terminal from '../components/Terminal'
-import { maturityCounts, REGISTERED_FRAMEWORKS, REGISTRY } from '../data/frameworks'
+import { AVAILABLE_FRAMEWORKS, isRegistered, maturityCounts, REGISTRY } from '../data/frameworks'
 import {
   PORT_CAPABILITIES,
   QUALITY_PROFILE_OPTIONS,
@@ -14,19 +14,20 @@ import {
 } from '../data/landing'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { installCommand } from '../lib/install-command'
+import { CLI_PACKAGE } from '../lib/cli-release'
 import { SITE_TAGLINE } from '../lib/site-identity'
 import { REPOSITORY_URL } from '../lib/site-metadata'
 
-const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tanstack')
-const frameworkGroups = [...new Set(REGISTERED_FRAMEWORKS.map((framework) => framework.maturity))].map(
+const tanstack = AVAILABLE_FRAMEWORKS.find((framework) => framework.id === 'tanstack')
+const frameworkGroups = [...new Set(AVAILABLE_FRAMEWORKS.map((framework) => framework.maturity))].map(
   (maturity) => ({
     maturity,
-    labels: REGISTERED_FRAMEWORKS.filter((framework) => framework.maturity === maturity)
+    labels: AVAILABLE_FRAMEWORKS.filter((framework) => framework.maturity === maturity)
       .map((framework) => framework.label)
       .join(' · '),
   }),
 )
-const previewLabels = REGISTERED_FRAMEWORKS.filter((framework) => framework.maturity === 'preview').map(
+const previewLabels = AVAILABLE_FRAMEWORKS.filter((framework) => framework.maturity === 'preview').map(
   (framework) => framework.label,
 )
 const frameworksTitle = [
@@ -127,7 +128,7 @@ const frameworksTitle = [
             <div class="terminal-body">
               <span class="terminal-line is-command">
                 <span aria-hidden="true" class="terminal-prefix">$ </span>
-                {'pnpm dlx @alfredmouelle/create-stack@latest my-app --database convex --trpc'.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
+                {`pnpm dlx ${CLI_PACKAGE} my-app --database convex --trpc`.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
               </span>
               <span class="terminal-line is-conflict">
                 <span aria-hidden="true" class="terminal-prefix">■ </span>Convex cannot be combined
@@ -216,7 +217,7 @@ const frameworksTitle = [
                   {entry.label}
                 </a>
                 <p class="registry-foot">
-                  {entry.maturity === 'planned' ? entry.summary : `--framework ${entry.id}`}
+                  {isRegistered(entry) ? entry.availability === 'released' ? `--framework ${entry.id}` : 'Coming in the next release' : entry.summary}
                 </p>
               </li>
             ))
@@ -228,7 +229,8 @@ const frameworksTitle = [
         </ul>
         <p class="legend">
           <span><Badge maturity="stable" /> gate verified in CI</span>
-          <span><Badge maturity="preview" /> depends on prerelease upstream packages</span>
+          <span><Badge maturity="preview" /> published preview support</span>
+          <span>Coming soon: implemented, awaiting npm publication</span>
           <span><Badge maturity="planned" /> on the roadmap, not installable</span>
         </p>
         <a class="button is-ghost is-small" href="/frameworks">All frameworks →</a>
@@ -245,7 +247,7 @@ const frameworksTitle = [
               <div class="terminal-body">
                 <span class="terminal-line is-command">
                   <span aria-hidden="true" class="terminal-prefix">$ </span>
-                  {'pnpm dlx @alfredmouelle/create-stack@latest add --with storage=r2 cache=upstash logger'.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
+                  {`pnpm dlx ${CLI_PACKAGE} add --with storage=r2 cache=upstash logger`.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
                 </span>
                 <span class="terminal-line is-success">
                   <span aria-hidden="true" class="terminal-prefix">+ </span>src/server/storage/port.ts
@@ -336,7 +338,7 @@ const frameworksTitle = [
             <div class="terminal-body">
               <span class="terminal-line is-command">
                 <span aria-hidden="true" class="terminal-prefix">$ </span>
-                {'pnpm dlx @alfredmouelle/create-stack@latest api --framework next --database prisma --auth clerk --no-mail --linter oxlint'.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
+                {`pnpm dlx ${CLI_PACKAGE} api --framework next --database prisma --auth clerk --no-mail --linter oxlint`.split(' ').map((token, index) => [index ? ' ' : '', <span class="terminal-token">{token}</span>])}
               </span>
               <span class="terminal-line is-success">
                 <span aria-hidden="true" class="terminal-prefix">◆ </span>typecheck + selected quality tools clean

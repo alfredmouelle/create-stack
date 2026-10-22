@@ -1,9 +1,11 @@
 import {
-  CAPABILITY_CATALOG,
-  FRAMEWORK_SUPPORT,
-  MAILERS,
-  RECOMMENDED_FRAMEWORK,
-} from '@alfredmouelle/stack-config'
+  RELEASE_CAPABILITIES as CAPABILITY_CATALOG,
+  CLI_RELEASE,
+  RELEASE_FRAMEWORK_SUPPORT as FRAMEWORK_SUPPORT,
+} from '../lib/cli-release'
+import { installCommand } from '../lib/install-command'
+
+const RECOMMENDED_FRAMEWORK = CLI_RELEASE.recommendedFramework
 
 export const GATE_STEPS = [
   { id: 'install', label: 'install', command: 'pnpm install' },
@@ -25,7 +27,7 @@ type TranscriptLine = {
 export const terminalTranscript = {
   version: 2,
   lines: [
-    { kind: 'command', text: 'pnpm dlx @alfredmouelle/create-stack@latest my-app --yes' },
+    { kind: 'command', text: `${installCommand('pnpm')} --yes` },
     { kind: 'heading', text: 'Creation plan' },
     { kind: 'output', text: 'Framework: TanStack Start' },
     { kind: 'output', text: 'Database: drizzle', note: 'recommended stack' },
@@ -110,7 +112,9 @@ export const PORT_CAPABILITIES: readonly PortCapability[] = [
   ),
   {
     name: 'mailer',
-    providers: MAILERS.filter((mailer) => mailer !== 'none'),
+    providers: FRAMEWORK_SUPPORT[RECOMMENDED_FRAMEWORK].supports.mailer.filter(
+      (mailer) => mailer !== 'none',
+    ),
     recommended: FRAMEWORK_SUPPORT[RECOMMENDED_FRAMEWORK].recommendations.mailer[0],
   },
 ]

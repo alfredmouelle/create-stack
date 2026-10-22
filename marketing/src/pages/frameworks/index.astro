@@ -2,6 +2,7 @@
 import Badge from '../../components/Badge.astro'
 import { isRegistered, maturityCounts, REGISTRY } from '../../data/frameworks'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { CLI_RELEASE } from '../../lib/cli-release'
 
 const counts = maturityCounts()
 const AXES = ['database', 'auth', 'trpc', 'mailer', 'formatter', 'linter'] as const
@@ -26,11 +27,13 @@ const AXIS_LABELS = {
       <p class="t-lead">
         Each framework is one module, one reference application and one registry entry. Stable
         means its module passes the conformance suite and the gate in CI.
+        Installable choices below are available in CLI {CLI_RELEASE.version}.
       </p>
       <p class="summary-line">
         <span><Badge maturity="stable" /> <b>{counts.stable}</b></span>
         <span><Badge maturity="preview" /> <b>{counts.preview}</b></span>
         <span><Badge maturity="planned" /> <b>{counts.planned}</b></span>
+        <span>Coming soon <b>{counts.unreleased}</b></span>
         <span><span class="is-pass">*</span> recommended by the framework</span>
       </p>
     </header>
@@ -70,7 +73,7 @@ const AXIS_LABELS = {
                 ))}
               </dl>
               <div class="framework-actions">
-                <code class="mini-cmd">--framework {entry.id}</code>
+                {entry.availability === 'released' ? <code class="mini-cmd">--framework {entry.id}</code> : <span class="is-muted">Coming in the next release</span>}
                 <a class="text-link" href={`/frameworks/${entry.id}`}>Details →</a>
               </div>
             </li>

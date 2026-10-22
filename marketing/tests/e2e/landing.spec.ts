@@ -1,7 +1,8 @@
 import { devices, expect, test } from '@playwright/test'
+import { CLI_PACKAGE, CLI_RELEASE } from '../../src/lib/cli-release'
 import { openPage } from './navigation'
 
-const canonicalPnpmCommand = 'pnpm dlx @alfredmouelle/create-stack@latest my-app'
+const canonicalPnpmCommand = `pnpm dlx ${CLI_PACKAGE} my-app`
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -24,9 +25,9 @@ test.describe('install command', () => {
     await expect(command).toHaveValue(canonicalPnpmCommand)
 
     for (const [manager, expected] of [
-      ['npm', 'npx @alfredmouelle/create-stack@latest my-app'],
-      ['yarn', 'yarn dlx @alfredmouelle/create-stack@latest my-app'],
-      ['bun', 'bunx @alfredmouelle/create-stack@latest my-app'],
+      ['npm', `npx ${CLI_PACKAGE} my-app`],
+      ['yarn', `yarn dlx ${CLI_PACKAGE} my-app`],
+      ['bun', `bunx ${CLI_PACKAGE} my-app`],
       ['pnpm', canonicalPnpmCommand],
     ]) {
       await page.getByRole('button', { name: manager, exact: true }).click()
@@ -90,7 +91,7 @@ test.describe('terminal playback', () => {
     })
     await page.getByRole('button', { name: 'Replay sequence' }).click()
     await expect(page.getByRole('button', { name: 'Pause sequence' })).toBeVisible()
-    await expect(terminal).toContainText('pnpm dlx @alfredmouelle/create-stack@latest my-app --yes')
+    await expect(terminal).toContainText(`pnpm dlx ${CLI_PACKAGE} my-app --yes`)
   })
 
   test('marks each gate step as the transcript reaches it', async ({ page }) => {
@@ -138,7 +139,7 @@ test.describe('mobile keyboard experience', () => {
     await expect(page.getByRole('button', { name: 'npm', exact: true })).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('textbox', { name: 'Create Stack install command' })).toHaveValue(
-      'npx @alfredmouelle/create-stack@latest my-app',
+      `npx ${CLI_PACKAGE} my-app`,
     )
 
     const copy = page.getByRole('button', { name: 'Copy command' })
@@ -153,7 +154,7 @@ test.describe('mobile keyboard experience', () => {
     await expect(pause).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('button', { name: 'Resume sequence' })).toBeVisible()
-    await expect(terminal).toContainText('pnpm dlx @alfredmouelle/create-stack@latest my-app --yes')
+    await expect(terminal).toContainText(`pnpm dlx ${CLI_PACKAGE} my-app --yes`)
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeHidden()
@@ -227,12 +228,18 @@ test('copies static commands from the page', async ({ context, page, baseURL }) 
     .toBe(canonicalPnpmCommand)
 })
 
-test('shows Remix preview as installable', async ({ page }) => {
+test('shows Remix installation only after npm publication', async ({ page }) => {
   await openPage(page, '/frameworks/remix')
 
   await expect(page.getByRole('heading', { level: 1, name: 'Remix' })).toBeVisible()
   await expect(page.getByText('Not installable yet', { exact: false })).toHaveCount(0)
   await expect(page.locator('.badge.is-preview').first()).toBeVisible()
+  if (CLI_RELEASE.frameworks.remix === undefined) {
+    await expect(page.locator('main')).toContainText('Coming in the next release')
+    await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toHaveCount(0)
+    await expect(page.locator('main')).not.toContainText('--framework remix')
+    return
+  }
   await expect(page.getByRole('button', { name: 'Copy the Remix command' })).toBeEnabled()
   await expect(page.locator('main')).toContainText('--framework remix')
 })
@@ -264,7 +271,12 @@ test('shows the hero tagline, grouped frameworks and preview roadmap status', as
     const stable = hero.locator(':scope > span').filter({ hasText: 'stable' })
     const preview = hero.locator(':scope > span').filter({ hasText: 'preview' })
     await expect(stable).toContainText('TanStack Start · Next.js')
-    await expect(preview).toContainText('RasenganJS · Remix')
+    await expect(preview).toContainText('RasenganJS')
+    if (CLI_RELEASE.frameworks.remix === undefined) {
+      await expect(hero).not.toContainText('Remix')
+    } else {
+      await expect(preview).toContainText('Remix')
+    }
     expect(await hero.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
   }
 

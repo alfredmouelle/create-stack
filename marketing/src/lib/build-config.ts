@@ -1,7 +1,6 @@
 import {
   AUTHS,
   type Auth,
-  CAPABILITY_CATALOG,
   type CapabilityName,
   DATABASES,
   type Database,
@@ -11,7 +10,6 @@ import {
   FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   type Framework,
-  type FrameworkSupportCatalog,
   frameworkTitle,
   isValidImportAlias,
   LINTERS,
@@ -27,6 +25,12 @@ import {
   type StackConfigurationInput,
   type StackConfigurationResult,
 } from '@alfredmouelle/stack-config'
+import type { CliRelease } from '@alfredmouelle/stack-config/release'
+import {
+  RELEASE_CAPABILITIES as CAPABILITY_CATALOG,
+  CLI_RELEASE,
+  frameworkAvailabilityMessage,
+} from './cli-release'
 
 export const BUILD_SCHEMA_VERSION = '1'
 
@@ -63,6 +67,7 @@ export interface BuildState {
 
 export type BuildStateResult = StackConfigurationResult & {
   command: string | null
+  availabilityError: string | undefined
 }
 
 export type ParsedBuildState =
@@ -76,8 +81,6 @@ const EXECUTORS: Record<PackageManagerName, string> = {
   yarn: 'yarn dlx',
   bun: 'bunx',
 }
-
-const STACK_PACKAGE = '@alfredmouelle/create-stack@latest'
 
 type StackChoice = keyof Pick<
   StackConfigurationInput,
@@ -104,8 +107,11 @@ function stackInput(state: BuildState): StackConfigurationInput {
   }
 }
 
-function capabilityDefinition(name: string): (typeof CAPABILITY_CATALOG)[number] | undefined {
-  return CAPABILITY_CATALOG.find((capability) => capability.name === name)
+function capabilityDefinition(
+  name: string,
+  release: CliRelease,
+): CliRelease['capabilities'][number] | undefined {
+  return release.capabilities.find((capability) => capability.name === name)
 }
 
 function shellQuote(value: string): string {
@@ -113,34 +119,88 @@ function shellQuote(value: string): string {
   return `'${value.replaceAll("'", "'\\''")}'`
 }
 
-function commandFor(state: BuildState, stackArgs: readonly string[]): string | null {
-  if (!state.projectName.trim()) return null
-  if (state.alias !== undefined && !isValidImportAlias(state.alias)) return null
-
+function commandArguments(
+  state: BuildState,
+  stackArgs: readonly string[],
+  release: CliRelease,
+): string[] {
   const args = [...stackArgs]
   const alias = state.alias === undefined ? DEFAULT_IMPORT_ALIAS : normalizeImportAlias(state.alias)
   if (alias !== DEFAULT_IMPORT_ALIAS) args.push('--alias', alias)
   if (state.monorepo) args.push('--monorepo', state.monorepo)
-
-  for (const capability of CAPABILITY_CATALOG) {
+  for (const capability of release.capabilities) {
     const provider = state.capabilities[capability.name]
-    if (provider === undefined) continue
-    args.push(`--${capability.flag}`, provider)
+    if (provider !== undefined) args.push(`--${capability.flag}`, provider)
   }
+  return args
+}
 
-  return [...EXECUTORS[state.packageManager].split(' '), STACK_PACKAGE, state.projectName, ...args]
-    .map(shellQuote)
-    .join(' ')
+function argumentError(args: readonly string[], release: CliRelease): string | undefined {
+  for (let index = 0; index < args.length; index++) {
+    const argument = args[index]
+    const flag = release.flags.find(
+      (candidate) => argument === `--${candidate.name}` || argument === `--${candidate.negation}`,
+    )
+    if (flag === undefined) return `${argument} is unavailable in CLI ${release.version}.`
+    if (argument === `--${flag.negation}` || flag.value.kind === 'none') continue
+    const value = args[++index]
+    if (
+      value === undefined ||
+      (flag.value.kind === 'choice' && !flag.value.choices.includes(value))
+    ) {
+      return `${argument} ${value ?? ''} is unavailable in CLI ${release.version}.`
+    }
+  }
+}
+
+function selectionError(state: BuildState, release: CliRelease): string | undefined {
+  if (!release.packageManagers.includes(state.packageManager))
+    return `Package manager ${state.packageManager} is unavailable in CLI ${release.version}.`
+  for (const [name, provider] of Object.entries(state.capabilities)) {
+    if (
+      provider !== undefined &&
+      !capabilityDefinition(name, release)?.providers.includes(provider)
+    ) {
+      return `${name} ${provider} is unavailable in CLI ${release.version}.`
+    }
+  }
 }
 
 export function resolveBuildState(
   state: BuildState,
-  frameworkSupport: FrameworkSupportCatalog = FRAMEWORK_SUPPORT,
+  release: CliRelease = CLI_RELEASE,
 ): BuildStateResult {
-  const result = resolveStackConfiguration(stackInput(state), frameworkSupport)
+  const frameworkSupport = { ...FRAMEWORK_SUPPORT, ...release.frameworks }
+  const result = resolveStackConfiguration(
+    stackInput(state),
+    frameworkSupport,
+    release.recommendedFramework,
+  )
+  const args = commandArguments(state, result.cliArgs, release)
+  const unavailable = frameworkAvailabilityMessage(result.configuration.framework, release)
+  const unavailableOption = selectionError(state, release) ?? argumentError(args, release)
+  const conflicts = unavailable
+    ? [...result.conflicts, { axes: ['framework'] as const, message: unavailable }]
+    : unavailableOption
+      ? [...result.conflicts, { axes: [], message: unavailableOption }]
+      : result.conflicts
+  const validProject =
+    state.projectName.trim() && (state.alias === undefined || isValidImportAlias(state.alias))
   return {
     ...result,
-    command: result.conflicts.length === 0 ? commandFor(state, result.cliArgs) : null,
+    conflicts,
+    availabilityError: unavailable ?? unavailableOption,
+    command:
+      conflicts.length === 0 && validProject
+        ? [
+            ...EXECUTORS[state.packageManager].split(' '),
+            `${release.packageName}@${release.version}`,
+            state.projectName,
+            ...args,
+          ]
+            .map(shellQuote)
+            .join(' ')
+        : null,
   }
 }
 
@@ -188,12 +248,12 @@ export function serializeBuildState(state: BuildState): string {
   return `?${params.toString()}`
 }
 
-function parseCapabilities(params: URLSearchParams, state: BuildState): void {
+function parseCapabilities(params: URLSearchParams, state: BuildState, release: CliRelease): void {
   for (const selection of params.getAll('cap')) {
     const separator = selection.indexOf('=')
     const name = separator === -1 ? selection : selection.slice(0, separator)
     const provider = separator === -1 ? '' : selection.slice(separator + 1)
-    const capability = capabilityDefinition(name)
+    const capability = capabilityDefinition(name, release)
     if (!capability?.providers.includes(provider)) {
       throw new Error(`Invalid capability selection "${selection}"`)
     }
@@ -237,10 +297,19 @@ function parseMonorepo(params: URLSearchParams, state: BuildState): void {
   state.monorepo = monorepo
 }
 
-function parseStateValues(params: URLSearchParams, state: BuildState): string | undefined {
+function parseStateValues(
+  params: URLSearchParams,
+  state: BuildState,
+  release: CliRelease,
+): string | undefined {
   try {
     parsePackageManager(params, state)
     setChoice(state, params, 'framework', FRAMEWORKS)
+    const unavailable = frameworkAvailabilityMessage(
+      state.framework ?? release.recommendedFramework,
+      release,
+    )
+    if (unavailable) throw new Error(unavailable)
     setChoice(state, params, 'database', DATABASES)
     setChoice(state, params, 'auth', AUTHS)
     setChoice(state, params, 'mailer', MAILERS)
@@ -249,13 +318,18 @@ function parseStateValues(params: URLSearchParams, state: BuildState): string | 
     parseTrpc(params, state)
     parseAlias(params, state)
     parseMonorepo(params, state)
-    parseCapabilities(params, state)
+    parseCapabilities(params, state, release)
+    const availabilityError = resolveBuildState(state, release).availabilityError
+    if (availabilityError) throw new Error(availabilityError)
   } catch (error) {
     return error instanceof Error ? error.message : 'Invalid build URL'
   }
 }
 
-export function parseBuildState(search: string): ParsedBuildState {
+export function parseBuildState(
+  search: string,
+  release: CliRelease = CLI_RELEASE,
+): ParsedBuildState {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
   const version = params.get('v')
   if (version !== null && version !== BUILD_SCHEMA_VERSION) {
@@ -264,7 +338,7 @@ export function parseBuildState(search: string): ParsedBuildState {
 
   const state = defaultBuildState()
   state.projectName = params.get('name') ?? state.projectName
-  const error = parseStateValues(params, state)
+  const error = parseStateValues(params, state, release)
   if (error) return { kind: 'invalid', message: error }
 
   return { kind: 'current', state }

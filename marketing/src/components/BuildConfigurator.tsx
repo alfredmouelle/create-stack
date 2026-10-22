@@ -1,19 +1,15 @@
 import {
   type Auth,
-  CAPABILITY_CATALOG,
   type Database,
   DEFAULT_IMPORT_ALIAS,
   FORMATTERS,
   type Formatter,
-  FRAMEWORK_SUPPORT,
   FRAMEWORKS,
   type Framework,
   isValidImportAlias,
   LINTERS,
   type Linter,
   type Mailer,
-  MONOREPO_ORCHESTRATORS,
-  PACKAGE_MANAGERS,
   QUALITY_TOOL_LABELS,
   type StackAxis,
 } from '@alfredmouelle/stack-config'
@@ -32,6 +28,14 @@ import {
   resolveBuildState,
   serializeBuildState,
 } from '../lib/build-config'
+import {
+  RELEASE_CAPABILITIES as CAPABILITY_CATALOG,
+  CLI_RELEASE,
+  RELEASE_FRAMEWORK_SUPPORT as FRAMEWORK_SUPPORT,
+  RELEASE_MONOREPOS as MONOREPO_ORCHESTRATORS,
+  RELEASE_PACKAGE_MANAGERS as PACKAGE_MANAGERS,
+  RELEASED_FRAMEWORKS,
+} from '../lib/cli-release'
 
 type CopyState = 'idle' | 'copied' | 'error'
 
@@ -81,7 +85,10 @@ const linterOptions: readonly ChoiceOption<Linter>[] = LINTERS.map((value) => ({
 
 const frameworkOptions: readonly ChoiceOption<Framework>[] = FRAMEWORKS.map((value) => ({
   value,
-  label: FRAMEWORK_SUPPORT[value].label,
+  label:
+    CLI_RELEASE.frameworks[value] === undefined
+      ? `${FRAMEWORK_SUPPORT[value].label} · coming soon`
+      : FRAMEWORK_SUPPORT[value].label,
 }))
 
 function reasonFor(result: BuildStateResult, axis: StackAxis) {
@@ -319,6 +326,7 @@ function StackChoices({
           result={result}
           selectedValue={state.framework ?? result.configuration.framework}
           state={state}
+          supportedValues={RELEASED_FRAMEWORKS}
         />
         <div className="chips">
           {PLANNED_FRAMEWORKS.slice(0, 1).map((framework) => (
@@ -726,6 +734,7 @@ export default function BuildConfigurator() {
         <div className="stack is-tight">
           <p className="t-label">Stack builder</p>
           <h1 className="t-h1">Build your stack</h1>
+          <p className="is-muted">Available in CLI {CLI_RELEASE.version}.</p>
         </div>
         <button
           className="button is-quiet"

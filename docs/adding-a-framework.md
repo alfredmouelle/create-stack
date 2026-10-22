@@ -1,5 +1,7 @@
 # Adding a framework
 
+Framework registration describes repository support. Public installation availability comes from the manifest in the npm-published CLI. Packing generates `_stack/release.json`; marketing refreshes its verified snapshot before deployment and pins commands to that version. A newly registered framework stays marked as coming soon until a successful npm publication includes it. See [Marketing Worker delivery](runbooks/marketing-worker.md#published-cli-availability).
+
 This guide is for the owner of a new framework module, such as Remix or RasenganJS.
 It names the files you create, the two shared lines you add, and the checks your
 framework must pass. Read [CONTEXT.md](../CONTEXT.md) for the vocabulary and

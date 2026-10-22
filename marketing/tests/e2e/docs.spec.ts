@@ -1,5 +1,6 @@
 import { DATABASES, FRAMEWORKS } from '@alfredmouelle/stack-config'
 import { expect, test } from '@playwright/test'
+import { RELEASED_FRAMEWORKS } from '../../src/lib/cli-release'
 import { openPage } from './navigation'
 
 test.beforeEach(async ({ page }) => {
@@ -36,5 +37,8 @@ test('lists the stack values the CLI accepts', async ({ page }) => {
   const database = flags.getByRole('row', { name: /--database/ })
   for (const value of DATABASES) await expect(database).toContainText(value)
   const framework = flags.getByRole('row', { name: /--framework/ })
-  for (const value of FRAMEWORKS) await expect(framework).toContainText(value)
+  for (const value of FRAMEWORKS) {
+    if (RELEASED_FRAMEWORKS.includes(value)) await expect(framework).toContainText(value)
+    else await expect(framework).not.toContainText(value)
+  }
 })

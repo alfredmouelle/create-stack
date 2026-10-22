@@ -1,11 +1,11 @@
+import type { FrameworkMaturity, ScaffoldFlag } from '@alfredmouelle/stack-config'
+import { PLANNED_FRAMEWORKS, UNRELEASED_FRAMEWORKS } from '../data/frameworks'
 import {
-  FRAMEWORK_SUPPORT,
-  FRAMEWORKS,
-  type FrameworkMaturity,
-  SCAFFOLD_FLAGS,
-  type ScaffoldFlag,
-} from '@alfredmouelle/stack-config'
-import { PLANNED_FRAMEWORKS } from '../data/frameworks'
+  RELEASE_FRAMEWORK_SUPPORT as FRAMEWORK_SUPPORT,
+  RELEASED_FRAMEWORKS as FRAMEWORKS,
+  RELEASE_FLAGS as SCAFFOLD_FLAGS,
+} from './cli-release'
+import { installCommand } from './install-command'
 import { SITE_NAME, SITE_TITLE } from './site-identity'
 
 export { SITE_NAME, SITE_TITLE }
@@ -54,6 +54,10 @@ const FRAMEWORK_MATURITY = [
   maturitySentence(frameworkLabels('stable'), 'stable'),
   maturitySentence(frameworkLabels('preview'), 'in preview'),
   maturitySentence(
+    UNRELEASED_FRAMEWORKS.map(({ label }) => label),
+    'coming in the next release, not installable',
+  ),
+  maturitySentence(
     PLANNED_FRAMEWORKS.map(({ label }) => label),
     'planned, not installable',
   ),
@@ -82,7 +86,7 @@ Create Stack assembles a project from the selected parts of a framework's tested
 Before the first Git commit it runs install, format, typecheck and lint, and it commits only when all four pass.
 ${FRAMEWORK_MATURITY}
 
-Start with \`pnpm dlx @alfredmouelle/create-stack@latest my-app\`.
+Start with \`${installCommand('pnpm')}\`.
 
 ## Non-interactive use
 

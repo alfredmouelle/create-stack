@@ -2,7 +2,7 @@
 
 This runbook covers the deliberate delivery of the marketing site from the isolated `create-stack-marketing` static-assets Worker. The `marketing/` package is the source of truth for the public site and always emits indexable metadata.
 
-The workflow is manual and uses the existing public hostname only for post-deployment verification.
+The workflow deploys selected pushes to `main`, manual dispatches, and successful CLI publications. Every deployment verifies the npm release before building the site.
 
 ## Scoped API token
 
@@ -36,7 +36,23 @@ export CLOUDFLARE_ACCOUNT_ID
 pnpm --filter @alfredmouelle/marketing run deploy
 ```
 
-The single package `deploy` script runs the public Astro build, starts a local preview, checks it over HTTP, and invokes the pinned workspace Wrangler only if those checks pass. It does not perform a post-deployment check because a local command cannot know which Worker URL should be considered authoritative; run the verification command below with the deployed URL.
+The package `deploy` script refreshes the verified CLI release, runs the public Astro build, starts a local preview, checks it over HTTP, and invokes the pinned workspace Wrangler only if those checks pass. Run the verification command below afterward with the deployed URL.
+
+## Published CLI availability
+
+The CLI pack step generates `_stack/release.json` from the shared framework, option, capability, and recommendation declarations. The manifest includes the exact package version. Marketing uses `src/data/cli-release.json`, a snapshot of that published manifest and its npm artifact integrity.
+
+Before deployment, `release:refresh` resolves npm's `latest` tag, downloads the exact tarball, verifies its SHA-512 integrity and package identity, and reads the manifest without executing package code. CLI 0.16.0 predates the manifest; its initial snapshot was checked against published commit `12f280fa83476270b34d8a912821ed2ca3f74122` and the published tarball. A package without a manifest can reuse a snapshot only when both its version and artifact integrity match exactly.
+
+The site pins commands to the verified version. Its hero, builder, framework pages, docs, and `llms.txt` share that release's availability. Implemented frameworks absent from the release appear as coming soon, have no installation command, and cannot be selected through shared URLs. Maturity (`stable` or `preview`) is independent of publication.
+
+Local development and ordinary builds use the checked-in snapshot. Refresh it explicitly when needed:
+
+```sh
+pnpm --filter @alfredmouelle/marketing release:refresh
+```
+
+After `npm publish`, the publication workflow verifies the expected release tag and calls the existing deployment workflow. `EXPECTED_CLI_VERSION` requires that exact version to be available on npm's `latest` tag, with bounded retries for registry propagation. Failed publication, unavailable npm metadata, integrity mismatch, or an unsupported manifest stops the process before Wrangler runs. The existing deployed site remains in place.
 
 ## GitHub secret setup
 
@@ -47,7 +63,7 @@ gh secret set CLOUDFLARE_API_TOKEN
 gh secret set CLOUDFLARE_ACCOUNT_ID
 ```
 
-The workflow is [.github/workflows/deploy-marketing.yml](../../.github/workflows/deploy-marketing.yml). It has only a manual `workflow_dispatch` trigger, uses one cancelling concurrency group, and calls the same `@alfredmouelle/marketing` package script used locally. The Worker URL is a required dispatch input so an operator chooses the exact endpoint to verify; it is not stored as a credential.
+The workflow is [.github/workflows/deploy-marketing.yml](../../.github/workflows/deploy-marketing.yml). It uses one cancelling concurrency group and calls the same package script used locally. The Worker URL is required for manual dispatch; publication calls verify the public hostname. Cloudflare secrets pass through the reusable workflow without entering the release manifest.
 
 ## Public Worker deployment
 
@@ -62,7 +78,7 @@ The check expects HTTP 200, the Create Stack page title, `robots.txt` with `Allo
 
 ## Push filtering
 
-The workflow deploys on pushes to `main` when one of the marketing delivery inputs changes. It remains independent from npm publication and keeps the manual trigger available:
+The workflow deploys on pushes to `main` when a marketing delivery input changes. It also accepts a `workflow_call` from the CLI publication workflow and keeps manual dispatch available:
 
 ```yaml
 on:

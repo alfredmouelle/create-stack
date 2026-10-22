@@ -23,6 +23,7 @@ function run(label: string, args: string[]) {
   }
 }
 
+run('verifying the published CLI', ['run', 'release:refresh'])
 run('building public site', ['run', 'build:public'])
 run('running local HTTP smoke test', ['run', 'smoke'])
 run('deploying with the workspace Wrangler', [

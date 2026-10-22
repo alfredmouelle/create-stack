@@ -484,6 +484,7 @@ function resolveConfiguration(
   choices: ReturnType<typeof explicitChoices>,
   framework: FrameworkSupport,
   minimal: boolean,
+  recommendedFramework: Framework,
 ): StackConfiguration {
   const { recommendations } = framework
   const database =
@@ -507,7 +508,7 @@ function resolveConfiguration(
       fitsAxis('mailer', { ...choices, database, auth, trpc, mailer }),
     )
   return {
-    framework: choices.framework ?? RECOMMENDED_FRAMEWORK,
+    framework: choices.framework ?? recommendedFramework,
     database,
     auth,
     trpc,
@@ -635,18 +636,19 @@ function cliArgsFor(input: StackConfigurationInput): readonly string[] {
 export function resolveStackConfiguration(
   input: StackConfigurationInput = {},
   frameworkSupport: FrameworkSupportCatalog = FRAMEWORK_SUPPORT,
+  recommendedFramework: Framework = RECOMMENDED_FRAMEWORK,
 ): StackConfigurationResult {
   validateBoolean(input.trpc, 'trpc')
   validateBoolean(input.minimal, 'minimal')
 
   const choices = explicitChoices(input)
-  const framework = frameworkSupport[choices.framework ?? RECOMMENDED_FRAMEWORK]
+  const framework = frameworkSupport[choices.framework ?? recommendedFramework]
   const conflicts = findConflicts(choices, framework)
   const minimal = input.minimal === true
   const hasExplicitChoice = Object.values(choices).some((value) => value !== undefined)
   const recommendationMessage =
     !minimal && !hasExplicitChoice ? 'recommended stack' : 'applicable recommendation'
-  const configuration = resolveConfiguration(choices, framework, minimal)
+  const configuration = resolveConfiguration(choices, framework, minimal, recommendedFramework)
   const reasons = createReasons(choices, configuration, minimal, recommendationMessage)
   completeDependencyReasons(choices, configuration, reasons)
 

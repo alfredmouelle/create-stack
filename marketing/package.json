@@ -8,6 +8,7 @@
     "build:public": "astro build --mode public",
     "deploy": "node scripts/deploy.ts",
     "preview": "astro preview",
+    "release:refresh": "node scripts/refresh-cli-release.ts",
     "smoke": "node scripts/smoke.ts",
     "test": "vitest run src",
     "test:watch": "vitest",

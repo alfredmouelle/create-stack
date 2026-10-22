@@ -1,6 +1,7 @@
-import { PACKAGE_MANAGERS, type PackageManagerName } from '@alfredmouelle/stack-config'
+import type { PackageManagerName } from '@alfredmouelle/stack-config'
 import { useEffect, useRef, useState } from 'react'
 import { captureCommandCopied } from '../lib/analytics'
+import { RELEASE_PACKAGE_MANAGERS as PACKAGE_MANAGERS } from '../lib/cli-release'
 import { installCommand } from '../lib/install-command'
 
 type CopyState = 'idle' | 'copied' | 'error'

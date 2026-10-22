@@ -1,5 +1,5 @@
-import { SCAFFOLD_FLAGS } from '@alfredmouelle/stack-config'
 import { describe, expect, it } from 'vitest'
+import { CLI_RELEASE, RELEASE_FLAGS as SCAFFOLD_FLAGS } from './cli-release'
 import { getSiteMetadata } from './site-metadata'
 
 const { llms } = getSiteMetadata()
@@ -11,7 +11,9 @@ describe('llms.txt', () => {
   })
 
   it.each([
-    '`--framework tanstack|next|rasengan|remix`',
+    CLI_RELEASE.frameworks.remix
+      ? '`--framework tanstack|next|rasengan|remix`'
+      : '`--framework tanstack|next|rasengan`',
     '`--trpc` / `--no-trpc`',
     '`--database drizzle|prisma|convex|none` / `--no-db`',
     '`--errors sentry`',
@@ -23,7 +25,9 @@ describe('llms.txt', () => {
 
   it('states framework maturity from the shared support catalog', () => {
     expect(llms).toContain(
-      'TanStack Start and Next.js are stable. RasenganJS and Remix are in preview. Vue, NestJS, and PHP frameworks are planned, not installable.',
+      CLI_RELEASE.frameworks.remix
+        ? 'TanStack Start and Next.js are stable. RasenganJS and Remix are in preview. Vue, NestJS, and PHP frameworks are planned, not installable.'
+        : 'TanStack Start and Next.js are stable. RasenganJS is in preview. Remix is coming in the next release, not installable. Vue, NestJS, and PHP frameworks are planned, not installable.',
     )
   })
 })

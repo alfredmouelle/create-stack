@@ -31,3 +31,15 @@ test('publish job installs workspace dependencies before npm publish', () => {
   expect(install).toBeGreaterThanOrEqual(0)
   expect(publish).toBeGreaterThan(install)
 })
+
+test('marketing deployment waits for publication and verification of the release tag', () => {
+  const job = publishJob ?? ''
+  const publish = job.indexOf('run: npm publish --access public')
+  const verification = job.indexOf(
+    'run: pnpm --filter @alfredmouelle/marketing run release:refresh',
+  )
+  expect(verification).toBeGreaterThan(publish)
+  expect(job).toContain(`EXPECTED_CLI_VERSION: \${{ github.ref_name }}`)
+  expect(workflow).toContain('needs: publish\n    uses: ./.github/workflows/deploy-marketing.yml')
+  expect(workflow).toContain(`cli_version: \${{ github.ref_name }}`)
+})
