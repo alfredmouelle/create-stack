@@ -248,13 +248,21 @@ test('numbers the remaining planned frameworks consecutively', async ({ page }) 
   )
 })
 
-test('identifies Rasengan as preview on the homepage and planned framework roadmap', async ({
+test('groups hero frameworks by maturity and identifies previews on the roadmap', async ({
   page,
 }) => {
   await openPage(page, '/')
-  const hero = page.locator('.hero-label > span').filter({ hasText: 'RasenganJS' })
-  await expect(hero.getByText('preview', { exact: true })).toBeVisible()
-  await expect(hero.getByText('stable', { exact: true })).toHaveCount(0)
+  const hero = page.locator('.hero-label')
+  for (const width of [375, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect(hero.getByText('stable', { exact: true })).toHaveCount(1)
+    await expect(hero.getByText('preview', { exact: true })).toHaveCount(1)
+    const stable = hero.locator(':scope > span').filter({ hasText: 'stable' })
+    const preview = hero.locator(':scope > span').filter({ hasText: 'preview' })
+    await expect(stable).toContainText('TanStack Start · Next.js')
+    await expect(preview).toContainText('RasenganJS · Remix')
+    expect(await hero.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+  }
 
   await openPage(page, '/frameworks/vue')
   const roadmap = page.locator('.roadmap .is-done').filter({ hasText: 'RasenganJS' })

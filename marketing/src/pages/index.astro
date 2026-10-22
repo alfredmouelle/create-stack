@@ -17,6 +17,14 @@ import { installCommand } from '../lib/install-command'
 import { REPOSITORY_URL } from '../lib/site-metadata'
 
 const tanstack = REGISTERED_FRAMEWORKS.find((framework) => framework.id === 'tanstack')
+const frameworkGroups = [...new Set(REGISTERED_FRAMEWORKS.map((framework) => framework.maturity))].map(
+  (maturity) => ({
+    maturity,
+    labels: REGISTERED_FRAMEWORKS.filter((framework) => framework.maturity === maturity)
+      .map((framework) => framework.label)
+      .join(' · '),
+  }),
+)
 const previewLabels = REGISTERED_FRAMEWORKS.filter((framework) => framework.maturity === 'preview').map(
   (framework) => framework.label,
 )
@@ -34,8 +42,8 @@ const frameworksTitle = [
   <main>
     <section aria-labelledby="hero-title" class="hero shell">
       <p class="t-label hero-label">
-        {REGISTERED_FRAMEWORKS.map((framework) => (
-          <span><Badge maturity={framework.maturity} /> {framework.label}</span>
+        {frameworkGroups.map((group) => (
+          <span><Badge maturity={group.maturity} /> <span>{group.labels}</span></span>
         ))}
       </p>
       <h1 class="t-display" id="hero-title">Your first commit <br />is <em>green.</em></h1>
